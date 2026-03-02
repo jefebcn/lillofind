@@ -13,10 +13,12 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,serverTimestamp,query,orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,updatePassword,EmailAuthProvider,reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
-window.__fb={db:getFirestore(app),auth:getAuth(app),collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,serverTimestamp,query,orderBy,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged};
+const _googleProvider=new GoogleAuthProvider();
+_googleProvider.setCustomParameters({prompt:'select_account'});
+window.__fb={db:getFirestore(app),auth:getAuth(app),collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,serverTimestamp,query,orderBy,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,updatePassword,EmailAuthProvider,reauthenticateWithCredential,_googleProvider};
 </script>
 
 <style>
@@ -173,6 +175,26 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 .tier-c.unlocked{border-color:var(--k);background:var(--k);color:var(--w);}
 .tier-c.unlocked .tier-glow{color:var(--led);}
 
+/* ── PROFILE TABS ────────────────────────────── */
+.prof-tab{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;
+  padding:14px 16px;cursor:pointer;color:#444;white-space:nowrap;
+  transition:color .2s,border-color .2s;min-height:48px;
+}
+.prof-tab.on{color:var(--led);border-bottom-color:var(--led);}
+.prof-tab:hover{color:var(--led);}
+.ptab{display:none;}
+.ptab.on{display:block;}
+
+/* ── TOGGLE SWITCH ───────────────────────────── */
+.lf-toggle{position:relative;display:inline-block;width:46px;height:24px;flex-shrink:0;}
+.lf-toggle input{opacity:0;width:0;height:0;}
+.lf-slider{position:absolute;cursor:pointer;inset:0;background:#ddd;transition:.3s;border-radius:0;}
+.lf-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:var(--w);transition:.3s;}
+.lf-toggle input:checked+.lf-slider{background:var(--led);}
+.lf-toggle input:checked+.lf-slider:before{transform:translateX(22px);background:var(--k);}
+
 /* ── SECTION LABEL ───────────────────────────── */
 .slbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);}
 
@@ -306,6 +328,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 /* ── PROGRESS BAR ────────────────────────────── */
 .prog-bg{background:#1e1e1e;height:3px;border-radius:0;}
 .prog-fill{height:3px;background:var(--led);box-shadow:0 0 8px var(--led);transition:width .8s ease;}
+@keyframes pulse-led{0%,100%{box-shadow:0 0 8px var(--led);}50%{box-shadow:0 0 20px var(--led),0 0 40px rgba(200,255,0,.4);}}
 
 /* ── LED BADGE ───────────────────────────────── */
 .led-badge{
@@ -472,54 +495,61 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 ════════════════════════════════════════════════════════ -->
 <div id="pg-home" class="pg on">
 
-  <!-- HERO -->
-  <section style="min-height:92vh;display:flex;align-items:center;padding:60px 32px;border-bottom:2px solid var(--k);position:relative;overflow:hidden;background:#f5f5f5;">
-    <!-- Subtle grid background instead of overlapping text -->
-    <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(0,0,0,.04) 59px,rgba(0,0,0,.04) 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(0,0,0,.04) 59px,rgba(0,0,0,.04) 60px);pointer-events:none;"></div>
-    <!-- Faint corner watermark — right side only, no overlap -->
-    <div class="hide-mob" style="position:absolute;right:-40px;top:50%;transform:translateY(-50%);pointer-events:none;user-select:none;">
-      <span class="bb" style="font-size:clamp(160px,18vw,260px);color:transparent;-webkit-text-stroke:1px rgba(0,0,0,.07);line-height:1;display:block;">LF</span>
+  <!-- HERO — Dark cinematic full-bleed -->
+  <section style="min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;background:var(--k);border-bottom:3px solid var(--k);">
+    <!-- Grain overlay -->
+    <div style="position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.035;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22/></svg>');background-size:200px;"></div>
+    <!-- LED diagonal line -->
+    <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:hidden;">
+      <div style="position:absolute;top:-50%;left:58%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.25) 50%,transparent);transform:rotate(-12deg);"></div>
+      <div style="position:absolute;top:-50%;left:68%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.08) 50%,transparent);transform:rotate(-12deg);"></div>
     </div>
-    <!-- LED dot accents -->
-    <div style="position:absolute;top:18%;left:60%;width:6px;height:6px;background:var(--led);border-radius:50%;box-shadow:0 0 18px var(--led);"></div>
-    <div style="position:absolute;top:70%;left:55%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 12px var(--led2);"></div>
-    <div style="position:absolute;bottom:20%;left:45%;width:5px;height:5px;background:var(--led);border-radius:50%;box-shadow:0 0 14px var(--led);"></div>
-    <!-- Hero content -->
-    <div style="position:relative;z-index:2;max-width:680px;">
-      <div class="led-badge" style="margin-bottom:24px;">✦ SS 2025 — New Drop Live</div>
-      <h1 class="bb" style="font-size:clamp(64px,10vw,128px);line-height:.92;margin-bottom:28px;color:var(--k);">
-        Define<br/>Your Drop.
-      </h1>
-      <p style="font-size:13px;color:#444;line-height:1.85;max-width:380px;margin-bottom:36px;background:rgba(245,245,245,.8);padding:0;">
-        Streetwear autentico, curato senza compromessi.<br/>
-        🚀 Spedizione DHL — 10/15 giorni lavorativi.<br/>
-        🔄 Reso gratuito entro 30 giorni.
-      </p>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;">
-        <button class="btn-k" onclick="showPg('shop')" style="font-size:12px;">Shop Now →</button>
-        <button class="btn-g" onclick="showPg('lfpoints')" style="font-size:12px;">LFPoints Program</button>
+    <!-- Glow dots -->
+    <div style="position:absolute;top:12%;right:6%;width:8px;height:8px;background:var(--led);border-radius:50%;box-shadow:0 0 32px var(--led),0 0 64px rgba(200,255,0,.3);z-index:3;"></div>
+    <div style="position:absolute;top:38%;right:14%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 18px var(--led2);z-index:3;"></div>
+    <div style="position:absolute;bottom:40%;left:7%;width:5px;height:5px;background:var(--led);border-radius:50%;box-shadow:0 0 22px var(--led);z-index:3;"></div>
+    <!-- GIANT LILLOFIND WATERMARK -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;">
+      <span class="bb" style="font-size:clamp(72px,13vw,170px);color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.055);letter-spacing:8px;white-space:nowrap;">LILLOFIND</span>
+    </div>
+    <!-- Hero copy -->
+    <div style="position:relative;z-index:4;padding:40px 32px 0;max-width:860px;" class="pad-mob">
+      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:28px;background:rgba(200,255,0,.05);">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--led);box-shadow:0 0 8px var(--led);display:inline-block;animation:pulse-led 2s ease-in-out infinite;"></span>
+        <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--led);">SS 2025 — Drop Live Ora</span>
       </div>
-      <!-- Stats inline -->
-      <div style="margin-top:48px;display:flex;gap:32px;flex-wrap:wrap;border-top:1px solid #ddd;padding-top:28px;">
-        <div>
-          <p class="bb" style="font-size:28px;line-height:1;">DHL</p>
-          <p style="font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">Express</p>
-        </div>
-        <div style="width:1px;background:#ddd;"></div>
-        <div>
-          <p class="bb" style="font-size:28px;line-height:1;">10–15</p>
-          <p style="font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">Giorni lav.</p>
-        </div>
-        <div style="width:1px;background:#ddd;"></div>
-        <div>
-          <p class="bb" style="font-size:28px;line-height:1;">30gg</p>
-          <p style="font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">Reso gratis</p>
-        </div>
-        <div style="width:1px;background:#ddd;"></div>
-        <div>
-          <p class="bb" style="font-size:28px;line-height:1;color:var(--k);">1:1</p>
-          <p style="font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">€ → LFPTS</p>
-        </div>
+      <h1 class="bb" style="font-size:clamp(72px,11vw,150px);line-height:.88;color:var(--w);margin-bottom:0;letter-spacing:2px;">DEFINE<br/>YOUR<br/><span style="color:var(--led);">DROP.</span></h1>
+      <div style="width:56px;height:2px;background:var(--led);box-shadow:0 0 14px var(--led);margin:28px 0;"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:36px;max-width:480px;">
+        <p style="font-size:15px;color:rgba(255,255,255,.9);line-height:1.5;font-family:'IBM Plex Mono',monospace;">Streetwear premium, senza compromessi.</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.38);letter-spacing:.5px;line-height:1.8;font-family:'IBM Plex Mono',monospace;">Pezzi rari curati ogni settimana — Nike, Jordan, Bape, Supreme e molti altri.<br/>Qualità 1:1 • Spedizione DHL • Reso 30gg gratis</p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;padding-bottom:52px;">
+        <button class="btn-led" onclick="showPg('shop')" style="font-size:12px;padding:16px 32px;">Shop the Drop →</button>
+        <button onclick="showPg('lfpoints')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w);padding:16px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s;-webkit-appearance:none;" onmouseover="this.style.borderColor='var(--led)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">⬡ LFPoints</button>
+      </div>
+    </div>
+    <!-- Bottom stats bar -->
+    <div style="position:relative;z-index:4;border-top:1px solid rgba(255,255,255,.07);display:flex;overflow-x:auto;">
+      <div style="flex:1;min-width:110px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">DHL</p>
+        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Express</p>
+      </div>
+      <div style="flex:1;min-width:110px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">10–15</p>
+        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Giorni lav.</p>
+      </div>
+      <div style="flex:1;min-width:90px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">30gg</p>
+        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Reso gratis</p>
+      </div>
+      <div style="flex:1;min-width:90px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:20px;color:var(--led);margin-bottom:2px;">1:1</p>
+        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">€ → LFPTS</p>
+      </div>
+      <div class="hide-mob" style="flex:1;min-width:110px;padding:18px 20px;">
+        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">SSL</p>
+        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Pagamento sicuro</p>
       </div>
     </div>
   </section>
@@ -806,6 +836,16 @@ textarea.lf-in{resize:vertical;min-height:90px;}
         <p style="font-size:10px;color:var(--mid);letter-spacing:1px;">⭐ Unisciti a migliaia di members. Primo LFPOINT guadagnato al primo acquisto.</p>
       </div>
 
+      <!-- Google Sign-in -->
+      <button onclick="doGoogleAuth()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 20px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:border-color .2s,box-shadow .2s;margin-bottom:4px;" onmouseover="this.style.borderColor='var(--k)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.borderColor='#ddd';this.style.boxShadow='none'">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continua con Google
+      </button>
+      <div style="display:flex;align-items:center;gap:12px;margin:4px 0;">
+        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+        <span style="font-size:10px;color:var(--dim);white-space:nowrap;">oppure con email</span>
+        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+      </div>
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div id="a-name-row" style="display:none;flex-direction:column;gap:6px;">
           <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Completo</label>
@@ -820,11 +860,6 @@ textarea.lf-in{resize:vertical;min-height:90px;}
           <input class="lf-in" id="a-pass" type="password" placeholder="min. 6 caratteri" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
         </div>
         <button class="btn-led" id="auth-cta" onclick="doAuth()" style="margin-top:4px;width:100%;">Accedi →</button>
-        <div style="display:flex;align-items:center;gap:12px;margin:4px 0;">
-          <div style="flex:1;height:1px;background:#e0e0e0;"></div>
-          <span style="font-size:10px;color:var(--dim);">oppure</span>
-          <div style="flex:1;height:1px;background:#e0e0e0;"></div>
-        </div>
         <button onclick="switchTab(authTab==='li'?'reg':'li')" class="btn-g" style="width:100%;">
           <span id="switch-tab-lbl">Non hai un account? Registrati</span>
         </button>
@@ -933,6 +968,59 @@ textarea.lf-in{resize:vertical;min-height:90px;}
         <div id="tr-history" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
     </div>
+
+    <!-- ── IMPORT RAPIDO PRODOTTI ── -->
+    <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;">
+      <p class="slbl" style="margin-bottom:6px;">Import Veloce</p>
+      <h3 class="bb" style="font-size:36px;margin-bottom:8px;">🚀 Carica Prodotti in Bulk</h3>
+      <p style="font-size:11px;color:var(--mid);margin-bottom:24px;line-height:1.8;">Seleziona una categoria di Yupoo e compila solo i campi variabili (prezzo, URL immagine). Il sistema salverà automaticamente tutti i prodotti nel DB.</p>
+
+      <!-- Category quick-select -->
+      <div style="margin-bottom:20px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">1. Scegli Categoria (da Huskyreps)</p>
+        <div id="bulk-cat-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+
+      <!-- Bulk product rows -->
+      <div style="margin-bottom:20px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">2. Aggiungi Prodotti</p>
+        <div id="bulk-rows" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
+          <!-- JS will render rows here -->
+        </div>
+        <button onclick="addBulkRow()" class="btn-g" style="padding:8px 16px;font-size:10px;">+ Aggiungi Riga</button>
+      </div>
+
+      <!-- Common fields for all rows -->
+      <div style="border:1.5px solid #e0e0e0;padding:16px;margin-bottom:20px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Campi Comuni (applicati a tutti)</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="bk-model" placeholder="es. Hoodie"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile</label>
+            <select class="lf-in" id="bk-style"><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia Default</label>
+            <select class="lf-in" id="bk-size"><option value="">—</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>Unica</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-led" id="bk-btn" onclick="saveBulkProducts()">💾 Salva Tutti →</button>
+        <p id="bk-status" style="font-size:10px;color:var(--mid);letter-spacing:1px;"></p>
+      </div>
+
+      <!-- CSV Guide -->
+      <div style="margin-top:32px;border:1.5px solid var(--led);padding:20px;background:rgba(200,255,0,.03);">
+        <p class="bb" style="font-size:20px;margin-bottom:10px;color:var(--k);">💡 Guida per Yupoo (huskyreps)</p>
+        <ol style="font-size:11px;color:var(--mid);line-height:2.1;padding-left:18px;">
+          <li>Vai su <strong>huskyreps.x.yupoo.com/albums</strong> → scegli un album (es. Nike Dunk)</li>
+          <li>Clicca su un prodotto → copia il link della foto (<strong>tasto destro → "Copia indirizzo immagine"</strong>)</li>
+          <li>Torna qui, seleziona il brand dalla lista sopra, incolla l'URL nel campo immagine della riga</li>
+          <li>Imposta nome e prezzo → clicca <strong>Salva Tutti</strong></li>
+        </ol>
+        <p style="font-size:10px;color:var(--dim);margin-top:12px;">💡 Per aggiungere molti prodotti velocemente: apri Yupoo in un'altra scheda e lavora in parallelo su questa finestra.</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -941,95 +1029,266 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 ════════════════════════════════════════════════════════ -->
 <div id="pg-profile" class="pg">
   <div class="led-strip"></div>
-  <div style="max-width:820px;margin:0 auto;padding:40px 20px;">
-    <!-- Points card -->
-    <div style="background:var(--k);color:var(--w);padding:40px 28px;margin-bottom:32px;border-left:3px solid var(--led);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;flex-wrap:wrap;gap:16px;">
-        <div>
-          <p class="slbl" style="color:#333;margin-bottom:12px;">Saldo LFPOINTS</p>
-          <p class="bb" id="pr-pts" style="font-size:clamp(56px,9vw,96px);line-height:1;color:var(--led);">0</p>
-          <p id="pr-val" style="font-size:10px;color:#444;margin-top:6px;letter-spacing:1px;text-transform:uppercase;">≈ €0.00 in acquisti</p>
+
+  <!-- Profile nav tabs -->
+  <div style="background:var(--k);color:var(--w);position:sticky;top:0;z-index:50;border-bottom:1px solid var(--border);">
+    <div style="max-width:900px;margin:0 auto;padding:0 20px;display:flex;overflow-x:auto;gap:0;">
+      <button class="prof-tab on" data-tab="overview" onclick="switchProfTab('overview')">📊 Overview</button>
+      <button class="prof-tab" data-tab="tracking" onclick="switchProfTab('tracking')">📦 Traccia Pacco</button>
+      <button class="prof-tab" data-tab="prizes" onclick="switchProfTab('prizes')">🎁 Premi</button>
+      <button class="prof-tab" data-tab="address" onclick="switchProfTab('address')">📍 Indirizzi</button>
+      <button class="prof-tab" data-tab="security" onclick="switchProfTab('security')">🔒 Sicurezza</button>
+      <button class="prof-tab" data-tab="notifications" onclick="switchProfTab('notifications')">🔔 Notifiche</button>
+      <button class="prof-tab" data-tab="settings" onclick="switchProfTab('settings')">⚙️ Impostazioni</button>
+    </div>
+  </div>
+
+  <div style="max-width:900px;margin:0 auto;padding:32px 20px;">
+
+    <!-- ─── TAB: OVERVIEW ─────────────────────────────── -->
+    <div id="ptab-overview" class="ptab on">
+      <!-- Points hero card -->
+      <div style="background:var(--k);color:var(--w);padding:32px 28px;margin-bottom:24px;border-left:3px solid var(--led);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
+          <div>
+            <p class="slbl" style="color:#333;margin-bottom:8px;">Saldo LFPOINTS</p>
+            <p class="bb" id="pr-pts" style="font-size:clamp(52px,9vw,88px);line-height:1;color:var(--led);">0</p>
+            <p id="pr-val" style="font-size:10px;color:#444;margin-top:4px;letter-spacing:1px;text-transform:uppercase;">≈ €0.00 in acquisti</p>
+          </div>
+          <div style="text-align:right;">
+            <p class="slbl" style="color:#333;margin-bottom:6px;">Livello</p>
+            <p class="bb" id="pr-tier" style="font-size:28px;letter-spacing:2px;color:var(--led);">—</p>
+            <p id="pr-next-prize" style="font-size:9px;color:#444;margin-top:3px;letter-spacing:1px;"></p>
+          </div>
         </div>
-        <div style="text-align:right;">
-          <p class="slbl" style="color:#333;margin-bottom:8px;">Livello</p>
-          <p class="bb" id="pr-tier" style="font-size:32px;letter-spacing:2px;color:var(--led);">—</p>
-          <p id="pr-next-prize" style="font-size:9px;color:#444;margin-top:4px;letter-spacing:1px;"></p>
-        </div>
-      </div>
-      <!-- Progress bar -->
-      <div id="pr-prog">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <p id="pr-nlbl" style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;"></p>
-          <p id="pr-nnum" style="font-size:9px;color:#333;"></p>
-        </div>
-        <div class="prog-bg"><div id="pr-bar" class="prog-fill" style="width:0%;"></div></div>
-      </div>
-    </div>
-
-    <!-- LED separator -->
-    <div class="led-strip-sm" style="margin-bottom:32px;"></div>
-
-    <!-- NEXT REWARD -->
-    <div id="pr-next-rew-wrap" style="border:1.5px solid var(--led);padding:20px 24px;margin-bottom:32px;background:rgba(200,255,0,.04);box-shadow:0 0 16px rgba(200,255,0,.1);">
-      <p class="slbl" style="margin-bottom:8px;">Prossimo Premio</p>
-      <p id="pr-next-rew-txt" class="bb" style="font-size:28px;"></p>
-      <p id="pr-next-rew-sub" style="font-size:10px;color:var(--mid);margin-top:4px;letter-spacing:1px;"></p>
-    </div>
-
-    <!-- ── TRACCIA PACCO ── -->
-    <div id="pr-tracking-wrap" style="margin-bottom:32px;border:2px solid var(--k);overflow:hidden;">
-      <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:20px;">📦</span>
-          <p class="bb" style="font-size:22px;letter-spacing:2px;">Traccia Pacco</p>
-        </div>
-        <span id="pr-track-status-badge" style="display:none;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;background:var(--led);color:var(--k);">—</span>
-      </div>
-      <div class="led-strip-sm"></div>
-      <div id="pr-tracking-content" style="padding:24px 20px;">
-        <p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun ordine in corso. Il tracking verrà mostrato qui una volta spedito il tuo ordine.</p>
-      </div>
-    </div>
-
-    <!-- Tier cards -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:36px;" class="grid-1-mob" style="grid-template-columns:1fr 1fr!important;">
-      <div class="tier-c" data-min="0"><p style="font-size:16px;margin-bottom:4px;">🥉</p><p class="bb" style="font-size:18px;" >Bronze</p><p style="font-size:9px;margin-top:4px;">0+ pts</p></div>
-      <div class="tier-c" data-min="50"><p style="font-size:16px;margin-bottom:4px;">🥈</p><p class="bb" style="font-size:18px;">Silver</p><p style="font-size:9px;margin-top:4px;">50+ pts</p></div>
-      <div class="tier-c" data-min="200"><p style="font-size:16px;margin-bottom:4px;">🥇</p><p class="bb tier-glow" style="font-size:18px;">Gold</p><p style="font-size:9px;margin-top:4px;">200+ pts</p></div>
-      <div class="tier-c" data-min="500"><p style="font-size:16px;margin-bottom:4px;">💎</p><p class="bb tier-glow" style="font-size:18px;">Platinum</p><p style="font-size:9px;margin-top:4px;">500+ pts</p></div>
-    </div>
-
-    <!-- Info -->
-    <div style="border-top:2px solid var(--k);padding-top:32px;margin-bottom:36px;">
-      <p class="slbl" style="margin-bottom:20px;">Account</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-        <div style="padding:14px 0;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Nome</p><p id="pr-name" style="font-size:13px;">—</p></div>
-        <div style="padding:14px 0 14px 20px;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Email</p><p id="pr-email" style="font-size:13px;word-break:break-all;">—</p></div>
-        <div style="padding:14px 0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Totale Speso</p><p id="pr-spent" style="font-size:13px;">€0.00</p></div>
-        <div style="padding:14px 0 14px 20px;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">LFPOINTS</p><p id="pr-pts2" style="font-size:13px;color:var(--k);">0</p></div>
-      </div>
-    </div>
-
-    <!-- Rewards claimable -->
-    <div style="border:1.5px solid var(--k);padding:24px;margin-bottom:36px;">
-      <p class="slbl" style="margin-bottom:20px;">Premi Disponibili</p>
-      <div id="pr-rewards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;"></div>
-    </div>
-
-    <!-- Prefs -->
-    <div style="border-top:2px solid var(--k);padding-top:32px;">
-      <p class="slbl" style="margin-bottom:20px;">Preferenze Personali</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;" class="grid-1-mob">
-        <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia Preferita</label>
-          <select class="lf-in" id="pf-size"><option value="">Nessuna</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Brand Preferiti</label>
-          <input class="lf-in" id="pf-brands" placeholder="Nike, Carhartt, Stüssy..."/>
+        <div id="pr-prog">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <p id="pr-nlbl" style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;"></p>
+            <p id="pr-nnum" style="font-size:9px;color:#333;"></p>
+          </div>
+          <div class="prog-bg"><div id="pr-bar" class="prog-fill" style="width:0%;"></div></div>
         </div>
       </div>
-      <button class="btn-led" onclick="savePrefs()">Salva Preferenze</button>
+
+      <!-- Next reward highlight -->
+      <div id="pr-next-rew-wrap" style="border:1.5px solid var(--led);padding:18px 22px;margin-bottom:24px;background:rgba(200,255,0,.04);box-shadow:0 0 14px rgba(200,255,0,.08);">
+        <p class="slbl" style="margin-bottom:6px;">Prossimo Premio</p>
+        <p id="pr-next-rew-txt" class="bb" style="font-size:26px;"></p>
+        <p id="pr-next-rew-sub" style="font-size:10px;color:var(--mid);margin-top:3px;letter-spacing:1px;"></p>
+      </div>
+
+      <!-- Tier grid -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:28px;">
+        <div class="tier-c" data-min="0"><p style="font-size:16px;margin-bottom:4px;">🥉</p><p class="bb" style="font-size:17px;">Bronze</p><p style="font-size:9px;margin-top:3px;">0+ pts</p></div>
+        <div class="tier-c" data-min="50"><p style="font-size:16px;margin-bottom:4px;">🥈</p><p class="bb" style="font-size:17px;">Silver</p><p style="font-size:9px;margin-top:3px;">50+ pts</p></div>
+        <div class="tier-c" data-min="200"><p style="font-size:16px;margin-bottom:4px;">🥇</p><p class="bb tier-glow" style="font-size:17px;">Gold</p><p style="font-size:9px;margin-top:3px;">200+ pts</p></div>
+        <div class="tier-c" data-min="500"><p style="font-size:16px;margin-bottom:4px;">💎</p><p class="bb tier-glow" style="font-size:17px;">Platinum</p><p style="font-size:9px;margin-top:3px;">500+ pts</p></div>
+      </div>
+
+      <!-- Account info -->
+      <div style="border-top:2px solid var(--k);padding-top:24px;margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <p class="slbl">Dati Account</p>
+          <button onclick="switchProfTab('settings')" style="font-size:10px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Modifica →</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+          <div style="padding:12px 0;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Nome</p><p id="pr-name" style="font-size:13px;">—</p></div>
+          <div style="padding:12px 0 12px 18px;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Email</p><p id="pr-email" style="font-size:13px;word-break:break-all;">—</p></div>
+          <div style="padding:12px 0;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Telefono</p><p id="pr-phone" style="font-size:13px;">—</p></div>
+          <div style="padding:12px 0 12px 18px;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Membro dal</p><p id="pr-joined" style="font-size:13px;">—</p></div>
+          <div style="padding:12px 0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Totale Speso</p><p id="pr-spent" style="font-size:13px;">€0.00</p></div>
+          <div style="padding:12px 0 12px 18px;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">LFPOINTS</p><p id="pr-pts2" style="font-size:13px;color:var(--k);">0</p></div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <button onclick="switchProfTab('tracking')" style="border:1.5px solid #e0e0e0;padding:18px 12px;text-align:center;background:none;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--k)'" onmouseout="this.style.borderColor='#e0e0e0'">
+          <p style="font-size:20px;margin-bottom:6px;">📦</p>
+          <p style="font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Traccia</p>
+        </button>
+        <button onclick="switchProfTab('prizes')" style="border:1.5px solid #e0e0e0;padding:18px 12px;text-align:center;background:none;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--led)'" onmouseout="this.style.borderColor='#e0e0e0'">
+          <p style="font-size:20px;margin-bottom:6px;">🎁</p>
+          <p style="font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Premi</p>
+        </button>
+        <button onclick="switchProfTab('address')" style="border:1.5px solid #e0e0e0;padding:18px 12px;text-align:center;background:none;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--k)'" onmouseout="this.style.borderColor='#e0e0e0'">
+          <p style="font-size:20px;margin-bottom:6px;">📍</p>
+          <p style="font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Indirizzi</p>
+        </button>
+      </div>
     </div>
+
+    <!-- ─── TAB: TRACKING ─────────────────────────────── -->
+    <div id="ptab-tracking" class="ptab">
+      <h2 class="bb" style="font-size:40px;margin-bottom:24px;">📦 Traccia Pacco</h2>
+      <div id="pr-tracking-wrap" style="border:2px solid var(--k);overflow:hidden;">
+        <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+          <p class="bb" style="font-size:20px;letter-spacing:2px;">Stato Spedizione</p>
+          <span id="pr-track-status-badge" style="display:none;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;background:var(--led);color:var(--k);">—</span>
+        </div>
+        <div class="led-strip-sm"></div>
+        <div id="pr-tracking-content" style="padding:24px 20px;">
+          <p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun ordine in corso. Il tracking apparirà qui una volta spedito il tuo ordine.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: PRIZES ───────────────────────────────── -->
+    <div id="ptab-prizes" class="ptab">
+      <h2 class="bb" style="font-size:40px;margin-bottom:8px;">🎁 I Tuoi Premi</h2>
+      <p style="font-size:11px;color:var(--mid);margin-bottom:24px;letter-spacing:1px;">Riscatta i tuoi LFPOINTS in sconti reali. Un codice per ordine, valido 90 giorni.</p>
+      <div id="pr-rewards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;"></div>
+    </div>
+
+    <!-- ─── TAB: ADDRESSES ────────────────────────────── -->
+    <div id="ptab-address" class="ptab">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+        <h2 class="bb" style="font-size:40px;">📍 Indirizzi</h2>
+        <button onclick="toggleAddressForm()" class="btn-k" style="padding:10px 18px;font-size:10px;" id="add-addr-btn">+ Aggiungi Indirizzo</button>
+      </div>
+      <!-- Add address form (hidden by default) -->
+      <div id="addr-form" style="display:none;border:2px solid var(--k);padding:24px;margin-bottom:24px;">
+        <p class="slbl" style="margin-bottom:20px;">Nuovo Indirizzo</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome e Cognome *</label><input class="lf-in" id="addr-name" placeholder="Mario Rossi"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Telefono</label><input class="lf-in" id="addr-phone" placeholder="+39 333 000 0000" type="tel"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Indirizzo *</label><input class="lf-in" id="addr-street" placeholder="Via Roma 1, Interno 2"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Città *</label><input class="lf-in" id="addr-city" placeholder="Milano"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">CAP *</label><input class="lf-in" id="addr-zip" placeholder="20100" maxlength="5"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Provincia</label><input class="lf-in" id="addr-prov" placeholder="MI" maxlength="2"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Paese</label><select class="lf-in" id="addr-country"><option>Italia</option><option>San Marino</option><option>Svizzera</option><option>Altro</option></select></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;"><input type="checkbox" id="addr-default" style="width:16px;height:16px;"/><label for="addr-default" style="font-size:11px;cursor:pointer;">Imposta come indirizzo predefinito</label></div>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+          <button class="btn-led" onclick="saveAddress()">Salva Indirizzo</button>
+          <button class="btn-g" onclick="toggleAddressForm()">Annulla</button>
+        </div>
+      </div>
+      <!-- Address list -->
+      <div id="addr-list">
+        <p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun indirizzo salvato.</p>
+      </div>
+    </div>
+
+    <!-- ─── TAB: SECURITY ─────────────────────────────── -->
+    <div id="ptab-security" class="ptab">
+      <h2 class="bb" style="font-size:40px;margin-bottom:24px;">🔒 Sicurezza</h2>
+
+      <!-- Change password -->
+      <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+        <p class="slbl" style="margin-bottom:16px;">Cambia Password</p>
+        <div style="display:flex;flex-direction:column;gap:14px;max-width:400px;">
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Password Attuale</label><input class="lf-in" id="sec-old-pass" type="password" placeholder="Password attuale"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nuova Password</label><input class="lf-in" id="sec-new-pass" type="password" placeholder="min. 8 caratteri"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Conferma Nuova Password</label><input class="lf-in" id="sec-conf-pass" type="password" placeholder="Ripeti la nuova password"/></div>
+          <button class="btn-k" onclick="changePassword()" style="width:fit-content;">Aggiorna Password</button>
+        </div>
+      </div>
+
+      <!-- Sessions / devices -->
+      <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+        <p class="slbl" style="margin-bottom:16px;">Sessioni Attive</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #e0e0e0;">
+          <div style="display:flex;gap:12px;align-items:center;">
+            <span style="font-size:20px;">💻</span>
+            <div><p style="font-size:12px;">Browser attuale</p><p style="font-size:10px;color:var(--dim);">Questa sessione</p></div>
+          </div>
+          <span style="font-size:10px;color:var(--led);letter-spacing:1px;text-transform:uppercase;">Attiva</span>
+        </div>
+        <div style="margin-top:16px;">
+          <button onclick="handleLogout()" class="btn-g" style="padding:10px 18px;font-size:10px;color:#c00;border-color:#c00;" onmouseover="this.style.background='#c00';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#c00'">Esci da tutti i dispositivi</button>
+        </div>
+      </div>
+
+      <!-- Account delete -->
+      <div style="border:2px solid #ffdddd;padding:24px;background:#fff9f9;">
+        <p class="slbl" style="margin-bottom:8px;color:#c00;">Zona Pericolosa</p>
+        <p style="font-size:11px;color:#c00;margin-bottom:16px;line-height:1.7;">L'eliminazione dell'account è permanente. Tutti i tuoi LFPOINTS e dati verranno cancellati.</p>
+        <button onclick="confirmDeleteAccount()" class="btn-g" style="padding:10px 18px;font-size:10px;color:#c00;border-color:#c00;" onmouseover="this.style.background='#c00';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#c00'">Elimina Account</button>
+      </div>
+    </div>
+
+    <!-- ─── TAB: NOTIFICATIONS ────────────────────────── -->
+    <div id="ptab-notifications" class="ptab">
+      <h2 class="bb" style="font-size:40px;margin-bottom:24px;">🔔 Notifiche</h2>
+      <div style="display:flex;flex-direction:column;gap:0;border:2px solid var(--k);">
+        <div style="padding:18px 20px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;">
+          <div><p style="font-size:13px;margin-bottom:3px;">📨 Newsletter Drops</p><p style="font-size:10px;color:var(--dim);">Nuovi drop e prodotti in arrivo ogni settimana</p></div>
+          <label class="lf-toggle"><input type="checkbox" id="notif-nl" checked onchange="saveNotifications()"/><span class="lf-slider"></span></label>
+        </div>
+        <div style="padding:18px 20px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;">
+          <div><p style="font-size:13px;margin-bottom:3px;">📦 Aggiornamenti Spedizione</p><p style="font-size:10px;color:var(--dim);">Email quando il tuo pacco cambia stato</p></div>
+          <label class="lf-toggle"><input type="checkbox" id="notif-ship" checked onchange="saveNotifications()"/><span class="lf-slider"></span></label>
+        </div>
+        <div style="padding:18px 20px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;">
+          <div><p style="font-size:13px;margin-bottom:3px;">⬡ LFPOINTS & Premi</p><p style="font-size:10px;color:var(--dim);">Avvisi quando sblocchi un nuovo premio</p></div>
+          <label class="lf-toggle"><input type="checkbox" id="notif-pts" checked onchange="saveNotifications()"/><span class="lf-slider"></span></label>
+        </div>
+        <div style="padding:18px 20px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;">
+          <div><p style="font-size:13px;margin-bottom:3px;">🔥 Early Access Drop</p><p style="font-size:10px;color:var(--dim);">Accedi ai drop 24h prima degli altri (Silver+)</p></div>
+          <label class="lf-toggle"><input type="checkbox" id="notif-early" checked onchange="saveNotifications()"/><span class="lf-slider"></span></label>
+        </div>
+        <div style="padding:18px 20px;display:flex;justify-content:space-between;align-items:center;">
+          <div><p style="font-size:13px;margin-bottom:3px;">💸 Offerte & Saldi</p><p style="font-size:10px;color:var(--dim);">Promozioni stagionali e outlet</p></div>
+          <label class="lf-toggle"><input type="checkbox" id="notif-sale" onchange="saveNotifications()"/><span class="lf-slider"></span></label>
+        </div>
+      </div>
+      <p style="font-size:10px;color:var(--dim);margin-top:12px;letter-spacing:1px;">Le preferenze vengono salvate automaticamente. Puoi disiscriverti in qualsiasi momento.</p>
+    </div>
+
+    <!-- ─── TAB: SETTINGS ─────────────────────────────── -->
+    <div id="ptab-settings" class="ptab">
+      <h2 class="bb" style="font-size:40px;margin-bottom:24px;">⚙️ Impostazioni</h2>
+
+      <!-- Personal info -->
+      <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+        <p class="slbl" style="margin-bottom:20px;">Informazioni Personali</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome</label><input class="lf-in" id="set-firstname" placeholder="Mario"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Cognome</label><input class="lf-in" id="set-lastname" placeholder="Rossi"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Telefono</label><input class="lf-in" id="set-phone" type="tel" placeholder="+39 333 000 0000"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Data di Nascita</label><input class="lf-in" id="set-bday" type="date"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Genere</label>
+            <select class="lf-in" id="set-gender"><option value="">Preferisco non specificare</option><option>Uomo</option><option>Donna</option><option>Non binario</option><option>Altro</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Lingua</label>
+            <select class="lf-in" id="set-lang"><option>Italiano</option><option>English</option></select>
+          </div>
+        </div>
+        <button class="btn-led" onclick="saveSettings()" style="margin-top:20px;">Salva Modifiche</button>
+      </div>
+
+      <!-- Style preferences -->
+      <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+        <p class="slbl" style="margin-bottom:20px;">Preferenze di Stile</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia Preferita</label>
+            <select class="lf-in" id="pf-size"><option value="">Nessuna</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Brand Preferiti</label>
+            <input class="lf-in" id="pf-brands" placeholder="Nike, Bape, Supreme..."/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile Preferito</label>
+            <select class="lf-in" id="pf-style-pref"><option value="">Tutti</option><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Budget Medio</label>
+            <select class="lf-in" id="pf-budget"><option value="">Non specificato</option><option>Sotto €50</option><option>€50–€100</option><option>€100–€200</option><option>Oltre €200</option></select>
+          </div>
+        </div>
+        <button class="btn-k" onclick="savePrefs()" style="margin-top:20px;padding:12px 24px;font-size:11px;">Salva Preferenze</button>
+      </div>
+
+      <!-- Appearance -->
+      <div style="border:2px solid var(--k);padding:24px;">
+        <p class="slbl" style="margin-bottom:16px;">Aspetto</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button onclick="setTheme('light')" id="theme-light" style="flex:1;min-width:100px;border:2px solid var(--k);padding:14px;background:#f5f5f5;color:#0a0a0a;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;">☀️ Chiaro</button>
+          <button onclick="setTheme('dark')" id="theme-dark" style="flex:1;min-width:100px;border:2px solid #333;padding:14px;background:#0a0a0a;color:#f5f5f5;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;">🌙 Scuro</button>
+        </div>
+        <p style="font-size:10px;color:var(--dim);margin-top:10px;letter-spacing:1px;">Il tema scuro è in beta — alcune sezioni potrebbero non essere ottimizzate.</p>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1117,7 +1376,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       <button class="flink" onclick="openInfo('resi')">🔄 Resi &amp; Rimborsi</button>
       <button class="flink" onclick="document.getElementById('size-modal').classList.add('open')">📏 Guida Taglie</button>
       <button class="flink" onclick="openInfo('traccia')">📍 Traccia Ordine</button>
-      <a href="mailto:support@lillofind.com" class="flink" style="text-decoration:none;">✉️ Email Supporto</a>
+      <a href="/cdn-cgi/l/email-protection#22515752524d5056624e4b4e4e4d444b4c460c414d4f" class="flink" style="text-decoration:none;">✉️ Email Supporto</a>
       <p style="font-size:9px;color:#2a2a2a;margin-top:10px;line-height:1.8;">Lun–Ven 9:00–18:00<br/>Sab 10:00–14:00</p>
     </div>
 
@@ -1175,7 +1434,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 <!-- ════════════════════════════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════════════════════════════ -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
   // ── Firebase wait ──────────────────────────────────────
   function waitFB(cb){ window.__fb ? cb() : setTimeout(()=>waitFB(cb), 80); }
 
@@ -1243,7 +1502,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       if(btn) btn.classList.toggle('active',k===id);
     });
     if(id==='shop') loadProds();
-    if(id==='profile') renderProfile();
+    if(id==='profile'){if(typeof window._fullRenderProfile==='function')window._fullRenderProfile();else renderProfile();}
     if(id==='home') updateHomeDisplay();
     if(id==='lfpoints') renderRewardsTable();
     window.scrollTo({top:0,behavior:'smooth'});
@@ -1915,6 +2174,346 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   window.closeInfo=function(){
     document.getElementById('info-modal').classList.remove('open');
     document.body.style.overflow='';
+  };
+
+  // ── GOOGLE AUTH ──────────────────────────────────────────
+  window.doGoogleAuth=async function(){
+    const fb=window.__fb;
+    try{
+      const result=await fb.signInWithPopup(fb.auth,fb._googleProvider);
+      const u=result.user;
+      // Check if user doc exists
+      const ref=fb.doc(fb.db,'users',u.uid);
+      const snap=await fb.getDoc(ref);
+      if(!snap.exists()){
+        await fb.setDoc(ref,{
+          email:u.email,
+          displayName:u.displayName||'',
+          lfpoints:0,totalSpent:0,
+          preferredSize:'',preferredBrands:[],
+          createdAt:fb.serverTimestamp()
+        });
+      }
+      showToast('🎉 Benvenuto '+( u.displayName||u.email)+'!');
+      showPg('home');
+    } catch(e){
+      if(e.code!=='auth/popup-closed-by-user') showToast('⚠️ '+e.message);
+    }
+  };
+
+  // ── PROFILE TABS ─────────────────────────────────────────
+  window.switchProfTab=function(tab){
+    document.querySelectorAll('.prof-tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+    document.querySelectorAll('.ptab').forEach(p=>p.classList.remove('on'));
+    const el=document.getElementById('ptab-'+tab);
+    if(el) el.classList.add('on');
+  };
+
+  // ── ADDRESSES ───────────────────────────────────────────
+  window.toggleAddressForm=function(){
+    const f=document.getElementById('addr-form');
+    f.style.display=f.style.display==='none'?'block':'none';
+  };
+
+  window.saveAddress=async function(){
+    if(!user)return;
+    const fb=window.__fb;
+    const name=document.getElementById('addr-name').value.trim();
+    const street=document.getElementById('addr-street').value.trim();
+    const city=document.getElementById('addr-city').value.trim();
+    const zip=document.getElementById('addr-zip').value.trim();
+    if(!name||!street||!city||!zip){showToast('⚠️ Compila i campi obbligatori.');return;}
+    const addr={
+      name,phone:document.getElementById('addr-phone').value.trim(),
+      street,city,zip,
+      province:document.getElementById('addr-prov').value.trim(),
+      country:document.getElementById('addr-country').value,
+      isDefault:document.getElementById('addr-default').checked,
+      id:Date.now()
+    };
+    const addresses=udata.addresses||[];
+    if(addr.isDefault) addresses.forEach(a=>a.isDefault=false);
+    addresses.push(addr);
+    await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{addresses});
+    udata={...udata,addresses};
+    renderAddresses();
+    document.getElementById('addr-form').style.display='none';
+    ['addr-name','addr-phone','addr-street','addr-city','addr-zip','addr-prov'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('addr-default').checked=false;
+    showToast('✅ Indirizzo salvato!');
+  };
+
+  function renderAddresses(){
+    const list=document.getElementById('addr-list');
+    if(!list)return;
+    const addrs=udata?.addresses||[];
+    if(!addrs.length){list.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun indirizzo salvato.</p>';return;}
+    list.innerHTML=addrs.map(a=>`
+      <div style="border:1.5px solid ${a.isDefault?'var(--led)':'#e0e0e0'};padding:18px 20px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;${a.isDefault?'background:rgba(200,255,0,.04);':''}">
+        <div>
+          ${a.isDefault?'<span style="font-size:9px;letter-spacing:2px;background:var(--led);color:var(--k);padding:2px 8px;margin-bottom:8px;display:inline-block;">PREDEFINITO</span><br/>':''}
+          <p style="font-size:13px;font-weight:500;margin-bottom:4px;">${a.name}</p>
+          <p style="font-size:11px;color:var(--mid);">${a.street}<br/>${a.zip} ${a.city}${a.province?' ('+a.province+')':''} — ${a.country}</p>
+          ${a.phone?`<p style="font-size:11px;color:var(--dim);margin-top:4px;">📞 ${a.phone}</p>`:''}
+        </div>
+        <button onclick="deleteAddress(${a.id})" style="background:none;border:none;cursor:pointer;font-size:18px;color:#ccc;min-width:36px;min-height:36px;" title="Elimina">🗑️</button>
+      </div>`).join('');
+  }
+
+  window.deleteAddress=async function(id){
+    if(!user)return;
+    const fb=window.__fb;
+    const addresses=(udata.addresses||[]).filter(a=>a.id!==id);
+    await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{addresses});
+    udata={...udata,addresses};
+    renderAddresses();
+    showToast('Indirizzo eliminato.');
+  };
+
+  // ── CHANGE PASSWORD ──────────────────────────────────────
+  window.changePassword=async function(){
+    const fb=window.__fb;
+    if(!user)return;
+    const oldP=document.getElementById('sec-old-pass').value;
+    const newP=document.getElementById('sec-new-pass').value;
+    const confP=document.getElementById('sec-conf-pass').value;
+    if(!oldP||!newP||!confP){showToast('⚠️ Compila tutti i campi.');return;}
+    if(newP!==confP){showToast('⚠️ Le password non coincidono.');return;}
+    if(newP.length<8){showToast('⚠️ La password deve avere almeno 8 caratteri.');return;}
+    try{
+      const cred=fb.EmailAuthProvider.credential(user.email,oldP);
+      await fb.reauthenticateWithCredential(user,cred);
+      await fb.updatePassword(user,newP);
+      showToast('✅ Password aggiornata!');
+      ['sec-old-pass','sec-new-pass','sec-conf-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    } catch(e){
+      const m=e.code==='auth/wrong-password'?'Password attuale errata.':e.message;
+      showToast('⚠️ '+m);
+    }
+  };
+
+  // ── ACCOUNT DELETE CONFIRM ───────────────────────────────
+  window.confirmDeleteAccount=function(){
+    if(confirm('⚠️ Sei sicuro? Tutti i tuoi LFPOINTS e dati verranno eliminati definitivamente.')){
+      showToast('Funzione non disponibile. Contatta support@lillofind.com');
+    }
+  };
+
+  // ── NOTIFICATIONS ────────────────────────────────────────
+  window.saveNotifications=async function(){
+    if(!user)return;
+    const fb=window.__fb;
+    const notifs={
+      nl:document.getElementById('notif-nl')?.checked,
+      ship:document.getElementById('notif-ship')?.checked,
+      pts:document.getElementById('notif-pts')?.checked,
+      early:document.getElementById('notif-early')?.checked,
+      sale:document.getElementById('notif-sale')?.checked,
+    };
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{notifications:notifs});
+      udata={...udata,notifications:notifs};
+    } catch(_){}
+  };
+
+  function loadNotificationPrefs(){
+    const n=udata?.notifications||{};
+    const defaults={nl:true,ship:true,pts:true,early:true,sale:false};
+    Object.keys(defaults).forEach(k=>{
+      const el=document.getElementById('notif-'+k);
+      if(el) el.checked=k in n?n[k]:defaults[k];
+    });
+  }
+
+  // ── SETTINGS SAVE ────────────────────────────────────────
+  window.saveSettings=async function(){
+    if(!user)return;
+    const fb=window.__fb;
+    const data={
+      displayName:(document.getElementById('set-firstname')?.value||'').trim()+' '+(document.getElementById('set-lastname')?.value||'').trim(),
+      phone:document.getElementById('set-phone')?.value.trim()||'',
+      birthday:document.getElementById('set-bday')?.value||'',
+      gender:document.getElementById('set-gender')?.value||'',
+      language:document.getElementById('set-lang')?.value||'Italiano',
+    };
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'users',user.uid),data);
+      udata={...udata,...data};
+      updateNav(user,udata);
+      showToast('✅ Profilo aggiornato!');
+    } catch(e){showToast('⚠️ Errore: '+e.message);}
+  };
+
+  // ── THEME ────────────────────────────────────────────────
+  window.setTheme=function(t){
+    if(t==='dark'){
+      document.documentElement.style.setProperty('--w','#1a1a1a');
+      document.documentElement.style.setProperty('--k','#f0f0f0');
+      document.documentElement.style.setProperty('--card','#111');
+      document.documentElement.style.setProperty('--border','#333');
+      document.body.style.background='#1a1a1a';
+    } else {
+      document.documentElement.style.setProperty('--w','#f5f5f5');
+      document.documentElement.style.setProperty('--k','#0a0a0a');
+      document.documentElement.style.setProperty('--card','#fff');
+      document.documentElement.style.setProperty('--border','#222');
+      document.body.style.background='#f5f5f5';
+    }
+    localStorage.setItem('lf_theme',t);
+    showToast(t==='dark'?'🌙 Tema scuro attivato':'☀️ Tema chiaro attivato');
+  };
+  // Apply saved theme
+  if(localStorage.getItem('lf_theme')==='dark') window.setTheme('dark');
+
+  // ── PATCH renderProfile to also load new tabs ────────────
+  const _baseRenderProfile=window.renderProfile;
+  // Override the full renderProfile used by showPg
+  window._fullRenderProfile=function(){
+    if(_baseRenderProfile) _baseRenderProfile();
+    // Load settings fields
+    if(udata){
+      const parts=(udata.displayName||'').split(' ');
+      const fn=document.getElementById('set-firstname'); if(fn) fn.value=parts[0]||'';
+      const ln=document.getElementById('set-lastname'); if(ln) ln.value=parts.slice(1).join(' ')||'';
+      const ph=document.getElementById('set-phone'); if(ph) ph.value=udata.phone||'';
+      const bd=document.getElementById('set-bday'); if(bd) bd.value=udata.birthday||'';
+      const gn=document.getElementById('set-gender'); if(gn) gn.value=udata.gender||'';
+      const lg=document.getElementById('set-lang'); if(lg) lg.value=udata.language||'Italiano';
+      const prPhone=document.getElementById('pr-phone'); if(prPhone) prPhone.textContent=udata.phone||'—';
+      const prJoined=document.getElementById('pr-joined'); 
+      if(prJoined&&udata.createdAt?.seconds){
+        const d=new Date(udata.createdAt.seconds*1000);
+        prJoined.textContent=d.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+      }
+      loadNotificationPrefs();
+      renderAddresses();
+    }
+  };
+
+
+  // ── BULK IMPORT ──────────────────────────────────────────
+  const HUSKY_CATS=[
+    {label:'Nike Air Force 1',brand:'Nike',model:'Air Force 1'},
+    {label:'Nike Dunk',brand:'Nike',model:'Dunk'},
+    {label:'Nike TN',brand:'Nike',model:'Air Max TN'},
+    {label:'Jordan 1',brand:'Jordan',model:'Retro 1'},
+    {label:'Jordan 4',brand:'Jordan',model:'Retro 4'},
+    {label:'Jordan 11',brand:'Jordan',model:'Retro 11'},
+    {label:'Adidas Gazelle',brand:'Adidas',model:'Gazelle'},
+    {label:'Adidas Samba',brand:'Adidas',model:'Samba'},
+    {label:'Adidas Yeezy',brand:'Adidas',model:'Yeezy'},
+    {label:'Bape Hoodie',brand:'Bape',model:'Hoodie'},
+    {label:'Bape T-Shirt',brand:'Bape',model:'T-Shirt'},
+    {label:'Supreme Box Logo',brand:'Supreme',model:'Hoodie'},
+    {label:'Supreme T-Shirt',brand:'Supreme',model:'T-Shirt'},
+    {label:'CDG Play',brand:'Comme des Garçons',model:'T-Shirt'},
+    {label:'Carhartt WIP',brand:'Carhartt WIP',model:'Jacket'},
+    {label:'Amiri Jeans',brand:'Amiri',model:'Jeans'},
+    {label:'Off-White',brand:'Off-White',model:'T-Shirt'},
+    {label:'Broken Planet',brand:'Broken Planet',model:'Hoodie'},
+    {label:'Cole Buxton',brand:'Cole Buxton',model:'Sweatshirt'},
+    {label:'New Balance 550',brand:'New Balance',model:'550'},
+    {label:'New Balance 9060',brand:'New Balance',model:'9060'},
+    {label:'Stüssy',brand:'Stüssy',model:'T-Shirt'},
+    {label:'Palace',brand:'Palace',model:'T-Shirt'},
+    {label:'CPFM',brand:'CPFM',model:'Hoodie'},
+    {label:'Dior',brand:'Dior',model:'T-Shirt'},
+    {label:'Gucci',brand:'Gucci',model:'T-Shirt'},
+    {label:'Burberry',brand:'Burberry',model:'Jacket'},
+    {label:'Balenciaga',brand:'Balenciaga',model:'Sneaker'},
+    {label:'Alo Yoga',brand:'Alo Yoga',model:'Leggings'},
+    {label:'Anti Social SC',brand:'ASSC',model:'Hoodie'},
+  ];
+
+  let bulkSelectedCat={brand:'',model:''};
+  let bulkRowCount=0;
+
+  function initBulkImport(){
+    const chips=document.getElementById('bulk-cat-chips');
+    if(!chips)return;
+    chips.innerHTML=HUSKY_CATS.map((c,i)=>
+      `<span class="chip" onclick="selectBulkCat(${i})" id="bkc-${i}">${c.label}</span>`
+    ).join('');
+    // Start with 3 empty rows
+    const rows=document.getElementById('bulk-rows');
+    if(rows&&rows.children.length===0){
+      addBulkRow();addBulkRow();addBulkRow();
+    }
+  }
+
+  window.selectBulkCat=function(i){
+    document.querySelectorAll('#bulk-cat-chips .chip').forEach(c=>c.classList.remove('on'));
+    document.getElementById('bkc-'+i).classList.add('on');
+    bulkSelectedCat=HUSKY_CATS[i];
+    showToast('Categoria: '+bulkSelectedCat.label);
+  };
+
+  window.addBulkRow=function(){
+    const rows=document.getElementById('bulk-rows');
+    if(!rows)return;
+    const id=bulkRowCount++;
+    const div=document.createElement('div');
+    div.id='bkrow-'+id;
+    div.style.cssText='display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:10px;align-items:end;border:1px solid #e0e0e0;padding:12px;';
+    div.innerHTML=`
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Nome Prodotto *</label>
+        <input class="lf-in" id="bkn-${id}" placeholder="es. Nike Dunk Low Panda"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Prezzo € *</label>
+        <input class="lf-in" id="bkp-${id}" type="number" step="0.01" placeholder="89.99"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">URL Immagine</label>
+        <input class="lf-in" id="bki-${id}" placeholder="https://photo.yupoo.com/..."/>
+      </div>
+      <button onclick="document.getElementById('bkrow-${id}').remove()" style="background:none;border:1px solid #ddd;padding:12px;cursor:pointer;color:#999;font-size:14px;min-height:48px;" title="Rimuovi">✕</button>`;
+    rows.appendChild(div);
+  };
+
+  window.saveBulkProducts=async function(){
+    const fb=window.__fb;
+    if(!user||!udata?.isAdmin){showToast('Accesso negato.');return;}
+    const model=document.getElementById('bk-model').value.trim()||bulkSelectedCat.model||'';
+    const style=document.getElementById('bk-style').value;
+    const size=document.getElementById('bk-size').value;
+    const btn=document.getElementById('bk-btn');
+    const status=document.getElementById('bk-status');
+    btn.textContent='Salvando...'; btn.disabled=true;
+    let saved=0,errors=0;
+    const rows=document.getElementById('bulk-rows').children;
+    for(let i=0;i<rows.length;i++){
+      const row=rows[i];
+      const id=row.id.replace('bkrow-','');
+      const name=document.getElementById('bkn-'+id)?.value.trim();
+      const price=parseFloat(document.getElementById('bkp-'+id)?.value);
+      const imgUrl=document.getElementById('bki-'+id)?.value.trim()||'';
+      if(!name||isNaN(price)){errors++;continue;}
+      try{
+        await fb.addDoc(fb.collection(fb.db,'products'),{
+          name,price,
+          brand:bulkSelectedCat.brand||'',
+          model:model||bulkSelectedCat.model||'',
+          style,size,imageUrl:imgUrl,
+          description:'',
+          createdAt:fb.serverTimestamp()
+        });
+        saved++;
+        if(status) status.textContent=`${saved} prodotti salvati...`;
+      } catch(e){errors++;}
+    }
+    products=[];// force reload
+    btn.textContent='💾 Salva Tutti →'; btn.disabled=false;
+    if(status) status.textContent=`✅ ${saved} salvati${errors?' — ⚠️ '+errors+' errori':''}`;
+    showToast(`✅ ${saved} prodotti caricati!`);
+  };
+
+  // Init bulk import when admin page loads
+  const _origShowPg=window.showPg;
+  window.showPg=function(id){
+    _origShowPg(id);
+    if(id==='admin') setTimeout(initBulkImport,100);
   };
 
 </script>
