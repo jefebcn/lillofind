@@ -350,6 +350,12 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   .grid-1-mob{grid-template-columns:1fr !important;}
   .pad-mob{padding:32px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
+  /* Hero mobile: wordmark stays in upper portion, never overlaps copy */
+  #hero-wordmark-wrap{bottom:52% !important;}
+  #hero-wordmark, #hero-wordmark+span, #hero-wordmark~span{
+    font-size:clamp(36px,8vw,60px) !important;
+    letter-spacing:2px !important;
+  }
 }
 @media(min-width:769px){
   .mob-only{display:none !important;}
@@ -512,14 +518,14 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     <div style="position:absolute;top:35%;right:12%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 18px var(--led2);z-index:3;animation:pulse-led 4s ease-in-out infinite;"></div>
 
     <!-- STYLED LILLOFIND WATERMARK — glitch personality -->
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;" id="hero-wordmark-wrap">
-      <div style="position:relative;transform:rotate(-4deg);">
+    <div style="position:absolute;top:0;left:0;right:0;bottom:40%;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;" id="hero-wordmark-wrap">
+      <div style="position:relative;transform:rotate(-4deg);max-width:100%;overflow:hidden;">
         <!-- Shadow layer for depth -->
-        <span class="bb" style="position:absolute;top:4px;left:4px;font-size:clamp(68px,12vw,160px);color:transparent;-webkit-text-stroke:1px rgba(200,255,0,.04);letter-spacing:10px;white-space:nowrap;filter:blur(2px);">LILLOFIND</span>
+        <span class="bb" style="position:absolute;top:3px;left:3px;font-size:clamp(42px,9vw,160px);color:transparent;-webkit-text-stroke:1px rgba(200,255,0,.04);letter-spacing:clamp(2px,1.5vw,10px);white-space:nowrap;filter:blur(2px);">LILLOFIND</span>
         <!-- Main outline -->
-        <span class="bb" id="hero-wordmark" style="font-size:clamp(68px,12vw,160px);color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.1);letter-spacing:10px;white-space:nowrap;position:relative;display:block;">LILLOFIND</span>
+        <span class="bb" id="hero-wordmark" style="font-size:clamp(42px,9vw,160px);color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.12);letter-spacing:clamp(2px,1.5vw,10px);white-space:nowrap;position:relative;display:block;">LILLOFIND</span>
         <!-- LED accent bar under the L -->
-        <div style="position:absolute;bottom:-6px;left:0;width:38%;height:2px;background:linear-gradient(90deg,rgba(200,255,0,.5),transparent);box-shadow:0 0 10px rgba(200,255,0,.3);"></div>
+        <div style="position:absolute;bottom:-4px;left:0;width:38%;height:2px;background:linear-gradient(90deg,rgba(200,255,0,.5),transparent);box-shadow:0 0 8px rgba(200,255,0,.3);"></div>
       </div>
     </div>
 
