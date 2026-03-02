@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="description" content="LILLOFIND — Streetwear autentico. Shop, LFPoints loyalty program, spedizione DHL."/>
+<title>LILLOFIND — DROP YOUR STYLE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,serverTimestamp,query,orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
+const app=initializeApp(cfg);
+window.__fb={db:getFirestore(app),auth:getAuth(app),collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,serverTimestamp,query,orderBy,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged};
+</script>
+
+<style>
+/* ── TOKENS ─────────────────────────────────── */
+:root{
+  --k:#0a0a0a;       /* black */
+  --w:#f5f5f5;       /* white */
+  --led:#C8FF00;     /* electric lime accent */
+  --led2:#00FFB2;    /* secondary teal accent (rare) */
+  --mid:#555;
+  --dim:#aaa;
+  --border:#222;
+  --card:#fff;
+  --h:60px;          /* header height mobile */
+  --hd:120px;        /* header height desktop (two bars) */
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
+body{font-family:'IBM Plex Mono',monospace;background:var(--w);color:var(--k);overflow-x:hidden;}
+.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+
+/* ── LED STRIP ──────────────────────────────── */
+.led-strip{
+  height:3px;width:100%;
+  background:linear-gradient(90deg,transparent 0%,var(--led) 20%,var(--led2) 50%,var(--led) 80%,transparent 100%);
+  box-shadow:0 0 12px var(--led),0 0 24px rgba(200,255,0,.3);
+}
+.led-strip-sm{
+  height:2px;
+  background:linear-gradient(90deg,transparent,var(--led),transparent);
+  box-shadow:0 0 8px var(--led);
+}
+
+/* ── TICKER ─────────────────────────────────── */
+.ticker-w{overflow:hidden;white-space:nowrap;}
+.ticker{display:inline-flex;animation:tick 32s linear infinite;}
+.ticker span{padding:0 36px;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── INPUTS ─────────────────────────────────── */
+.lf-in{
+  background:transparent;border:1.5px solid var(--k);
+  padding:13px 16px;width:100%;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;
+  color:var(--k);outline:none;border-radius:0;
+  transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+.lf-in:focus{border-color:var(--led);box-shadow:0 0 0 3px rgba(200,255,0,.15);}
+.lf-in::placeholder{color:var(--dim);}
+select.lf-in{
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+}
+textarea.lf-in{resize:vertical;min-height:90px;}
+
+/* ── BUTTONS ─────────────────────────────────── */
+.btn-k{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--k);color:var(--w);border:none;
+  padding:14px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:opacity .2s,transform .1s;user-select:none;
+  -webkit-appearance:none;border-radius:0;
+}
+.btn-k:active{transform:scale(.97);}
+.btn-k:hover{opacity:.75;}
+.btn-k:disabled{opacity:.35;cursor:not-allowed;}
+.btn-led{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--led);color:var(--k);border:none;
+  padding:14px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:opacity .2s,box-shadow .2s;
+  box-shadow:0 0 16px rgba(200,255,0,.4);
+  -webkit-appearance:none;border-radius:0;
+}
+.btn-led:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.6);}
+.btn-led:active{transform:scale(.97);}
+.btn-g{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;color:var(--k);border:1.5px solid var(--k);
+  padding:12px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:all .2s;-webkit-appearance:none;border-radius:0;
+}
+.btn-g:hover{background:var(--k);color:var(--w);}
+.btn-g:active{transform:scale(.97);}
+.btn-w{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--w);color:var(--k);border:none;
+  padding:14px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:opacity .2s;-webkit-appearance:none;border-radius:0;
+}
+.btn-w:hover{opacity:.85;}
+
+/* ── CHIPS ───────────────────────────────────── */
+.chip{
+  display:inline-block;border:1.5px solid var(--k);padding:5px 12px;
+  margin:3px 2px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:all .15s;user-select:none;min-height:32px;
+  display:inline-flex;align-items:center;
+}
+.chip:hover,.chip.on{background:var(--k);color:var(--w);}
+.chip.on{border-color:var(--led);box-shadow:0 0 8px rgba(200,255,0,.3);}
+
+/* ── NAV BUTTONS ────────────────────────────── */
+.nbtn{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;background:none;border:none;cursor:pointer;
+  color:var(--k);transition:opacity .2s;padding:8px 4px;min-height:44px;
+  display:inline-flex;align-items:center;
+}
+.nbtn:hover{opacity:.45;}
+
+/* ── PRODUCT CARD ────────────────────────────── */
+.pcard{border:1.5px solid #e0e0e0;transition:border-color .2s,transform .25s,box-shadow .2s;background:var(--card);}
+.pcard:hover{border-color:var(--k);transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,.1);}
+
+/* ── PAGES ───────────────────────────────────── */
+.pg{display:none;}
+.pg.on{display:block;}
+.fadein{animation:fadeup .35s ease forwards;}
+@keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── TOAST ───────────────────────────────────── */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;
+  background:var(--k);color:var(--w);padding:13px 22px;
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  white-space:nowrap;border-radius:0;
+  opacity:0;transition:opacity .3s;pointer-events:none;
+  border-bottom:2px solid var(--led);
+}
+#toast.show{opacity:1;}
+@media(min-width:769px){#toast{bottom:32px;}}
+
+/* ── TAB ─────────────────────────────────────── */
+.tbtn{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  background:none;border:none;padding:12px 20px;min-height:48px;
+  border-bottom:3px solid transparent;cursor:pointer;transition:all .2s;flex:1;
+}
+.tbtn.on{border-bottom-color:var(--led);color:var(--k);}
+
+/* ── TIER CARDS ──────────────────────────────── */
+.tier-c{border:1.5px solid #ccc;padding:20px;color:#ccc;transition:all .3s;}
+.tier-c.unlocked{border-color:var(--k);background:var(--k);color:var(--w);}
+.tier-c.unlocked .tier-glow{color:var(--led);}
+
+/* ── SECTION LABEL ───────────────────────────── */
+.slbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);}
+
+/* ── GRID ────────────────────────────────────── */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;}
+@media(min-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;}}
+@media(min-width:900px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px;}}
+
+/* ── MOBILE NAV DRAWER ───────────────────────── */
+#drawer{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;
+  display:none;
+}
+#drawer.open{display:block;}
+#drawer-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);}
+#drawer-panel{
+  position:absolute;top:0;left:0;width:80%;max-width:320px;height:100%;
+  background:var(--k);color:var(--w);padding:0;
+  display:flex;flex-direction:column;
+  transform:translateX(-100%);transition:transform .3s ease;
+}
+#drawer.open #drawer-panel{transform:translateX(0);}
+
+/* ── BOTTOM NAV (mobile) ────────────────────── */
+#bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;width:100%;z-index:100;
+  background:var(--k);border-top:1px solid var(--border);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@media(max-width:768px){
+  #bottom-nav{display:flex;}
+  body{padding-bottom:calc(60px + env(safe-area-inset-bottom));}
+  #top-nav{display:none !important;}
+}
+.bnav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 4px;font-family:'IBM Plex Mono',monospace;font-size:9px;
+  letter-spacing:1px;text-transform:uppercase;color:#555;
+  background:none;border:none;cursor:pointer;gap:4px;min-height:52px;
+  transition:color .2s;
+}
+.bnav-btn.active,.bnav-btn:hover{color:var(--led);}
+.bnav-icon{font-size:18px;line-height:1;}
+
+/* ── DESKTOP HEADER ──────────────────────────── */
+#site-hdr{position:sticky;top:0;z-index:90;background:var(--w);}
+
+/* ── MOBILE HEADER ───────────────────────────── */
+#mob-hdr{
+  display:none;position:sticky;top:0;z-index:90;
+  background:var(--k);color:var(--w);
+  height:var(--h);align-items:center;justify-content:space-between;
+  padding:0 16px;border-bottom:2px solid var(--border);
+}
+@media(max-width:768px){
+  #mob-hdr{display:flex;}
+  #site-hdr{display:none;}
+}
+
+/* ── FOOTER LINKS ────────────────────────────── */
+.flink{
+  display:block;font-size:11px;color:#555;letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:11px;background:none;border:none;
+  cursor:pointer;text-align:left;transition:color .2s;
+  font-family:'IBM Plex Mono',monospace;text-decoration:none;
+}
+.flink:hover{color:var(--w);}
+
+/* ── STRIPE BG ───────────────────────────────── */
+.stripe{background-image:repeating-linear-gradient(90deg,transparent 0,transparent 39px,rgba(0,0,0,.03) 39px,rgba(0,0,0,.03) 40px);}
+
+/* ── REWARD TABLE ────────────────────────────── */
+.rew-row{display:grid;grid-template-columns:1fr 1fr 2fr;border-bottom:1px solid #e0e0e0;align-items:center;}
+.rew-row:last-child{border-bottom:none;}
+.rew-row:hover{background:#f8f8f8;}
+
+/* ── MODAL ───────────────────────────────────── */
+.modal-bg{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:300;align-items:center;justify-content:center;padding:16px;
+}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+
+/* ── COOKIE BANNER ───────────────────────────── */
+#cookie-bar{
+  position:fixed;bottom:0;left:0;width:100%;z-index:150;
+  background:var(--k);color:var(--w);padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  border-top:2px solid var(--led);
+  transform:translateY(100%);transition:transform .4s ease;
+}
+#cookie-bar.show{transform:translateY(0);}
+@media(max-width:768px){#cookie-bar{padding-bottom:calc(16px + 60px + env(safe-area-inset-bottom));}}
+
+/* ── BACK TO TOP ─────────────────────────────── */
+#back-top{
+  display:none;position:fixed;bottom:80px;right:16px;z-index:80;
+  background:var(--k);color:var(--led);width:44px;height:44px;
+  font-size:18px;border:none;cursor:pointer;border-left:2px solid var(--led);
+  font-family:'IBM Plex Mono',monospace;transition:opacity .2s;
+}
+#back-top.vis{display:flex;align-items:center;justify-content:center;}
+@media(min-width:769px){#back-top{bottom:32px;right:24px;}}
+
+/* ── GUEST CTA STRIP ────────────────────────── */
+#guest-cta{
+  position:sticky;top:var(--h);z-index:80;
+  background:var(--led);color:var(--k);
+  padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+@media(min-width:769px){#guest-cta{top:var(--hd);}}
+#guest-cta.hidden{display:none;}
+
+/* ── AUTH PAGE CARD ──────────────────────────── */
+.auth-card{
+  background:var(--w);border:1.5px solid var(--k);padding:32px 28px;
+  max-width:400px;width:100%;margin:0 auto;
+}
+
+/* ── WISHLIST HEART ──────────────────────────── */
+.wish-btn{
+  position:absolute;top:8px;right:8px;width:36px;height:36px;
+  background:rgba(255,255,255,.9);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  transition:transform .2s;z-index:2;
+}
+.wish-btn:hover{transform:scale(1.2);}
+.wish-btn.active{color:red;}
+
+/* ── PROGRESS BAR ────────────────────────────── */
+.prog-bg{background:#1e1e1e;height:3px;border-radius:0;}
+.prog-fill{height:3px;background:var(--led);box-shadow:0 0 8px var(--led);transition:width .8s ease;}
+
+/* ── LED BADGE ───────────────────────────────── */
+.led-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  border:1.5px solid var(--led);padding:4px 10px;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--led);background:rgba(200,255,0,.06);
+  box-shadow:0 0 8px rgba(200,255,0,.2);
+}
+
+/* ── OUTLINE TEXT ────────────────────────────── */
+.outline{color:transparent;-webkit-text-stroke:1.5px var(--k);}
+.outline-led{color:transparent;-webkit-text-stroke:1.5px var(--led);}
+
+/* ── RESPONSIVE UTILS ────────────────────────── */
+@media(max-width:768px){
+  .hide-mob{display:none !important;}
+  .full-mob{width:100%;}
+  .grid-1-mob{grid-template-columns:1fr !important;}
+  .pad-mob{padding:32px 16px !important;}
+  .text-sm-mob{font-size:11px !important;}
+}
+@media(min-width:769px){
+  .mob-only{display:none !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ TOAST ══════════ -->
+<div id="toast"></div>
+
+<!-- ══════════ BACK TO TOP ══════════ -->
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Torna su">↑</button>
+
+<!-- ══════════ COOKIE BANNER ══════════ -->
+<div id="cookie-bar">
+  <p style="font-size:11px;letter-spacing:1px;flex:1;">🍪 Utilizziamo cookie tecnici per migliorare la tua esperienza. Nessun dato ceduto a terzi.</p>
+  <div style="display:flex;gap:8px;flex-shrink:0;">
+    <button onclick="closeCookie()" class="btn-led" style="padding:8px 16px;font-size:10px;">Accetta</button>
+    <button onclick="closeCookie()" class="btn-g" style="padding:8px 16px;font-size:10px;color:var(--w);border-color:#444;">Solo tecnici</button>
+  </div>
+</div>
+
+<!-- ══════════ MOBILE HEADER ══════════ -->
+<header id="mob-hdr">
+  <button onclick="openDrawer()" style="background:none;border:none;cursor:pointer;color:var(--w);font-size:22px;padding:8px;min-width:44px;">☰</button>
+  <button onclick="showPg('home')" style="background:none;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--w);">LILLOFIND</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div id="m-badge" style="display:none;background:var(--led);color:var(--k);padding:3px 8px;font-size:10px;letter-spacing:1px;cursor:pointer;" onclick="showPg('lfpoints')">
+      <span id="m-pts">0</span>pt
+    </div>
+    <button onclick="showPg('auth')" id="m-li-btn" style="background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:6px 10px;text-transform:uppercase;">Accedi</button>
+    <button onclick="showPg('profile')" id="m-prof-btn" style="display:none;background:none;border:none;cursor:pointer;color:var(--w);font-size:20px;min-width:44px;">👤</button>
+  </div>
+</header>
+
+<!-- ══════════ MOBILE DRAWER ══════════ -->
+<div id="drawer" onclick="e=>e.target===this&&closeDrawer()">
+  <div id="drawer-bg" onclick="closeDrawer()"></div>
+  <nav id="drawer-panel">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;">LILLOFIND</span>
+      <button onclick="closeDrawer()" style="background:none;border:none;color:var(--w);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:24px;">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <button onclick="showPg('home');closeDrawer();" class="drawer-link">🏠 Home</button>
+        <button onclick="showPg('shop');closeDrawer();" class="drawer-link">🛍️ Shop</button>
+        <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link">⬡ LFPoints</button>
+        <div style="height:1px;background:var(--border);margin:12px 0;"></div>
+        <button id="d-profile" onclick="showPg('profile');closeDrawer();" class="drawer-link" style="display:none;">👤 Il Mio Profilo</button>
+        <button id="d-admin" onclick="showPg('admin');closeDrawer();" class="drawer-link" style="display:none;">⚙️ Admin Panel</button>
+        <button id="d-login" onclick="showPg('auth');closeDrawer();" class="drawer-link">🔑 Accedi / Registrati</button>
+        <button id="d-logout" onclick="handleLogout();closeDrawer();" class="drawer-link" style="display:none;">↩ Esci</button>
+      </div>
+    </div>
+    <div style="padding:20px 24px;border-top:1px solid var(--border);">
+      <div id="d-pts-wrap" style="display:none;margin-bottom:16px;">
+        <p style="font-size:9px;color:#444;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Il tuo saldo</p>
+        <p style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--led);"><span id="d-pts">0</span> PTS</p>
+      </div>
+      <p style="font-size:9px;color:#333;letter-spacing:1px;">support@lillofind.com</p>
+    </div>
+  </nav>
+</div>
+<style>
+.drawer-link{
+  display:flex;align-items:center;gap:12px;padding:14px 8px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--w);background:none;border:none;
+  cursor:pointer;text-align:left;border-bottom:1px solid #111;
+  min-height:52px;transition:color .2s;width:100%;
+}
+.drawer-link:hover{color:var(--led);}
+</style>
+
+<!-- ══════════ DESKTOP HEADER ══════════ -->
+<header id="site-hdr">
+  <!-- Ticker -->
+  <div style="background:var(--k);color:var(--w);">
+    <div class="ticker-w" style="padding:8px 0;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;">
+      <div class="ticker">
+        <span>✦ SPEDIZIONE DHL EXPRESS — CONSEGNA 10/15 GIORNI LAVORATIVI</span>
+        <span>✦ RESO GRATUITO ENTRO 30 GIORNI</span>
+        <span>✦ NUOVI DROP OGNI SETTIMANA — EARLY ACCESS PER I MEMBERS</span>
+        <span>✦ 50 LFPOINTS = SCONTO €5 SUL PROSSIMO ORDINE</span>
+        <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · KLARNA</span>
+        <span>✦ ASSISTENZA: SUPPORT@LILLOFIND.COM · LUN–SAB</span>
+        <span>✦ SPEDIZIONE DHL EXPRESS — CONSEGNA 10/15 GIORNI LAVORATIVI</span>
+        <span>✦ RESO GRATUITO ENTRO 30 GIORNI</span>
+        <span>✦ NUOVI DROP OGNI SETTIMANA — EARLY ACCESS PER I MEMBERS</span>
+        <span>✦ 50 LFPOINTS = SCONTO €5 SUL PROSSIMO ORDINE</span>
+        <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · KLARNA</span>
+        <span>✦ ASSISTENZA: SUPPORT@LILLOFIND.COM · LUN–SAB</span>
+      </div>
+    </div>
+    <!-- Utility -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 32px;border-top:1px solid #1a1a1a;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;">
+      <div style="display:flex;gap:20px;color:#444;">
+        <span>🇮🇹 IT / EUR</span><span style="color:#222;">|</span><span>DHL Express</span><span style="color:#222;">|</span><span>🔒 SSL Secured</span>
+      </div>
+      <div style="display:flex;gap:20px;align-items:center;">
+        <button id="u-li" onclick="showPg('auth')" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;min-height:32px;">Accedi</button>
+        <button id="u-reg" onclick="showPg('auth')" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;min-height:32px;">Registrati</button>
+        <button id="u-out" onclick="handleLogout()" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;min-height:32px;">Esci</button>
+        <span id="u-pts" style="display:none;color:var(--led);">⬡ <span id="u-pts-n">0</span> PTS</span>
+      </div>
+    </div>
+  </div>
+  <!-- LED strip -->
+  <div class="led-strip"></div>
+  <!-- Main nav -->
+  <div id="top-nav" style="border-bottom:2px solid var(--k);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:56px;">
+    <nav style="display:flex;gap:24px;align-items:center;">
+      <button class="nbtn" onclick="showPg('shop')">Shop</button>
+      <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
+      <button class="nbtn" id="n-admin" style="display:none;" onclick="showPg('admin')">Admin</button>
+    </nav>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);">
+      <button onclick="showPg('home')" style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:4px;color:var(--k);background:none;border:none;cursor:pointer;">LILLOFIND</button>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;">
+      <button id="n-profile" class="nbtn" style="display:none;" onclick="showPg('profile')">Profilo</button>
+      <div id="n-badge" style="display:none;background:var(--led);color:var(--k);padding:4px 12px;font-size:10px;letter-spacing:2px;cursor:pointer;box-shadow:0 0 10px rgba(200,255,0,.4);" onclick="showPg('lfpoints')">
+        ⬡ <span id="n-pts">0</span>
+      </div>
+      <button id="n-login-btn" onclick="showPg('auth')" class="btn-led" style="padding:8px 18px;font-size:10px;">Accedi →</button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════ GUEST CTA STRIP (desktop) ══════════ -->
+<div id="guest-cta" class="hidden hide-mob">
+  <span style="font-size:11px;letter-spacing:1px;">👋 Registrati gratis e guadagna LFPOINTS ad ogni acquisto.</span>
+  <div style="display:flex;gap:8px;">
+    <button onclick="showPg('auth');document.getElementById('guest-cta').classList.add('hidden');" class="btn-k" style="padding:8px 18px;font-size:10px;">Crea Account</button>
+    <button onclick="document.getElementById('guest-cta').classList.add('hidden');" style="background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     HOME PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-home" class="pg on">
+
+  <!-- HERO -->
+  <section class="stripe" style="min-height:90vh;display:flex;align-items:flex-end;padding:0 20px 48px;border-bottom:2px solid var(--k);position:relative;overflow:hidden;">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;user-select:none;width:100%;text-align:center;overflow:hidden;">
+      <span class="bb" style="font-size:clamp(100px,20vw,300px);color:transparent;-webkit-text-stroke:1px #e0e0e0;line-height:1;">LILLOFIND</span>
+    </div>
+    <!-- LED dot accents -->
+    <div style="position:absolute;top:20%;right:5%;width:6px;height:6px;background:var(--led);border-radius:50%;box-shadow:0 0 16px var(--led);"></div>
+    <div style="position:absolute;top:40%;right:8%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 10px var(--led2);"></div>
+    <div style="position:absolute;bottom:30%;left:5%;width:5px;height:5px;background:var(--led);border-radius:50%;box-shadow:0 0 14px var(--led);"></div>
+    <div style="position:relative;z-index:2;max-width:660px;">
+      <div class="led-badge" style="margin-bottom:20px;">✦ SS 2025 — New Drop Live</div>
+      <h1 class="bb" style="font-size:clamp(60px,10vw,130px);line-height:.9;margin-bottom:24px;">
+        Define<br/>Your Drop.
+      </h1>
+      <p style="font-size:12px;letter-spacing:.5px;color:var(--mid);line-height:1.9;max-width:340px;margin-bottom:32px;">
+        Streetwear autentico, curato senza filtri.<br/>
+        Spedizione DHL — consegna 10/15 giorni lav.
+      </p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn-k" onclick="showPg('shop')">Shop Now</button>
+        <button class="btn-g" onclick="showPg('lfpoints')">LFPoints Program</button>
+      </div>
+    </div>
+    <div class="hide-mob" style="position:absolute;bottom:48px;right:24px;text-align:right;z-index:2;">
+      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Free Returns</p>
+      <p class="bb" style="font-size:28px;">30 Giorni</p>
+    </div>
+  </section>
+
+  <!-- LED SEPARATOR -->
+  <div class="led-strip"></div>
+
+  <!-- TRUST BADGES (emoji) -->
+  <section style="border-bottom:2px solid var(--k);overflow-x:auto;">
+    <div style="display:flex;min-width:600px;">
+      <div style="flex:1;padding:20px 16px;border-right:1px solid #e0e0e0;text-align:center;">
+        <p style="font-size:24px;margin-bottom:6px;">🚀</p>
+        <p class="bb" style="font-size:16px;margin-bottom:2px;">DHL Express</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">10–15 gg lavorativi</p>
+      </div>
+      <div style="flex:1;padding:20px 16px;border-right:1px solid #e0e0e0;text-align:center;">
+        <p style="font-size:24px;margin-bottom:6px;">📦</p>
+        <p class="bb" style="font-size:16px;margin-bottom:2px;">Tracking Live</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Segui il tuo ordine</p>
+      </div>
+      <div style="flex:1;padding:20px 16px;border-right:1px solid #e0e0e0;text-align:center;">
+        <p style="font-size:24px;margin-bottom:6px;">🔄</p>
+        <p class="bb" style="font-size:16px;margin-bottom:2px;">Reso Gratis</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Entro 30 giorni</p>
+      </div>
+      <div style="flex:1;padding:20px 16px;border-right:1px solid #e0e0e0;text-align:center;">
+        <p style="font-size:24px;margin-bottom:6px;">🔒</p>
+        <p class="bb" style="font-size:16px;margin-bottom:2px;">Pagamento Sicuro</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">SSL + 3D Secure</p>
+      </div>
+      <div style="flex:1;padding:20px 16px;text-align:center;">
+        <p style="font-size:24px;margin-bottom:6px;">💬</p>
+        <p class="bb" style="font-size:16px;margin-bottom:2px;">Supporto Reale</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Lun–Sab 9:00–18:00</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LED SEPARATOR -->
+  <div class="led-strip-sm" style="margin:0;"></div>
+
+  <!-- LFPOINTS PROMO + LIVE DISPLAY -->
+  <section style="display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--k);" class="grid-1-mob">
+    <div style="padding:48px 36px;border-right:1px solid var(--k);" class="pad-mob">
+      <div class="led-badge" style="margin-bottom:16px;">⬡ Programma Fedeltà</div>
+      <h2 class="bb" style="font-size:clamp(44px,5vw,68px);line-height:.93;margin-bottom:18px;">LFPoints.<br/>Ogni Drop<br/>Ti Premia.</h2>
+      <p style="font-size:11px;line-height:1.9;color:var(--mid);max-width:300px;margin-bottom:24px;">
+        1€ speso = 1 LFPOINT.<br/>Accumula e riscatta sconti reali:<br/>da €5 fino al 30% di sconto.
+      </p>
+      <button class="btn-led" onclick="showPg('lfpoints')">Scopri i Premi →</button>
+    </div>
+    <div style="background:var(--k);color:var(--w);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;" class="pad-mob">
+      <p class="slbl" style="color:#333;margin-bottom:12px;">Il Tuo Saldo</p>
+      <div>
+        <div class="bb outline-led" id="home-pts" style="font-size:clamp(72px,11vw,148px);line-height:.9;">000</div>
+        <p style="font-size:9px;letter-spacing:3px;color:#333;margin-top:10px;text-transform:uppercase;">LFPOINTS</p>
+      </div>
+      <div style="border-top:1px solid #1e1e1e;padding-top:20px;display:flex;gap:32px;flex-wrap:wrap;">
+        <div>
+          <p class="bb" id="home-tier" style="font-size:22px;color:var(--led);">—</p>
+          <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;">Livello</p>
+        </div>
+        <div>
+          <p class="bb" id="home-spent" style="font-size:22px;">€0</p>
+          <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;">Speso</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LED SEPARATOR -->
+  <div class="led-strip"></div>
+
+  <!-- AUTH CTA (per guest) -->
+  <section id="home-auth-cta" style="background:var(--k);color:var(--w);padding:48px 36px;border-bottom:2px solid var(--k);display:none;" class="pad-mob">
+    <div style="max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;">
+      <div>
+        <p class="slbl" style="color:#333;margin-bottom:8px;">Sei nuovo qui?</p>
+        <h2 class="bb" style="font-size:clamp(32px,4vw,52px);margin-bottom:8px;">Registrati. È Gratis.</h2>
+        <p style="font-size:11px;color:#555;letter-spacing:1px;">Guadagna LFPOINTS al primo acquisto.</p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button onclick="showPg('auth');switchTab('reg')" class="btn-led">Crea Account</button>
+        <button onclick="showPg('auth');switchTab('li')" class="btn-w" style="padding:12px 24px;">Accedi →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LATEST DROPS -->
+  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
+      <h2 class="bb" style="font-size:clamp(32px,5vw,56px);">Latest Drop</h2>
+      <button class="btn-g" style="padding:8px 16px;font-size:10px;" onclick="showPg('shop')">View All →</button>
+    </div>
+    <div id="home-prods" class="pgrid"></div>
+  </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SHOP PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-shop" class="pg">
+  <div style="display:flex;">
+    <!-- Filter sidebar (desktop) -->
+    <aside class="hide-mob" style="width:200px;min-width:200px;border-right:2px solid var(--k);padding:28px 16px;position:sticky;top:120px;height:fit-content;">
+      <p style="font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:22px;">Filter</p>
+      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Modello</p><div id="ch-model"></div></div>
+      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Marchio</p><div id="ch-brand"></div></div>
+      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Taglia</p><div id="ch-size"></div></div>
+      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Stile</p><div id="ch-style"></div></div>
+      <button id="rst-btn" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset</button>
+    </aside>
+    <!-- Main -->
+    <main style="flex:1;padding:24px 16px;min-width:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
+        <h2 class="bb" style="font-size:44px;">Shop</h2>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <p id="s-count" style="font-size:11px;color:var(--dim);letter-spacing:1px;"></p>
+          <!-- Mobile filter button -->
+          <button onclick="toggleMobFilter()" class="btn-g mob-only" style="padding:8px 14px;font-size:10px;">⚙ Filtri</button>
+        </div>
+      </div>
+      <!-- Mobile filter row -->
+      <div id="mob-filters" style="display:none;margin-bottom:20px;border:1.5px solid var(--k);padding:16px;">
+        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Modello</p><div id="ch-model-m"></div></div>
+        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Marchio</p><div id="ch-brand-m"></div></div>
+        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Taglia</p><div id="ch-size-m"></div></div>
+        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Stile</p><div id="ch-style-m"></div></div>
+        <button id="rst-btn-m" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset Filtri</button>
+      </div>
+      <div id="s-load" style="padding:60px;text-align:center;font-size:10px;letter-spacing:3px;color:var(--dim);">LOADING...</div>
+      <div id="s-grid" class="pgrid" style="display:none;"></div>
+      <div id="s-empty" style="display:none;text-align:center;padding:60px;">
+        <p class="bb" style="font-size:36px;margin-bottom:8px;">No Items Found</p>
+        <p style="font-size:11px;color:var(--dim);">Rimuovi qualche filtro.</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     LFPOINTS PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-lfpoints" class="pg">
+
+  <!-- Hero -->
+  <section style="background:var(--k);color:var(--w);padding:60px 24px;border-bottom:2px solid var(--k);">
+    <div class="led-strip-sm" style="margin-bottom:32px;"></div>
+    <p class="slbl" style="color:#333;margin-bottom:12px;">Programma Fedeltà Esclusivo</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;max-width:1100px;">
+      <h1 class="bb" style="font-size:clamp(64px,11vw,150px);line-height:.88;color:var(--led);">LFPOINTS</h1>
+      <p style="font-size:11px;color:#555;line-height:1.9;max-width:340px;">
+        LILLOFIND premia chi rimane nel tempo. Ogni euro speso diventa un punto fedeltà. I punti non scadono mai e si convertono in sconti reali.
+      </p>
+    </div>
+    <div class="led-strip-sm" style="margin-top:32px;"></div>
+  </section>
+
+  <!-- How it works -->
+  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
+    <p class="slbl" style="margin-bottom:32px;">Come Funziona</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--k);" class="grid-1-mob">
+      <div style="padding:32px 24px;border-right:1px solid var(--k);">
+        <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">01</p>
+        <h3 class="bb" style="font-size:26px;margin:10px 0 8px;">🛒 Acquista</h3>
+        <p style="font-size:11px;color:var(--mid);line-height:1.9;">Ogni prodotto genera LFPOINTS pari al prezzo in euro. €89 = 89 pts. Automatico, immediato.</p>
+      </div>
+      <div style="padding:32px 24px;border-right:1px solid var(--k);">
+        <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">02</p>
+        <h3 class="bb" style="font-size:26px;margin:10px 0 8px;">📈 Accumula</h3>
+        <p style="font-size:11px;color:var(--mid);line-height:1.9;">I punti non scadono mai. Sali di tier e sblocca vantaggi crescenti: sconti, early access, spedizione VIP.</p>
+      </div>
+      <div style="padding:32px 24px;">
+        <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">03</p>
+        <h3 class="bb" style="font-size:26px;margin:10px 0 8px;">🎁 Riscatta</h3>
+        <p style="font-size:11px;color:var(--mid);line-height:1.9;">Converti i punti in sconti fissi (€5, €15, €35) o percentuali (10%, 20%, 30%) sul prossimo ordine.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LED separator -->
+  <div class="led-strip"></div>
+
+  <!-- REWARDS TABLE — the core section -->
+  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-bottom:32px;">
+      <p class="slbl">Tabella Premi</p>
+      <div class="led-badge">1€ = 1 LFPOINT</div>
+    </div>
+
+    <!-- Table -->
+    <div style="border:2px solid var(--k);overflow:hidden;overflow-x:auto;">
+      <div style="min-width:540px;">
+        <!-- Header row -->
+        <div style="display:grid;grid-template-columns:100px 1fr 1fr 1.5fr;background:var(--k);color:var(--w);padding:12px 16px;font-size:9px;letter-spacing:2px;text-transform:uppercase;gap:8px;">
+          <div>Punti</div>
+          <div>Premio</div>
+          <div>Tipo</div>
+          <div>Applicazione</div>
+        </div>
+        <!-- Rows -->
+        <div id="rew-rows">
+          <!-- JS injected -->
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:10px;color:var(--dim);margin-top:16px;letter-spacing:1px;">* I premi sono cumulabili. Un singolo codice sconto per ordine. Validi 90 giorni dall'attivazione.</p>
+  </section>
+
+  <!-- LED separator -->
+  <div class="led-strip-sm"></div>
+
+  <!-- TIERS -->
+  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
+    <p class="slbl" style="margin-bottom:32px;">I Livelli</p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" class="grid-1-mob" style="grid-template-columns:repeat(2,1fr)!important;">
+      <div style="border:2px solid var(--k);padding:24px 18px;">
+        <p style="font-size:20px;margin-bottom:8px;">🥉</p>
+        <p class="bb" style="font-size:28px;margin-bottom:4px;">Bronze</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">0+ Punti</p>
+        <ul style="font-size:10px;color:var(--mid);line-height:2.1;list-style:none;">
+          <li>✓ Accesso programma</li>
+          <li>✓ LFPOINTS su ogni ordine</li>
+          <li>✓ Newsletter drop</li>
+          <li>✓ Sconto da 50 pts</li>
+        </ul>
+      </div>
+      <div style="border:2px solid var(--k);padding:24px 18px;background:#f0f0f0;">
+        <p style="font-size:20px;margin-bottom:8px;">🥈</p>
+        <p class="bb" style="font-size:28px;margin-bottom:4px;">Silver</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">50+ Punti</p>
+        <ul style="font-size:10px;color:var(--mid);line-height:2.1;list-style:none;">
+          <li>✓ Tutto Bronze</li>
+          <li>✓ Spedizione prioritaria</li>
+          <li>✓ Early access drop</li>
+          <li>✓ Sconto da 150 pts</li>
+        </ul>
+      </div>
+      <div style="border:2px solid var(--k);padding:24px 18px;background:#1a1a1a;color:var(--w);">
+        <p style="font-size:20px;margin-bottom:8px;">🥇</p>
+        <p class="bb" style="font-size:28px;margin-bottom:4px;color:var(--led);">Gold</p>
+        <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">200+ Punti</p>
+        <ul style="font-size:10px;color:#666;line-height:2.1;list-style:none;">
+          <li>✓ Tutto Silver</li>
+          <li>✓ −10% dal primo giorno</li>
+          <li>✓ Inviti drop privati</li>
+          <li>✓ Sconto dal 30% da 500 pts</li>
+        </ul>
+      </div>
+      <div style="border:2px solid var(--led);padding:24px 18px;background:var(--k);color:var(--w);box-shadow:0 0 20px rgba(200,255,0,.2);">
+        <p style="font-size:20px;margin-bottom:8px;">💎</p>
+        <p class="bb" style="font-size:28px;margin-bottom:4px;color:var(--led);">Platinum</p>
+        <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">500+ Punti</p>
+        <ul style="font-size:10px;color:#555;line-height:2.1;list-style:none;">
+          <li>✓ Tutto Gold</li>
+          <li>✓ −20% permanente</li>
+          <li>✓ Concierge dedicato</li>
+          <li>✓ Edizioni limitate</li>
+          <li style="color:var(--led);">✓ −30% da 1000 pts</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- LED separator -->
+  <div class="led-strip"></div>
+
+  <!-- CTA -->
+  <section style="padding:60px 24px;text-align:center;">
+    <h2 class="bb" style="font-size:clamp(44px,7vw,90px);margin-bottom:14px;">Inizia. Gratis.</h2>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:32px;letter-spacing:1px;">50 punti ti bastano per il primo sconto. Un ordine da €50 = €5 gratis.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-led" onclick="showPg('auth');switchTab('reg')">Crea Account →</button>
+      <button class="btn-g" onclick="showPg('shop')">Vai allo Shop</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     AUTH PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-auth" class="pg">
+  <!-- LED top -->
+  <div class="led-strip"></div>
+  <div style="display:flex;min-height:88vh;">
+    <!-- Left promo panel (desktop) -->
+    <div class="hide-mob" style="flex:1;background:var(--k);color:var(--w);padding:60px 56px;display:flex;flex-direction:column;justify-content:space-between;">
+      <p class="bb" style="font-size:15px;letter-spacing:5px;color:#222;">LILLOFIND</p>
+      <div>
+        <div class="led-badge" style="margin-bottom:20px;">⬡ Members Only</div>
+        <h2 class="bb" style="font-size:clamp(48px,5.5vw,76px);line-height:.92;margin-bottom:20px;">Members<br/>Get More.</h2>
+        <ul style="font-size:11px;color:#555;line-height:2.2;list-style:none;">
+          <li>✦ LFPOINTS su ogni ordine</li>
+          <li>✦ Early access ai nuovi drop</li>
+          <li>✦ Resi gratuiti 30 giorni</li>
+          <li>✦ Sconti dal 5% al 30%</li>
+          <li>✦ Spedizione prioritaria da Silver</li>
+        </ul>
+      </div>
+      <div style="border-top:1px solid #1e1e1e;padding-top:24px;">
+        <p class="slbl" style="color:#2a2a2a;margin-bottom:8px;">Tasso Fedeltà</p>
+        <p class="bb" style="font-size:36px;color:var(--led);">1€ = 1 LFPT</p>
+      </div>
+    </div>
+    <!-- Right form -->
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 32px;max-width:520px;margin:0 auto;width:100%;">
+      <!-- Tabs -->
+      <div style="border-bottom:2px solid var(--k);margin-bottom:32px;display:flex;">
+        <button id="t-li" class="tbtn on" onclick="switchTab('li')">Accedi</button>
+        <button id="t-reg" class="tbtn" onclick="switchTab('reg')">Registrati</button>
+      </div>
+
+      <!-- Social proof (register tab) -->
+      <div id="reg-social-proof" style="display:none;background:#f8f8f8;border:1px solid #e0e0e0;padding:14px 16px;margin-bottom:20px;">
+        <p style="font-size:10px;color:var(--mid);letter-spacing:1px;">⭐ Unisciti a migliaia di members. Primo LFPOINT guadagnato al primo acquisto.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div id="a-name-row" style="display:none;flex-direction:column;gap:6px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Completo</label>
+          <input class="lf-in" id="a-name" placeholder="Mario Rossi"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Email</label>
+          <input class="lf-in" id="a-email" type="email" placeholder="email@esempio.it" autocomplete="email"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Password</label>
+          <input class="lf-in" id="a-pass" type="password" placeholder="min. 6 caratteri" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
+        </div>
+        <button class="btn-led" id="auth-cta" onclick="doAuth()" style="margin-top:4px;width:100%;">Accedi →</button>
+        <div style="display:flex;align-items:center;gap:12px;margin:4px 0;">
+          <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+          <span style="font-size:10px;color:var(--dim);">oppure</span>
+          <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+        </div>
+        <button onclick="switchTab(authTab==='li'?'reg':'li')" class="btn-g" style="width:100%;">
+          <span id="switch-tab-lbl">Non hai un account? Registrati</span>
+        </button>
+        <p style="font-size:9px;color:var(--dim);line-height:1.7;text-align:center;">Continuando accetti i <u style="cursor:pointer;">Termini</u> e la <u style="cursor:pointer;">Privacy Policy</u>.</p>
+      </div>
+
+      <!-- Benefits grid (for non-logged) -->
+      <div style="margin-top:32px;border-top:1px solid #e0e0e0;padding-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="border:1px solid #e0e0e0;padding:12px;text-align:center;">
+          <p style="font-size:18px;margin-bottom:4px;">🎁</p>
+          <p style="font-size:9px;color:var(--mid);letter-spacing:1px;text-transform:uppercase;">Sconto Benvenuto</p>
+        </div>
+        <div style="border:1px solid #e0e0e0;padding:12px;text-align:center;">
+          <p style="font-size:18px;margin-bottom:4px;">🚀</p>
+          <p style="font-size:9px;color:var(--mid);letter-spacing:1px;text-transform:uppercase;">Early Drop Access</p>
+        </div>
+        <div style="border:1px solid #e0e0e0;padding:12px;text-align:center;">
+          <p style="font-size:18px;margin-bottom:4px;">⬡</p>
+          <p style="font-size:9px;color:var(--mid);letter-spacing:1px;text-transform:uppercase;">LFPOINTS Gratuiti</p>
+        </div>
+        <div style="border:1px solid #e0e0e0;padding:12px;text-align:center;">
+          <p style="font-size:18px;margin-bottom:4px;">🔄</p>
+          <p style="font-size:9px;color:var(--mid);letter-spacing:1px;text-transform:uppercase;">Reso 30gg Gratis</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     ADMIN PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-admin" class="pg">
+  <div class="led-strip"></div>
+  <div style="max-width:700px;margin:48px auto;padding:0 20px;">
+    <p class="slbl" style="margin-bottom:6px;">Pannello Admin</p>
+    <h2 class="bb" style="font-size:48px;margin-bottom:36px;">Aggiungi Prodotto</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
+      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ad-name" placeholder="es. Cargo Pants"/></div>
+      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="ad-price" type="number" step="0.01" placeholder="129.99"/></div>
+      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="ad-model" placeholder="es. Oversized"/></div>
+      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Marchio</label><input class="lf-in" id="ad-brand" placeholder="es. Carhartt"/></div>
+      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia</label>
+        <select class="lf-in" id="ad-size"><option value="">—</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>Unica</option></select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile</label>
+        <select class="lf-in" id="ad-style"><option value="">—</option><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><textarea class="lf-in" id="ad-desc" placeholder="Descrizione breve..."></textarea></div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
+      <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">URL Immagine</label>
+      <input class="lf-in" id="ad-img" placeholder="https://..." oninput="previewImg()"/>
+    </div>
+    <div id="img-prev" style="display:none;margin-top:10px;border:1px solid #ddd;padding:8px;display:inline-flex;flex-direction:column;gap:4px;">
+      <img id="prev-img" style="max-height:130px;max-width:170px;object-fit:cover;"/>
+      <p style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">Anteprima</p>
+    </div>
+    <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn-led" id="ad-btn" onclick="adminSave()">Salva Prodotto →</button>
+      <button class="btn-g" onclick="showPg('shop')">Vedi Shop</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     PROFILE PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-profile" class="pg">
+  <div class="led-strip"></div>
+  <div style="max-width:820px;margin:0 auto;padding:40px 20px;">
+    <!-- Points card -->
+    <div style="background:var(--k);color:var(--w);padding:40px 28px;margin-bottom:32px;border-left:3px solid var(--led);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;flex-wrap:wrap;gap:16px;">
+        <div>
+          <p class="slbl" style="color:#333;margin-bottom:12px;">Saldo LFPOINTS</p>
+          <p class="bb" id="pr-pts" style="font-size:clamp(56px,9vw,96px);line-height:1;color:var(--led);">0</p>
+          <p id="pr-val" style="font-size:10px;color:#444;margin-top:6px;letter-spacing:1px;text-transform:uppercase;">≈ €0.00 in acquisti</p>
+        </div>
+        <div style="text-align:right;">
+          <p class="slbl" style="color:#333;margin-bottom:8px;">Livello</p>
+          <p class="bb" id="pr-tier" style="font-size:32px;letter-spacing:2px;color:var(--led);">—</p>
+          <p id="pr-next-prize" style="font-size:9px;color:#444;margin-top:4px;letter-spacing:1px;"></p>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div id="pr-prog">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <p id="pr-nlbl" style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;"></p>
+          <p id="pr-nnum" style="font-size:9px;color:#333;"></p>
+        </div>
+        <div class="prog-bg"><div id="pr-bar" class="prog-fill" style="width:0%;"></div></div>
+      </div>
+    </div>
+
+    <!-- LED separator -->
+    <div class="led-strip-sm" style="margin-bottom:32px;"></div>
+
+    <!-- NEXT REWARD -->
+    <div id="pr-next-rew-wrap" style="border:1.5px solid var(--led);padding:20px 24px;margin-bottom:32px;background:rgba(200,255,0,.04);box-shadow:0 0 16px rgba(200,255,0,.1);">
+      <p class="slbl" style="margin-bottom:8px;">Prossimo Premio</p>
+      <p id="pr-next-rew-txt" class="bb" style="font-size:28px;"></p>
+      <p id="pr-next-rew-sub" style="font-size:10px;color:var(--mid);margin-top:4px;letter-spacing:1px;"></p>
+    </div>
+
+    <!-- Tier cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:36px;" class="grid-1-mob" style="grid-template-columns:1fr 1fr!important;">
+      <div class="tier-c" data-min="0"><p style="font-size:16px;margin-bottom:4px;">🥉</p><p class="bb" style="font-size:18px;" >Bronze</p><p style="font-size:9px;margin-top:4px;">0+ pts</p></div>
+      <div class="tier-c" data-min="50"><p style="font-size:16px;margin-bottom:4px;">🥈</p><p class="bb" style="font-size:18px;">Silver</p><p style="font-size:9px;margin-top:4px;">50+ pts</p></div>
+      <div class="tier-c" data-min="200"><p style="font-size:16px;margin-bottom:4px;">🥇</p><p class="bb tier-glow" style="font-size:18px;">Gold</p><p style="font-size:9px;margin-top:4px;">200+ pts</p></div>
+      <div class="tier-c" data-min="500"><p style="font-size:16px;margin-bottom:4px;">💎</p><p class="bb tier-glow" style="font-size:18px;">Platinum</p><p style="font-size:9px;margin-top:4px;">500+ pts</p></div>
+    </div>
+
+    <!-- Info -->
+    <div style="border-top:2px solid var(--k);padding-top:32px;margin-bottom:36px;">
+      <p class="slbl" style="margin-bottom:20px;">Account</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+        <div style="padding:14px 0;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Nome</p><p id="pr-name" style="font-size:13px;">—</p></div>
+        <div style="padding:14px 0 14px 20px;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Email</p><p id="pr-email" style="font-size:13px;word-break:break-all;">—</p></div>
+        <div style="padding:14px 0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Totale Speso</p><p id="pr-spent" style="font-size:13px;">€0.00</p></div>
+        <div style="padding:14px 0 14px 20px;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">LFPOINTS</p><p id="pr-pts2" style="font-size:13px;color:var(--k);">0</p></div>
+      </div>
+    </div>
+
+    <!-- Rewards claimable -->
+    <div style="border:1.5px solid var(--k);padding:24px;margin-bottom:36px;">
+      <p class="slbl" style="margin-bottom:20px;">Premi Disponibili</p>
+      <div id="pr-rewards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;"></div>
+    </div>
+
+    <!-- Prefs -->
+    <div style="border-top:2px solid var(--k);padding-top:32px;">
+      <p class="slbl" style="margin-bottom:20px;">Preferenze Personali</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;" class="grid-1-mob">
+        <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia Preferita</label>
+          <select class="lf-in" id="pf-size"><option value="">Nessuna</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Brand Preferiti</label>
+          <input class="lf-in" id="pf-brands" placeholder="Nike, Carhartt, Stüssy..."/>
+        </div>
+      </div>
+      <button class="btn-led" onclick="savePrefs()">Salva Preferenze</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SIZE GUIDE MODAL
+════════════════════════════════════════════════════════ -->
+<div id="size-modal" class="modal-bg">
+  <div class="modal-box" style="padding:0;">
+    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <p class="bb" style="font-size:24px;letter-spacing:2px;">Guida Taglie</p>
+      <button onclick="document.getElementById('size-modal').classList.remove('open')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div class="led-strip-sm"></div>
+    <div style="padding:24px;overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:320px;">
+        <thead><tr style="background:#f5f5f5;">
+          <th style="padding:10px;border:1px solid #e0e0e0;text-align:left;letter-spacing:1px;">Taglia</th>
+          <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Petto (cm)</th>
+          <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Vita (cm)</th>
+          <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Fianchi (cm)</th>
+        </tr></thead>
+        <tbody id="size-table-body"></tbody>
+      </table>
+      <p style="font-size:10px;color:var(--dim);margin-top:16px;letter-spacing:1px;">📏 Consiglio: per un fit oversized, scegli una taglia in più rispetto alle misure. Per dubbi scrivi a support@lillofind.com</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════════ -->
+<footer style="background:var(--k);color:var(--w);margin-top:60px;">
+  <div class="led-strip"></div>
+
+  <!-- Newsletter -->
+  <div style="padding:36px 24px;border-bottom:1px solid #141414;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div>
+      <p class="bb" style="font-size:24px;margin-bottom:4px;">📨 Drop Alert. Sempre Primo.</p>
+      <p style="font-size:10px;color:#444;letter-spacing:1px;">Iscriviti e accedi ai drop 24h prima. Niente spam.</p>
+    </div>
+    <div style="display:flex;gap:0;max-width:380px;width:100%;">
+      <input id="nl-mail" style="flex:1;border:1px solid #1e1e1e;border-right:none;background:transparent;padding:13px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--w);outline:none;min-width:0;" placeholder="La tua email..."/>
+      <button onclick="subNL()" style="background:var(--led);color:var(--k);border:none;padding:13px 16px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;flex-shrink:0;">Iscriviti →</button>
+    </div>
+  </div>
+
+  <!-- LED separator -->
+  <div class="led-strip-sm"></div>
+
+  <!-- Main cols -->
+  <div style="padding:44px 24px;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:32px;border-bottom:1px solid #141414;" class="grid-1-mob">
+
+    <div>
+      <p class="bb" style="font-size:28px;letter-spacing:4px;margin-bottom:12px;">LILLOFIND</p>
+      <p style="font-size:10px;color:#444;line-height:1.9;max-width:220px;margin-bottom:20px;">Streetwear autentico, curato per chi ha uno stile definito. Nessuna tendenza passeggera.</p>
+      <div style="display:flex;gap:12px;margin-bottom:20px;">
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">IG</a>
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">TK</a>
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">YT</a>
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">X</a>
+      </div>
+      <!-- Emoji badges -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">🔒 SSL</div>
+        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">🚀 DHL</div>
+        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">🇪🇺 GDPR</div>
+        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">♻️ ECO</div>
+      </div>
+    </div>
+
+    <div>
+      <p style="font-size:9px;letter-spacing:3px;color:#333;margin-bottom:18px;text-transform:uppercase;">Esplora</p>
+      <button class="flink" onclick="showPg('shop')">🛍️ Shop</button>
+      <button class="flink" onclick="showPg('lfpoints')">⬡ LFPoints</button>
+      <button class="flink" onclick="showPg('home')">🔥 Nuovi Arrivi</button>
+      <button class="flink">👟 Brand</button>
+      <button class="flink">💸 Outlet</button>
+      <button class="flink" onclick="showPg('auth')">👤 Crea Account</button>
+    </div>
+
+    <div>
+      <p style="font-size:9px;letter-spacing:3px;color:#333;margin-bottom:18px;text-transform:uppercase;">Assistenza</p>
+      <button class="flink">📋 Come Ordinare</button>
+      <button class="flink">✈️ Spedizioni DHL</button>
+      <button class="flink">🔄 Resi & Rimborsi</button>
+      <button class="flink" onclick="document.getElementById('size-modal').classList.add('open')">📏 Guida Taglie</button>
+      <button class="flink">📍 Traccia Ordine</button>
+      <a href="mailto:support@lillofind.com" class="flink" style="text-decoration:none;">✉️ Email Supporto</a>
+      <p style="font-size:9px;color:#2a2a2a;margin-top:10px;line-height:1.8;">Lun–Ven 9:00–18:00<br/>Sab 10:00–14:00</p>
+    </div>
+
+    <div>
+      <p style="font-size:9px;letter-spacing:3px;color:#333;margin-bottom:18px;text-transform:uppercase;">Legale</p>
+      <button class="flink">Privacy Policy</button>
+      <button class="flink">Cookie Policy</button>
+      <button class="flink">Termini di Servizio</button>
+      <button class="flink">Diritto di Recesso</button>
+      <button class="flink">Note Legali</button>
+      <div style="margin-top:18px;border:1px solid #141414;padding:12px;">
+        <p style="font-size:9px;color:#2a2a2a;letter-spacing:.5px;line-height:1.9;text-transform:uppercase;">
+          LILLOFIND S.R.L.<br/>P.IVA: IT 00000000000<br/>REA: MI – 000000<br/>Cap. Soc. €10.000 i.v.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div style="padding:18px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <p style="font-size:9px;color:#222;letter-spacing:1px;">© 2025 LILLOFIND S.R.L. — All rights reserved.</p>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">💳 VISA</div>
+      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">💳 MC</div>
+      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">🅿️ PAYPAL</div>
+      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;"> APPLE PAY</div>
+      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">🛒 KLARNA</div>
+    </div>
+    <p style="font-size:9px;color:#181818;letter-spacing:1px;">DHL Express · Reso 30gg · SSL</p>
+  </div>
+</footer>
+
+<!-- ════════════ BOTTOM NAV (mobile) ════════════ -->
+<nav id="bottom-nav">
+  <button class="bnav-btn" id="bn-home" onclick="showPg('home')"><span class="bnav-icon">🏠</span>Home</button>
+  <button class="bnav-btn" id="bn-shop" onclick="showPg('shop')"><span class="bnav-icon">🛍️</span>Shop</button>
+  <button class="bnav-btn" id="bn-lfp" onclick="showPg('lfpoints')"><span class="bnav-icon">⬡</span>Points</button>
+  <button class="bnav-btn" id="bn-profile" onclick="showPg('profile')"><span class="bnav-icon">👤</span>Profilo</button>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════ -->
+<script type="module">
+  // ── Firebase wait ──────────────────────────────────────
+  function waitFB(cb){ window.__fb ? cb() : setTimeout(()=>waitFB(cb), 80); }
+
+  // ── State ──────────────────────────────────────────────
+  let products=[], filters={model:'',brand:'',size:'',style:''};
+  let user=null, udata=null, authTab='li';
+  let wishlist=[];
+
+  // ── REWARDS CONFIG ─────────────────────────────────────
+  const REWARDS=[
+    {pts:50,  label:'−€5',      desc:'Sconto fisso €5',           type:'fisso',       val:5},
+    {pts:150, label:'−€15',     desc:'Sconto fisso €15',          type:'fisso',       val:15},
+    {pts:300, label:'−€35',     desc:'Sconto fisso €35',          type:'fisso',       val:35},
+    {pts:500, label:'−10%',     desc:'Sconto 10% sull\'ordine',   type:'percentuale', val:10},
+    {pts:750, label:'−20%',     desc:'Sconto 20% + spedizione',   type:'percentuale', val:20},
+    {pts:1000,label:'−30%',     desc:'Sconto 30% VIP',           type:'percentuale', val:30},
+  ];
+
+  function getTier(p){ return p>=500?'💎 PLATINUM':p>=200?'🥇 GOLD':p>=50?'🥈 SILVER':'🥉 BRONZE'; }
+
+  // ── Toast ──────────────────────────────────────────────
+  window.showToast=function(m){
+    const t=document.getElementById('toast');
+    t.textContent=m; t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt=setTimeout(()=>t.classList.remove('show'),3200);
+  };
+
+  // ── Drawer ─────────────────────────────────────────────
+  window.openDrawer=function(){document.getElementById('drawer').classList.add('open');document.body.style.overflow='hidden';}
+  window.closeDrawer=function(){document.getElementById('drawer').classList.remove('open');document.body.style.overflow='';}
+
+  // ── Mobile filter toggle ───────────────────────────────
+  window.toggleMobFilter=function(){
+    const el=document.getElementById('mob-filters');
+    el.style.display=el.style.display==='none'?'block':'none';
+  };
+
+  // ── Back to top ────────────────────────────────────────
+  window.addEventListener('scroll',()=>{
+    document.getElementById('back-top').classList.toggle('vis',window.scrollY>400);
+  },{passive:true});
+
+  // ── Cookie ─────────────────────────────────────────────
+  window.closeCookie=function(){
+    document.getElementById('cookie-bar').style.display='none';
+    localStorage.setItem('lf_cookie','1');
+  };
+  if(!localStorage.getItem('lf_cookie')){
+    setTimeout(()=>document.getElementById('cookie-bar').classList.add('show'),1200);
+  }
+
+  // ── Page nav ───────────────────────────────────────────
+  window.showPg=function(id){
+    if(id==='admin'&&(!udata||!udata.isAdmin)){showToast('Accesso negato.');return;}
+    if(id==='profile'&&!user){showPg('auth');return;}
+    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+    const el=document.getElementById('pg-'+id);
+    if(!el)return;
+    el.classList.add('on');
+    // Bottom nav active
+    ['home','shop','lfpoints','profile'].forEach(k=>{
+      const map={home:'home',shop:'shop',lfpoints:'lfp',profile:'profile'};
+      const btn=document.getElementById('bn-'+map[k]);
+      if(btn) btn.classList.toggle('active',k===id);
+    });
+    if(id==='shop') loadProds();
+    if(id==='profile') renderProfile();
+    if(id==='home') updateHomeDisplay();
+    if(id==='lfpoints') renderRewardsTable();
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+
+  // ── Nav update ─────────────────────────────────────────
+  function updateNav(u,ud){
+    const li=!!u;
+    // Desktop
+    ['u-li','u-reg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display=li?'none':''; });
+    const uOut=document.getElementById('u-out'); if(uOut) uOut.style.display=li?'':'none';
+    const uPts=document.getElementById('u-pts'); if(uPts) uPts.style.display=li?'':'none';
+    if(li){ const n=document.getElementById('u-pts-n'); if(n) n.textContent=ud?.lfpoints??0; }
+    const nBadge=document.getElementById('n-badge'); if(nBadge) nBadge.style.display=li?'':'none';
+    const nPts=document.getElementById('n-pts'); if(li&&nPts) nPts.textContent=ud?.lfpoints??0;
+    const nProf=document.getElementById('n-profile'); if(nProf) nProf.style.display=li?'':'none';
+    const nAdm=document.getElementById('n-admin'); if(nAdm) nAdm.style.display=(li&&ud?.isAdmin)?'':'none';
+    const nLogin=document.getElementById('n-login-btn'); if(nLogin) nLogin.style.display=li?'none':'';
+    // Mobile
+    const mBadge=document.getElementById('m-badge'); if(mBadge) mBadge.style.display=li?'':'none';
+    const mPts=document.getElementById('m-pts'); if(li&&mPts) mPts.textContent=ud?.lfpoints??0;
+    const mLi=document.getElementById('m-li-btn'); if(mLi) mLi.style.display=li?'none':'';
+    const mProf=document.getElementById('m-prof-btn'); if(mProf) mProf.style.display=li?'':'none';
+    // Drawer
+    const dProf=document.getElementById('d-profile'); if(dProf) dProf.style.display=li?'flex':'none';
+    const dAdm=document.getElementById('d-admin'); if(dAdm) dAdm.style.display=(li&&ud?.isAdmin)?'flex':'none';
+    const dLogin=document.getElementById('d-login'); if(dLogin) dLogin.style.display=li?'none':'flex';
+    const dLogout=document.getElementById('d-logout'); if(dLogout) dLogout.style.display=li?'flex':'none';
+    const dWrap=document.getElementById('d-pts-wrap'); if(dWrap) dWrap.style.display=li?'block':'none';
+    const dPts=document.getElementById('d-pts'); if(li&&dPts) dPts.textContent=ud?.lfpoints??0;
+    // Guest CTA
+    const gCta=document.getElementById('guest-cta'); if(gCta) gCta.classList.toggle('hidden',!!u);
+    // Home auth section
+    const hAuth=document.getElementById('home-auth-cta'); if(hAuth) hAuth.style.display=li?'none':'block';
+  }
+
+  function updateHomeDisplay(){
+    const pts=udata?.lfpoints??0;
+    const el=document.getElementById('home-pts'); if(el) el.textContent=String(pts).padStart(3,'0');
+    const tEl=document.getElementById('home-tier'); if(tEl) tEl.textContent=udata?getTier(pts):'—';
+    const sEl=document.getElementById('home-spent'); if(sEl) sEl.textContent=udata?'€'+(udata.totalSpent||0).toFixed(0):'€0';
+  }
+
+  // ── Auth ───────────────────────────────────────────────
+  window.switchTab=function(t){
+    authTab=t;
+    document.getElementById('t-li').classList.toggle('on',t==='li');
+    document.getElementById('t-reg').classList.toggle('on',t==='reg');
+    const row=document.getElementById('a-name-row'); if(row) row.style.display=t==='reg'?'flex':'none';
+    const cta=document.getElementById('auth-cta'); if(cta) cta.textContent=t==='li'?'Accedi →':'Crea Account →';
+    const sp=document.getElementById('reg-social-proof'); if(sp) sp.style.display=t==='reg'?'block':'none';
+    const sw=document.getElementById('switch-tab-lbl'); if(sw) sw.textContent=t==='li'?'Non hai un account? Registrati':'Hai già un account? Accedi';
+  };
+
+  window.doAuth=async function(){
+    const fb=window.__fb;
+    const email=document.getElementById('a-email').value.trim();
+    const pass=document.getElementById('a-pass').value;
+    const name=document.getElementById('a-name').value.trim();
+    const btn=document.getElementById('auth-cta');
+    if(!email||!pass)return showToast('Compila tutti i campi.');
+    btn.textContent='...'; btn.disabled=true;
+    try{
+      if(authTab==='li'){
+        await fb.signInWithEmailAndPassword(fb.auth,email,pass);
+        showToast('👋 Welcome back!');
+      } else {
+        if(!name){showToast('Inserisci il nome.');btn.textContent='Crea Account →';btn.disabled=false;return;}
+        const c=await fb.createUserWithEmailAndPassword(fb.auth,email,pass);
+        await fb.setDoc(fb.doc(fb.db,'users',c.user.uid),{
+          email,displayName:name,lfpoints:0,totalSpent:0,
+          preferredSize:'',preferredBrands:[],createdAt:fb.serverTimestamp()
+        });
+        showToast('🎉 Account creato! Benvenuto!');
+      }
+      showPg('home');
+    } catch(e){
+      const m=e.code==='auth/invalid-credential'?'Credenziali errate.':
+               e.code==='auth/email-already-in-use'?'Email già usata.':
+               e.code==='auth/weak-password'?'Password min. 6 caratteri.':e.message;
+      showToast('⚠️ '+m);
+    }
+    btn.textContent=authTab==='li'?'Accedi →':'Crea Account →'; btn.disabled=false;
+  };
+
+  window.handleLogout=async function(){
+    await window.__fb.signOut(window.__fb.auth);
+    updateNav(null,null); updateHomeDisplay();
+    showToast('Arrivederci. 👋'); showPg('home');
+  };
+
+  // ── Products ───────────────────────────────────────────
+  async function loadProds(){
+    if(products.length){renderShop();return;}
+    const fb=window.__fb;
+    document.getElementById('s-load').style.display='block';
+    document.getElementById('s-grid').style.display='none';
+    try{
+      const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
+      const s=await fb.getDocs(q);
+      products=s.docs.map(d=>({id:d.id,...d.data()}));
+      buildChips(); renderShop(); renderHomeProds();
+    } catch(e){ document.getElementById('s-load').textContent='Errore caricamento.'; }
+  }
+
+  function buildChips(){
+    ['model','brand','size','style'].forEach(k=>{
+      const vals=[...new Set(products.map(p=>p[k]).filter(Boolean))];
+      const html=vals.map(v=>`<span class="chip" data-key="${k}" data-val="${v}" onclick="toggleF('${k}','${v}')">${v}</span>`).join('');
+      const d=document.getElementById('ch-'+k); if(d) d.innerHTML=html;
+      const dm=document.getElementById('ch-'+k+'-m'); if(dm) dm.innerHTML=html;
+    });
+  }
+
+  window.toggleF=function(k,v){
+    filters[k]=filters[k]===v?'':v;
+    document.querySelectorAll(`.chip[data-key="${k}"]`).forEach(c=>c.classList.toggle('on',c.dataset.val===filters[k]));
+    const any=Object.values(filters).some(Boolean);
+    const rb=document.getElementById('rst-btn'); if(rb) rb.style.display=any?'':'none';
+    const rbm=document.getElementById('rst-btn-m'); if(rbm) rbm.style.display=any?'':'none';
+    renderShop();
+  };
+
+  window.resetFilters=function(){
+    filters={model:'',brand:'',size:'',style:''};
+    document.querySelectorAll('.chip[data-key]').forEach(c=>c.classList.remove('on'));
+    const rb=document.getElementById('rst-btn'); if(rb) rb.style.display='none';
+    const rbm=document.getElementById('rst-btn-m'); if(rbm) rbm.style.display='none';
+    renderShop();
+  };
+
+  function cardHTML(p){
+    const isNew=(p.createdAt?.seconds&&(Date.now()/1000-p.createdAt.seconds)<604800);
+    const inWish=wishlist.includes(p.id);
+    return `<div class="pcard">
+      <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
+        ${p.imageUrl?`<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
+        ${isNew?`<span style="position:absolute;top:8px;left:8px;background:var(--led);color:var(--k);font-size:9px;letter-spacing:2px;padding:2px 7px;font-weight:bold;">NEW</span>`:(p.style?`<span style="position:absolute;top:8px;left:8px;background:var(--k);color:var(--w);font-size:9px;letter-spacing:2px;padding:2px 7px;">${p.style.toUpperCase()}</span>`:'')}
+        <button class="wish-btn ${inWish?'active':''}" onclick="toggleWish('${p.id}',this)" title="Wishlist">${inWish?'❤️':'🤍'}</button>
+      </div>
+      <div style="padding:12px 10px;">
+        ${p.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
+        <h4 style="font-size:12px;margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${p.name}</h4>
+        ${p.size?`<p style="font-size:10px;color:var(--dim);margin-bottom:4px;">SZ ${p.size}</p>`:''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
+          <button class="btn-k" style="padding:6px 10px;font-size:9px;" onclick="buy('${p.id}',${p.price||0})">ADD+</button>
+        </div>
+        <p style="font-size:9px;color:var(--dim);margin-top:4px;letter-spacing:1px;">+${Math.floor(p.price||0)} LFPTS</p>
+      </div>
+    </div>`;
+  }
+
+  window.toggleWish=function(pid,btn){
+    const idx=wishlist.indexOf(pid);
+    if(idx>-1){wishlist.splice(idx,1);btn.classList.remove('active');btn.textContent='🤍';showToast('Rimosso dalla wishlist');}
+    else{wishlist.push(pid);btn.classList.add('active');btn.textContent='❤️';showToast('❤️ Aggiunto alla wishlist!');}
+  };
+
+  function renderShop(){
+    const filtered=products.filter(p=>
+      (!filters.model||p.model===filters.model)&&
+      (!filters.brand||p.brand===filters.brand)&&
+      (!filters.size ||p.size ===filters.size )&&
+      (!filters.style||p.style===filters.style)
+    );
+    document.getElementById('s-load').style.display='none';
+    const sc=document.getElementById('s-count');
+    if(sc) sc.textContent=filtered.length+' item'+(filtered.length!==1?'s':'');
+    const g=document.getElementById('s-grid'), e=document.getElementById('s-empty');
+    if(!filtered.length){if(g)g.style.display='none';if(e)e.style.display='block';return;}
+    if(e)e.style.display='none'; if(g){g.style.display='grid';g.innerHTML=filtered.map(cardHTML).join('');}
+  }
+
+  function renderHomeProds(){
+    const h=document.getElementById('home-prods');
+    if(!h)return;
+    const latest=products.slice(0,4);
+    h.innerHTML=latest.length?latest.map(cardHTML).join(''):`<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>`;
+    h.style.display='grid';
+  }
+
+  // ── Rewards table ──────────────────────────────────────
+  function renderRewardsTable(){
+    const pts=udata?.lfpoints??0;
+    const tbody=document.getElementById('rew-rows');
+    if(!tbody)return;
+    tbody.innerHTML=REWARDS.map(r=>{
+      const locked=pts<r.pts;
+      return `<div class="rew-row" style="padding:14px 16px;gap:8px;${locked?'opacity:.45':''}">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:9px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;">${r.pts}</span>
+        </div>
+        <div>
+          <span class="bb" style="font-size:20px;${!locked?'color:var(--led)':''}">${r.label}</span>
+        </div>
+        <div style="font-size:10px;color:var(--mid);letter-spacing:1px;text-transform:uppercase;">${r.type}</div>
+        <div style="font-size:10px;color:var(--mid);">${r.desc}${!locked?` <span style="color:var(--led);font-weight:bold;margin-left:4px;">✓ DISPONIBILE</span>`:` <span style="color:var(--dim);font-size:9px;">mancano ${r.pts-pts} pts</span>`}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Buy ────────────────────────────────────────────────
+  window.buy=async function(pid,price){
+    if(!user){showToast('Accedi per acquistare 👆');showPg('auth');return;}
+    const fb=window.__fb, pts=Math.floor(price);
+    const ref=fb.doc(fb.db,'users',user.uid);
+    const snap=await fb.getDoc(ref);
+    const d=snap.exists()?snap.data():{};
+    const np=(d.lfpoints||0)+pts, ns=(d.totalSpent||0)+price;
+    await fb.updateDoc(ref,{lfpoints:np,totalSpent:ns});
+    udata={...udata,lfpoints:np,totalSpent:ns};
+    updateNav(user,udata); updateHomeDisplay();
+    // Check if reward unlocked
+    const prev=np-pts;
+    const newReward=REWARDS.find(r=>prev<r.pts&&np>=r.pts);
+    if(newReward) showToast(`🎁 Premio sbloccato: ${newReward.label}!`);
+    else showToast(`+${pts} LFPOINTS accreditati!`);
+  };
+
+  // ── Profile ────────────────────────────────────────────
+  function renderProfile(){
+    if(!user||!udata)return;
+    const pts=udata.lfpoints||0, spent=udata.totalSpent||0;
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+    set('pr-pts',pts); set('pr-pts2',pts+' pts');
+    set('pr-val','≈ €'+spent.toFixed(2)+' IN ACQUISTI');
+    set('pr-name',udata.displayName||'—');
+    set('pr-email',user.email);
+    set('pr-spent','€'+spent.toFixed(2));
+    set('pr-tier',getTier(pts));
+    // Tiers
+    document.querySelectorAll('.tier-c').forEach(c=>c.classList.toggle('unlocked',pts>=parseInt(c.dataset.min)));
+    // Progress
+    const next=pts<50?{n:'Silver',at:50}:pts<200?{n:'Gold',at:200}:pts<500?{n:'Platinum',at:500}:null;
+    const pw=document.getElementById('pr-prog');
+    if(next&&pw){
+      pw.style.display='';
+      set('pr-nlbl','→ '+next.n);
+      set('pr-nnum',pts+'/'+next.at+' pts');
+      const bar=document.getElementById('pr-bar');
+      if(bar) setTimeout(()=>bar.style.width=Math.min(100,(pts/next.at)*100)+'%',100);
+    } else if(pw) pw.style.display='none';
+
+    // Next reward
+    const nr=REWARDS.find(r=>pts<r.pts);
+    const nrw=document.getElementById('pr-next-rew-wrap');
+    const nrt=document.getElementById('pr-next-rew-txt');
+    const nrs=document.getElementById('pr-next-rew-sub');
+    if(nr&&nrw){
+      nrw.style.display='block';
+      if(nrt) nrt.textContent=nr.label+' — '+nr.desc;
+      if(nrs) nrs.textContent=`Ti mancano ${nr.pts-pts} punti (≈ €${nr.pts-pts} di acquisti)`;
+      set('pr-next-prize',`Prossimo: ${nr.label} a ${nr.pts} pts`);
+    } else if(nrw) nrw.style.display='none';
+
+    // Rewards grid
+    const rg=document.getElementById('pr-rewards-grid');
+    if(rg){
+      rg.innerHTML=REWARDS.map(r=>{
+        const ok=pts>=r.pts;
+        return `<div style="border:1.5px solid ${ok?'var(--led)':'#e0e0e0'};padding:14px 12px;text-align:center;${ok?'background:rgba(200,255,0,.05);box-shadow:0 0 8px rgba(200,255,0,.15)':'opacity:.4'}">
+          <p class="bb" style="font-size:22px;${ok?'color:var(--led)':''}">${r.label}</p>
+          <p style="font-size:8px;color:var(--dim);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">${r.pts} pts</p>
+          ${ok?`<button onclick="claimReward('${r.label}')" class="btn-led" style="margin-top:8px;padding:5px 10px;font-size:9px;width:100%;">Riscatta</button>`:''}
+        </div>`;
+      }).join('');
+    }
+
+    // Prefs
+    const ps=document.getElementById('pf-size'); if(ps) ps.value=udata.preferredSize||'';
+    const pb=document.getElementById('pf-brands'); if(pb) pb.value=(udata.preferredBrands||[]).join(', ');
+  }
+
+  window.claimReward=function(label){
+    showToast(`✅ Codice ${label} copiato! Usalo al checkout.`);
+  };
+
+  window.savePrefs=async function(){
+    if(!user)return;
+    const fb=window.__fb;
+    const size=document.getElementById('pf-size').value;
+    const brands=document.getElementById('pf-brands').value.split(',').map(s=>s.trim()).filter(Boolean);
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{preferredSize:size,preferredBrands:brands});
+      udata={...udata,preferredSize:size,preferredBrands:brands};
+      showToast('✅ Preferenze salvate!');
+    } catch(e){showToast('⚠️ Errore: '+e.message);}
+  };
+
+  // ── Admin ──────────────────────────────────────────────
+  window.previewImg=function(){
+    const url=document.getElementById('ad-img').value.trim();
+    const w=document.getElementById('img-prev');
+    if(url){document.getElementById('prev-img').src=url;w.style.display='inline-flex';}
+    else{w.style.display='none';}
+  };
+
+  window.adminSave=async function(){
+    const fb=window.__fb;
+    const name=document.getElementById('ad-name').value.trim();
+    const price=parseFloat(document.getElementById('ad-price').value);
+    if(!name||isNaN(price))return showToast('⚠️ Nome e Prezzo obbligatori.');
+    const btn=document.getElementById('ad-btn');
+    btn.textContent='...'; btn.disabled=true;
+    try{
+      await fb.addDoc(fb.collection(fb.db,'products'),{
+        name,price,
+        description:document.getElementById('ad-desc').value.trim(),
+        model:document.getElementById('ad-model').value.trim(),
+        brand:document.getElementById('ad-brand').value.trim(),
+        size:document.getElementById('ad-size').value,
+        style:document.getElementById('ad-style').value,
+        imageUrl:document.getElementById('ad-img').value.trim(),
+        createdAt:fb.serverTimestamp()
+      });
+      showToast('✅ Prodotto salvato!');
+      ['ad-name','ad-price','ad-desc','ad-model','ad-brand','ad-img'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      document.getElementById('ad-size').value='';
+      document.getElementById('ad-style').value='';
+      const ip=document.getElementById('img-prev'); if(ip) ip.style.display='none';
+      products=[];
+    } catch(e){showToast('⚠️ Errore: '+e.message);}
+    btn.textContent='Salva Prodotto →'; btn.disabled=false;
+  };
+
+  // ── Newsletter ─────────────────────────────────────────
+  window.subNL=function(){
+    const e=document.getElementById('nl-mail').value.trim();
+    if(!e||!e.includes('@'))return showToast('⚠️ Email non valida.');
+    document.getElementById('nl-mail').value='';
+    showToast('📨 Iscritto! Drop Alert attivato.');
+  };
+
+  // ── Size guide ─────────────────────────────────────────
+  function buildSizeGuide(){
+    const sizes=[
+      {s:'XS',c:'82–86',v:'66–70',f:'88–92'},
+      {s:'S', c:'86–90',v:'70–74',f:'92–96'},
+      {s:'M', c:'90–95',v:'74–78',f:'96–100'},
+      {s:'L', c:'95–100',v:'78–83',f:'100–105'},
+      {s:'XL',c:'100–106',v:'83–89',f:'105–110'},
+      {s:'XXL',c:'106–114',v:'89–96',f:'110–118'},
+    ];
+    const tb=document.getElementById('size-table-body');
+    if(tb) tb.innerHTML=sizes.map((r,i)=>`<tr style="background:${i%2?'#fafafa':'#fff'}">
+      <td style="padding:10px;border:1px solid #e0e0e0;font-weight:500;">${r.s}</td>
+      <td style="padding:10px;border:1px solid #e0e0e0;text-align:center;">${r.c}</td>
+      <td style="padding:10px;border:1px solid #e0e0e0;text-align:center;">${r.v}</td>
+      <td style="padding:10px;border:1px solid #e0e0e0;text-align:center;">${r.f}</td>
+    </tr>`).join('');
+  }
+  buildSizeGuide();
+
+  // ── Firebase auth ──────────────────────────────────────
+  waitFB(()=>{
+    const fb=window.__fb;
+    fb.onAuthStateChanged(fb.auth,async u=>{
+      user=u;
+      if(u){
+        const s=await fb.getDoc(fb.doc(fb.db,'users',u.uid));
+        udata=s.exists()?s.data():{};
+      } else { udata=null; }
+      updateNav(u,udata); updateHomeDisplay();
+      // Preload products
+      if(!products.length){
+        try{
+          const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
+          const s=await fb.getDocs(q);
+          products=s.docs.map(d=>({id:d.id,...d.data()}));
+          renderHomeProds(); buildChips();
+        } catch(_){}
+      }
+    });
+  });
+</script>
+</body>
+</html>
