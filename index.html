@@ -433,17 +433,17 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     <div class="ticker-w" style="padding:8px 0;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;">
       <div class="ticker">
         <span>✦ SPEDIZIONE DHL EXPRESS — CONSEGNA 10/15 GIORNI LAVORATIVI</span>
-        <span>✦ RESO GRATUITO ENTRO 30 GIORNI</span>
+        <span>✦ RESO GRATUITO ENTRO 30 GIORNI — NESSUNA DOMANDA</span>
         <span>✦ NUOVI DROP OGNI SETTIMANA — EARLY ACCESS PER I MEMBERS</span>
         <span>✦ 50 LFPOINTS = SCONTO €5 SUL PROSSIMO ORDINE</span>
         <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · KLARNA</span>
-        <span>✦ ASSISTENZA: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="20737570706f7274606c696c6c6f66696e640e636f6d">[email&#160;protected]</a> · LUN–SAB</span>
+        <span>✦ QUALITÀ 1:1 — STREETWEAR PREMIUM SENZA COMPROMESSI</span>
         <span>✦ SPEDIZIONE DHL EXPRESS — CONSEGNA 10/15 GIORNI LAVORATIVI</span>
-        <span>✦ RESO GRATUITO ENTRO 30 GIORNI</span>
+        <span>✦ RESO GRATUITO ENTRO 30 GIORNI — NESSUNA DOMANDA</span>
         <span>✦ NUOVI DROP OGNI SETTIMANA — EARLY ACCESS PER I MEMBERS</span>
         <span>✦ 50 LFPOINTS = SCONTO €5 SUL PROSSIMO ORDINE</span>
         <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · KLARNA</span>
-        <span>✦ ASSISTENZA: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="02515752524d5056424e4b4e4e4d444b4c462c414d4f">[email&#160;protected]</a> · LUN–SAB</span>
+        <span>✦ QUALITÀ 1:1 — STREETWEAR PREMIUM SENZA COMPROMESSI</span>
       </div>
     </div>
     <!-- Utility -->
@@ -495,23 +495,34 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 ════════════════════════════════════════════════════════ -->
 <div id="pg-home" class="pg on">
 
-  <!-- HERO — Dark cinematic full-bleed -->
-  <section style="min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;background:var(--k);border-bottom:3px solid var(--k);">
-    <!-- Grain overlay -->
-    <div style="position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.035;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22/></svg>');background-size:200px;"></div>
-    <!-- LED diagonal line -->
+  <!-- HERO — Dark cinematic full-bleed with particle globe -->
+  <section style="min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;background:#080808;border-bottom:3px solid var(--k);">
+
+    <!-- Canvas particle globe background -->
+    <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;"></canvas>
+
+    <!-- LED diagonal lines -->
     <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:hidden;">
-      <div style="position:absolute;top:-50%;left:58%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.25) 50%,transparent);transform:rotate(-12deg);"></div>
-      <div style="position:absolute;top:-50%;left:68%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.08) 50%,transparent);transform:rotate(-12deg);"></div>
+      <div style="position:absolute;top:-50%;left:60%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.2) 50%,transparent);transform:rotate(-10deg);"></div>
+      <div style="position:absolute;top:-50%;left:70%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.06) 50%,transparent);transform:rotate(-10deg);"></div>
     </div>
+
     <!-- Glow dots -->
-    <div style="position:absolute;top:12%;right:6%;width:8px;height:8px;background:var(--led);border-radius:50%;box-shadow:0 0 32px var(--led),0 0 64px rgba(200,255,0,.3);z-index:3;"></div>
-    <div style="position:absolute;top:38%;right:14%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 18px var(--led2);z-index:3;"></div>
-    <div style="position:absolute;bottom:40%;left:7%;width:5px;height:5px;background:var(--led);border-radius:50%;box-shadow:0 0 22px var(--led);z-index:3;"></div>
-    <!-- GIANT LILLOFIND WATERMARK -->
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;">
-      <span class="bb" style="font-size:clamp(72px,13vw,170px);color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.055);letter-spacing:8px;white-space:nowrap;">LILLOFIND</span>
+    <div style="position:absolute;top:10%;right:5%;width:8px;height:8px;background:var(--led);border-radius:50%;box-shadow:0 0 32px var(--led),0 0 64px rgba(200,255,0,.3);z-index:3;animation:pulse-led 3s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:35%;right:12%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 18px var(--led2);z-index:3;animation:pulse-led 4s ease-in-out infinite;"></div>
+
+    <!-- STYLED LILLOFIND WATERMARK — glitch personality -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;" id="hero-wordmark-wrap">
+      <div style="position:relative;transform:rotate(-4deg);">
+        <!-- Shadow layer for depth -->
+        <span class="bb" style="position:absolute;top:4px;left:4px;font-size:clamp(68px,12vw,160px);color:transparent;-webkit-text-stroke:1px rgba(200,255,0,.04);letter-spacing:10px;white-space:nowrap;filter:blur(2px);">LILLOFIND</span>
+        <!-- Main outline -->
+        <span class="bb" id="hero-wordmark" style="font-size:clamp(68px,12vw,160px);color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.1);letter-spacing:10px;white-space:nowrap;position:relative;display:block;">LILLOFIND</span>
+        <!-- LED accent bar under the L -->
+        <div style="position:absolute;bottom:-6px;left:0;width:38%;height:2px;background:linear-gradient(90deg,rgba(200,255,0,.5),transparent);box-shadow:0 0 10px rgba(200,255,0,.3);"></div>
+      </div>
     </div>
+
     <!-- Hero copy -->
     <div style="position:relative;z-index:4;padding:40px 32px 0;max-width:860px;" class="pad-mob">
       <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:28px;background:rgba(200,255,0,.05);">
@@ -529,6 +540,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
         <button onclick="showPg('lfpoints')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w);padding:16px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s;-webkit-appearance:none;" onmouseover="this.style.borderColor='var(--led)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">⬡ LFPoints</button>
       </div>
     </div>
+
     <!-- Bottom stats bar -->
     <div style="position:relative;z-index:4;border-top:1px solid rgba(255,255,255,.07);display:flex;overflow-x:auto;">
       <div style="flex:1;min-width:110px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
@@ -553,6 +565,134 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       </div>
     </div>
   </section>
+
+  <!-- Canvas particle globe init -->
+  <script>
+  (function(){
+    const canvas = document.getElementById('hero-canvas');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let W, H, particles=[], edges=[];
+    const COLORS = ['rgba(200,255,0,', 'rgba(0,255,178,', 'rgba(255,255,255,'];
+
+    function resize(){
+      W = canvas.width = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+    }
+
+    // Globe-like particle positions using spherical coordinates
+    function initParticles(){
+      particles = [];
+      edges = [];
+      const N = Math.min(120, Math.floor(W * H / 8000));
+      const cx = W * 0.72, cy = H * 0.42;
+      const R = Math.min(W, H) * 0.32;
+      for(let i=0; i<N; i++){
+        // Distribute on sphere surface
+        const theta = Math.random() * Math.PI * 2;
+        const phi   = Math.acos(2 * Math.random() - 1);
+        const r     = R * (0.85 + Math.random() * 0.15);
+        const x0    = cx + r * Math.sin(phi) * Math.cos(theta);
+        const y0    = cy + r * Math.sin(phi) * Math.sin(theta) * 0.5; // flatten Y for globe look
+        const depth = Math.cos(phi); // -1 to 1, back to front
+        particles.push({
+          x: x0, y: y0, ox: x0, oy: y0,
+          theta, phi, r,
+          cx, cy,
+          speed: 0.00015 + Math.random() * 0.0002,
+          depth,
+          size: depth > 0 ? 1.5 + depth * 1.5 : 0.6,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          alpha: depth > 0 ? 0.15 + depth * 0.45 : 0.05 + Math.random()*0.1,
+          angle: Math.random() * Math.PI * 2, // rotation angle
+        });
+      }
+    }
+
+    function buildEdges(){
+      edges = [];
+      const THRESH = Math.min(W,H) * 0.18;
+      for(let i=0;i<particles.length;i++){
+        for(let j=i+1;j<particles.length;j++){
+          const dx=particles[i].x-particles[j].x;
+          const dy=particles[i].y-particles[j].y;
+          const d=Math.sqrt(dx*dx+dy*dy);
+          if(d<THRESH && particles[i].depth>-0.3 && particles[j].depth>-0.3){
+            edges.push({i,j,d,maxD:THRESH});
+          }
+        }
+      }
+    }
+
+    function update(t){
+      particles.forEach(p=>{
+        // Rotate around globe Y axis
+        p.angle += p.speed;
+        p.x = p.cx + p.r * Math.sin(p.phi) * Math.cos(p.theta + p.angle);
+        p.y = p.cy + p.r * Math.sin(p.phi) * Math.sin(p.theta + p.angle) * 0.5;
+        p.depth = Math.cos(p.phi) * Math.cos(p.angle * 0.3);
+        p.size  = p.depth > 0 ? 1.5 + p.depth * 1.5 : 0.6;
+        p.alpha = p.depth > 0 ? 0.12 + p.depth * 0.5 : 0.03 + Math.abs(p.depth)*0.07;
+      });
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+
+      // Draw lines between close particles
+      edges.forEach(e=>{
+        const a=particles[e.i], b=particles[e.j];
+        const dx=a.x-b.x, dy=a.y-b.y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        const alpha=Math.min(a.alpha,b.alpha)*(1-d/e.maxD)*0.6;
+        if(alpha<0.01)return;
+        ctx.beginPath();
+        ctx.moveTo(a.x,a.y);
+        ctx.lineTo(b.x,b.y);
+        ctx.strokeStyle=`rgba(200,255,0,${alpha})`;
+        ctx.lineWidth=0.5;
+        ctx.stroke();
+      });
+
+      // Draw particles
+      particles.forEach(p=>{
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(0.4, p.size), 0, Math.PI*2);
+        ctx.fillStyle = p.color + p.alpha + ')';
+        ctx.fill();
+        // Glow on bright particles
+        if(p.depth > 0.4){
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI*2);
+          ctx.fillStyle = p.color + (p.alpha*0.2) + ')';
+          ctx.fill();
+        }
+      });
+
+      // Random edge rebuild every ~3s
+      if(Math.random() < 0.005) buildEdges();
+    }
+
+    let raf;
+    function loop(t){
+      update(t);
+      draw();
+      raf = requestAnimationFrame(loop);
+    }
+
+    // Pause when tab is hidden (performance)
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden){ cancelAnimationFrame(raf); }
+      else { raf = requestAnimationFrame(loop); }
+    });
+
+    resize();
+    initParticles();
+    buildEdges();
+    loop(0);
+    window.addEventListener('resize', ()=>{ resize(); initParticles(); buildEdges(); });
+  })();
+  </script>
 
   <!-- LED SEPARATOR -->
   <div class="led-strip"></div>
