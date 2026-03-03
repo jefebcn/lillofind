@@ -343,97 +343,119 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 .outline{color:transparent;-webkit-text-stroke:1.5px var(--k);}
 .outline-led{color:transparent;-webkit-text-stroke:1.5px var(--led);}
 
-/* ── RESPONSIVE UTILS ─────────────────────────── */
+/* ══ RESPONSIVE UTILS ══════════════════════════════════════ */
 @media(max-width:768px){
   .hide-mob{display:none !important;}
   .show-mob{display:block !important;}
   .full-mob{width:100% !important;}
   .grid-1-mob{grid-template-columns:1fr !important;}
-  .pad-mob{padding:20px 16px !important;}
+  .pad-mob{padding:22px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
 
-  /* MOBILE HERO ─ absolute layout, LED top 44%, content bottom 56% */
+  /* ══ MOBILE HERO — compact stacked layout, zero void ══ */
+  /* Remove fullscreen height — let content dictate size */
   #pg-hero-section{
-    display:block !important;
+    display:flex !important;
+    flex-direction:column !important;
     position:relative !important;
-    height:100svh !important;
-    min-height:100svh !important;
+    height:auto !important;
+    min-height:auto !important;
     overflow:hidden !important;
   }
+  /* LED block: fixed height, centered */
   #hero-wordmark-wrap{
-    position:absolute !important;
-    top:0 !important; left:0 !important;
-    right:0 !important; bottom:56% !important;
-    height:auto !important;
+    position:relative !important;
+    top:auto !important; left:auto !important;
+    right:auto !important; bottom:auto !important;
+    height:150px !important;
     display:flex !important;
     align-items:center !important;
     justify-content:center !important;
-    padding-top:12px !important;
+    flex-shrink:0 !important;
+    padding-top:16px !important;
   }
   #hero-wordmark-wrap > div{ transform:rotate(-3deg) !important; }
   #led-word{
-    font-size:clamp(48px,13vw,74px) !important;
-    letter-spacing:clamp(2px,1.5vw,8px) !important;
+    font-size:clamp(46px,13vw,72px) !important;
+    letter-spacing:clamp(2px,1.4vw,8px) !important;
   }
-  #hero-spacer,#hero-lines,#hero-glows{ display:none !important; }
+  /* Hide spacer, decorative lines, glows on mobile */
+  #hero-spacer,#hero-lines,#hero-glows,.mob-fade-in{ display:none !important; }
+  /* Content block: flows naturally below LED */
   #hero-content{
-    position:absolute !important;
-    top:44% !important; left:0 !important;
-    right:0 !important; bottom:0 !important;
-    display:flex !important;
-    flex-direction:column !important;
-    justify-content:flex-end !important;
+    position:relative !important;
+    top:auto !important; left:auto !important;
+    right:auto !important; bottom:auto !important;
+    display:block !important;
     z-index:5 !important;
-    padding:0 !important;
-    overflow:hidden !important;
+    flex-shrink:0 !important;
   }
-  .mob-fade-in{ display:none !important; }
   #hero-content-inner{
-    padding:14px 18px 0 !important;
+    padding:14px 18px 20px !important;
     background:#080808 !important;
   }
-  #hero-badge{ margin-bottom:10px !important; }
+  #hero-badge{
+    margin-bottom:10px !important;
+    padding:4px 10px !important;
+  }
   #hero-badge span:last-child{ font-size:8px !important; }
   #hero-h1{
-    font-size:clamp(46px,13.5vw,76px) !important;
+    font-size:clamp(44px,13vw,74px) !important;
     line-height:.88 !important;
     letter-spacing:0 !important;
+    margin-bottom:0 !important;
   }
-  #hero-divider{ margin:10px 0 !important; width:36px !important; }
-  #hero-tagline{ font-size:12px !important; margin-bottom:3px !important; }
+  #hero-divider{ margin:10px 0 !important; width:34px !important; }
+  #hero-tagline{ font-size:12px !important; margin-bottom:4px !important; }
   #hero-sub{
     font-size:9px !important;
     margin-bottom:14px !important;
     line-height:1.7 !important;
   }
   #hero-cta{
+    display:flex !important;
     flex-wrap:nowrap !important;
     gap:8px !important;
     padding-bottom:0 !important;
   }
   #hero-cta button{
     flex:1 !important;
-    padding:14px 10px !important;
+    padding:13px 8px !important;
     font-size:10px !important;
     min-width:0 !important;
     white-space:nowrap !important;
   }
+  /* Stats bar: compact, no horizontal scroll needed */
   #hero-stats{
     background:#080808 !important;
-    overflow-x:auto !important;
-    -webkit-overflow-scrolling:touch !important;
+    flex-shrink:0 !important;
   }
   #hero-stats > div{
-    padding:10px 12px !important;
-    min-width:68px !important;
+    padding:9px 10px !important;
+    min-width:60px !important;
   }
-  #hero-stats p.bb{ font-size:14px !important; margin-bottom:1px !important; }
+  #hero-stats p.bb{ font-size:13px !important; margin-bottom:1px !important; }
   #hero-stats p:last-child{ font-size:6px !important; }
+
+  /* ══ HOME SECTIONS — fix huge paddings ══ */
+  /* LFPoints promo section */
+  .lfpoints-promo-left{ padding:22px 16px !important; }
+  .lfpoints-promo-right{ padding:22px 16px !important; }
+
+  /* Latest drops section */
+  .latest-drops-section{ padding:24px 16px !important; }
+  .latest-drops-header{ margin-bottom:18px !important; }
+
+  /* Auth CTA */
+  .auth-cta-section{ padding:24px 16px !important; }
+
+  /* General section padding override */
+  section.home-section{ padding:22px 16px !important; }
 }
 
 @media(min-width:769px){
   .mob-only,.show-mob{ display:none !important; }
-  /* DESKTOP HERO ─ 2-column grid */
+  /* Desktop hero — 2-column grid */
   #pg-hero-section{
     display:grid !important;
     grid-template-columns:1fr 1fr !important;
@@ -469,12 +491,13 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   #hero-lines{ display:block !important; }
 }
 
-/* App: no tap highlight, prevent iOS zoom on inputs, smooth scroll */
+/* ══ APP BEHAVIORS ══════════════════════════════════════════ */
 *{ -webkit-tap-highlight-color:transparent; }
 input,textarea,select{ font-size:16px !important; }
 body{ -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
 button{ touch-action:manipulation; }
 img{ -webkit-user-drag:none; user-select:none; }
+
 </style>
 </head>
 <body>
@@ -625,7 +648,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-home" class="pg on">
 
   <!-- HERO — Mobile-first: globe fills top, content anchored to bottom -->
-  <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#080808;border-bottom:3px solid var(--k);">
+  <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#080808;">
 
     <!-- Globe removed — LED wordmark takes over -->
 
@@ -702,7 +725,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div id="hero-spacer" style="flex:1;min-height:45vh;"></div>
 
     <!-- Content — always below globe, no overlap -->
-    <div id="hero-content" style="position:relative;z-index:5;">
+    <div id="hero-content" style="position:relative;z-index:5;"><div class="show-mob" style="height:1px;background:linear-gradient(90deg,transparent,rgba(200,255,0,.4),transparent);margin:0 18px;"></div>
       <div class="mob-fade-in" style="height:80px;background:linear-gradient(0deg,#080808,transparent);margin-top:-80px;pointer-events:none;"></div>
       <div style="background:#080808;padding:20px 24px 0;" id="hero-content-inner">
         <div id="hero-badge" style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:18px;background:rgba(200,255,0,.05);">
@@ -752,7 +775,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   <!-- LFPOINTS PROMO + LIVE DISPLAY -->
   <section style="display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--k);" class="grid-1-mob">
-    <div style="padding:48px 36px;border-right:1px solid var(--k);" class="pad-mob">
+    <div style="padding:48px 36px;border-right:1px solid var(--k);" class="pad-mob lfpoints-promo-left">
       <div class="led-badge" style="margin-bottom:16px;">⬡ Programma Fedeltà</div>
       <h2 class="bb" style="font-size:clamp(44px,5vw,68px);line-height:.93;margin-bottom:18px;">LFPoints.<br/>Ogni Drop<br/>Ti Premia.</h2>
       <p style="font-size:11px;line-height:1.9;color:var(--mid);max-width:300px;margin-bottom:24px;">
@@ -760,20 +783,20 @@ img{ -webkit-user-drag:none; user-select:none; }
       </p>
       <button class="btn-led" onclick="showPg('lfpoints')">Scopri i Premi →</button>
     </div>
-    <div style="background:var(--k);color:var(--w);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;" class="pad-mob">
-      <p class="slbl" style="color:#333;margin-bottom:12px;">Il Tuo Saldo</p>
+    <div style="background:var(--k);color:var(--w);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;" class="pad-mob lfpoints-promo-right">
+      <p class="slbl" style="color:rgba(255,255,255,.5);margin-bottom:12px;">Il Tuo Saldo</p>
       <div>
         <div class="bb outline-led" id="home-pts" style="font-size:clamp(72px,11vw,148px);line-height:.9;">000</div>
-        <p style="font-size:9px;letter-spacing:3px;color:#333;margin-top:10px;text-transform:uppercase;">LFPOINTS</p>
+        <p style="font-size:9px;letter-spacing:3px;color:rgba(255,255,255,.45);margin-top:10px;text-transform:uppercase;">LFPOINTS</p>
       </div>
       <div style="border-top:1px solid #1e1e1e;padding-top:20px;display:flex;gap:32px;flex-wrap:wrap;">
         <div>
           <p class="bb" id="home-tier" style="font-size:22px;color:var(--led);">—</p>
-          <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;">Livello</p>
+          <p style="font-size:9px;color:rgba(255,255,255,.45);letter-spacing:2px;text-transform:uppercase;">Livello</p>
         </div>
         <div>
           <p class="bb" id="home-spent" style="font-size:22px;">€0</p>
-          <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;">Speso</p>
+          <p style="font-size:9px;color:rgba(255,255,255,.45);letter-spacing:2px;text-transform:uppercase;">Speso</p>
         </div>
       </div>
     </div>
@@ -783,12 +806,12 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div class="led-strip"></div>
 
   <!-- AUTH CTA (per guest) -->
-  <section id="home-auth-cta" style="background:var(--k);color:var(--w);padding:48px 36px;border-bottom:2px solid var(--k);display:none;" class="pad-mob">
+  <section id="home-auth-cta" style="background:var(--k);color:var(--w);padding:48px 36px;border-bottom:2px solid var(--k);display:none;" class="pad-mob auth-cta-section">
     <div style="max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;">
       <div>
-        <p class="slbl" style="color:#333;margin-bottom:8px;">Sei nuovo qui?</p>
+        <p class="slbl" style="color:rgba(255,255,255,.5);margin-bottom:8px;">Sei nuovo qui?</p>
         <h2 class="bb" style="font-size:clamp(32px,4vw,52px);margin-bottom:8px;">Registrati. È Gratis.</h2>
-        <p style="font-size:11px;color:#555;letter-spacing:1px;">Guadagna LFPOINTS al primo acquisto.</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.6);letter-spacing:1px;">Guadagna LFPOINTS al primo acquisto.</p>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
         <button onclick="showPg('auth');switchTab('reg')" class="btn-led">Crea Account</button>
@@ -798,8 +821,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   </section>
 
   <!-- LATEST DROPS -->
-  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
+  <section style="padding:48px 24px;border-bottom:2px solid var(--k);" class="latest-drops-section">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;" class="latest-drops-header">
       <h2 class="bb" style="font-size:clamp(32px,5vw,56px);">Latest Drop</h2>
       <button class="btn-g" style="padding:8px 16px;font-size:10px;" onclick="showPg('shop')">View All →</button>
     </div>
@@ -1030,7 +1053,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   <!-- Hero -->
   <section style="background:var(--k);color:var(--w);padding:60px 24px;border-bottom:2px solid var(--k);">
     <div class="led-strip-sm" style="margin-bottom:32px;"></div>
-    <p class="slbl" style="color:#333;margin-bottom:12px;">Programma Fedeltà Esclusivo</p>
+    <p class="slbl" style="margin-bottom:12px;">Programma Fedeltà Esclusivo</p>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;max-width:1100px;">
       <h1 class="bb" style="font-size:clamp(64px,11vw,150px);line-height:.88;color:var(--led);">LFPOINTS</h1>
       <p style="font-size:11px;color:#555;line-height:1.9;max-width:340px;">
