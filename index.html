@@ -580,184 +580,263 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     </div>
   </section>
 
-  <!-- Real 3D Globe on Canvas -->
+  <!-- High-Fidelity 3D Globe -->
+  <script>
+<!-- High-Fidelity 3D Rotating Globe -->
   <script>
   (function(){
     const canvas = document.getElementById('hero-canvas');
     if(!canvas) return;
     const ctx = canvas.getContext('2d');
-    let W, H, rot = 0;
+    let W, H, rotY = 0, raf;
 
-    // Simplified continent outlines as [lon, lat] arrays (degrees)
-    // Projected onto sphere surface
-    const CONTINENTS = [
-      // Europe + partial Africa
-      [[10,55],[5,46],[-5,36],[0,30],[10,26],[20,22],[30,20],[40,12],[45,10],[42,12],[38,14],[30,18],[25,22],[20,26],[15,30],[10,38],[8,44],[5,46],[10,55]],
-      // Africa
-      [[-5,36],[0,30],[10,26],[20,22],[30,18],[40,12],[45,10],[50,8],[55,-2],[55,-10],[50,-20],[45,-28],[35,-35],[25,-35],[18,-30],[15,-20],[12,-10],[8,0],[4,6],[-5,10],[-15,12],[-16,20],[-15,28],[-10,34],[-5,36]],
-      // North America
-      [[-70,70],[-80,62],[-85,58],[-90,50],[-95,48],[-100,45],[-110,38],[-120,32],[-115,25],[-110,22],[-100,20],[-90,18],[-85,20],[-80,25],[-75,28],[-70,32],[-65,42],[-65,50],[-60,58],[-65,64],[-70,70]],
-      // South America
-      [[-80,8],[-78,2],[-75,-5],[-72,-15],[-70,-25],[-68,-35],[-65,-45],[-60,-52],[-55,-55],[-50,-55],[-45,-50],[-40,-40],[-38,-28],[-38,-18],[-40,-10],[-42,-5],[-44,0],[-50,4],[-60,6],[-68,8],[-72,10],[-76,8],[-80,8]],
-      // Asia
-      [[40,12],[45,10],[55,20],[60,22],[65,25],[70,28],[75,32],[80,36],[85,42],[90,48],[95,52],[100,58],[110,62],[120,68],[130,72],[140,70],[150,62],[155,58],[150,48],[145,40],[140,38],[135,32],[130,28],[125,22],[120,18],[115,10],[105,12],[100,14],[95,12],[90,8],[85,10],[80,8],[75,10],[70,12],[65,14],[60,18],[55,20],[50,14],[45,10],[40,12]],
-      // Australia
-      [[115,-22],[120,-18],[130,-12],[135,-12],[140,-16],[145,-18],[148,-22],[150,-28],[148,-35],[145,-38],[140,-38],[135,-35],[130,-32],[125,-28],[120,-28],[115,-26],[115,-22]],
+    // ── CONTINENT POLYGONS ─────────────────────────────────────────────────────
+    // Carefully corrected lon/lat [degrees] for accurate orthographic projection
+    // Each sub-array is a closed polygon ring
+    const POLYS = [
+      // NORTH AMERICA — main body
+      [[-168,72],[-155,72],[-130,68],[-118,60],[-96,68],[-82,62],[-70,58],
+       [-64,46],[-68,43],[-72,40],[-76,36],[-80,25],[-88,16],[-84,10],
+       [-78,8],[-76,4],[-78,10],[-84,16],[-90,20],[-98,22],[-104,20],
+       [-110,24],[-116,30],[-122,36],[-126,42],[-128,50],[-134,56],
+       [-140,58],[-152,58],[-158,58],[-162,62],[-168,66],[-168,72]],
+      // CENTRAL AMERICA / CARIBBEAN rough
+      [[-88,16],[-82,10],[-78,8],[-76,8],[-78,10],[-84,16],[-88,16]],
+      // GREENLAND
+      [[-65,82],[-35,82],[-18,76],[-20,70],[-28,64],[-42,64],[-54,68],[-60,76],[-65,82]],
+      // SOUTH AMERICA
+      [[-80,10],[-76,2],[-72,-4],[-70,-16],[-66,-28],[-68,-38],[-65,-46],
+       [-62,-52],[-56,-54],[-50,-54],[-44,-46],[-38,-34],[-35,-24],
+       [-35,-12],[-38,-6],[-44,0],[-50,4],[-58,8],[-64,10],[-68,12],
+       [-72,10],[-76,8],[-80,10]],
+      // EUROPE — Iberian + France + core
+      [[-9,36],[-9,44],[-4,44],[-2,44],[0,44],[3,44],[4,48],[8,48],
+       [14,52],[18,56],[20,60],[24,62],[28,60],[30,58],[26,56],[22,56],
+       [20,54],[18,54],[14,56],[10,58],[6,58],[2,52],[0,50],[-4,48],
+       [-8,44],[-10,40],[-8,36],[-9,36]],
+      // SCANDINAVIA + FINLAND
+      [[6,58],[10,58],[14,56],[18,54],[20,56],[22,58],[24,62],[28,64],
+       [30,70],[24,72],[18,70],[14,68],[10,62],[6,58]],
+      // UK
+      [[-5,50],[-2,50],[2,52],[0,54],[-4,56],[-6,56],[-5,54],[-4,52],[-5,50]],
+      // IRELAND
+      [[-10,52],[-6,52],[-6,54],[-10,54],[-10,52]],
+      // AFRICA
+      [[-6,36],[2,37],[10,38],[14,34],[12,28],[16,22],[20,16],[24,12],
+       [28,8],[34,4],[40,0],[42,-10],[38,-18],[36,-24],[30,-30],[26,-34],
+       [20,-34],[14,-30],[10,-24],[6,-16],[4,-6],[2,0],[0,4],[-2,8],
+       [-6,14],[-10,20],[-10,28],[-8,34],[-6,36]],
+      // MADAGASCAR
+      [[44,-12],[50,-16],[50,-24],[44,-26],[42,-20],[44,-12]],
+      // EUROPE EAST / ITALY rough
+      [[8,44],[14,44],[16,42],[16,38],[16,36],[14,38],[12,40],[10,44],[8,44]],
+      // TURKEY / ANATOLIA
+      [[26,42],[36,42],[42,38],[44,36],[40,36],[36,36],[32,36],[28,38],[26,42]],
+      // ARABIAN PENINSULA
+      [[36,30],[38,22],[40,18],[42,14],[46,8],[50,12],[56,22],[58,24],
+       [56,26],[52,28],[48,30],[44,28],[40,26],[36,30]],
+      // IRAN / MESOPOTAMIA
+      [[44,38],[48,38],[52,38],[56,36],[58,28],[54,24],[50,26],[46,30],
+       [44,34],[44,38]],
+      // INDIA subcontinent
+      [[68,22],[72,22],[76,20],[80,14],[82,10],[80,8],[76,6],[70,8],
+       [66,22],[68,22]],
+      // SRI LANKA
+      [[80,8],[82,8],[82,6],[80,6],[80,8]],
+      // SE ASIA MAINLAND
+      [[98,24],[102,22],[104,18],[100,14],[100,6],[104,2],[106,2],
+       [108,14],[104,18],[102,22],[98,24]],
+      // MALAY PENINSULA
+      [[100,6],[104,2],[106,2],[104,4],[102,6],[100,6]],
+      // CHINA / EAST ASIA CORE
+      [[80,52],[86,50],[92,52],[98,52],[102,22],[100,14],[108,14],
+       [116,22],[120,30],[122,32],[126,38],[128,42],[130,46],[136,52],
+       [138,48],[134,44],[130,40],[128,36],[122,28],[120,24],[116,20],
+       [110,20],[106,20],[104,20],[100,22],[96,24],[92,26],[88,28],
+       [84,28],[80,30],[76,32],[74,36],[76,38],[78,38],[80,40],
+       [82,44],[80,48],[80,52]],
+      // JAPAN — Honshu
+      [[130,32],[132,34],[136,34],[138,36],[140,38],[140,42],[142,44],
+       [140,42],[138,38],[134,34],[130,34],[130,32]],
+      // JAPAN — Hokkaido
+      [[140,42],[142,44],[146,44],[146,42],[142,42],[140,42]],
+      // SIBERIA / RUSSIA NORTH
+      [[60,56],[68,58],[76,62],[80,66],[90,70],[100,72],[110,72],
+       [120,70],[130,68],[140,66],[150,62],[158,58],[162,60],[160,54],
+       [152,54],[144,54],[136,54],[128,54],[120,56],[112,54],[106,54],
+       [98,54],[90,56],[82,56],[76,60],[68,60],[60,56]],
+      // RUSSIA FAR EAST / KAMCHATKA
+      [[158,56],[162,60],[166,64],[168,62],[164,56],[158,52],[158,56]],
+      // AUSTRALIA
+      [[114,-22],[116,-16],[120,-14],[128,-12],[130,-12],[136,-12],
+       [140,-18],[144,-18],[148,-22],[152,-26],[152,-32],[148,-38],
+       [144,-38],[140,-36],[136,-36],[128,-34],[122,-34],[116,-30],
+       [114,-26],[114,-22]],
+      // TASMANIA
+      [[144,-40],[148,-40],[148,-44],[144,-44],[144,-40]],
+      // NEW ZEALAND NORTH ISLAND
+      [[172,-36],[176,-36],[178,-38],[176,-42],[172,-40],[172,-36]],
+      // NEW ZEALAND SOUTH ISLAND
+      [[168,-44],[172,-44],[174,-46],[172,-48],[168,-46],[168,-44]],
+      // BORNEO
+      [[108,2],[116,6],[118,2],[116,-2],[112,-2],[108,2]],
+      // SUMATRA
+      [[96,4],[104,2],[106,-4],[104,-6],[100,-2],[96,4]],
+      // JAVA
+      [[106,-6],[112,-6],[114,-8],[110,-8],[106,-6]],
+      // NEW GUINEA
+      [[132,-2],[140,-4],[148,-6],[148,-8],[140,-6],[132,-4],[132,-2]],
+      // PHILIPPINES LUZON
+      [[120,16],[122,16],[124,14],[122,12],[120,14],[120,16]],
     ];
 
     function resize(){
-      W = canvas.width = canvas.offsetWidth;
+      W = canvas.width  = canvas.offsetWidth;
       H = canvas.height = canvas.offsetHeight;
     }
 
-    // Project lon/lat to screen coords given current rotation
-    function project(lon, lat, cx, cy, R, rotY){
-      const lonR = (lon * Math.PI/180) + rotY;
-      const latR = lat * Math.PI/180;
-      const x3 = R * Math.cos(latR) * Math.sin(lonR);
-      const y3 = R * Math.sin(latR);
-      const z3 = R * Math.cos(latR) * Math.cos(lonR);
-      return { sx: cx + x3, sy: cy - y3, z: z3, visible: z3 > 0 };
+    // Orthographic projection — returns screen XY and depth z
+    function proj(lon, lat, cx, cy, R){
+      const lo = lon * Math.PI/180 + rotY;
+      const la = lat * Math.PI/180;
+      const cosLa = Math.cos(la);
+      return {
+        x: cx + R * cosLa * Math.sin(lo),
+        y: cy - R * Math.sin(la),
+        z: cosLa * Math.cos(lo)   // >0 = front hemisphere
+      };
+    }
+
+    // Stroke a polygon, lifting pen when crossing to back-hemisphere
+    function strokePoly(poly, cx, cy, R, style, lw){
+      ctx.beginPath();
+      let pen = false;
+      for(const [lon,lat] of poly){
+        const p = proj(lon, lat, cx, cy, R);
+        if(p.z > -0.04){
+          pen ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+          pen = true;
+        } else { pen = false; }
+      }
+      ctx.strokeStyle = style;
+      ctx.lineWidth   = lw;
+      ctx.stroke();
+    }
+
+    // Fill a polygon (only when fully on front hemisphere or mostly so)
+    function fillPoly(poly, cx, cy, R, style){
+      ctx.beginPath();
+      let pen = false;
+      for(const [lon,lat] of poly){
+        const p = proj(lon, lat, cx, cy, R);
+        if(p.z > -0.04){
+          pen ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+          pen = true;
+        } else { pen = false; }
+      }
+      ctx.closePath();
+      ctx.fillStyle = style;
+      ctx.fill();
     }
 
     function draw(){
-      ctx.clearRect(0,0,W,H);
+      ctx.clearRect(0, 0, W, H);
 
-      const cx = W * 0.68, cy = H * 0.44;
-      const R = Math.min(W, H) * (W < 500 ? 0.38 : 0.28);
+      const mob = W < 600;
+      const cx  = mob ? W * 0.50 : W * 0.68;
+      const cy  = mob ? H * 0.40 : H * 0.44;
+      const R   = Math.min(W, H) * (mob ? 0.40 : 0.32);
 
-      // Globe base (ocean)
-      const grad = ctx.createRadialGradient(cx - R*0.3, cy - R*0.25, R*0.1, cx, cy, R);
-      grad.addColorStop(0, 'rgba(0,80,160,0.18)');
-      grad.addColorStop(0.6, 'rgba(0,40,100,0.12)');
-      grad.addColorStop(1, 'rgba(0,10,40,0.22)');
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, 0, Math.PI*2);
-      ctx.fillStyle = grad;
-      ctx.fill();
+      // ── Ocean fill ──────────────────────────────────────
+      const oGrad = ctx.createRadialGradient(cx-R*.28, cy-R*.22, 0, cx, cy, R);
+      oGrad.addColorStop(0,   'rgba(0,60,140,0.30)');
+      oGrad.addColorStop(0.6, 'rgba(0,30,90,0.25)');
+      oGrad.addColorStop(1,   'rgba(0,10,40,0.35)');
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+      ctx.fillStyle = oGrad; ctx.fill();
 
-      // Globe border glow
-      const borderGrad = ctx.createRadialGradient(cx, cy, R*0.85, cx, cy, R);
-      borderGrad.addColorStop(0, 'rgba(200,255,0,0)');
-      borderGrad.addColorStop(1, 'rgba(200,255,0,0.15)');
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, 0, Math.PI*2);
-      ctx.strokeStyle = 'rgba(200,255,0,0.25)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = borderGrad;
-      ctx.fill();
-
-      // Clip to globe
+      // ── Clip to sphere ───────────────────────────────────
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, R - 0.5, 0, Math.PI*2);
-      ctx.clip();
+      ctx.beginPath(); ctx.arc(cx, cy, R-0.5, 0, Math.PI*2); ctx.clip();
 
-      // Latitude lines
-      for(let lat = -75; lat <= 75; lat += 15){
-        ctx.beginPath();
-        let first = true;
-        for(let lon = -180; lon <= 180; lon += 3){
-          const p = project(lon, lat, cx, cy, R, rot);
-          if(p.visible){
-            if(first){ ctx.moveTo(p.sx, p.sy); first = false; }
-            else ctx.lineTo(p.sx, p.sy);
-          } else first = true;
+      // Grid — latitude
+      for(let la=-75; la<=75; la+=15){
+        ctx.beginPath(); let fp=true;
+        for(let lo=-180; lo<=180; lo+=3){
+          const p=proj(lo,la,cx,cy,R);
+          if(p.z>0){ fp?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); fp=false; } else fp=true;
         }
-        ctx.strokeStyle = 'rgba(200,255,0,0.06)';
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
+        ctx.strokeStyle = la===0?'rgba(200,255,0,0.22)':'rgba(200,255,0,0.07)';
+        ctx.lineWidth   = la===0?0.9:0.4; ctx.stroke();
+      }
+      // Grid — longitude
+      for(let lo=-180; lo<180; lo+=20){
+        ctx.beginPath(); let fp=true;
+        for(let la=-90; la<=90; la+=3){
+          const p=proj(lo,la,cx,cy,R);
+          if(p.z>0){ fp?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); fp=false; } else fp=true;
+        }
+        ctx.strokeStyle='rgba(200,255,0,0.07)'; ctx.lineWidth=0.4; ctx.stroke();
       }
 
-      // Longitude lines
-      for(let lon = -180; lon < 180; lon += 20){
-        ctx.beginPath();
-        let first = true;
-        for(let lat = -90; lat <= 90; lat += 3){
-          const p = project(lon, lat, cx, cy, R, rot);
-          if(p.visible){
-            if(first){ ctx.moveTo(p.sx, p.sy); first = false; }
-            else ctx.lineTo(p.sx, p.sy);
-          } else first = true;
-        }
-        ctx.strokeStyle = 'rgba(200,255,0,0.06)';
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
+      // Continent fills (semi-transparent)
+      POLYS.forEach(p => fillPoly(p, cx, cy, R, 'rgba(200,255,0,0.12)'));
+      // Continent outlines
+      POLYS.forEach(p => strokePoly(p, cx, cy, R, 'rgba(200,255,0,0.60)', 0.85));
 
-      // Equator highlight
-      ctx.beginPath();
-      let feq = true;
-      for(let lon = -180; lon <= 180; lon += 2){
-        const p = project(lon, 0, cx, cy, R, rot);
-        if(p.visible){
-          if(feq){ ctx.moveTo(p.sx, p.sy); feq = false; }
-          else ctx.lineTo(p.sx, p.sy);
-        } else feq = true;
-      }
-      ctx.strokeStyle = 'rgba(200,255,0,0.18)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Continents
-      CONTINENTS.forEach(poly => {
-        ctx.beginPath();
-        let started = false;
-        for(let i = 0; i < poly.length; i++){
-          const [lon, lat] = poly[i];
-          const p = project(lon, lat, cx, cy, R, rot);
-          if(!started){ ctx.moveTo(p.sx, p.sy); started = true; }
-          else ctx.lineTo(p.sx, p.sy);
-        }
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(200,255,0,0.10)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(200,255,0,0.30)';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-      });
-
-      // Glowing cities/dots
-      const cities = [
-        [12.5, 41.9], [2.3, 48.9], [-0.1, 51.5], [-73.9, 40.7],
-        [139.7, 35.7], [116.4, 39.9], [77.2, 28.6], [151.2, -33.9],
-        [-43.2, -22.9], [18.4, -33.9], [55.3, 25.2], [28.9, 41.0],
+      // City dots
+      const CITIES=[
+        [12.5,41.9],[2.3,48.9],[-0.1,51.5],[-73.9,40.7],[-87.6,41.8],
+        [-43.2,-22.9],[139.7,35.7],[116.4,39.9],[77.2,28.6],[151.2,-33.9],
+        [28.9,41.0],[18.4,-33.9],[55.3,25.2],[103.8,1.3],[-58.4,-34.6],
+        [37.6,55.8],[-99.1,19.4],[31.2,30.1],[106.8,10.8],[144.9,-37.8],
       ];
-      cities.forEach(([lon, lat]) => {
-        const p = project(lon, lat, cx, cy, R, rot);
-        if(p.visible){
-          const pulse = 0.5 + 0.5 * Math.sin(Date.now()*0.002 + lon);
-          ctx.beginPath();
-          ctx.arc(p.sx, p.sy, 2 + pulse, 0, Math.PI*2);
-          ctx.fillStyle = `rgba(200,255,0,${0.5 + pulse*0.5})`;
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(p.sx, p.sy, 5 + pulse*2, 0, Math.PI*2);
-          ctx.fillStyle = `rgba(200,255,0,${0.05 + pulse*0.08})`;
-          ctx.fill();
+      const t=Date.now()*0.0018;
+      CITIES.forEach(([lo,la],i)=>{
+        const p=proj(lo,la,cx,cy,R);
+        if(p.z>0.08){
+          const pulse=0.5+0.5*Math.sin(t+i*1.4);
+          const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,7+pulse*4);
+          g.addColorStop(0,`rgba(200,255,0,${0.7*p.z})`);
+          g.addColorStop(1,'rgba(200,255,0,0)');
+          ctx.beginPath(); ctx.arc(p.x,p.y,7+pulse*4,0,Math.PI*2);
+          ctx.fillStyle=g; ctx.fill();
+          ctx.beginPath(); ctx.arc(p.x,p.y,1.8+pulse*0.5,0,Math.PI*2);
+          ctx.fillStyle=`rgba(200,255,0,${0.9*p.z+0.1})`; ctx.fill();
         }
       });
 
       ctx.restore();
 
-      // Atmosphere glow (outside globe)
-      const atmoGrad = ctx.createRadialGradient(cx, cy, R, cx, cy, R*1.15);
-      atmoGrad.addColorStop(0, 'rgba(200,255,0,0.06)');
-      atmoGrad.addColorStop(1, 'rgba(200,255,0,0)');
-      ctx.beginPath();
-      ctx.arc(cx, cy, R*1.15, 0, Math.PI*2);
-      ctx.fillStyle = atmoGrad;
-      ctx.fill();
+      // Globe border
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+      ctx.strokeStyle='rgba(200,255,0,0.40)'; ctx.lineWidth=1.5; ctx.stroke();
 
-      rot += 0.0015;
-      requestAnimationFrame(draw);
+      // Atmosphere halo
+      const aGrad=ctx.createRadialGradient(cx,cy,R*.88,cx,cy,R*1.14);
+      aGrad.addColorStop(0,'rgba(200,255,0,0.10)');
+      aGrad.addColorStop(0.5,'rgba(0,200,100,0.04)');
+      aGrad.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.arc(cx,cy,R*1.14,0,Math.PI*2);
+      ctx.fillStyle=aGrad; ctx.fill();
+
+      // Specular
+      const sGrad=ctx.createRadialGradient(cx-R*.32,cy-R*.28,0,cx-R*.32,cy-R*.28,R*.6);
+      sGrad.addColorStop(0,'rgba(255,255,255,0.07)');
+      sGrad.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+      ctx.fillStyle=sGrad; ctx.fill();
+
+      rotY += 0.0018;
+      raf = requestAnimationFrame(draw);
     }
 
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) requestAnimationFrame(draw); });
-    resize();
-    draw();
-    window.addEventListener('resize', ()=>{ resize(); });
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden) cancelAnimationFrame(raf);
+      else raf = requestAnimationFrame(draw);
+    });
+    resize(); draw();
+    window.addEventListener('resize', resize);
   })();
   </script>
 

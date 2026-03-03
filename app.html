@@ -181,240 +181,6 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <button class="abn-btn" id="abn-live" onclick="showPg('live')"><span class="abn-icon live-dot" style="width:14px;height:14px;border-radius:50%;margin-bottom:2px;"></span>Live</button>
 </nav>
 
-<!-- ═══════════════════════════════════════
-     HOME PAGE
-═══════════════════════════════════════ -->
-<div id="pg-home" class="pg on">
-  <!-- Hero -->
-  <section id="app-hero" style="min-height:70vh;display:flex;flex-direction:column;justify-content:flex-end;padding:52px 32px 40px;position:relative;overflow:hidden;border-bottom:3px solid #1a0a00;" class="pad-mob">
-    <!-- Sunset sky gradient background -->
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1628 0%,#1a2850 15%,#2d1b4e 30%,#8b2252 50%,#d4522a 68%,#f4882a 80%,#ffc347 90%,#ffe08a 100%);z-index:0;"></div>
-    <!-- Sun -->
-    <div style="position:absolute;left:50%;bottom:38%;transform:translateX(-50%);width:clamp(80px,14vw,160px);height:clamp(80px,14vw,160px);border-radius:50%;background:radial-gradient(circle,#fff9e0 0%,#ffe066 30%,#ffb020 60%,rgba(255,120,0,0) 100%);box-shadow:0 0 60px 20px rgba(255,200,60,.5),0 0 120px 40px rgba(255,120,0,.3);z-index:1;animation:sunPulse 4s ease-in-out infinite;"></div>
-    <!-- Horizon glow -->
-    <div style="position:absolute;left:0;right:0;bottom:28%;height:60px;background:linear-gradient(180deg,transparent,rgba(255,160,40,.25),transparent);z-index:1;filter:blur(12px);"></div>
-    <!-- Sea waves -->
-    <div style="position:absolute;left:0;right:0;bottom:0;height:36%;z-index:2;overflow:hidden;">
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,60,120,.55) 0%,rgba(0,40,90,.9) 60%,rgba(0,20,60,1) 100%);"></div>
-      <canvas id="waves-canvas" style="position:absolute;bottom:0;left:0;width:100%;height:100%;opacity:.6;"></canvas>
-      <!-- Sea shimmer reflections -->
-      <div style="position:absolute;top:10%;left:40%;width:20%;height:3px;background:linear-gradient(90deg,transparent,rgba(255,220,80,.6),transparent);border-radius:50%;filter:blur(2px);animation:shimmer 3s ease-in-out infinite;"></div>
-      <div style="position:absolute;top:25%;left:30%;width:30%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,200,60,.4),transparent);border-radius:50%;filter:blur(3px);animation:shimmer 4s ease-in-out infinite 1s;"></div>
-      <div style="position:absolute;top:40%;left:45%;width:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,220,100,.5),transparent);border-radius:50%;filter:blur(2px);animation:shimmer 2.5s ease-in-out infinite .5s;"></div>
-    </div>
-    <!-- Beach elements: sand strip -->
-    <div style="position:absolute;bottom:0;left:0;right:0;height:12%;background:linear-gradient(180deg,transparent,rgba(210,170,80,.3));z-index:3;"></div>
-    <!-- Palm silhouette left -->
-    <svg style="position:absolute;bottom:8%;left:2%;width:clamp(60px,8vw,120px);z-index:3;opacity:.7;" viewBox="0 0 100 200" fill="none">
-      <line x1="50" y1="200" x2="50" y2="60" stroke="#1a0800" stroke-width="5"/>
-      <path d="M50 60 Q20 30 0 10 Q25 35 50 60" fill="#1a2000" opacity=".9"/>
-      <path d="M50 60 Q80 25 100 5 Q75 30 50 60" fill="#1a2000" opacity=".9"/>
-      <path d="M50 60 Q15 60 0 50 Q22 58 50 60" fill="#1a2000" opacity=".8"/>
-      <path d="M50 60 Q85 55 100 45 Q78 53 50 60" fill="#1a2000" opacity=".8"/>
-    </svg>
-    <!-- Beer bottle silhouette right -->
-    <div style="position:absolute;bottom:10%;right:5%;width:clamp(18px,2.5vw,30px);height:clamp(50px,7vw,80px);z-index:4;opacity:.5;">
-      <div style="width:40%;height:15%;background:#2a1a00;margin:0 auto;border-radius:2px 2px 0 0;"></div>
-      <div style="width:100%;height:85%;background:linear-gradient(180deg,#4a6a20,#3a5018);border-radius:3px 3px 4px 4px;"></div>
-    </div>
-    <!-- Stars (top portion) -->
-    <div style="position:absolute;top:0;left:0;right:0;height:40%;z-index:1;overflow:hidden;" id="stars-div"></div>
-
-    <style>
-    @keyframes sunPulse{0%,100%{box-shadow:0 0 60px 20px rgba(255,200,60,.5),0 0 120px 40px rgba(255,120,0,.3);}50%{box-shadow:0 0 80px 30px rgba(255,210,70,.65),0 0 160px 60px rgba(255,140,0,.4);}}
-    @keyframes shimmer{0%,100%{opacity:.3;transform:scaleX(1);}50%{opacity:1;transform:scaleX(1.3);}}
-    @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
-    </style>
-
-    <!-- Content -->
-    <div style="position:relative;z-index:5;">
-      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,200,60,.4);padding:5px 14px;margin-bottom:20px;background:rgba(255,180,0,.08);backdrop-filter:blur(4px);">
-        <span style="width:6px;height:6px;border-radius:50%;background:#ffc347;box-shadow:0 0 8px #ffc347;display:inline-block;animation:sunPulse 2s ease-in-out infinite;"></span>
-        <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#ffc347;">Stagione 2025 — Beach Mode 🏖️</span>
-      </div>
-      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,10vw,120px);line-height:.88;color:#fff;margin-bottom:16px;text-shadow:0 2px 20px rgba(0,0,0,.4);">LILLOFIND<br/>BEACH<br/><span style="color:#ffc347;text-shadow:0 0 30px rgba(255,195,71,.6);">VOLLEY.</span></h1>
-      <p style="font-size:12px;color:rgba(255,240,200,.7);line-height:1.8;max-width:440px;margin-bottom:28px;font-family:'IBM Plex Mono',monospace;">Sole, sabbia, birra fresca e pallavolo 🍺 — La piattaforma ufficiale per tornei, classifiche e premi esclusivi LilloFind.</p>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <button onclick="openModal('iscriviti-modal')" style="display:inline-flex;align-items:center;gap:8px;background:#ffc347;color:#1a0a00;border:none;padding:14px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:0;box-shadow:0 0 20px rgba(255,195,71,.4);transition:all .2s;">🏐 Iscriviti ora</button>
-        <button onclick="showPg('live')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;padding:14px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:0;backdrop-filter:blur(4px);" onmouseover="this.style.borderColor='#ffc347'" onmouseout="this.style.borderColor='rgba(255,255,255,.3)'"><span style="width:7px;height:7px;border-radius:50%;background:var(--led);box-shadow:0 0 8px var(--led);"></span>Guarda Live</button>
-      </div>
-    </div>
-  </section>
-
-  <script>
-  // Stars
-  (function(){
-    const div=document.getElementById('stars-div');
-    if(!div)return;
-    let html='';
-    for(let i=0;i<60;i++){
-      const x=Math.random()*100,y=Math.random()*100,s=Math.random()*1.5+0.5,o=Math.random()*0.7+0.3;
-      html+=`<div style="position:absolute;left:${x}%;top:${y}%;width:${s}px;height:${s}px;border-radius:50%;background:#fff;opacity:${o};animation:sunPulse ${2+Math.random()*3}s ease-in-out infinite ${Math.random()*3}s;"></div>`;
-    }
-    div.innerHTML=html;
-  })();
-  // Wave canvas
-  (function(){
-    const canvas=document.getElementById('waves-canvas');
-    if(!canvas)return;
-    const ctx=canvas.getContext('2d');
-    let W,H,t=0;
-    function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight;}
-    function draw(){
-      ctx.clearRect(0,0,W,H);
-      for(let w=0;w<3;w++){
-        ctx.beginPath();
-        const amp=6+w*3,speed=0.03-w*0.008,offset=w*0.8;
-        for(let x=0;x<=W;x+=4){
-          const y=H*(0.2+w*0.25)+amp*Math.sin(x*0.02+t*speed+offset)+amp*0.5*Math.sin(x*0.035+t*speed*1.3+offset);
-          x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-        }
-        ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
-        ctx.fillStyle=`rgba(0,${60+w*20},${120+w*30},${0.15-w*0.04})`;
-        ctx.fill();
-        ctx.strokeStyle=`rgba(100,180,255,${0.2-w*0.06})`;
-        ctx.lineWidth=1.5;ctx.stroke();
-      }
-      t+=1;requestAnimationFrame(draw);
-    }
-    resize();draw();window.addEventListener('resize',resize);
-  })();
-  </script><html lang="it">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#0a0a0a"/>
-<title>LilloFind — Tornei Beach Volley</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-
-<style>
-:root{
-  --k:#0a0a0a;
-  --w:#f5f5f5;
-  --led:#C8FF00;
-  --led2:#00FFB2;
-  --sand:#f0e6c8;
-  --sand2:#e8d5a0;
-  --ocean:#0077b6;
-  --ocean2:#00b4d8;
-  --mid:#555;
-  --dim:#999;
-  --border:#222;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
-body{font-family:'IBM Plex Mono',monospace;background:var(--w);color:var(--k);overflow-x:hidden;}
-.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
-
-/* LED */
-.led-strip{height:3px;width:100%;background:linear-gradient(90deg,transparent 0%,var(--led) 20%,var(--led2) 50%,var(--led) 80%,transparent 100%);box-shadow:0 0 12px var(--led),0 0 24px rgba(200,255,0,.3);}
-.led-strip-sm{height:2px;background:linear-gradient(90deg,transparent,var(--led),transparent);box-shadow:0 0 8px var(--led);}
-
-/* Ticker */
-.ticker-w{overflow:hidden;white-space:nowrap;}
-.ticker{display:inline-flex;animation:tick 32s linear infinite;}
-.ticker span{padding:0 36px;}
-@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-
-/* Inputs/Buttons */
-.lf-in{background:transparent;border:1.5px solid var(--k);padding:13px 16px;width:100%;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--k);outline:none;border-radius:0;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
-.lf-in:focus{border-color:var(--led);box-shadow:0 0 0 3px rgba(200,255,0,.15);}
-.lf-in::placeholder{color:var(--dim);}
-select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
-.btn-k{display:inline-flex;align-items:center;justify-content:center;background:var(--k);color:var(--w);border:none;padding:12px 24px;min-height:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;user-select:none;-webkit-appearance:none;border-radius:0;}
-.btn-k:active{transform:scale(.97);}
-.btn-k:hover{opacity:.75;}
-.btn-led{display:inline-flex;align-items:center;justify-content:center;background:var(--led);color:var(--k);border:none;padding:12px 24px;min-height:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,box-shadow .2s;box-shadow:0 0 16px rgba(200,255,0,.4);-webkit-appearance:none;border-radius:0;}
-.btn-led:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.6);}
-.btn-g{display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--k);border:1.5px solid var(--k);padding:10px 20px;min-height:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;-webkit-appearance:none;border-radius:0;}
-.btn-g:hover{background:var(--k);color:var(--w);}
-
-/* Toast */
-#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--k);color:var(--w);padding:13px 22px;font-size:11px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;border-radius:0;opacity:0;transition:opacity .3s;pointer-events:none;border-bottom:2px solid var(--led);}
-#toast.show{opacity:1;}
-@media(min-width:769px){#toast{bottom:24px;}}
-
-/* Pages */
-.pg{display:none;}
-.pg.on{display:block;}
-.fadein{animation:fadeup .35s ease forwards;}
-@keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-
-/* Nav */
-.nbtn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--k);transition:opacity .2s;padding:8px 4px;min-height:44px;display:inline-flex;align-items:center;}
-.nbtn:hover{opacity:.45;}
-.nbtn.active{color:var(--led);border-bottom:2px solid var(--led);}
-
-/* Cards */
-.card{border:1.5px solid #e0e0e0;background:#fff;transition:border-color .2s,transform .2s,box-shadow .2s;}
-.card:hover{border-color:var(--k);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.08);}
-
-/* Tabs */
-.tab-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;background:none;border:none;border-bottom:3px solid transparent;padding:14px 20px;cursor:pointer;color:#555;transition:all .2s;flex:1;min-height:48px;}
-.tab-btn.on{border-bottom-color:var(--led);color:var(--k);}
-
-/* Badge */
-.badge{display:inline-flex;align-items:center;padding:3px 9px;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-radius:0;}
-.badge-gold{background:#ffd700;color:#333;}
-.badge-silver{background:#c0c0c0;color:#333;}
-.badge-bronze{background:#cd7f32;color:#fff;}
-.badge-led{background:rgba(200,255,0,.15);color:var(--led);border:1px solid var(--led);}
-.badge-green{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;}
-.badge-red{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;}
-.badge-blue{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;}
-
-/* Table */
-.tbl{width:100%;border-collapse:collapse;font-size:12px;}
-.tbl th{background:var(--k);color:var(--w);padding:10px 14px;text-align:left;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
-.tbl td{padding:12px 14px;border-bottom:1px solid #f0f0f0;}
-.tbl tr:hover td{background:#fafafa;}
-
-/* Live indicator */
-@keyframes pulse-led{0%,100%{box-shadow:0 0 8px var(--led);}50%{box-shadow:0 0 20px var(--led),0 0 40px rgba(200,255,0,.4);}}
-.live-dot{width:8px;height:8px;border-radius:50%;background:var(--led);box-shadow:0 0 8px var(--led);animation:pulse-led 2s ease-in-out infinite;display:inline-block;}
-
-/* Mobile bottom nav */
-#app-bottom-nav{display:none;position:fixed;bottom:0;left:0;width:100%;z-index:100;background:var(--k);border-top:1px solid #222;padding-bottom:env(safe-area-inset-bottom);}
-@media(max-width:768px){#app-bottom-nav{display:flex;}body{padding-bottom:calc(60px + env(safe-area-inset-bottom));}}
-.abn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;gap:3px;min-height:52px;transition:color .2s;}
-.abn-btn.active,.abn-btn:hover{color:var(--led);}
-.abn-icon{font-size:16px;line-height:1;}
-
-/* Score live match */
-.match-card{border:2px solid var(--k);padding:20px;background:#fff;margin-bottom:12px;}
-.match-card.live{border-color:var(--led);box-shadow:0 0 12px rgba(200,255,0,.2);}
-
-/* Bracket */
-.bracket-round{display:flex;flex-direction:column;gap:24px;align-items:center;min-width:160px;}
-.bracket-match{border:1.5px solid #e0e0e0;background:#fff;padding:8px 12px;width:150px;}
-.bracket-match.winner{border-color:var(--led);background:rgba(200,255,0,.05);}
-
-/* Responsive utils */
-@media(max-width:768px){
-  .hide-mob{display:none !important;}
-  .full-mob{width:100%!important;}
-  .grid-1-mob{grid-template-columns:1fr !important;}
-  .pad-mob{padding:20px 16px !important;}
-}
-@media(min-width:769px){.mob-only{display:none !important;}}
-
-/* Hero gradient */
-#app-hero{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a0a 40%,#0a1a0a 100%);}
-
-/* Prize medal colors */
-.prize-1{color:#ffd700;}
-.prize-2{color:#c0c0c0;}
-.prize-3{color:#cd7f32;}
-
-/* Modal */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;align-items:center;justify-content:center;padding:16px;}
-.modal-bg.open{display:flex;}
-.modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
-</style>
-</head>
-<body>
-
 <div id="toast"></div>
 
 <!-- ══════════ HEADER ══════════ -->
@@ -464,20 +230,121 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
      HOME PAGE
 ═══════════════════════════════════════ -->
 <div id="pg-home" class="pg on">
-  <!-- Hero -->
-  <section id="app-hero" style="min-height:60vh;display:flex;flex-direction:column;justify-content:flex-end;padding:48px 32px;position:relative;overflow:hidden;border-bottom:3px solid var(--k);" class="pad-mob">
-    <!-- BG animated net pattern -->
-    <canvas id="net-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.35;"></canvas>
-    <div style="position:relative;z-index:2;">
-      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:24px;background:rgba(200,255,0,.05);">
-        <span class="live-dot"></span>
-        <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--led);">Stagione 2025 — Attiva</span>
+  <!-- ── HERO: Pure-CSS sunset beach — zero canvas, zero JS, zero lag ── -->
+  <section id="app-hero" style="min-height:65vh;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;border-bottom:3px solid #1a0800;" class="pad-mob">
+
+    <!-- Sky layers: static gradients only -->
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,
+      #060d1f 0%,
+      #0f1e3a 12%,
+      #1e1640 22%,
+      #6b1a3a 40%,
+      #c43e1a 58%,
+      #e8721a 70%,
+      #f5a832 80%,
+      #fdd068 90%,
+      #ffe89a 100%
+    );"></div>
+
+    <!-- Sun: a single div, one CSS animation (opacity pulse only — cheap) -->
+    <div style="
+      position:absolute;
+      left:50%;bottom:36%;
+      transform:translateX(-50%);
+      width:clamp(90px,12vw,150px);
+      height:clamp(90px,12vw,150px);
+      border-radius:50%;
+      background:radial-gradient(circle,#ffffff 0%,#fff7c0 20%,#ffd040 50%,rgba(255,140,0,0) 100%);
+      box-shadow:0 0 80px 30px rgba(255,200,50,.55), 0 0 160px 60px rgba(255,120,0,.2);
+      animation:sunGlow 5s ease-in-out infinite;
+    "></div>
+
+    <!-- Horizon glow band: static -->
+    <div style="position:absolute;left:0;right:0;bottom:30%;height:80px;background:linear-gradient(180deg,transparent 0%,rgba(255,140,30,.18) 50%,transparent 100%);"></div>
+
+    <!-- Sea: static gradient, no canvas -->
+    <div style="position:absolute;left:0;right:0;bottom:0;height:38%;
+      background:linear-gradient(180deg,
+        rgba(10,50,120,.45) 0%,
+        rgba(5,30,80,.85) 50%,
+        rgba(2,15,50,1) 100%
+      );
+    "></div>
+
+    <!-- Sea sun reflection: static shimmer stripe -->
+    <div style="position:absolute;bottom:14%;left:0;right:0;height:12px;
+      background:linear-gradient(90deg,transparent 10%,rgba(255,210,80,.35) 40%,rgba(255,230,120,.55) 50%,rgba(255,210,80,.35) 60%,transparent 90%);
+      animation:shimmerLine 4s ease-in-out infinite;
+    "></div>
+    <div style="position:absolute;bottom:22%;left:0;right:0;height:6px;
+      background:linear-gradient(90deg,transparent 20%,rgba(255,200,60,.2) 45%,rgba(255,220,100,.35) 50%,rgba(255,200,60,.2) 55%,transparent 80%);
+      animation:shimmerLine 6s ease-in-out infinite 1s;
+    "></div>
+
+    <!-- Palm silhouette (SVG inline, no filter, no blur) -->
+    <svg style="position:absolute;bottom:0;left:1%;width:clamp(70px,9vw,130px);z-index:2;pointer-events:none;" viewBox="0 0 80 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Trunk -->
+      <path d="M40 180 Q38 140 36 120 Q34 100 40 80" stroke="#120800" stroke-width="6" stroke-linecap="round" fill="none"/>
+      <!-- Fronds -->
+      <path d="M40 82 Q20 65 2 48" stroke="#0d1800" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M40 82 Q55 58 72 42" stroke="#0d1800" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M40 82 Q18 80 2 74" stroke="#0d1800" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path d="M40 82 Q62 78 78 72" stroke="#0d1800" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path d="M40 82 Q28 70 20 58" stroke="#0d1800" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M40 82 Q52 68 62 56" stroke="#0d1800" stroke-width="3" stroke-linecap="round" fill="none"/>
+    </svg>
+
+    <!-- Second palm right -->
+    <svg style="position:absolute;bottom:0;right:4%;width:clamp(50px,6vw,90px);z-index:2;pointer-events:none;opacity:.7;" viewBox="0 0 60 140" fill="none">
+      <path d="M30 140 Q28 110 32 90" stroke="#120800" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M32 90 Q16 72 2 58" stroke="#0d1800" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path d="M32 90 Q46 68 58 52" stroke="#0d1800" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path d="M32 90 Q14 88 2 82" stroke="#0d1800" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M32 90 Q50 86 58 80" stroke="#0d1800" stroke-width="3" stroke-linecap="round" fill="none"/>
+    </svg>
+
+    <!-- Beer bottle: minimal SVG right side -->
+    <svg style="position:absolute;bottom:2%;right:16%;width:clamp(14px,1.8vw,24px);z-index:2;pointer-events:none;opacity:.55;" viewBox="0 0 20 60" fill="none">
+      <rect x="7" y="0" width="6" height="8" rx="1" fill="#1a1000"/>
+      <rect x="5" y="8" width="10" height="10" rx="2" fill="#2a3a08"/>
+      <rect x="4" y="18" width="12" height="38" rx="3" fill="#3a5010"/>
+      <rect x="4" y="20" width="3" height="15" rx="1" fill="rgba(255,255,200,.12)"/>
+    </svg>
+
+    <!-- Volleyball net silhouette -->
+    <svg style="position:absolute;bottom:36%;left:0;right:0;width:100%;z-index:1;pointer-events:none;opacity:.18;" viewBox="0 0 400 30" preserveAspectRatio="none">
+      <line x1="0" y1="8" x2="400" y2="8" stroke="#ffd080" stroke-width="2"/>
+      <line x1="0" y1="22" x2="400" y2="22" stroke="#ffd080" stroke-width="1"/>
+      <line x1="20" y1="0" x2="20" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="60" y1="0" x2="60" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="100" y1="0" x2="100" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="140" y1="0" x2="140" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="180" y1="0" x2="180" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="200" y1="-20" x2="200" y2="50" stroke="#ffd080" stroke-width="2.5"/>
+      <line x1="220" y1="0" x2="220" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="260" y1="0" x2="260" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="300" y1="0" x2="300" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="340" y1="0" x2="340" y2="30" stroke="#ffd080" stroke-width="1"/>
+      <line x1="380" y1="0" x2="380" y2="30" stroke="#ffd080" stroke-width="1"/>
+    </svg>
+
+    <!-- Keyframes: 2 ultra-light animations -->
+    <style>
+      @keyframes sunGlow{0%,100%{opacity:.92;}50%{opacity:1;}}
+      @keyframes shimmerLine{0%,100%{opacity:.5;transform:scaleX(.85);}50%{opacity:1;transform:scaleX(1.1);}}
+    </style>
+
+    <!-- Content -->
+    <div style="position:relative;z-index:5;padding:0 0 40px 32px;" class="pad-mob">
+      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,200,60,.5);padding:5px 14px;margin-bottom:20px;background:rgba(255,180,0,.08);">
+        <span style="width:7px;height:7px;border-radius:50%;background:#ffc347;display:inline-block;animation:sunGlow 2s ease-in-out infinite;"></span>
+        <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#ffc347;font-family:'IBM Plex Mono',monospace;">Stagione 2025 — Beach Mode 🏖️</span>
       </div>
-      <h1 class="bb" style="font-size:clamp(56px,10vw,130px);line-height:.88;color:var(--w);margin-bottom:20px;">LILLOFIND<br/>BEACH<br/><span style="color:var(--led);">VOLLEY.</span></h1>
-      <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.8;max-width:460px;margin-bottom:32px;">La piattaforma ufficiale per la gestione dei tornei beach volley LilloFind. Iscrizioni, classifiche, premi e partite live — tutto in un posto.</p>
+      <h1 class="bb" style="font-size:clamp(52px,10vw,120px);line-height:.88;color:#fff;margin-bottom:16px;text-shadow:0 2px 24px rgba(0,0,0,.5);">LILLOFIND<br/>BEACH<br/><span style="color:#ffc347;">VOLLEY.</span></h1>
+      <p style="font-size:12px;color:rgba(255,240,200,.7);line-height:1.8;max-width:440px;margin-bottom:28px;font-family:'IBM Plex Mono',monospace;">Sole, sabbia, birra fresca e pallavolo 🍺<br/>Tornei, classifiche e premi esclusivi LilloFind.</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <button class="btn-led" onclick="openModal('iscriviti-modal')" style="font-size:12px;padding:14px 28px;">🏐 Iscriviti ora</button>
-        <button onclick="showPg('live')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w);padding:14px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:0;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--led)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'"><span class="live-dot"></span>Guarda Live</button>
+        <button onclick="openModal('iscriviti-modal')" style="background:#ffc347;color:#1a0a00;border:none;padding:14px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🏐 Iscriviti ora</button>
+        <button onclick="showPg('live')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;padding:14px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;" onmouseover="this.style.borderColor='#ffc347'" onmouseout="this.style.borderColor='rgba(255,255,255,.3)'"><span class="live-dot"></span>Guarda Live</button>
       </div>
     </div>
   </section>
