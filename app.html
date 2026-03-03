@@ -675,10 +675,15 @@ function renderHome(){
   const grid=document.getElementById('tornei-grid');
   if(grid) grid.innerHTML=tornei.map(t=>{
     const iscr=iscritti.filter(i=>i.torneo===t.id);
-    return `<div class="card" style="overflow:hidden;">
+    const delBtn=isAdmin?`<button
+      onclick="deleteTorneo('${t.id}','${t.nome.replace(/'/g,'&#39;')}')"
+      title="Elimina torneo"
+      style="position:absolute;top:12px;right:12px;background:rgba(200,30,30,.9);border:none;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;z-index:5;box-shadow:0 0 8px rgba(200,30,30,.4);">&#128465;</button>`:'';
+    return `<div class="card" style="overflow:hidden;position:relative;">
+      ${delBtn}
       <div style="background:var(--k);color:var(--w);padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-          <p class="bb" style="font-size:22px;">${t.nome}</p>
+          <p class="bb" style="font-size:22px;padding-right:${isAdmin?'36px':'0'};">${t.nome}</p>
           <span class="badge ${STATUS_COLOR[t.status]}">${STATUS_LABEL[t.status]}</span>
         </div>
         <p style="font-size:10px;color:#444;letter-spacing:1px;">📍 ${t.luogo}</p>
@@ -718,6 +723,21 @@ function renderHome(){
   const sel=document.getElementById('iscr-torneo');
   if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
 }
+
+
+window.deleteTorneo=function(tid,nome){
+  if(!isAdmin){showToast('\u26a0\ufe0f Solo admin.');return;}
+  if(!confirm('Eliminare il torneo "'+nome+'"?\nVerranno eliminati anche tutti i dati associati.\nAzione irreversibile.'))return;
+  // Remove from array
+  const idx=tornei.findIndex(t=>t.id===tid);
+  if(idx>-1) tornei.splice(idx,1);
+  // Remove associated iscritti
+  const before=iscritti.length;
+  iscritti=iscritti.filter(i=>i.torneo!==tid);
+  renderHome();
+  renderIscritti();
+  showToast('\ud83d\uddd1 Torneo eliminato ('+(before-iscritti.length)+' iscrizioni rimosse).');
+};
 
 // ── RENDER ISCRITTI ──────────────────────────────────────
 function renderIscritti(filter='',torneoFilter=''){
