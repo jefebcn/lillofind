@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="theme-color" content="#0a0a0a"/>
 <title>LilloFind — Tornei Beach Volley</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -131,6 +131,15 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;align-items:center;justify-content:center;padding:16px;}
 .modal-bg.open{display:flex;}
 .modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+
+/* App-like behaviors */
+* { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+input, textarea, select { font-size:16px !important; } /* prevents iOS zoom on focus */
+body { -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
+button { touch-action:manipulation; }
+img { -webkit-user-drag:none; user-select:none; }
+/* hide browser scrollbar on webkit */
+::-webkit-scrollbar { width:0; background:transparent; }
 </style>
 </head>
 <body>
@@ -142,11 +151,11 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   <!-- ticker -->
   <div class="ticker-w" style="padding:6px 0;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;border-bottom:1px solid #1a1a1a;">
     <div class="ticker">
-      <span>🏐 LILLOFIND BEACH VOLLEY — TORNEI UFFICIALI 2025</span>
+      <span>🏐 LILLOFIND BEACH VOLLEY — TORNEI UFFICIALI 2026</span>
       <span>🏆 ISCRIVITI E VINCI — PREMI ESCLUSIVI IN PALIO</span>
       <span>📊 CLASSIFICHE LIVE IN TEMPO REALE</span>
       <span>⬡ LFPOINTS BONUS PER CHI PARTECIPA</span>
-      <span>🏐 LILLOFIND BEACH VOLLEY — TORNEI UFFICIALI 2025</span>
+      <span>🏐 LILLOFIND BEACH VOLLEY — TORNEI UFFICIALI 2026</span>
       <span>🏆 ISCRIVITI E VINCI — PREMI ESCLUSIVI IN PALIO</span>
       <span>📊 CLASSIFICHE LIVE IN TEMPO REALE</span>
       <span>⬡ LFPOINTS BONUS PER CHI PARTECIPA</span>
@@ -187,72 +196,84 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 ═══════════════════════════════════════ -->
 <div id="pg-home" class="pg on">
 
-  <!-- ── HERO: Simple, impactful, zero-lag ── -->
-  <section style="min-height:72vh;display:flex;flex-direction:column;justify-content:center;padding:48px 40px;position:relative;overflow:hidden;border-bottom:3px solid #ffc347;background:#0a0a0a;" class="pad-mob">
+  <!-- HERO — Full mobile-first, bold, dark warm, no canvas, no lag -->
+  <section style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#0a0a0a;">
 
-    <!-- Bold orange diagonal accent -->
-    <div style="position:absolute;top:0;right:-10%;width:55%;height:100%;background:linear-gradient(135deg,#c43e00 0%,#e8721a 40%,#ffc347 100%);clip-path:polygon(20% 0,100% 0,100% 100%,0 100%);z-index:0;opacity:.92;"></div>
+    <!-- Warm dark gradient background -->
+    <div style="position:absolute;inset:0;background:linear-gradient(160deg,#0a0a0a 0%,#1a0900 38%,#2e1300 58%,#0a0a0a 100%);"></div>
 
-    <!-- Sun circle in accent area -->
-    <div style="position:absolute;right:18%;top:50%;transform:translateY(-50%);width:clamp(100px,18vw,220px);height:clamp(100px,18vw,220px);border-radius:50%;background:radial-gradient(circle,#fff9d0 0%,#ffd040 40%,rgba(255,160,0,0) 100%);z-index:1;opacity:.55;"></div>
+    <!-- Sun glow - pure CSS, zero JS -->
+    <div style="position:absolute;right:6%;top:16%;width:clamp(150px,32vw,300px);height:clamp(150px,32vw,300px);border-radius:50%;background:radial-gradient(circle,rgba(255,235,100,.5) 0%,rgba(255,155,0,.28) 40%,transparent 72%);pointer-events:none;"></div>
 
-    <!-- Beach volleyball emoji large -->
-    <div style="position:absolute;right:calc(18% - clamp(50px,9vw,110px));top:50%;transform:translateY(-50%);font-size:clamp(80px,14vw,180px);z-index:2;opacity:.18;pointer-events:none;user-select:none;">🏐</div>
+    <!-- Subtle diagonal light -->
+    <div style="position:absolute;top:0;right:0;width:50%;height:100%;background:linear-gradient(135deg,transparent,rgba(255,190,60,.05) 50%,rgba(255,120,0,.09));pointer-events:none;"></div>
 
-    <!-- Text content -->
-    <div style="position:relative;z-index:3;max-width:560px;">
-      <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:22px;">
-        <span style="width:8px;height:8px;border-radius:50%;background:#ffc347;display:inline-block;"></span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ffc347;">Stagione 2025 · Beach Mode</span>
+    <!-- Big decorative "2026" watermark -->
+    <div class="bb" style="position:absolute;bottom:-6%;right:-3%;font-size:clamp(150px,42vw,380px);color:transparent;-webkit-text-stroke:1px rgba(255,190,60,.06);pointer-events:none;user-select:none;line-height:1;letter-spacing:-6px;">2026</div>
+
+    <!-- Push content down -->
+    <div style="flex:1;"></div>
+
+    <!-- Main content block -->
+    <div style="position:relative;z-index:5;padding:24px 20px 0;">
+
+      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,190,60,.38);padding:5px 14px;margin-bottom:18px;background:rgba(255,175,0,.06);">
+        <span style="width:7px;height:7px;border-radius:50%;background:#ffc347;display:inline-block;"></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#ffc347;">Stagione 2026 &middot; Beach Mode &#x1F3D6;</span>
       </div>
-      <h1 class="bb" style="font-size:clamp(60px,11vw,140px);line-height:.86;color:#f5f5f5;margin-bottom:20px;">BEACH<br/>VOLLEY<br/><span style="color:#ffc347;">2025.</span></h1>
-      <p style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.9;max-width:380px;margin-bottom:32px;font-family:'IBM Plex Mono',monospace;">Sole ☀️ sabbia 🏖️ birra 🍺 pallavolo 🏐<br/>Tornei, premi e classifiche live.</p>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <button onclick="openModal('iscriviti-modal')" style="background:#ffc347;color:#0a0a0a;border:none;padding:15px 32px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:500;">🏐 Iscriviti ora</button>
-        <button onclick="showPg('classifica')" style="background:transparent;border:1.5px solid rgba(255,255,255,.25);color:#fff;padding:15px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='#ffc347'" onmouseout="this.style.borderColor='rgba(255,255,255,.25)'">📊 Classifica</button>
+
+      <h1 class="bb" style="font-size:clamp(70px,18vw,170px);line-height:.84;color:#f5f5f5;margin-bottom:0;letter-spacing:-1px;">BEACH<br/>VOLLEY<br/><span style="color:#ffc347;">2026.</span></h1>
+
+      <div style="width:48px;height:2px;background:#ffc347;margin:18px 0;box-shadow:0 0 14px rgba(255,190,60,.5);"></div>
+
+      <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:2;font-family:'IBM Plex Mono',monospace;margin-bottom:22px;">
+        &#x2600; Sole &nbsp;&bull;&nbsp; &#x1F3D6; Sabbia &nbsp;&bull;&nbsp; &#x1F37A; Birra &nbsp;&bull;&nbsp; &#x1F3D0; Pallavolo<br/>
+        Tornei, premi e classifiche live.
+      </p>
+
+      <div style="display:flex;gap:10px;margin-bottom:0;">
+        <button onclick="openModal('iscriviti-modal')" style="flex:1;background:#ffc347;color:#0a0a0a;border:none;padding:17px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;">Iscriviti ora</button>
+        <button onclick="showPg('live')" style="flex:1;background:transparent;border:1.5px solid rgba(255,255,255,.2);color:#fff;padding:17px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><span class="live-dot"></span>Live</button>
       </div>
     </div>
-  </section>
 
-    <!-- Stats bar -->
-  <section style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--k);" class="grid-1-mob">
-    <div style="padding:24px;border-right:1px solid #e0e0e0;text-align:center;" class="grid-1-mob">
-      <p class="bb" style="font-size:40px;" id="stat-teams">24</p>
-      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Squadre Iscritte</p>
-    </div>
-    <div style="padding:24px;border-right:1px solid #e0e0e0;text-align:center;">
-      <p class="bb" style="font-size:40px;">3</p>
-      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Tornei Attivi</p>
-    </div>
-    <div style="padding:24px;border-right:1px solid #e0e0e0;text-align:center;">
-      <p class="bb" style="font-size:40px;color:var(--led);" id="stat-live">2</p>
-      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Partite Live</p>
-    </div>
-    <div style="padding:24px;text-align:center;">
-      <p class="bb" style="font-size:40px;">€850</p>
-      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Montepremi</p>
+    <!-- Stats strip at very bottom of hero -->
+    <div style="position:relative;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.07);margin-top:22px;background:rgba(0,0,0,.35);">
+      <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
+        <p class="bb" style="font-size:22px;color:#ffc347;" id="stat-teams">24</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Squadre</p>
+      </div>
+      <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
+        <p class="bb" style="font-size:22px;color:#f5f5f5;">3</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Tornei</p>
+      </div>
+      <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
+        <p class="bb" style="font-size:22px;color:var(--led);" id="stat-live">2</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Live ora</p>
+      </div>
+      <div style="padding:14px 10px;text-align:center;">
+        <p class="bb" style="font-size:22px;color:#f5f5f5;">&euro;850</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Premi</p>
+      </div>
     </div>
   </section>
 
   <!-- Tornei cards -->
-  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;flex-wrap:wrap;gap:8px;">
-      <h2 class="bb" style="font-size:clamp(28px,5vw,48px);">Tornei Attivi</h2>
+  <section style="padding:28px 16px;border-bottom:2px solid var(--k);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+      <h2 class="bb" style="font-size:clamp(28px,7vw,48px);">Tornei Attivi</h2>
       <button class="btn-g admin-only" onclick="openModal('nuovo-torneo-modal')" style="font-size:10px;padding:8px 16px;display:none;">+ Nuovo Torneo</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;" id="tornei-grid"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;" id="tornei-grid"></div>
   </section>
 
-  <!-- Prossimi iscritti -->
-  <section style="padding:48px 24px;">
-    <h2 class="bb" style="font-size:clamp(28px,5vw,48px);margin-bottom:24px;">Ultime Iscrizioni</h2>
+  <!-- Ultime iscrizioni -->
+  <section style="padding:28px 16px 88px;">
+    <h2 class="bb" style="font-size:clamp(24px,6vw,40px);margin-bottom:14px;">Ultime Iscrizioni</h2>
     <div id="home-iscritti" style="display:flex;flex-direction:column;gap:0;border:2px solid var(--k);overflow:hidden;"></div>
   </section>
 </div>
 
-<!-- ═══════════════════════════════════════
-     ISCRITTI PAGE
-═══════════════════════════════════════ -->
 <div id="pg-iscritti" class="pg">
   <div style="padding:32px 24px;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
@@ -502,7 +523,7 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
     </div>
     <div class="led-strip-sm"></div>
     <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
-      <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Torneo *</label><input class="lf-in" id="nt-nome" placeholder="es. Torneo Estivo 2025"/></div>
+      <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Torneo *</label><input class="lf-in" id="nt-nome" placeholder="es. Torneo Estivo 2026"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
         <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Data Inizio</label><input class="lf-in" id="nt-date" type="date"/></div>
         <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Max Squadre</label><input class="lf-in" id="nt-max" type="number" placeholder="16"/></div>
@@ -571,9 +592,9 @@ function hideAdminUI(){
 
 // ── DATA ──────────────────────────────────────────────────
 let tornei=[
-  {id:'t1',nome:'Torneo Estivo 2025',data:'2025-06-15',max:16,formato:'Gironi + Eliminazione',montepremi:500,luogo:'Rimini Spiaggia 42',status:'attivo'},
-  {id:'t2',nome:'Coppa LilloFind',data:'2025-07-20',max:8,formato:'Eliminazione Diretta',montepremi:250,luogo:'Milano Idroscalo',status:'iscrizioni'},
-  {id:'t3',nome:'Trofeo Beach 2025',data:'2025-08-10',max:12,formato:'Round Robin',montepremi:100,luogo:'Riccione Beach',status:'pianificato'},
+  {id:'t1',nome:'Torneo Estivo 2026',data:'2026-06-15',max:16,formato:'Gironi + Eliminazione',montepremi:500,luogo:'Rimini Spiaggia 42',status:'attivo'},
+  {id:'t2',nome:'Coppa LilloFind',data:'2026-07-20',max:8,formato:'Eliminazione Diretta',montepremi:250,luogo:'Milano Idroscalo',status:'iscrizioni'},
+  {id:'t3',nome:'Trofeo Beach 2026',data:'2026-08-10',max:12,formato:'Round Robin',montepremi:100,luogo:'Riccione Beach',status:'pianificato'},
 ];
 
 let iscritti=[

@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="theme-color" content="#0a0a0a"/>
 <meta name="description" content="LILLOFIND — Streetwear autentico. Shop, LFPoints loyalty program, spedizione DHL."/>
 <title>LILLOFIND — DROP YOUR STYLE</title>
@@ -348,18 +348,90 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   .hide-mob{display:none !important;}
   .full-mob{width:100%;}
   .grid-1-mob{grid-template-columns:1fr !important;}
-  .pad-mob{padding:32px 16px !important;}
+  .pad-mob{padding:24px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
-  /* Hero mobile: wordmark stays in upper portion, never overlaps copy */
-  #hero-wordmark-wrap{bottom:52% !important;}
-  #hero-wordmark, #hero-wordmark+span, #hero-wordmark~span{
-    font-size:clamp(56px,14vw,80px) !important;
-    letter-spacing:2px !important;
+
+  /* ── MOBILE HERO: globe top, content bottom — no overlap ── */
+  #pg-hero-section{
+    min-height:100svh !important;
+    display:grid !important;
+    grid-template-rows:1fr auto !important;
+    flex-direction:unset !important;
+    justify-content:unset !important;
   }
+  #hero-canvas{
+    position:absolute !important;
+    inset:0 !important;
+    height:58% !important; /* globe only in top half */
+  }
+  #hero-wordmark-wrap{
+    top:0 !important; bottom:auto !important;
+    height:58% !important;
+    display:flex !important;
+    align-items:flex-start !important;
+    padding-top:18px !important;
+  }
+  #hero-wordmark, #hero-wordmark ~ span, #hero-wordmark + span{
+    font-size:clamp(44px,12vw,70px) !important;
+    letter-spacing:1px !important;
+    -webkit-text-stroke-width:1.5px !important;
+  }
+  /* glow dots hide on mobile */
+  #hero-glows{ display:none !important; }
+  /* Diagonal lines: softer on mobile */
+  #hero-lines{ opacity:.4 !important; }
+
+  /* Content area: sits in bottom row, never overlaps globe */
+  #hero-content{
+    position:relative !important;
+    top:auto !important; left:auto !important;
+    z-index:10 !important;
+    background:linear-gradient(180deg,rgba(8,8,8,0) 0%,#080808 18%) !important;
+    padding:16px 20px 28px !important;
+    margin-top:0 !important;
+    max-width:100% !important;
+    grid-row:2 !important;
+  }
+  #hero-content h1{
+    font-size:clamp(54px,15vw,90px) !important;
+    line-height:.88 !important;
+    margin-bottom:0 !important;
+  }
+  #hero-badge{ margin-bottom:14px !important; }
+  #hero-divider{ margin:14px 0 !important; }
+  #hero-desc{ margin-bottom:20px !important; }
+  #hero-desc p:first-child{ font-size:13px !important; }
+  #hero-desc p:last-child{ font-size:10px !important; }
+  #hero-cta{ padding-bottom:16px !important; gap:10px !important; }
+  #hero-cta button, #hero-cta a{
+    padding:14px 20px !important;
+    font-size:11px !important;
+    flex:1 !important;
+    justify-content:center !important;
+  }
+  /* Stats bar mobile */
+  #hero-stats{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #hero-stats > div{ min-width:80px !important; padding:12px 14px !important; }
+  #hero-stats p.bb{ font-size:16px !important; }
+  #hero-stats p:last-child{ font-size:7px !important; }
 }
 @media(min-width:769px){
   .mob-only{display:none !important;}
 }
+
+/* App-like global touch behaviors */
+* { -webkit-tap-highlight-color: transparent; }
+input, textarea, select { font-size:16px; } /* prevent iOS zoom on focus */
+body { -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
+button { touch-action:manipulation; }
+img { -webkit-user-drag:none; user-select:none; }
+
+/* App-like global behaviors */
+* { -webkit-tap-highlight-color: transparent; }
+input, textarea, select { font-size:16px !important; }
+body { -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
+button { touch-action:manipulation; }
+img { -webkit-user-drag:none; }
 </style>
 </head>
 <body>
@@ -509,76 +581,77 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 ════════════════════════════════════════════════════════ -->
 <div id="pg-home" class="pg on">
 
-  <!-- HERO — Dark cinematic full-bleed with particle globe -->
-  <section style="min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;background:#080808;border-bottom:3px solid var(--k);">
+  <!-- HERO — Mobile-first: globe fills top, content anchored to bottom -->
+  <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#080808;border-bottom:3px solid var(--k);">
 
-    <!-- Canvas particle globe background -->
     <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;"></canvas>
 
-    <!-- LED diagonal lines -->
-    <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:hidden;">
+    <div id="hero-lines" style="position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;">
       <div style="position:absolute;top:-50%;left:60%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.2) 50%,transparent);transform:rotate(-10deg);"></div>
       <div style="position:absolute;top:-50%;left:70%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.06) 50%,transparent);transform:rotate(-10deg);"></div>
     </div>
 
-    <!-- Glow dots -->
-    <div style="position:absolute;top:10%;right:5%;width:8px;height:8px;background:var(--led);border-radius:50%;box-shadow:0 0 32px var(--led),0 0 64px rgba(200,255,0,.3);z-index:3;animation:pulse-led 3s ease-in-out infinite;"></div>
-    <div style="position:absolute;top:35%;right:12%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 18px var(--led2);z-index:3;animation:pulse-led 4s ease-in-out infinite;"></div>
+    <div id="hero-glows" style="position:absolute;inset:0;z-index:3;pointer-events:none;">
+      <div style="position:absolute;top:10%;right:5%;width:8px;height:8px;background:var(--led);border-radius:50%;box-shadow:0 0 32px var(--led),0 0 64px rgba(200,255,0,.3);animation:pulse-led 3s ease-in-out infinite;"></div>
+      <div style="position:absolute;top:35%;right:12%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 18px var(--led2);animation:pulse-led 4s ease-in-out infinite;"></div>
+    </div>
 
-    <!-- STYLED LILLOFIND WATERMARK — glitch personality -->
-    <div style="position:absolute;top:0;left:0;right:0;bottom:40%;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;" id="hero-wordmark-wrap">
+    <!-- LILLOFIND watermark — visible through globe -->
+    <div id="hero-wordmark-wrap" style="position:absolute;top:0;left:0;right:0;bottom:42%;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;">
       <div style="position:relative;transform:rotate(-4deg);max-width:100%;overflow:hidden;">
-        <!-- Shadow layer for depth -->
-        <span class="bb" style="position:absolute;top:3px;left:3px;font-size:clamp(64px,13vw,160px);color:transparent;-webkit-text-stroke:1px rgba(200,255,0,.06);letter-spacing:clamp(2px,1.5vw,10px);white-space:nowrap;filter:blur(2px);">LILLOFIND</span>
-        <!-- Main outline — more visible on mobile -->
-        <span class="bb" id="hero-wordmark" style="font-size:clamp(64px,13vw,160px);color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.28);letter-spacing:clamp(2px,1.5vw,10px);white-space:nowrap;position:relative;display:block;text-shadow:0 0 40px rgba(200,255,0,.15);">LILLOFIND</span>
-        <!-- LED accent bar under the L -->
+        <span class="bb" style="position:absolute;top:3px;left:3px;font-size:clamp(64px,13vw,160px);color:transparent;-webkit-text-stroke:1px rgba(200,255,0,.05);letter-spacing:clamp(2px,1.5vw,10px);white-space:nowrap;filter:blur(2px);">LILLOFIND</span>
+        <span class="bb" id="hero-wordmark" style="font-size:clamp(64px,13vw,160px);color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.25);letter-spacing:clamp(2px,1.5vw,10px);white-space:nowrap;display:block;text-shadow:0 0 40px rgba(200,255,0,.12);">LILLOFIND</span>
         <div style="position:absolute;bottom:-4px;left:0;width:38%;height:2px;background:linear-gradient(90deg,rgba(200,255,0,.7),transparent);box-shadow:0 0 12px rgba(200,255,0,.5);"></div>
       </div>
     </div>
 
-    <!-- Hero copy -->
-    <div style="position:relative;z-index:4;padding:40px 32px 0;max-width:860px;" class="pad-mob">
-      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:28px;background:rgba(200,255,0,.05);">
-        <span style="width:6px;height:6px;border-radius:50%;background:var(--led);box-shadow:0 0 8px var(--led);display:inline-block;animation:pulse-led 2s ease-in-out infinite;"></span>
-        <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--led);">SS 2025 — Drop Live Ora</span>
-      </div>
-      <h1 class="bb" style="font-size:clamp(72px,11vw,150px);line-height:.88;color:var(--w);margin-bottom:0;letter-spacing:2px;">DEFINE<br/>YOUR<br/><span style="color:var(--led);">DROP.</span></h1>
-      <div style="width:56px;height:2px;background:var(--led);box-shadow:0 0 14px var(--led);margin:28px 0;"></div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:36px;max-width:480px;">
-        <p style="font-size:15px;color:rgba(255,255,255,.9);line-height:1.5;font-family:'IBM Plex Mono',monospace;">Streetwear premium, senza compromessi.</p>
-        <p style="font-size:11px;color:rgba(255,255,255,.38);letter-spacing:.5px;line-height:1.8;font-family:'IBM Plex Mono',monospace;">Pezzi rari curati ogni settimana — Nike, Jordan, Bape, Supreme e molti altri.<br/>Qualità 1:1 • Spedizione DHL • Reso 30gg gratis</p>
-      </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;padding-bottom:52px;">
-        <button class="btn-led" onclick="showPg('shop')" style="font-size:12px;padding:16px 32px;">Shop the Drop →</button>
-        <button onclick="showPg('lfpoints')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w);padding:16px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s;-webkit-appearance:none;" onmouseover="this.style.borderColor='var(--led)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">⬡ LFPoints</button>
+    <!-- Spacer pushes content down on desktop -->
+    <div style="flex:1;min-height:45vh;"></div>
+
+    <!-- Content — always below globe, no overlap -->
+    <div id="hero-content" style="position:relative;z-index:5;">
+      <div style="height:80px;background:linear-gradient(0deg,#080808,transparent);margin-top:-80px;pointer-events:none;"></div>
+      <div style="background:#080808;padding:20px 24px 0;">
+        <div id="hero-badge" style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:18px;background:rgba(200,255,0,.05);">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--led);display:inline-block;animation:pulse-led 2s ease-in-out infinite;"></span>
+          <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--led);font-family:'IBM Plex Mono',monospace;">SS 2026 — Drop Live Ora</span>
+        </div>
+        <h1 id="hero-h1" class="bb" style="font-size:clamp(64px,15vw,150px);line-height:.86;color:var(--w);margin-bottom:0;letter-spacing:1px;">DEFINE<br/>YOUR<br/><span style="color:var(--led);">DROP.</span></h1>
+        <div id="hero-divider" style="width:50px;height:2px;background:var(--led);box-shadow:0 0 12px var(--led);margin:18px 0;"></div>
+        <p id="hero-tagline" style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.5;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">Streetwear premium, senza compromessi.</p>
+        <p id="hero-sub" style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.4px;line-height:1.9;font-family:'IBM Plex Mono',monospace;margin-bottom:22px;">Nike · Jordan · Bape · Supreme · e molto altro<br/>Qualità 1:1 · Spedizione DHL · Reso 30gg gratis</p>
+        <div id="hero-cta" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0;">
+          <button class="btn-led" onclick="showPg('shop')" style="flex:1;min-width:140px;font-size:12px;padding:16px 20px;text-align:center;">Shop the Drop →</button>
+          <button onclick="showPg('lfpoints')" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w);padding:16px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">⦡ LFPoints</button>
+        </div>
       </div>
     </div>
 
-    <!-- Bottom stats bar -->
-    <div style="position:relative;z-index:4;border-top:1px solid rgba(255,255,255,.07);display:flex;overflow-x:auto;">
-      <div style="flex:1;min-width:110px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
-        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">DHL</p>
-        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Express</p>
+    <!-- Stats bar -->
+    <div id="hero-stats" style="position:relative;z-index:5;border-top:1px solid rgba(255,255,255,.07);display:flex;overflow-x:auto;background:#080808;-webkit-overflow-scrolling:touch;">
+      <div style="flex:1;min-width:80px;padding:14px 16px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:18px;color:var(--w);margin-bottom:2px;">DHL</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Express</p>
       </div>
-      <div style="flex:1;min-width:110px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
-        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">10–15</p>
-        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Giorni lav.</p>
+      <div style="flex:1;min-width:80px;padding:14px 16px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:18px;color:var(--w);margin-bottom:2px;">10–15</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Giorni lav.</p>
       </div>
-      <div style="flex:1;min-width:90px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
-        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">30gg</p>
-        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Reso gratis</p>
+      <div style="flex:1;min-width:80px;padding:14px 16px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:18px;color:var(--w);margin-bottom:2px;">30gg</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Reso gratis</p>
       </div>
-      <div style="flex:1;min-width:90px;padding:18px 20px;border-right:1px solid rgba(255,255,255,.07);">
-        <p class="bb" style="font-size:20px;color:var(--led);margin-bottom:2px;">1:1</p>
-        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">€ → LFPTS</p>
+      <div style="flex:1;min-width:80px;padding:14px 16px;border-right:1px solid rgba(255,255,255,.07);">
+        <p class="bb" style="font-size:18px;color:var(--led);margin-bottom:2px;">1:1</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">€ → LFPTS</p>
       </div>
-      <div class="hide-mob" style="flex:1;min-width:110px;padding:18px 20px;">
-        <p class="bb" style="font-size:20px;color:var(--w);margin-bottom:2px;">SSL</p>
-        <p style="font-size:8px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Pagamento sicuro</p>
+      <div style="flex:1;min-width:80px;padding:14px 16px;">
+        <p class="bb" style="font-size:18px;color:var(--w);margin-bottom:2px;">SSL</p>
+        <p style="font-size:7px;color:rgba(255,255,255,.28);letter-spacing:2px;text-transform:uppercase;">Sicuro</p>
       </div>
     </div>
   </section>
+
 
   <!-- High-Fidelity 3D Globe -->
   <script>
@@ -741,9 +814,10 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       ctx.clearRect(0, 0, W, H);
 
       const mob = W < 600;
+      // Mobile: globe centered in upper 55% of screen. Desktop: right side.
       const cx  = mob ? W * 0.50 : W * 0.68;
-      const cy  = mob ? H * 0.40 : H * 0.44;
-      const R   = Math.min(W, H) * (mob ? 0.40 : 0.32);
+      const cy  = mob ? H * 0.27 : H * 0.44;   // higher on mobile
+      const R   = mob ? Math.min(W, H * 0.55) * 0.44 : Math.min(W, H) * 0.32;
 
       // ── Ocean fill ──────────────────────────────────────
       const oGrad = ctx.createRadialGradient(cx-R*.28, cy-R*.22, 0, cx, cy, R);
@@ -1875,7 +1949,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 
   <!-- Bottom bar -->
   <div style="padding:18px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-    <p style="font-size:9px;color:#222;letter-spacing:1px;">© 2025 LILLOFIND S.R.L. — All rights reserved.</p>
+    <p style="font-size:9px;color:#222;letter-spacing:1px;">© 2026 LILLOFIND S.R.L. — All rights reserved.</p>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
       <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">💳 VISA</div>
       <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">💳 MC</div>
