@@ -614,6 +614,20 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
 </div><!-- #app -->
 
+<!-- ═══ MODAL: Early Exit ═══ -->
+<div class="modal-bg" id="modal-early">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-early')">✕</button>
+    <div class="modal-title" style="color:#FF4757;">⚠️ Disdici Investimento</div>
+    <div id="modal-early-body"></div>
+    <button class="btn-primary" style="background:#FF4757;box-shadow:none;" onclick="doEarlyExit()">CONFERMA DISDETTA E RITIRA →</button>
+    <button class="btn-secondary" onclick="closeModal('modal-early')">Annulla — Mantieni Investimento</button>
+    <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding:14px;border:1.5px solid rgba(200,255,0,.25);color:var(--g);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;background:rgba(200,255,0,.04);">
+      💬 Parla con l'Assistenza WhatsApp
+    </a>
+  </div>
+</div>
+
 <!-- ═══ MODAL: Confirm Invest ═══ -->
 <div class="modal-bg" id="modal-confirm">
   <div class="modal-box">
@@ -1036,12 +1050,24 @@ function renderInvList(containerId, invs, isHistory=false) {
     const typeBadge = isRedeemed?'matured':inv.type;
     const typeLbl = isRedeemed?'Riscattato':isMatured?'Maturato':inv.type==='locked'?'Bloccato':'Standard';
     const daysLeft = Math.max(0,Math.ceil((end-now)/(1000*60*60*24)));
-    const actions = !isRedeemed && (isMatured) ? `
+    const daysPassed = Math.max(0, Math.ceil((now-start)/(1000*60*60*24)));
+    const proratedProfit = parseFloat((inv.profit * Math.min(pct/100, 1)).toFixed(2));
+    const earlyTotal = inv.capital + proratedProfit;
+
+    const actions = !isRedeemed && isMatured ? `
       <div class="inv-actions">
         <button class="inv-act-btn redeem" onclick="openRedeem('${inv.id}')">💸 Riscatta</button>
-      </div>` : !isRedeemed && !isMatured ? `
+        <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;">💬 Assistenza</a>
+      </div>`
+    : !isRedeemed && !isMatured && inv.type==='standard' ? `
+      <div class="inv-actions" style="flex-direction:column;gap:8px;">
+        <button class="inv-act-btn" style="width:100%;background:rgba(255,71,87,.08);border-color:rgba(255,71,87,.35);color:#FF4757;" onclick="openEarlyExit('${inv.id}')">⚠️ Disdici e Ritira Maturato</button>
+        <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;color:var(--g);border-color:rgba(200,255,0,.25);background:rgba(200,255,0,.04);">💬 Contatta Assistenza WhatsApp</a>
+      </div>`
+    : !isRedeemed && !isMatured && inv.type==='locked' ? `
       <div class="inv-actions">
         <button class="inv-act-btn" onclick="openRedeem('${inv.id}',true)">ℹ️ Dettagli</button>
+        <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;color:var(--g);border-color:rgba(200,255,0,.25);">💬 Assistenza</a>
       </div>` : '';
 
     return `<div class="inv-card ${typeBadge}">
@@ -1059,6 +1085,7 @@ function renderInvList(containerId, invs, isHistory=false) {
       ${!isRedeemed?`<div class="prog-bg"><div class="prog-fill ${inv.type}" style="width:${pct.toFixed(1)}%;${inv.type==='locked'?'background:var(--gold);box-shadow:0 0 6px rgba(255,209,102,.4);':''}"></div></div>
       <div class="inv-row" style="margin-bottom:0;"><span class="inv-lbl">${isMatured?'✅ Maturato':'Progresso'}</span><span class="inv-val">${pct.toFixed(0)}%${!isMatured?' — '+daysLeft+'gg':''}</span></div>`:'<div style="height:4px;"></div>'}
       <div class="inv-row"><span class="inv-lbl">Totale a Scadenza</span><span class="inv-val" style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:18px;">€ ${fmtNum(inv.capital+inv.profit)}</span></div>
+      ${!isRedeemed && !isMatured && inv.type==='standard' ? `<div class="inv-row" style="margin-bottom:0;background:rgba(255,71,87,.05);padding:8px 0;border-top:1px solid rgba(255,71,87,.15);margin-top:4px;"><span class="inv-lbl" style="color:#FF4757;">Maturato ora (uscita anticipata)</span><span class="inv-val" style="color:#FF4757;">€ ${fmtNum(earlyTotal)}</span></div>` : ''}
       ${actions}
     </div>`;
   }).join('');
@@ -1111,7 +1138,59 @@ function doRedeem() {
 }
 
 // ══════════════════════════════════════════════════
-// REQUESTS
+// EARLY EXIT (flessibile)
+// ══════════════════════════════════════════════════
+let earlyExitId = null;
+function openEarlyExit(id) {
+  earlyExitId = id;
+  const inv = state.investments.find(i=>i.id===id);
+  if(!inv) return;
+  const now = new Date();
+  const start = new Date(inv.startDate);
+  const end = new Date(inv.endDate);
+  const pct = Math.min(1, Math.max(0,(now-start)/(end-start)));
+  const daysPassed = Math.max(0,Math.ceil((now-start)/(1000*60*60*24)));
+  const daysTotal = Math.ceil((end-start)/(1000*60*60*24));
+  const proratedProfit = parseFloat((inv.profit * pct).toFixed(2));
+  const earlyTotal = inv.capital + proratedProfit;
+  const lostProfit = parseFloat((inv.profit - proratedProfit).toFixed(2));
+
+  document.getElementById('modal-early-body').innerHTML = `
+    <div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);padding:14px;font-size:9px;color:#FF4757;line-height:1.9;margin-bottom:16px;">
+      ⚠️ Stai per disdire un investimento flessibile in anticipo. Riceverai solo il rendimento maturato fino ad oggi. Il profitto rimanente andrà perso.
+    </div>
+    <div class="preview" style="margin-bottom:16px;">
+      <div class="prev-row"><span class="prev-key">Capitale</span><span class="prev-val">€ ${fmtNum(inv.capital)}</span></div>
+      <div class="prev-row"><span class="prev-key">Giorni trascorsi</span><span class="prev-val">${daysPassed} / ${daysTotal} gg</span></div>
+      <div class="prev-row"><span class="prev-key">Progresso</span><span class="prev-val">${(pct*100).toFixed(1)}%</span></div>
+      <div class="prev-row"><span class="prev-key">Profitto maturato ora</span><span class="prev-val green">+€ ${fmtNum(proratedProfit)}</span></div>
+      <div class="prev-row"><span class="prev-key" style="color:#FF4757;">Profitto perso</span><span class="prev-val" style="color:#FF4757;">−€ ${fmtNum(lostProfit)}</span></div>
+      <div class="prev-row" style="border:none;padding-top:10px;"><span class="prev-key">Riceverai</span><span class="prev-val gold" style="font-size:22px;">€ ${fmtNum(earlyTotal)}</span></div>
+    </div>`;
+  openModal('modal-early');
+}
+function doEarlyExit() {
+  const inv = state.investments.find(i=>i.id===earlyExitId);
+  if(!inv||inv.type!=='standard'||inv.status!=='active') return;
+  const now = new Date();
+  const start = new Date(inv.startDate);
+  const end = new Date(inv.endDate);
+  const pct = Math.min(1, Math.max(0,(now-start)/(end-start)));
+  const proratedProfit = parseFloat((inv.profit * pct).toFixed(2));
+  // Update investment: mark redeemed with actual prorated profit
+  inv.profit = proratedProfit;
+  inv.status = 'redeemed';
+  inv.earlyExit = true;
+  state.requests.push({
+    id:'REQ-'+Date.now(), type:'early_exit', invId:inv.id,
+    amount: inv.capital+proratedProfit, date: new Date().toISOString(), status:'pending'
+  });
+  saveState();
+  closeModal('modal-early');
+  showToast('✅ Disdetta inviata. Fondi in elaborazione.');
+  renderDash();
+  renderPortfolio();
+}
 // ══════════════════════════════════════════════════
 function renderRequests() {
   // Populate matured investments for withdrawal
