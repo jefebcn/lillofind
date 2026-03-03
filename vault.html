@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>LF VAULT — Gestionale Investimenti</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --k:#080808;--k2:#0f0f0f;--k3:#161616;--k4:#1e1e1e;
+  --w:#f0f0f0;--w2:#aaa;--w3:#555;
+  --g:#C8FF00;--g2:rgba(200,255,0,.12);--g3:rgba(200,255,0,.06);
+  --gold:#FFD166;--red:#FF4757;--blue:#00C4FF;
+  --border:rgba(255,255,255,.07);
+  --border2:rgba(200,255,0,.2);
+  --r:0px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospace;overflow-x:hidden;}
+body{padding-bottom:80px;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:var(--k);}
+::-webkit-scrollbar-thumb{background:var(--g);}
+
+/* ── LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;z-index:9999;background:var(--k);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;
+}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:72px;letter-spacing:8px;color:var(--g);
+  text-shadow:0 0 40px rgba(200,255,0,.4);line-height:1;margin-bottom:4px;}
+.login-sub{font-size:9px;letter-spacing:6px;color:var(--w3);text-transform:uppercase;margin-bottom:48px;}
+.login-box{background:var(--k3);border:1px solid var(--border);padding:40px 32px;width:100%;max-width:340px;}
+.login-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:12px;}
+.login-input{
+  width:100%;background:var(--k2);border:1.5px solid var(--border);color:var(--w);
+  font-family:'IBM Plex Mono',monospace;font-size:28px;letter-spacing:16px;text-align:center;
+  padding:18px;outline:none;transition:border-color .2s;
+  -webkit-text-security:disc;text-security:disc;
+}
+.login-input:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(200,255,0,.1);}
+.login-btn{
+  width:100%;margin-top:16px;background:var(--g);color:var(--k);border:none;
+  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;
+  padding:16px;cursor:pointer;transition:opacity .2s,box-shadow .2s;
+}
+.login-btn:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.4);}
+.login-err{
+  font-size:10px;letter-spacing:2px;color:var(--red);text-transform:uppercase;
+  margin-top:12px;text-align:center;min-height:16px;
+}
+.login-dots{display:flex;gap:8px;justify-content:center;margin-bottom:24px;}
+.dot{width:10px;height:10px;border:1.5px solid var(--w3);border-radius:50%;transition:all .2s;}
+.dot.filled{background:var(--g);border-color:var(--g);box-shadow:0 0 8px var(--g);}
+.login-back{margin-top:28px;font-size:9px;color:var(--w3);letter-spacing:2px;text-align:center;}
+.login-back a{color:var(--g);text-decoration:none;cursor:pointer;}
+
+/* ── APP ── */
+#app{display:none;}
+#app.show{display:block;}
+
+/* ── MOBILE HEADER ── */
+#mob-hdr{
+  position:sticky;top:0;z-index:90;background:var(--k2);
+  border-bottom:1px solid var(--border);
+  height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+}
+.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--g);}
+.hdr-badge{
+  background:var(--g2);border:1px solid var(--border2);color:var(--g);
+  font-size:8px;letter-spacing:2px;padding:4px 10px;
+}
+.hdr-logout{background:none;border:none;color:var(--w3);font-size:18px;cursor:pointer;padding:8px;}
+
+/* ── BOTTOM NAV ── */
+#bnav{
+  position:fixed;bottom:0;left:0;width:100%;z-index:100;
+  background:var(--k2);border-top:1px solid var(--border);
+  display:flex;padding-bottom:env(safe-area-inset-bottom);
+}
+.bn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 4px;background:none;border:none;cursor:pointer;
+  color:var(--w3);font-family:'IBM Plex Mono',monospace;font-size:8px;
+  letter-spacing:1px;text-transform:uppercase;gap:4px;transition:color .2s;min-height:56px;
+}
+.bn.active,.bn:hover{color:var(--g);}
+.bn-icon{font-size:20px;line-height:1;}
+
+/* ── PAGES ── */
+.pg{display:none;padding:20px 16px;}
+.pg.on{display:block;}
+.fadein{animation:fadeup .3s ease forwards;}
+@keyframes fadeup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SECTION HEADER ── */
+.sec-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--w);}
+.sec-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--k3);border:1px solid var(--border);padding:16px 14px;position:relative;overflow:hidden;}
+.stat-card.accent{border-color:var(--border2);background:var(--g3);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;}
+.stat-card.green::before{background:var(--g);box-shadow:0 0 8px var(--g);}
+.stat-card.gold::before{background:var(--gold);}
+.stat-card.blue::before{background:var(--blue);}
+.stat-card.red::before{background:var(--red);}
+.sc-label{font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:8px;}
+.sc-val{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;line-height:1;}
+.sc-val.green{color:var(--g);}
+.sc-val.gold{color:var(--gold);}
+.sc-val.blue{color:var(--blue);}
+.sc-sub{font-size:9px;color:var(--w3);margin-top:4px;}
+
+/* ── CHART CARD ── */
+.chart-card{background:var(--k3);border:1px solid var(--border);padding:18px;margin-bottom:16px;}
+.chart-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:16px;}
+.chart-wrap{position:relative;height:180px;}
+
+/* ── INVEST FORM ── */
+.form-card{background:var(--k3);border:1px solid var(--border);padding:20px;margin-bottom:14px;}
+.form-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:10px;}
+.amount-display{
+  font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:2px;color:var(--g);
+  text-shadow:0 0 20px rgba(200,255,0,.3);text-align:center;padding:10px 0;line-height:1;
+}
+.range-wrap{position:relative;margin:12px 0 8px;}
+input[type=range]{
+  width:100%;height:4px;background:var(--k4);outline:none;border-radius:2px;
+  -webkit-appearance:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--g);box-shadow:0 0 12px rgba(200,255,0,.6);cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  background:linear-gradient(90deg,var(--g) var(--pct,0%),var(--k4) var(--pct,0%));
+  height:4px;border-radius:2px;
+}
+.range-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--w3);}
+.duration-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;}
+.dur-btn{
+  background:var(--k4);border:1.5px solid var(--border);padding:12px 6px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;text-align:center;cursor:pointer;
+  transition:all .2s;color:var(--w2);
+}
+.dur-btn:hover{border-color:rgba(200,255,0,.4);color:var(--w);}
+.dur-btn.on{background:var(--g2);border-color:var(--g);color:var(--g);}
+.dur-month{font-family:'Bebas Neue',sans-serif;font-size:26px;color:inherit;line-height:1;display:block;}
+.dur-return{font-size:8px;letter-spacing:1px;color:rgba(200,255,0,.6);margin-top:2px;}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.type-btn{
+  background:var(--k4);border:1.5px solid var(--border);padding:16px 10px;
+  cursor:pointer;transition:all .2s;text-align:center;
+}
+.type-btn.on.standard{background:rgba(0,196,255,.08);border-color:var(--blue);}
+.type-btn.on.locked{background:rgba(255,209,102,.08);border-color:var(--gold);}
+.type-icon{font-size:22px;margin-bottom:6px;}
+.type-name{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--w2);}
+.type-badge{font-size:8px;color:var(--w3);margin-top:3px;}
+
+/* ── PREVIEW BOX ── */
+.preview{background:var(--k);border:1px solid var(--border2);padding:18px;margin-bottom:14px;}
+.prev-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border);}
+.prev-row:last-child{border-bottom:none;}
+.prev-key{font-size:9px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
+.prev-val{font-family:'Bebas Neue',sans-serif;font-size:18px;}
+.prev-val.green{color:var(--g);}
+.prev-val.gold{color:var(--gold);}
+
+/* ── PRIMARY BTN ── */
+.btn-primary{
+  width:100%;background:var(--g);color:var(--k);border:none;
+  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;
+  padding:18px;cursor:pointer;transition:opacity .2s,box-shadow .2s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-primary:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.35);}
+.btn-primary:disabled{opacity:.3;cursor:not-allowed;}
+.btn-secondary{
+  width:100%;background:transparent;color:var(--w);border:1.5px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  padding:14px;cursor:pointer;transition:all .2s;margin-top:8px;
+}
+.btn-secondary:hover{border-color:var(--w3);background:rgba(255,255,255,.04);}
+
+/* ── INVESTMENT LIST ── */
+.inv-card{background:var(--k3);border:1px solid var(--border);padding:16px;margin-bottom:10px;position:relative;overflow:hidden;}
+.inv-card.locked{border-color:rgba(255,209,102,.2);}
+.inv-card.locked::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--gold);}
+.inv-card.standard::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--blue);}
+.inv-card.matured{border-color:rgba(200,255,0,.3);}
+.inv-card.matured::before{background:var(--g);}
+.inv-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.inv-amount{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--w);}
+.inv-type-badge{
+  font-size:7px;letter-spacing:2px;padding:3px 8px;text-transform:uppercase;
+  border:1px solid currentColor;
+}
+.inv-type-badge.locked{color:var(--gold);}
+.inv-type-badge.standard{color:var(--blue);}
+.inv-type-badge.matured{color:var(--g);}
+.inv-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:6px;}
+.inv-lbl{color:var(--w3);}
+.inv-val{color:var(--w);}
+.inv-val.green{color:var(--g);}
+.prog-bg{background:var(--k4);height:3px;margin:10px 0 6px;border-radius:1px;}
+.prog-fill{height:3px;border-radius:1px;background:var(--g);transition:width .6s ease;box-shadow:0 0 6px rgba(200,255,0,.4);}
+.prog-fill.gold{background:var(--gold);}
+.inv-actions{display:flex;gap:8px;margin-top:12px;}
+.inv-act-btn{
+  flex:1;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:9px;
+  letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1.5px solid var(--border);
+  background:none;color:var(--w2);transition:all .2s;
+}
+.inv-act-btn.redeem{border-color:rgba(200,255,0,.3);color:var(--g);}
+.inv-act-btn.redeem:hover{background:var(--g2);}
+.inv-act-btn:hover{border-color:var(--w3);}
+
+/* ── RICHIESTA ── */
+.req-card{background:var(--k3);border:1px solid var(--border);padding:16px;margin-bottom:10px;}
+.req-status{display:inline-flex;align-items:center;gap:6px;font-size:8px;letter-spacing:2px;padding:3px 10px;border:1px solid currentColor;}
+.req-status.pending{color:var(--gold);}
+.req-status.approved{color:var(--g);}
+.req-status.rejected{color:var(--red);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* ── TABLE ── */
+.inv-table{width:100%;border-collapse:collapse;font-size:9px;}
+.inv-table th{padding:10px 8px;text-align:left;background:var(--k4);color:var(--w3);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.inv-table td{padding:10px 8px;border-bottom:1px solid var(--border);color:var(--w2);}
+.inv-table tr:last-child td{border-bottom:none;}
+.inv-table .green{color:var(--g);}
+.inv-table .gold{color:var(--gold);}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:flex-end;justify-content:center;padding:0;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--k2);border-top:2px solid var(--g);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:28px 20px;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:20px;}
+.modal-close{float:right;background:none;border:none;color:var(--w3);font-size:22px;cursor:pointer;margin-top:-4px;}
+.input-group{margin-bottom:16px;}
+.input-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:8px;display:block;}
+.lf-in{
+  width:100%;background:var(--k4);border:1.5px solid var(--border);color:var(--w);
+  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:12px 14px;outline:none;
+  transition:border-color .2s;
+}
+.lf-in:focus{border-color:var(--g);}
+textarea.lf-in{resize:vertical;min-height:80px;}
+
+/* ── TICKER ── */
+.ticker-wrap{overflow:hidden;background:var(--g);padding:8px 0;margin-bottom:16px;}
+.ticker{display:inline-flex;animation:tick 25s linear infinite;white-space:nowrap;}
+.ticker span{padding:0 32px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--k);font-weight:700;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:9998;
+  background:var(--k2);color:var(--w);padding:12px 20px;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;white-space:nowrap;border-bottom:2px solid var(--g);
+  opacity:0;transition:opacity .3s;pointer-events:none;
+}
+#toast.show{opacity:1;}
+
+/* ── EMPTY ── */
+.empty-state{text-align:center;padding:48px 20px;color:var(--w3);}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.4;}
+.empty-text{font-size:10px;letter-spacing:2px;text-transform:uppercase;}
+
+/* ── RATE TABLE ── */
+.rate-highlight{background:var(--g2);border:1px solid var(--border2);padding:16px;margin-bottom:16px;}
+.rate-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px;}
+.rate-cell{background:var(--k4);padding:10px 6px;text-align:center;}
+.rate-cell.header{background:var(--k3);font-size:7px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
+.rate-cell.active-dur{background:var(--g2);border:1px solid var(--g);}
+.rate-cell .big{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g);}
+.rate-cell .small{font-size:7px;color:var(--w3);letter-spacing:1px;margin-top:2px;}
+
+/* ── TABS ── */
+.tab-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab-btn{
+  flex:1;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--w3);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:-1px;
+}
+.tab-btn.on{color:var(--g);border-bottom-color:var(--g);}
+.tabp{display:none;}
+.tabp.on{display:block;}
+
+/* ── MOBILE ONLY ── */
+@media(min-width:769px){
+  body{max-width:480px;margin:0 auto;}
+  #mob-hdr{max-width:480px;left:50%;transform:translateX(-50%);}
+  #bnav{max-width:480px;left:50%;transform:translateX(-50%);}
+  .modal-bg{align-items:center;}
+  .modal-box{border-radius:0;border:1px solid var(--border);border-top:2px solid var(--g);}
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">VAULT</div>
+  <div class="login-sub">LF Capital Management</div>
+  <div class="login-box">
+    <div class="login-label">Inserisci Codice di Accesso</div>
+    <div class="login-dots">
+      <div class="dot" id="d0"></div>
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+    <input type="password" class="login-input" id="login-in" maxlength="4" inputmode="numeric" placeholder="••••" autocomplete="off" oninput="onPinInput(this.value)" onkeydown="if(event.key==='Enter')tryLogin()"/>
+    <button class="login-btn" onclick="tryLogin()">ACCEDI →</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+  <div class="login-back">← <a onclick="window.location.href='index.html'">Torna a LILLOFIND</a></div>
+</div>
+
+<!-- ════════════════════════════════
+     APP SHELL
+════════════════════════════════ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="mob-hdr">
+    <div class="hdr-logo">⬡ VAULT</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="hdr-badge" id="hdr-total">€ 0.00</div>
+      <button class="hdr-logout" onclick="doLogout()" title="Esci">⏏</button>
+    </div>
+  </header>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <span>LF VAULT</span><span>3 MESI → +4%</span><span>6 MESI → +9%</span><span>9 MESI → +14%</span><span>12 MESI → +20%</span><span>BLOCCATO → EXTRA +2.5%</span><span>RENDIMENTO ANNUO FINO AL 22.5%</span><span>INVESTIMENTO SICURO</span>
+      <span>LF VAULT</span><span>3 MESI → +4%</span><span>6 MESI → +9%</span><span>9 MESI → +14%</span><span>12 MESI → +20%</span><span>BLOCCATO → EXTRA +2.5%</span><span>RENDIMENTO ANNUO FINO AL 22.5%</span><span>INVESTIMENTO SICURO</span>
+    </div>
+  </div>
+
+  <!-- ─── DASHBOARD ─── -->
+  <div id="pg-dash" class="pg on fadein">
+    <div class="sec-hdr">
+      <div>
+        <div class="sec-label">Panoramica</div>
+        <div class="sec-title">Dashboard</div>
+      </div>
+      <div style="font-size:9px;color:var(--w3);" id="dash-date"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="sc-label">Portafoglio</div>
+        <div class="sc-val green" id="ds-total">€ 0</div>
+        <div class="sc-sub" id="ds-count">0 investimenti</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="sc-label">Guadagni Tot.</div>
+        <div class="sc-val gold" id="ds-gains">€ 0</div>
+        <div class="sc-sub" id="ds-pct">+0.0%</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="sc-label">Capitale Attivo</div>
+        <div class="sc-val blue" id="ds-active">€ 0</div>
+        <div class="sc-sub" id="ds-active-n">0 attivi</div>
+      </div>
+      <div class="stat-card red">
+        <div class="sc-label">Maturati</div>
+        <div class="sc-val" style="color:var(--g);" id="ds-mature">€ 0</div>
+        <div class="sc-sub" id="ds-mature-n">da riscattare</div>
+      </div>
+    </div>
+
+    <!-- Portfolio Growth Chart -->
+    <div class="chart-card">
+      <div class="chart-title">Andamento Portafoglio</div>
+      <div class="chart-wrap"><canvas id="chartGrowth"></canvas></div>
+    </div>
+
+    <!-- Allocation Chart -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div class="chart-card" style="margin-bottom:0;">
+        <div class="chart-title">Tipologia</div>
+        <div class="chart-wrap" style="height:130px;"><canvas id="chartType"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0;">
+        <div class="chart-title">Durata</div>
+        <div class="chart-wrap" style="height:130px;"><canvas id="chartDuration"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Rate Table -->
+    <div class="rate-highlight">
+      <div style="font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:6px;">Tassi di Rendimento</div>
+      <div class="rate-grid">
+        <div class="rate-cell header">Durata</div>
+        <div class="rate-cell header">Standard</div>
+        <div class="rate-cell header">Bloccato</div>
+        <div class="rate-cell header">Annuo</div>
+        <div class="rate-cell"><div class="big">3M</div></div>
+        <div class="rate-cell"><div class="big">4%</div><div class="small">periodo</div></div>
+        <div class="rate-cell"><div class="big">6.5%</div><div class="small">+2.5%</div></div>
+        <div class="rate-cell"><div class="big">16%</div><div class="small">ann.</div></div>
+        <div class="rate-cell"><div class="big">6M</div></div>
+        <div class="rate-cell"><div class="big">9%</div><div class="small">periodo</div></div>
+        <div class="rate-cell"><div class="big">11.5%</div><div class="small">+2.5%</div></div>
+        <div class="rate-cell"><div class="big">18%</div><div class="small">ann.</div></div>
+        <div class="rate-cell"><div class="big">9M</div></div>
+        <div class="rate-cell"><div class="big">14%</div><div class="small">periodo</div></div>
+        <div class="rate-cell"><div class="big">16.5%</div><div class="small">+2.5%</div></div>
+        <div class="rate-cell"><div class="big">18.7%</div><div class="small">ann.</div></div>
+        <div class="rate-cell"><div class="big">12M</div></div>
+        <div class="rate-cell"><div class="big">20%</div><div class="small">periodo</div></div>
+        <div class="rate-cell"><div class="big">22.5%</div><div class="small">+2.5%</div></div>
+        <div class="rate-cell"><div class="big">20%</div><div class="small">ann.</div></div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="showPg('invest')">+ NUOVO INVESTIMENTO</button>
+  </div>
+
+  <!-- ─── INVEST ─── -->
+  <div id="pg-invest" class="pg">
+    <div class="sec-hdr">
+      <div>
+        <div class="sec-label">Crea Piano</div>
+        <div class="sec-title">Investi</div>
+      </div>
+    </div>
+
+    <!-- Amount -->
+    <div class="form-card">
+      <div class="form-label">Importo da Investire</div>
+      <div class="amount-display" id="inv-amount-disp">€ 1.000</div>
+      <div class="range-wrap">
+        <input type="range" id="inv-range" min="100" max="15000" step="100" value="1000" oninput="onRange(this.value)"/>
+      </div>
+      <div class="range-labels">
+        <span>€ 100</span><span>€ 15.000</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(500)">€500</button>
+        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(1000)">€1K</button>
+        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(2500)">€2.5K</button>
+        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(5000)">€5K</button>
+        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(10000)">€10K</button>
+      </div>
+    </div>
+
+    <!-- Duration -->
+    <div class="form-card">
+      <div class="form-label">Durata Investimento</div>
+      <div class="duration-grid">
+        <div class="dur-btn on" onclick="selDur(3,this)">
+          <span class="dur-month">3</span>
+          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <div class="dur-return" id="dr-3">+4%</div>
+        </div>
+        <div class="dur-btn" onclick="selDur(6,this)">
+          <span class="dur-month">6</span>
+          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <div class="dur-return" id="dr-6">+9%</div>
+        </div>
+        <div class="dur-btn" onclick="selDur(9,this)">
+          <span class="dur-month">9</span>
+          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <div class="dur-return" id="dr-9">+14%</div>
+        </div>
+        <div class="dur-btn" onclick="selDur(12,this)">
+          <span class="dur-month">12</span>
+          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <div class="dur-return" id="dr-12">+20%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Type -->
+    <div class="form-card">
+      <div class="form-label">Tipologia</div>
+      <div class="type-grid">
+        <div class="type-btn standard on" onclick="selType('standard',this)">
+          <div class="type-icon">📈</div>
+          <div class="type-name">Standard</div>
+          <div class="type-badge">Flessibile</div>
+        </div>
+        <div class="type-btn locked" onclick="selType('locked',this)">
+          <div class="type-icon">🔒</div>
+          <div class="type-name">Bloccato</div>
+          <div class="type-badge" id="locked-badge">+2.5% extra</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview" id="inv-preview">
+      <div class="prev-row">
+        <span class="prev-key">Capitale</span>
+        <span class="prev-val" id="pv-capital">€ 1.000</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Durata</span>
+        <span class="prev-val" id="pv-dur">3 mesi</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Scadenza</span>
+        <span class="prev-val" id="pv-end">—</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Rendimento %</span>
+        <span class="prev-val green" id="pv-pct">+4.0%</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Profitto Netto</span>
+        <span class="prev-val green" id="pv-profit">+€ 40</span>
+      </div>
+      <div class="prev-row" style="border-bottom:none;padding-top:12px;">
+        <span class="prev-key">Totale a Scadenza</span>
+        <span class="prev-val gold" id="pv-total">€ 1.040</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="inv-btn" onclick="confirmInvest()">CONFERMA INVESTIMENTO →</button>
+    <button class="btn-secondary" onclick="showPg('dash')">Annulla</button>
+  </div>
+
+  <!-- ─── PORTFOLIO ─── -->
+  <div id="pg-portfolio" class="pg">
+    <div class="sec-hdr">
+      <div>
+        <div class="sec-label">I tuoi piani</div>
+        <div class="sec-title">Portfolio</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="tab-btn on" id="pt-active" onclick="switchPortTab('active')" style="flex:none;padding:8px 12px;border:1px solid var(--border);font-size:8px;border-bottom:none;">Attivi</button>
+        <button class="tab-btn" id="pt-history" onclick="switchPortTab('history')" style="flex:none;padding:8px 12px;border:1px solid var(--border);font-size:8px;border-bottom:none;">Storico</button>
+      </div>
+    </div>
+    <div id="port-active"></div>
+    <div id="port-history" style="display:none;"></div>
+  </div>
+
+  <!-- ─── RICHIESTE ─── -->
+  <div id="pg-requests" class="pg">
+    <div class="sec-hdr">
+      <div>
+        <div class="sec-label">Gestione</div>
+        <div class="sec-title">Richieste</div>
+      </div>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab-btn on" onclick="switchReqTab('new',this)">Nuova</button>
+      <button class="tab-btn" onclick="switchReqTab('history',this)">Storico</button>
+    </div>
+    <div class="tabp on" id="req-new">
+      <div class="form-card">
+        <div class="form-label">Tipo Richiesta</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          <div class="type-btn standard on" id="rq-withdraw-btn" onclick="selReqType('withdraw',this)">
+            <div class="type-icon">💸</div>
+            <div class="type-name">Prelievo</div>
+            <div class="type-badge">Fondi maturati</div>
+          </div>
+          <div class="type-btn locked" id="rq-info-btn" onclick="selReqType('info',this)">
+            <div class="type-icon">💬</div>
+            <div class="type-name">Informazioni</div>
+            <div class="type-badge">Assistenza</div>
+          </div>
+        </div>
+
+        <div id="rq-withdraw-form">
+          <div class="input-group">
+            <label class="input-label">Seleziona Investimento Maturato</label>
+            <select class="lf-in" id="rq-inv-select">
+              <option value="">— Seleziona —</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">IBAN / Metodo di Pagamento</label>
+            <input class="lf-in" type="text" id="rq-iban" placeholder="IT00 X000 0000 0000 0000 0000 000"/>
+          </div>
+        </div>
+        <div id="rq-info-form" style="display:none;">
+          <div class="input-group">
+            <label class="input-label">Oggetto</label>
+            <input class="lf-in" type="text" id="rq-subject" placeholder="Es. Rinnovo investimento..."/>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Messaggio</label>
+            <textarea class="lf-in" id="rq-msg" placeholder="Descrivi la tua richiesta..."></textarea>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="submitRequest()">INVIA RICHIESTA →</button>
+      </div>
+    </div>
+    <div class="tabp" id="req-history">
+      <div id="req-list"></div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- ═══ MODAL: Confirm Invest ═══ -->
+<div class="modal-bg" id="modal-confirm">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-confirm')">✕</button>
+    <div class="modal-title">Conferma Piano</div>
+    <div id="modal-confirm-body"></div>
+    <button class="btn-primary" id="modal-confirm-btn" onclick="doInvest()">AVVIA INVESTIMENTO ⬡</button>
+    <button class="btn-secondary" onclick="closeModal('modal-confirm')">Annulla</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Redeem ═══ -->
+<div class="modal-bg" id="modal-redeem">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-redeem')">✕</button>
+    <div class="modal-title">Riscatta Investimento</div>
+    <div id="modal-redeem-body"></div>
+    <button class="btn-primary" onclick="doRedeem()">RISCATTA FONDI →</button>
+    <button class="btn-secondary" onclick="closeModal('modal-redeem')">Chiudi</button>
+  </div>
+</div>
+
+<!-- ═══ BOTTOM NAV ═══ -->
+<nav id="bnav">
+  <button class="bn active" id="bn-dash" onclick="showPg('dash')">
+    <span class="bn-icon">⬡</span><span>Home</span>
+  </button>
+  <button class="bn" id="bn-invest" onclick="showPg('invest')">
+    <span class="bn-icon">📈</span><span>Investi</span>
+  </button>
+  <button class="bn" id="bn-portfolio" onclick="showPg('portfolio')">
+    <span class="bn-icon">💼</span><span>Portfolio</span>
+  </button>
+  <button class="bn" id="bn-requests" onclick="showPg('requests')">
+    <span class="bn-icon">📋</span><span>Richieste</span>
+  </button>
+</nav>
+
+<script>
+// ══════════════════════════════════════════════════
+// DATA & STATE
+// ══════════════════════════════════════════════════
+const ACCESS_CODE = '2809';
+const STORAGE_KEY = 'lfvault_data';
+
+const RATES = { // standard rates by months
+  3:  { period: 4,   annual: 16.00 },
+  6:  { period: 9,   annual: 18.00 },
+  9:  { period: 14,  annual: 18.67 },
+  12: { period: 20,  annual: 20.00 }
+};
+const LOCKED_BONUS = 2.5; // extra % for locked
+
+let state = {
+  investments: [], // { id, capital, months, type, rate, profit, startDate, endDate, status:'active'|'matured'|'redeemed' }
+  requests: [],    // { id, type, invId?, iban?, subject?, msg, date, status:'pending'|'approved'|'rejected' }
+};
+
+let selDurVal = 3;
+let selTypeVal = 'standard';
+let invAmount = 1000;
+let redeemId = null;
+let reqType = 'withdraw';
+
+// ── LOAD / SAVE ──
+function loadState() {
+  try { const d = localStorage.getItem(STORAGE_KEY); if(d) state = JSON.parse(d); } catch(e){}
+  // Refresh matured status
+  const now = new Date();
+  state.investments.forEach(inv => {
+    if(inv.status === 'active' && new Date(inv.endDate) <= now) inv.status = 'matured';
+  });
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ══════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════
+function onPinInput(val) {
+  document.getElementById('login-err').textContent = '';
+  for(let i=0;i<4;i++) {
+    const d = document.getElementById('d'+i);
+    d.classList.toggle('filled', i < val.length);
+  }
+  if(val.length === 4) tryLogin();
+}
+function tryLogin() {
+  const pin = document.getElementById('login-in').value;
+  if(pin === ACCESS_CODE) {
+    sessionStorage.setItem('vault_auth','1');
+    document.getElementById('login-screen').style.opacity='0';
+    document.getElementById('login-screen').style.transition='opacity .4s';
+    setTimeout(()=>{
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app').className='show';
+      initApp();
+    }, 400);
+  } else {
+    document.getElementById('login-err').textContent = '⚠ Codice errato — riprova';
+    document.getElementById('login-in').value = '';
+    for(let i=0;i<4;i++) document.getElementById('d'+i).classList.remove('filled');
+    document.getElementById('login-in').focus();
+  }
+}
+function doLogout() {
+  sessionStorage.removeItem('vault_auth');
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════
+// APP INIT
+// ══════════════════════════════════════════════════
+function initApp() {
+  loadState();
+  updatePreview();
+  renderDash();
+  renderPortfolio();
+  renderRequests();
+  updateRangeStyle(document.getElementById('inv-range'));
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+  // Auto-check session
+  if(!sessionStorage.getItem('vault_auth')) {
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app').className='';
+  }
+}
+
+// Check auth on load
+window.addEventListener('load', ()=>{
+  if(sessionStorage.getItem('vault_auth')==='1') {
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').className='show';
+    initApp();
+  }
+});
+
+// ══════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════
+const pages = ['dash','invest','portfolio','requests'];
+function showPg(id) {
+  pages.forEach(p => {
+    document.getElementById('pg-'+p).classList.toggle('on', p===id);
+    document.getElementById('pg-'+p).classList.remove('fadein');
+    if(p===id) setTimeout(()=>document.getElementById('pg-'+p).classList.add('fadein'),10);
+    const bn = document.getElementById('bn-'+p);
+    if(bn) bn.classList.toggle('active', p===id);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='invest') updatePreview();
+  if(id==='portfolio') renderPortfolio();
+  if(id==='requests') renderRequests();
+}
+
+// ══════════════════════════════════════════════════
+// INVEST FORM
+// ══════════════════════════════════════════════════
+function onRange(val) {
+  invAmount = parseInt(val);
+  document.getElementById('inv-amount-disp').textContent = '€ '+fmtNum(invAmount);
+  updateRangeStyle(document.getElementById('inv-range'));
+  updatePreview();
+}
+function updateRangeStyle(el) {
+  const pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+  el.style.setProperty('--pct', pct+'%');
+}
+function setAmount(v) {
+  invAmount = v;
+  document.getElementById('inv-range').value = v;
+  document.getElementById('inv-amount-disp').textContent = '€ '+fmtNum(v);
+  updateRangeStyle(document.getElementById('inv-range'));
+  updatePreview();
+}
+function selDur(months, el) {
+  selDurVal = months;
+  document.querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  updatePreview();
+  updateDurReturns();
+}
+function selType(type, el) {
+  selTypeVal = type;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  updatePreview();
+  updateDurReturns();
+}
+function updateDurReturns() {
+  [3,6,9,12].forEach(m => {
+    const base = RATES[m].period;
+    const r = selTypeVal==='locked' ? base+LOCKED_BONUS : base;
+    document.getElementById('dr-'+m).textContent = '+'+r+'%';
+  });
+}
+function calcRate(months, type) {
+  const base = RATES[months].period;
+  return type==='locked' ? base+LOCKED_BONUS : base;
+}
+function updatePreview() {
+  const rate = calcRate(selDurVal, selTypeVal);
+  const profit = invAmount * rate / 100;
+  const total = invAmount + profit;
+  const endDate = addMonths(new Date(), selDurVal);
+
+  document.getElementById('pv-capital').textContent = '€ '+fmtNum(invAmount);
+  document.getElementById('pv-dur').textContent = selDurVal+' mesi'+(selTypeVal==='locked'?' 🔒':'');
+  document.getElementById('pv-end').textContent = endDate.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('pv-pct').textContent = '+'+rate.toFixed(1)+'%';
+  document.getElementById('pv-profit').textContent = '+€ '+fmtNum(profit);
+  document.getElementById('pv-total').textContent = '€ '+fmtNum(total);
+  document.getElementById('locked-badge').textContent = selTypeVal==='locked'?'+2.5% extra → '+(RATES[selDurVal].period+LOCKED_BONUS)+'%':'+2.5% extra';
+}
+function confirmInvest() {
+  const rate = calcRate(selDurVal, selTypeVal);
+  const profit = invAmount * rate / 100;
+  const total = invAmount + profit;
+  const endDate = addMonths(new Date(), selDurVal);
+  const typeLbl = selTypeVal==='locked'?'🔒 Bloccato':'📈 Standard';
+
+  document.getElementById('modal-confirm-body').innerHTML = `
+    <div class="preview" style="margin-bottom:16px;">
+      <div class="prev-row"><span class="prev-key">Importo</span><span class="prev-val">€ ${fmtNum(invAmount)}</span></div>
+      <div class="prev-row"><span class="prev-key">Tipo</span><span class="prev-val">${typeLbl}</span></div>
+      <div class="prev-row"><span class="prev-key">Durata</span><span class="prev-val">${selDurVal} mesi</span></div>
+      <div class="prev-row"><span class="prev-key">Scadenza</span><span class="prev-val">${endDate.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})}</span></div>
+      <div class="prev-row"><span class="prev-key">Rendimento</span><span class="prev-val green">+${rate}%</span></div>
+      <div class="prev-row"><span class="prev-key">Profitto</span><span class="prev-val green">+€ ${fmtNum(profit)}</span></div>
+      <div class="prev-row" style="border:none;padding-top:10px;"><span class="prev-key">Totale Previsto</span><span class="prev-val gold" style="font-size:22px;">€ ${fmtNum(total)}</span></div>
+    </div>
+    <p style="font-size:9px;color:var(--w3);line-height:1.8;margin-bottom:16px;">
+      ${selTypeVal==='locked'?'⚠️ Il capitale bloccato non può essere ritirato prima della scadenza. Il rendimento aggiuntivo del 2.5% viene applicato automaticamente.':'Il capitale può essere richiesto prima della scadenza contattando il supporto.'}
+    </p>`;
+  openModal('modal-confirm');
+}
+function doInvest() {
+  const rate = calcRate(selDurVal, selTypeVal);
+  const profit = invAmount * rate / 100;
+  const now = new Date();
+  const inv = {
+    id: 'INV-'+Date.now(),
+    capital: invAmount,
+    months: selDurVal,
+    type: selTypeVal,
+    rate,
+    profit,
+    startDate: now.toISOString(),
+    endDate: addMonths(now, selDurVal).toISOString(),
+    status: 'active'
+  };
+  state.investments.push(inv);
+  saveState();
+  closeModal('modal-confirm');
+  showToast('✅ Investimento avviato con successo!');
+  renderDash();
+  renderPortfolio();
+  showPg('portfolio');
+}
+
+// ══════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════
+function renderDash() {
+  const invs = state.investments;
+  const active = invs.filter(i=>i.status==='active');
+  const matured = invs.filter(i=>i.status==='matured');
+  const redeemed = invs.filter(i=>i.status==='redeemed');
+
+  const totalCapital = [...active,...matured].reduce((s,i)=>s+i.capital,0);
+  const totalProfit = [...active,...matured,...redeemed].reduce((s,i)=>s+i.profit,0);
+  const totalInvested = invs.reduce((s,i)=>s+i.capital,0);
+  const activeCapital = active.reduce((s,i)=>s+i.capital,0);
+  const matureVal = matured.reduce((s,i)=>s+i.capital+i.profit,0);
+
+  const pct = totalInvested>0 ? (totalProfit/totalInvested*100) : 0;
+
+  setEl('ds-total','€ '+fmtNum(totalCapital+totalProfit));
+  setEl('ds-count',invs.length+' investim.');
+  setEl('ds-gains','€ '+fmtNum(totalProfit));
+  setEl('ds-pct','+'+pct.toFixed(1)+'%');
+  setEl('ds-active','€ '+fmtNum(activeCapital));
+  setEl('ds-active-n',active.length+' attivi');
+  setEl('ds-mature','€ '+fmtNum(matureVal));
+  setEl('ds-mature-n',matured.length+' da riscattare');
+  setEl('hdr-total','€ '+fmtNum(totalCapital));
+
+  drawGrowthChart(invs);
+  drawTypeChart(active);
+  drawDurChart(active);
+}
+
+function drawGrowthChart(invs) {
+  const ctx = document.getElementById('chartGrowth').getContext('2d');
+  if(window._cgChart) window._cgChart.destroy();
+
+  // Build 6-month timeline
+  const months = [];
+  const vals = [];
+  const now = new Date();
+  for(let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(d.toLocaleDateString('it-IT',{month:'short',year:'2-digit'}));
+    // Sum investments active at that point
+    const dt = new Date(d.getFullYear(), d.getMonth()+1, 0); // end of month
+    const total = invs.filter(inv=>{
+      const start = new Date(inv.startDate);
+      const end = new Date(inv.endDate);
+      return start <= dt;
+    }).reduce((s,inv)=>{
+      const start = new Date(inv.startDate);
+      const end = new Date(inv.endDate);
+      const monthsPassed = Math.min(inv.months, Math.max(0,(dt-start)/(1000*60*60*24*30)));
+      const partialProfit = inv.profit * (monthsPassed/inv.months);
+      return s + inv.capital + partialProfit;
+    },0);
+    vals.push(parseFloat(total.toFixed(2)));
+  }
+
+  window._cgChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: months,
+      datasets:[{
+        data: vals,
+        borderColor:'#C8FF00',
+        backgroundColor:'rgba(200,255,0,.06)',
+        borderWidth:2,
+        pointBackgroundColor:'#C8FF00',
+        pointRadius:3,
+        tension:.4,
+        fill:true
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#161616',borderColor:'rgba(200,255,0,.3)',borderWidth:1,
+        titleColor:'#aaa',bodyColor:'#C8FF00',
+        callbacks:{label:ctx=>'€ '+fmtNum(ctx.parsed.y)}
+      }},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#555',font:{size:8}}},
+        y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#555',font:{size:8},callback:v=>'€'+fmtK(v)}}
+      }
+    }
+  });
+}
+
+function drawTypeChart(active) {
+  const ctx = document.getElementById('chartType').getContext('2d');
+  if(window._ctChart) window._ctChart.destroy();
+  const std = active.filter(i=>i.type==='standard').reduce((s,i)=>s+i.capital,0);
+  const lck = active.filter(i=>i.type==='locked').reduce((s,i)=>s+i.capital,0);
+  if(std===0&&lck===0){
+    window._ctChart=null;
+    ctx.clearRect(0,0,300,300);
+    ctx.fillStyle='#333';ctx.font='10px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillText('Nessun dato',75,65);
+    return;
+  }
+  window._ctChart = new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:['Standard','Bloccato'],datasets:[{data:[std,lck],
+      backgroundColor:['rgba(0,196,255,.7)','rgba(255,209,102,.7)'],
+      borderColor:['#00C4FF','#FFD166'],borderWidth:1.5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:8},boxWidth:10,padding:6}},
+      tooltip:{backgroundColor:'#161616',titleColor:'#aaa',bodyColor:'#fff',
+        callbacks:{label:ctx=>'€ '+fmtNum(ctx.parsed)}}}}
+  });
+}
+
+function drawDurChart(active) {
+  const ctx = document.getElementById('chartDuration').getContext('2d');
+  if(window._cdChart) window._cdChart.destroy();
+  const byDur = {3:0,6:0,9:0,12:0};
+  active.forEach(i=>{ byDur[i.months]=(byDur[i.months]||0)+i.capital; });
+  const vals = Object.values(byDur);
+  if(vals.every(v=>v===0)){
+    ctx.clearRect(0,0,300,300);
+    ctx.fillStyle='#333';ctx.font='10px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillText('Nessun dato',75,65);
+    return;
+  }
+  window._cdChart = new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:['3M','6M','9M','12M'],datasets:[{data:vals,
+      backgroundColor:['rgba(200,255,0,.4)','rgba(200,255,0,.6)','rgba(200,255,0,.8)','rgba(200,255,0,1)'],
+      borderColor:'#080808',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:8},boxWidth:10,padding:6}},
+      tooltip:{backgroundColor:'#161616',titleColor:'#aaa',bodyColor:'#fff',
+        callbacks:{label:ctx=>'€ '+fmtNum(ctx.parsed)}}}}
+  });
+}
+
+// ══════════════════════════════════════════════════
+// PORTFOLIO
+// ══════════════════════════════════════════════════
+function renderPortfolio() {
+  const active = state.investments.filter(i=>i.status!=='redeemed');
+  const history = state.investments.filter(i=>i.status==='redeemed');
+  renderInvList('port-active', active);
+  renderInvList('port-history', history, true);
+}
+
+function renderInvList(containerId, invs, isHistory=false) {
+  const el = document.getElementById(containerId);
+  if(!invs.length){
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">${isHistory?'Nessuno storico':'Nessun investimento attivo'}</div></div>`;
+    return;
+  }
+  el.innerHTML = invs.sort((a,b)=>new Date(b.startDate)-new Date(a.startDate)).map(inv => {
+    const now = new Date();
+    const start = new Date(inv.startDate);
+    const end = new Date(inv.endDate);
+    const total = (now-start)/(end-start);
+    const pct = Math.min(100, Math.max(0, total*100));
+    const isMatured = inv.status==='matured';
+    const isRedeemed = inv.status==='redeemed';
+    const typeBadge = isRedeemed?'matured':inv.type;
+    const typeLbl = isRedeemed?'Riscattato':isMatured?'Maturato':inv.type==='locked'?'Bloccato':'Standard';
+    const daysLeft = Math.max(0,Math.ceil((end-now)/(1000*60*60*24)));
+    const actions = !isRedeemed && (isMatured) ? `
+      <div class="inv-actions">
+        <button class="inv-act-btn redeem" onclick="openRedeem('${inv.id}')">💸 Riscatta</button>
+      </div>` : !isRedeemed && !isMatured ? `
+      <div class="inv-actions">
+        <button class="inv-act-btn" onclick="openRedeem('${inv.id}',true)">ℹ️ Dettagli</button>
+      </div>` : '';
+
+    return `<div class="inv-card ${typeBadge}">
+      <div class="inv-head">
+        <div>
+          <div class="inv-amount">€ ${fmtNum(inv.capital)}</div>
+          <div style="font-size:9px;color:var(--w3);margin-top:2px;">${inv.id}</div>
+        </div>
+        <div class="inv-type-badge ${typeBadge}">${typeLbl}</div>
+      </div>
+      <div class="inv-row"><span class="inv-lbl">Rendimento</span><span class="inv-val green">+${inv.rate}% (+€${fmtNum(inv.profit)})</span></div>
+      <div class="inv-row"><span class="inv-lbl">Durata</span><span class="inv-val">${inv.months} mesi</span></div>
+      <div class="inv-row"><span class="inv-lbl">Inizio</span><span class="inv-val">${new Date(inv.startDate).toLocaleDateString('it-IT')}</span></div>
+      <div class="inv-row"><span class="inv-lbl">Scadenza</span><span class="inv-val">${new Date(inv.endDate).toLocaleDateString('it-IT')}</span></div>
+      ${!isRedeemed?`<div class="prog-bg"><div class="prog-fill ${inv.type}" style="width:${pct.toFixed(1)}%;${inv.type==='locked'?'background:var(--gold);box-shadow:0 0 6px rgba(255,209,102,.4);':''}"></div></div>
+      <div class="inv-row" style="margin-bottom:0;"><span class="inv-lbl">${isMatured?'✅ Maturato':'Progresso'}</span><span class="inv-val">${pct.toFixed(0)}%${!isMatured?' — '+daysLeft+'gg':''}</span></div>`:'<div style="height:4px;"></div>'}
+      <div class="inv-row"><span class="inv-lbl">Totale a Scadenza</span><span class="inv-val" style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:18px;">€ ${fmtNum(inv.capital+inv.profit)}</span></div>
+      ${actions}
+    </div>`;
+  }).join('');
+}
+
+function switchPortTab(tab) {
+  document.getElementById('port-active').style.display = tab==='active'?'block':'none';
+  document.getElementById('port-history').style.display = tab==='history'?'block':'none';
+  document.getElementById('pt-active').classList.toggle('on', tab==='active');
+  document.getElementById('pt-history').classList.toggle('on', tab==='history');
+}
+
+// ══════════════════════════════════════════════════
+// REDEEM
+// ══════════════════════════════════════════════════
+function openRedeem(id, infoOnly=false) {
+  redeemId = id;
+  const inv = state.investments.find(i=>i.id===id);
+  if(!inv) return;
+  const isMatured = inv.status==='matured';
+  document.getElementById('modal-redeem-body').innerHTML = `
+    <div class="preview" style="margin-bottom:16px;">
+      <div class="prev-row"><span class="prev-key">Investimento</span><span class="prev-val">${inv.id}</span></div>
+      <div class="prev-row"><span class="prev-key">Capitale</span><span class="prev-val">€ ${fmtNum(inv.capital)}</span></div>
+      <div class="prev-row"><span class="prev-key">Rendimento</span><span class="prev-val green">+${inv.rate}%</span></div>
+      <div class="prev-row"><span class="prev-key">Profitto</span><span class="prev-val green">+€ ${fmtNum(inv.profit)}</span></div>
+      <div class="prev-row"><span class="prev-key">Scadenza</span><span class="prev-val">${new Date(inv.endDate).toLocaleDateString('it-IT')}</span></div>
+      <div class="prev-row" style="border:none"><span class="prev-key">Totale</span><span class="prev-val gold" style="font-size:22px;">€ ${fmtNum(inv.capital+inv.profit)}</span></div>
+    </div>
+    ${!isMatured?'<div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);padding:12px;font-size:9px;color:var(--red);line-height:1.8;margin-bottom:16px;">⚠️ Questo investimento non è ancora maturato. Per richiedere un rientro anticipato, contatta il supporto tramite la sezione Richieste.</div>':'<div style="background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.2);padding:12px;font-size:9px;color:var(--g);line-height:1.8;margin-bottom:16px;">✅ Investimento maturato! Puoi procedere al riscatto dei fondi.</div>'}
+  `;
+  const btn = document.querySelector('#modal-redeem .btn-primary');
+  btn.style.display = isMatured&&!infoOnly ? 'flex':'none';
+  openModal('modal-redeem');
+}
+function doRedeem() {
+  const inv = state.investments.find(i=>i.id===redeemId);
+  if(!inv||inv.status!=='matured') return;
+  inv.status = 'redeemed';
+  // Create auto request
+  state.requests.push({
+    id:'REQ-'+Date.now(), type:'withdraw', invId:inv.id,
+    amount: inv.capital+inv.profit, date: new Date().toISOString(), status:'pending'
+  });
+  saveState();
+  closeModal('modal-redeem');
+  showToast('💸 Richiesta di riscatto inviata!');
+  renderDash();
+  renderPortfolio();
+}
+
+// ══════════════════════════════════════════════════
+// REQUESTS
+// ══════════════════════════════════════════════════
+function renderRequests() {
+  // Populate matured investments for withdrawal
+  const sel = document.getElementById('rq-inv-select');
+  const matured = state.investments.filter(i=>i.status==='matured');
+  sel.innerHTML = '<option value="">— Seleziona —</option>' +
+    matured.map(i=>`<option value="${i.id}">${i.id} — €${fmtNum(i.capital+i.profit)}</option>`).join('');
+
+  const el = document.getElementById('req-list');
+  if(!state.requests.length){
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Nessuna richiesta</div></div>`;
+    return;
+  }
+  el.innerHTML = [...state.requests].reverse().map(r=>`
+    <div class="req-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--w2);margin-bottom:4px;">${r.id}</div>
+          <div style="font-family:Bebas Neue,sans-serif;font-size:20px;">${r.type==='withdraw'?'💸 Prelievo':'💬 Informazioni'}</div>
+        </div>
+        <div class="req-status ${r.status}"><div class="status-dot"></div>${r.status==='pending'?'In attesa':r.status==='approved'?'Approvato':'Rifiutato'}</div>
+      </div>
+      ${r.amount?`<div style="font-size:9px;color:var(--w3);">Importo: <span style="color:var(--g);">€ ${fmtNum(r.amount)}</span></div>`:''}
+      ${r.subject?`<div style="font-size:9px;color:var(--w3);">Oggetto: ${r.subject}</div>`:''}
+      <div style="font-size:9px;color:var(--w3);margin-top:4px;">${new Date(r.date).toLocaleDateString('it-IT')}</div>
+    </div>`).join('');
+}
+
+function selReqType(type, el) {
+  reqType = type;
+  document.querySelectorAll('#req-new .type-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('rq-withdraw-form').style.display = type==='withdraw'?'block':'none';
+  document.getElementById('rq-info-form').style.display = type==='info'?'block':'none';
+}
+function switchReqTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  document.getElementById('req-new').classList.toggle('on', tab==='new');
+  document.getElementById('req-history').classList.toggle('on', tab==='history');
+}
+function submitRequest() {
+  if(reqType==='withdraw'){
+    const invId = document.getElementById('rq-inv-select').value;
+    const iban = document.getElementById('rq-iban').value.trim();
+    if(!invId){showToast('⚠️ Seleziona un investimento');return;}
+    const inv = state.investments.find(i=>i.id===invId);
+    state.requests.push({id:'REQ-'+Date.now(),type:'withdraw',invId,iban,amount:inv?inv.capital+inv.profit:0,date:new Date().toISOString(),status:'pending'});
+    if(inv) inv.status='redeemed';
+  } else {
+    const subject = document.getElementById('rq-subject').value.trim();
+    const msg = document.getElementById('rq-msg').value.trim();
+    if(!subject){showToast('⚠️ Inserisci un oggetto');return;}
+    state.requests.push({id:'REQ-'+Date.now(),type:'info',subject,msg,date:new Date().toISOString(),status:'pending'});
+  }
+  saveState();
+  showToast('✅ Richiesta inviata!');
+  renderDash();
+  renderRequests();
+  switchReqTab('history');
+}
+
+// ══════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════
+function fmtNum(n) {
+  return parseFloat(n.toFixed(2)).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtK(n) {
+  if(n>=1000) return (n/1000).toFixed(0)+'k';
+  return n.toFixed(0);
+}
+function setEl(id, text){ const e=document.getElementById(id); if(e) e.textContent=text; }
+function addMonths(date, months) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth()+months);
+  return d;
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden';}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow='';}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
