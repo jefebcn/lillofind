@@ -349,86 +349,82 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   .show-mob{display:block !important;}
   .full-mob{width:100% !important;}
   .grid-1-mob{grid-template-columns:1fr !important;}
-  .pad-mob{padding:20px 16px !important;}
+  .pad-mob{padding:18px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
 
-  /* MOBILE HERO ─ absolute layout, LED top 44%, content bottom 56% */
+  /* MOBILE HERO — stacked flex, height:auto, zero void */
   #pg-hero-section{
-    display:block !important;
+    display:flex !important;
+    flex-direction:column !important;
     position:relative !important;
-    height:100svh !important;
-    min-height:100svh !important;
+    height:auto !important;
+    min-height:auto !important;
     overflow:hidden !important;
   }
   #hero-wordmark-wrap{
-    position:absolute !important;
-    top:0 !important; left:0 !important;
-    right:0 !important; bottom:56% !important;
-    height:auto !important;
+    position:relative !important;
+    top:auto !important; left:auto !important;
+    right:auto !important; bottom:auto !important;
+    height:140px !important;
     display:flex !important;
     align-items:center !important;
     justify-content:center !important;
-    padding-top:12px !important;
+    flex-shrink:0 !important;
+    padding-top:14px !important;
   }
   #hero-wordmark-wrap > div{ transform:rotate(-3deg) !important; }
   #led-word{
-    font-size:clamp(48px,13vw,74px) !important;
-    letter-spacing:clamp(2px,1.5vw,8px) !important;
+    font-size:clamp(46px,13vw,72px) !important;
+    letter-spacing:clamp(2px,1.4vw,8px) !important;
   }
-  #hero-spacer,#hero-lines,#hero-glows{ display:none !important; }
+  #hero-spacer,#hero-lines,#hero-glows,.mob-fade-in{ display:none !important; }
   #hero-content{
-    position:absolute !important;
-    top:44% !important; left:0 !important;
-    right:0 !important; bottom:0 !important;
-    display:flex !important;
-    flex-direction:column !important;
-    justify-content:flex-end !important;
+    position:relative !important;
+    top:auto !important; left:auto !important;
+    right:auto !important; bottom:auto !important;
+    display:block !important;
     z-index:5 !important;
+    flex-shrink:0 !important;
     padding:0 !important;
-    overflow:hidden !important;
   }
-  .mob-fade-in{ display:none !important; }
   #hero-content-inner{
-    padding:14px 18px 0 !important;
+    padding:12px 16px 18px !important;
     background:#080808 !important;
   }
-  #hero-badge{ margin-bottom:10px !important; }
+  #hero-badge{ margin-bottom:8px !important; padding:4px 10px !important; }
   #hero-badge span:last-child{ font-size:8px !important; }
   #hero-h1{
-    font-size:clamp(46px,13.5vw,76px) !important;
+    font-size:clamp(42px,13vw,72px) !important;
     line-height:.88 !important;
     letter-spacing:0 !important;
+    margin-bottom:0 !important;
   }
-  #hero-divider{ margin:10px 0 !important; width:36px !important; }
-  #hero-tagline{ font-size:12px !important; margin-bottom:3px !important; }
-  #hero-sub{
-    font-size:9px !important;
-    margin-bottom:14px !important;
-    line-height:1.7 !important;
-  }
+  #hero-divider{ margin:8px 0 !important; width:32px !important; }
+  #hero-tagline{ font-size:11px !important; margin-bottom:3px !important; }
+  #hero-sub{ font-size:8.5px !important; margin-bottom:12px !important; line-height:1.7 !important; }
   #hero-cta{
+    display:flex !important;
     flex-wrap:nowrap !important;
     gap:8px !important;
     padding-bottom:0 !important;
   }
   #hero-cta button{
     flex:1 !important;
-    padding:14px 10px !important;
+    padding:12px 8px !important;
     font-size:10px !important;
     min-width:0 !important;
     white-space:nowrap !important;
   }
-  #hero-stats{
-    background:#080808 !important;
-    overflow-x:auto !important;
-    -webkit-overflow-scrolling:touch !important;
-  }
-  #hero-stats > div{
-    padding:10px 12px !important;
-    min-width:68px !important;
-  }
-  #hero-stats p.bb{ font-size:14px !important; margin-bottom:1px !important; }
+  #hero-stats{ background:#080808 !important; flex-shrink:0 !important; }
+  #hero-stats > div{ padding:8px 10px !important; min-width:60px !important; }
+  #hero-stats p.bb{ font-size:13px !important; margin-bottom:1px !important; }
   #hero-stats p:last-child{ font-size:6px !important; }
+
+  /* HOME SECTIONS — compact paddings */
+  .latest-drops-section{ padding:20px 16px !important; }
+  .latest-drops-header{ margin-bottom:16px !important; }
+  .lfpoints-promo-left,.lfpoints-promo-right{ padding:20px 16px !important; }
+  .auth-cta-section{ padding:20px 16px !important; }
 }
 
 @media(min-width:769px){

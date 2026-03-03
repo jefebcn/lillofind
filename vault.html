@@ -426,7 +426,6 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <div class="rate-cell"><div class="big">12M</div></div>
         <div class="rate-cell"><div class="big">18%</div><div class="small">flessibile</div></div>
         <div class="rate-cell"><div class="big">20%</div><div class="small">bloccato</div></div>
-        <div class="rate-cell"><div class="big">22.5%</div><div class="small">+2.5%</div></div>
         <div class="rate-cell"><div class="big">20%</div><div class="small">ann.</div></div>
       </div>
     </div>
@@ -469,22 +468,22 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <div class="dur-btn on" onclick="selDur(3,this)">
           <span class="dur-month">3</span>
           <span style="font-size:7px;color:var(--w3);">mesi</span>
-          <div class="dur-return" id="dr-3">+4%</div>
+          <div class="dur-return" id="dr-3">+3%</div>
         </div>
         <div class="dur-btn" onclick="selDur(6,this)">
           <span class="dur-month">6</span>
           <span style="font-size:7px;color:var(--w3);">mesi</span>
-          <div class="dur-return" id="dr-6">+9%</div>
+          <div class="dur-return" id="dr-6">+7%</div>
         </div>
         <div class="dur-btn" onclick="selDur(9,this)">
           <span class="dur-month">9</span>
           <span style="font-size:7px;color:var(--w3);">mesi</span>
-          <div class="dur-return" id="dr-9">+14%</div>
+          <div class="dur-return" id="dr-9">+12%</div>
         </div>
         <div class="dur-btn" onclick="selDur(12,this)">
           <span class="dur-month">12</span>
           <span style="font-size:7px;color:var(--w3);">mesi</span>
-          <div class="dur-return" id="dr-12">+20%</div>
+          <div class="dur-return" id="dr-12">+18%</div>
         </div>
       </div>
     </div>
@@ -501,7 +500,7 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <div class="type-btn locked" onclick="selType('locked',this)">
           <div class="type-icon">🔒</div>
           <div class="type-name">Bloccato</div>
-          <div class="type-badge" id="locked-badge">+2.5% extra</div>
+          <div class="type-badge" id="locked-badge">Rendimento massimo</div>
         </div>
       </div>
     </div>
@@ -845,7 +844,7 @@ function confirmInvest() {
       <div class="prev-row" style="border:none;padding-top:10px;"><span class="prev-key">Totale Previsto</span><span class="prev-val gold" style="font-size:22px;">€ ${fmtNum(total)}</span></div>
     </div>
     <p style="font-size:9px;color:var(--w3);line-height:1.8;margin-bottom:16px;">
-      ${selTypeVal==='locked'?'⚠️ Il capitale bloccato non può essere ritirato prima della scadenza. Il rendimento aggiuntivo del 2.5% viene applicato automaticamente.':'Il capitale può essere richiesto prima della scadenza contattando il supporto.'}
+      ${selTypeVal==='locked'?'⚠️ Il capitale bloccato non può essere ritirato prima della scadenza. Questo tipo di investimento garantisce il rendimento massimo disponibile.':'ℹ️ Il capitale flessibile può essere richiesto prima della scadenza contattando il supporto tramite la sezione Richieste.'}
     </p>`;
   openModal('modal-confirm');
 }
