@@ -343,96 +343,103 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 .outline{color:transparent;-webkit-text-stroke:1.5px var(--k);}
 .outline-led{color:transparent;-webkit-text-stroke:1.5px var(--led);}
 
-/* ── RESPONSIVE UTILS ────────────────────────── */
+/* ── RESPONSIVE UTILS ─────────────────────────── */
 @media(max-width:768px){
   .hide-mob{display:none !important;}
-  .full-mob{width:100%;}
+  .show-mob{display:block !important;}
+  .full-mob{width:100% !important;}
   .grid-1-mob{grid-template-columns:1fr !important;}
-  .pad-mob{padding:24px 16px !important;}
+  .pad-mob{padding:20px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
 
-  /* ── MOBILE HERO: globe top, content bottom — no overlap ── */
+  /* MOBILE HERO ─ absolute layout, LED top 44%, content bottom 56% */
   #pg-hero-section{
+    display:block !important;
+    position:relative !important;
+    height:100svh !important;
     min-height:100svh !important;
-    display:grid !important;
-    grid-template-rows:1fr auto !important;
-    flex-direction:unset !important;
-    justify-content:unset !important;
-  }
-  #hero-canvas{
-    position:absolute !important;
-    inset:0 !important;
-    height:58% !important; /* globe only in top half */
+    overflow:hidden !important;
   }
   #hero-wordmark-wrap{
-    top:0 !important; bottom:auto !important;
-    height:58% !important;
+    position:absolute !important;
+    top:0 !important; left:0 !important;
+    right:0 !important; bottom:56% !important;
+    height:auto !important;
     display:flex !important;
-    align-items:flex-start !important;
-    padding-top:18px !important;
-  }
-  #hero-wordmark, #hero-wordmark ~ span, #hero-wordmark + span{
-    font-size:clamp(44px,12vw,70px) !important;
-    letter-spacing:1px !important;
-    -webkit-text-stroke-width:1.5px !important;
-  }
-  /* glow dots hide on mobile */
-  #hero-glows{ display:none !important; }
-  /* Diagonal lines: softer on mobile */
-  #hero-lines{ opacity:.4 !important; }
-
-  /* Content area: sits in bottom row, never overlaps globe */
-  #hero-content{
-    position:relative !important;
-    top:auto !important; left:auto !important;
-    z-index:10 !important;
-    background:linear-gradient(180deg,rgba(8,8,8,0) 0%,#080808 18%) !important;
-    padding:16px 20px 28px !important;
-    margin-top:0 !important;
-    max-width:100% !important;
-    grid-row:2 !important;
-  }
-  #hero-content h1{
-    font-size:clamp(54px,15vw,90px) !important;
-    line-height:.88 !important;
-    margin-bottom:0 !important;
-  }
-  #hero-badge{ margin-bottom:14px !important; }
-  #hero-divider{ margin:14px 0 !important; }
-  #hero-desc{ margin-bottom:20px !important; }
-  #hero-desc p:first-child{ font-size:13px !important; }
-  #hero-desc p:last-child{ font-size:10px !important; }
-  #hero-cta{ padding-bottom:16px !important; gap:10px !important; }
-  #hero-cta button, #hero-cta a{
-    padding:14px 20px !important;
-    font-size:11px !important;
-    flex:1 !important;
+    align-items:center !important;
     justify-content:center !important;
+    padding-top:12px !important;
   }
-  /* Stats bar mobile */
-  #hero-stats{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  #hero-stats > div{ min-width:80px !important; padding:12px 14px !important; }
-  #hero-stats p.bb{ font-size:16px !important; }
-  #hero-stats p:last-child{ font-size:7px !important; }
+  #hero-wordmark-wrap > div{ transform:rotate(-3deg) !important; }
+  #led-word{
+    font-size:clamp(48px,13vw,74px) !important;
+    letter-spacing:clamp(2px,1.5vw,8px) !important;
+  }
+  #hero-spacer,#hero-lines,#hero-glows{ display:none !important; }
+  #hero-content{
+    position:absolute !important;
+    top:44% !important; left:0 !important;
+    right:0 !important; bottom:0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:flex-end !important;
+    z-index:5 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+  }
+  .mob-fade-in{ display:none !important; }
+  #hero-content-inner{
+    padding:14px 18px 0 !important;
+    background:#080808 !important;
+  }
+  #hero-badge{ margin-bottom:10px !important; }
+  #hero-badge span:last-child{ font-size:8px !important; }
+  #hero-h1{
+    font-size:clamp(46px,13.5vw,76px) !important;
+    line-height:.88 !important;
+    letter-spacing:0 !important;
+  }
+  #hero-divider{ margin:10px 0 !important; width:36px !important; }
+  #hero-tagline{ font-size:12px !important; margin-bottom:3px !important; }
+  #hero-sub{
+    font-size:9px !important;
+    margin-bottom:14px !important;
+    line-height:1.7 !important;
+  }
+  #hero-cta{
+    flex-wrap:nowrap !important;
+    gap:8px !important;
+    padding-bottom:0 !important;
+  }
+  #hero-cta button{
+    flex:1 !important;
+    padding:14px 10px !important;
+    font-size:10px !important;
+    min-width:0 !important;
+    white-space:nowrap !important;
+  }
+  #hero-stats{
+    background:#080808 !important;
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+  #hero-stats > div{
+    padding:10px 12px !important;
+    min-width:68px !important;
+  }
+  #hero-stats p.bb{ font-size:14px !important; margin-bottom:1px !important; }
+  #hero-stats p:last-child{ font-size:6px !important; }
 }
-@media(min-width:769px){
-  .mob-only{display:none !important;}
 
-  /* ── DESKTOP HERO: true 2-column side-by-side layout ── */
+@media(min-width:769px){
+  .mob-only,.show-mob{ display:none !important; }
+  /* DESKTOP HERO ─ 2-column grid */
   #pg-hero-section{
     display:grid !important;
     grid-template-columns:1fr 1fr !important;
     grid-template-rows:1fr auto !important;
     min-height:100svh !important;
-    flex-direction:unset !important;
-    align-items:unset !important;
   }
-  /* Canvas covers full section (globe drawn right-side by JS cx=W*0.68) */
-  #hero-canvas{
-    position:absolute !important;
-    inset:0 !important; width:100% !important; height:100% !important;
-  }
-  /* Wordmark: covers right half where globe is */
   #hero-wordmark-wrap{
     position:absolute !important;
     top:0 !important; bottom:0 !important;
@@ -441,52 +448,33 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     align-items:center !important;
     justify-content:center !important;
   }
-  /* Spacer: only in left column, fills vertical space, pushes content down */
-  #pg-hero-section > div[style*="flex:1"]{
-    grid-column:1 !important;
-    grid-row:1 !important;
-  }
-  /* Content block: left column, bottom-aligned */
+  #hero-spacer{ grid-column:1; grid-row:1; }
   #hero-content{
-    grid-column:1 !important;
-    grid-row:1 !important;
+    grid-column:1 !important; grid-row:1 !important;
     align-self:end !important;
-    position:relative !important;
-    z-index:5 !important;
+    position:relative !important; z-index:5 !important;
     padding:48px 52px 0 !important;
   }
-  #hero-content > div:first-child{ display:none !important; } /* hide fade overlay on desktop */
-  #hero-content-inner{
-    background:transparent !important;
-    padding:0 !important;
-  }
+  .mob-fade-in{ display:none !important; }
+  #hero-content-inner{ background:transparent !important; padding:0 !important; }
   #hero-h1{ font-size:clamp(72px,7.5vw,130px) !important; }
   #hero-badge{ margin-bottom:24px !important; }
   #hero-divider{ margin:24px 0 !important; }
-  #hero-cta button{ flex:0 1 auto !important; min-width:unset !important; }
-  /* Stats bar: full width, bottom row spanning both columns */
+  #hero-cta button{ flex:0 1 auto !important; }
   #hero-stats{
-    grid-column:1 / -1 !important;
-    grid-row:2 !important;
+    grid-column:1/-1 !important; grid-row:2 !important;
     background:#080808 !important;
   }
-  /* Glows: show on desktop */
   #hero-glows{ display:block !important; }
+  #hero-lines{ display:block !important; }
 }
 
-/* App-like global touch behaviors */
-* { -webkit-tap-highlight-color: transparent; }
-input, textarea, select { font-size:16px; } /* prevent iOS zoom on focus */
-body { -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
-button { touch-action:manipulation; }
-img { -webkit-user-drag:none; user-select:none; }
-
-/* App-like global behaviors */
-* { -webkit-tap-highlight-color: transparent; }
-input, textarea, select { font-size:16px !important; }
-body { -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
-button { touch-action:manipulation; }
-img { -webkit-user-drag:none; }
+/* App: no tap highlight, prevent iOS zoom on inputs, smooth scroll */
+*{ -webkit-tap-highlight-color:transparent; }
+input,textarea,select{ font-size:16px !important; }
+body{ -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
+button{ touch-action:manipulation; }
+img{ -webkit-user-drag:none; user-select:none; }
 </style>
 </head>
 <body>
@@ -709,15 +697,13 @@ img { -webkit-user-drag:none; }
       setTimeout(function(){sweep(0,startFlicker);},500);
     })();
     </script>
-      </div>
-    </div>
 
     <!-- Spacer pushes content down on desktop -->
-    <div style="flex:1;min-height:45vh;"></div>
+    <div id="hero-spacer" style="flex:1;min-height:45vh;"></div>
 
     <!-- Content — always below globe, no overlap -->
     <div id="hero-content" style="position:relative;z-index:5;">
-      <div class="mob-only" style="height:80px;background:linear-gradient(0deg,#080808,transparent);margin-top:-80px;pointer-events:none;"></div>
+      <div class="mob-fade-in" style="height:80px;background:linear-gradient(0deg,#080808,transparent);margin-top:-80px;pointer-events:none;"></div>
       <div style="background:#080808;padding:20px 24px 0;" id="hero-content-inner">
         <div id="hero-badge" style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:18px;background:rgba(200,255,0,.05);">
           <span style="width:6px;height:6px;border-radius:50%;background:var(--led);display:inline-block;animation:pulse-led 2s ease-in-out infinite;"></span>
