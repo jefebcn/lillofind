@@ -196,25 +196,24 @@ img { -webkit-user-drag:none; user-select:none; }
 ═══════════════════════════════════════ -->
 <div id="pg-home" class="pg on">
 
-  <!-- HERO — Full mobile-first, bold, dark warm, no canvas, no lag -->
+  <!-- HERO — Full mobile-first, bold, warm sunset, no canvas -->
   <section style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#0a0a0a;">
 
-    <!-- Warm dark gradient background -->
-    <div style="position:absolute;inset:0;background:linear-gradient(160deg,#0a0a0a 0%,#1a0900 38%,#2e1300 58%,#0a0a0a 100%);"></div>
+    <!-- Rich layered sunset bg -->
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 90% 55% at 72% 28%,rgba(255,145,0,.24) 0%,rgba(170,55,0,.15) 45%,transparent 75%),linear-gradient(160deg,#0d0800 0%,#1c0a00 30%,#2a1000 55%,#120800 100%);"></div>
 
-    <!-- Sun glow - pure CSS, zero JS -->
-    <div style="position:absolute;right:6%;top:16%;width:clamp(150px,32vw,300px);height:clamp(150px,32vw,300px);border-radius:50%;background:radial-gradient(circle,rgba(255,235,100,.5) 0%,rgba(255,155,0,.28) 40%,transparent 72%);pointer-events:none;"></div>
+    <!-- Horizon light band -->
+    <div style="position:absolute;bottom:35%;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 8%,rgba(255,165,40,.22) 30%,rgba(255,205,80,.35) 50%,rgba(255,165,40,.22) 70%,transparent 92%);filter:blur(1px);"></div>
 
-    <!-- Subtle diagonal light -->
-    <div style="position:absolute;top:0;right:0;width:50%;height:100%;background:linear-gradient(135deg,transparent,rgba(255,190,60,.05) 50%,rgba(255,120,0,.09));pointer-events:none;"></div>
+    <!-- Sand strip -->
+    <div style="position:absolute;bottom:0;left:0;right:0;height:28%;background:linear-gradient(180deg,transparent 0%,rgba(30,12,0,.6) 100%);"></div>
 
-    <!-- Big decorative "2026" watermark -->
+    <!-- Big "2026" watermark -->
     <div class="bb" style="position:absolute;bottom:-6%;right:-3%;font-size:clamp(150px,42vw,380px);color:transparent;-webkit-text-stroke:1px rgba(255,190,60,.06);pointer-events:none;user-select:none;line-height:1;letter-spacing:-6px;">2026</div>
 
-    <!-- Push content down -->
     <div style="flex:1;"></div>
 
-    <!-- Main content block -->
+    <!-- Main content -->
     <div style="position:relative;z-index:5;padding:24px 20px 0;">
 
       <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,190,60,.38);padding:5px 14px;margin-bottom:18px;background:rgba(255,175,0,.06);">
@@ -224,21 +223,35 @@ img { -webkit-user-drag:none; user-select:none; }
 
       <h1 class="bb" style="font-size:clamp(70px,18vw,170px);line-height:.84;color:#f5f5f5;margin-bottom:0;letter-spacing:-1px;">BEACH<br/>VOLLEY<br/><span style="color:#ffc347;">2026.</span></h1>
 
-      <div style="width:48px;height:2px;background:#ffc347;margin:18px 0;box-shadow:0 0 14px rgba(255,190,60,.5);"></div>
+      <div style="width:48px;height:2px;background:#ffc347;margin:18px 0;box-shadow:0 0 12px rgba(255,190,60,.5);"></div>
 
-      <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:2;font-family:'IBM Plex Mono',monospace;margin-bottom:22px;">
-        &#x2600; Sole &nbsp;&bull;&nbsp; &#x1F3D6; Sabbia &nbsp;&bull;&nbsp; &#x1F37A; Birra &nbsp;&bull;&nbsp; &#x1F3D0; Pallavolo<br/>
-        Tornei, premi e classifiche live.
-      </p>
+      <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:2;font-family:'IBM Plex Mono',monospace;margin-bottom:22px;">Sole &bull; Sabbia &bull; Birra &bull; Pallavolo<br/>Tornei, premi e classifiche live.</p>
 
-      <div style="display:flex;gap:10px;margin-bottom:0;">
-        <button onclick="openModal('iscriviti-modal')" style="flex:1;background:#ffc347;color:#0a0a0a;border:none;padding:17px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;">Iscriviti ora</button>
-        <button onclick="showPg('live')" style="flex:1;background:transparent;border:1.5px solid rgba(255,255,255,.2);color:#fff;padding:17px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><span class="live-dot"></span>Live</button>
+      <!-- Split CTA — no gap, shared border -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid rgba(255,190,60,.35);overflow:hidden;margin-bottom:0;">
+
+        <!-- Iscriviti: yellow fill -->
+        <button onclick="openModal('iscriviti-modal')" style="background:#ffc347;color:#0a0a0a;border:none;border-right:1.5px solid rgba(255,190,60,.35);padding:20px 12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;">
+          <span style="font-size:20px;line-height:1;">&#x1F3D0;</span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Iscriviti ora</span>
+          <span style="font-size:8px;font-weight:400;opacity:.6;letter-spacing:1px;">Posti limitati</span>
+        </button>
+
+        <!-- Live: dark with glow + text info -->
+        <button onclick="showPg('live')" style="background:rgba(200,255,0,.05);color:#fff;border:none;padding:20px 12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(200,255,0,.08),transparent 70%);pointer-events:none;"></div>
+          <div style="display:flex;align-items:center;gap:7px;z-index:1;">
+            <span class="live-dot" style="width:8px;height:8px;flex-shrink:0;"></span>
+            <span style="font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Live</span>
+          </div>
+          <span style="font-size:9px;color:rgba(255,255,255,.5);letter-spacing:1px;z-index:1;" id="live-cta-count">2 partite in corso</span>
+          <span style="font-size:8px;color:var(--led);letter-spacing:1px;text-transform:uppercase;z-index:1;">Segui in diretta &rarr;</span>
+        </button>
       </div>
     </div>
 
-    <!-- Stats strip at very bottom of hero -->
-    <div style="position:relative;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.07);margin-top:22px;background:rgba(0,0,0,.35);">
+    <!-- Stats strip -->
+    <div style="position:relative;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.07);margin-top:22px;background:rgba(0,0,0,.4);">
       <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
         <p class="bb" style="font-size:22px;color:#ffc347;" id="stat-teams">24</p>
         <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Squadre</p>
