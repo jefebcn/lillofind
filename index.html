@@ -405,6 +405,8 @@ textarea.lf-in{resize:vertical;min-height:90px;}
         <button onclick="showPg('home');closeDrawer();" class="drawer-link">🏠 Home</button>
         <button onclick="showPg('shop');closeDrawer();" class="drawer-link">🛍️ Shop</button>
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link">⬡ LFPoints</button>
+        <button onclick="showPg('cart');closeDrawer();" class="drawer-link">🛒 Carrello</button>
+        <a href="app.html" class="drawer-link" style="text-decoration:none;">🏐 Tornei Beach Volley</a>
         <div style="height:1px;background:var(--border);margin:12px 0;"></div>
         <button id="d-profile" onclick="showPg('profile');closeDrawer();" class="drawer-link" style="display:none;">👤 Il Mio Profilo</button>
         <button id="d-admin" onclick="showPg('admin');closeDrawer();" class="drawer-link" style="display:none;">⚙️ Admin Panel</button>
@@ -442,13 +444,13 @@ textarea.lf-in{resize:vertical;min-height:90px;}
         <span>✦ RESO GRATUITO ENTRO 30 GIORNI — NESSUNA DOMANDA</span>
         <span>✦ NUOVI DROP OGNI SETTIMANA — EARLY ACCESS PER I MEMBERS</span>
         <span>✦ 50 LFPOINTS = SCONTO €5 SUL PROSSIMO ORDINE</span>
-        <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · KLARNA</span>
+        <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · BONIFICO · KLARNA</span>
         <span>✦ QUALITÀ 1:1 — STREETWEAR PREMIUM SENZA COMPROMESSI</span>
         <span>✦ SPEDIZIONE DHL EXPRESS — CONSEGNA 10/15 GIORNI LAVORATIVI</span>
         <span>✦ RESO GRATUITO ENTRO 30 GIORNI — NESSUNA DOMANDA</span>
         <span>✦ NUOVI DROP OGNI SETTIMANA — EARLY ACCESS PER I MEMBERS</span>
-        <span>✦ 50 LFPOINTS = SCONTO €5 SUL PROSSIMO ORDINE</span>
-        <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · KLARNA</span>
+        <span>✦ 50 LFPOINTS = SCONTO €5 SUL PROSSIMO ORDINE — ACCREDITATI AL CHECKOUT</span>
+        <span>✦ PAGAMENTI SSL SICURI — VISA · MASTERCARD · PAYPAL · BONIFICO · KLARNA</span>
         <span>✦ QUALITÀ 1:1 — STREETWEAR PREMIUM SENZA COMPROMESSI</span>
       </div>
     </div>
@@ -472,6 +474,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     <nav style="display:flex;gap:24px;align-items:center;">
       <button class="nbtn" onclick="showPg('shop')">Shop</button>
       <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
+      <a href="app.html" class="nbtn" style="text-decoration:none;color:var(--k);">🏐 Tornei</a>
       <button class="nbtn" id="n-admin" style="display:none;" onclick="showPg('admin')">Admin</button>
     </nav>
     <div style="position:absolute;left:50%;transform:translateX(-50%);">
@@ -482,6 +485,11 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       <div id="n-badge" style="display:none;background:var(--led);color:var(--k);padding:4px 12px;font-size:10px;letter-spacing:2px;cursor:pointer;box-shadow:0 0 10px rgba(200,255,0,.4);" onclick="showPg('lfpoints')">
         ⬡ <span id="n-pts">0</span>
       </div>
+      <!-- Cart icon desktop -->
+      <button onclick="showPg('cart')" class="nbtn" style="position:relative;padding:8px;">
+        🛒
+        <span class="cart-badge" style="position:absolute;top:0;right:-4px;background:var(--led);color:var(--k);width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:bold;display:none;align-items:center;justify-content:center;"></span>
+      </button>
       <button id="n-login-btn" onclick="showPg('auth')" class="btn-led" style="padding:8px 18px;font-size:10px;">Accedi →</button>
     </div>
   </div>
@@ -709,7 +717,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       <div class="led-badge" style="margin-bottom:16px;">⬡ Programma Fedeltà</div>
       <h2 class="bb" style="font-size:clamp(44px,5vw,68px);line-height:.93;margin-bottom:18px;">LFPoints.<br/>Ogni Drop<br/>Ti Premia.</h2>
       <p style="font-size:11px;line-height:1.9;color:var(--mid);max-width:300px;margin-bottom:24px;">
-        1€ speso = 1 LFPOINT.<br/>Accumula e riscatta sconti reali:<br/>da €5 fino al 30% di sconto.
+        1€ speso = 1 LFPOINT.<br/>Accreditati al completamento dell'acquisto.<br/>Accumula e riscatta sconti: da €5 fino al 30%.
       </p>
       <button class="btn-led" onclick="showPg('lfpoints')">Scopri i Premi →</button>
     </div>
@@ -804,8 +812,180 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     LFPOINTS PAGE
+     CART PAGE
 ════════════════════════════════════════════════════════ -->
+<div id="pg-cart" class="pg">
+  <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
+      <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Carrello</h1>
+      <button class="btn-g" onclick="showPg('shop')" style="font-size:10px;padding:8px 16px;">← Continua a Fare Shopping</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:32px;" class="grid-1-mob">
+      <!-- Items -->
+      <div>
+        <div id="cart-items">
+          <div style="padding:60px;text-align:center;"><p style="font-size:11px;color:var(--dim);letter-spacing:2px;">CARICAMENTO...</p></div>
+        </div>
+      </div>
+      <!-- Summary -->
+      <div id="cart-summary" style="display:none;">
+        <div style="border:2px solid var(--k);padding:24px;position:sticky;top:130px;">
+          <p class="bb" style="font-size:24px;margin-bottom:20px;">Riepilogo Ordine</p>
+          <div style="display:flex;flex-direction:column;gap:10px;border-bottom:1px solid #e0e0e0;padding-bottom:16px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;">
+              <span style="color:var(--mid);">Subtotale</span><span id="cart-subtotal">€0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;">
+              <span style="color:var(--mid);">Spedizione DHL</span><span id="cart-ship">—</span>
+            </div>
+            <div style="font-size:9px;color:var(--dim);letter-spacing:1px;">Gratuita sopra €80</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span class="bb" style="font-size:20px;">Totale</span>
+            <span class="bb" style="font-size:20px;" id="cart-total">€0.00</span>
+          </div>
+          <p id="cart-pts-preview" style="font-size:9px;color:var(--led);letter-spacing:1px;margin-bottom:20px;"></p>
+          <!-- Discount code -->
+          <div style="display:flex;gap:0;margin-bottom:16px;">
+            <input class="lf-in" id="cart-coupon" placeholder="Codice sconto / LFPOINTS" style="flex:1;border-right:none;font-size:11px;"/>
+            <button onclick="applyCoupon()" class="btn-k" style="padding:0 16px;font-size:10px;flex-shrink:0;">Applica</button>
+          </div>
+          <div id="cart-coupon-msg" style="font-size:10px;color:var(--led);margin-bottom:12px;display:none;"></div>
+          <button onclick="showPg('checkout')" class="btn-led" style="width:100%;font-size:12px;padding:16px;">Procedi al Checkout →</button>
+          <div style="margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:9px;color:var(--dim);letter-spacing:1px;">🔒 SSL Sicuro</span>
+            <span style="font-size:9px;color:var(--dim);letter-spacing:1px;">🚀 DHL Express</span>
+            <span style="font-size:9px;color:var(--dim);letter-spacing:1px;">🔄 Reso 30gg</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     CHECKOUT PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-checkout" class="pg">
+  <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
+    <h1 class="bb" style="font-size:clamp(36px,5vw,64px);margin-bottom:8px;">Checkout</h1>
+    <div class="led-strip" style="margin-bottom:32px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:32px;" class="grid-1-mob">
+      <!-- Left: form -->
+      <div>
+        <!-- Shipping -->
+        <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+          <p class="bb" style="font-size:22px;margin-bottom:20px;">📦 Indirizzo di Spedizione</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ck-fname" placeholder="Mario"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Cognome *</label><input class="lf-in" id="ck-lname" placeholder="Rossi"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Indirizzo *</label><input class="lf-in" id="ck-street" placeholder="Via Roma 1"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Città *</label><input class="lf-in" id="ck-city" placeholder="Milano"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">CAP *</label><input class="lf-in" id="ck-zip" placeholder="20100" maxlength="5"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Telefono</label><input class="lf-in" id="ck-phone" placeholder="+39 333 000 0000" type="tel"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Paese</label>
+              <select class="lf-in" id="ck-country"><option>Italia</option><option>San Marino</option><option>Svizzera</option><option>Altro</option></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment method -->
+        <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+          <p class="bb" style="font-size:22px;margin-bottom:20px;">💳 Metodo di Pagamento</p>
+          <div style="display:flex;flex-direction:column;gap:0;border:1.5px solid #e0e0e0;">
+            
+            <!-- Card -->
+            <label style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid #e0e0e0;cursor:pointer;" onclick="selectPayment('card')">
+              <span id="pay-radio-card" style="width:20px;height:20px;border:2px solid var(--led);border-radius:50%;background:var(--led);flex-shrink:0;transition:all .2s;"></span>
+              <div>
+                <p style="font-size:12px;font-weight:500;">💳 Carta di Credito / Debito</p>
+                <p style="font-size:10px;color:var(--dim);">Visa · Mastercard · American Express</p>
+              </div>
+              <div style="margin-left:auto;display:flex;gap:6px;">
+                <span style="border:1px solid #e0e0e0;padding:2px 6px;font-size:9px;">VISA</span>
+                <span style="border:1px solid #e0e0e0;padding:2px 6px;font-size:9px;">MC</span>
+              </div>
+            </label>
+            <!-- Card fields -->
+            <div id="pay-card-fields" style="padding:16px 18px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Numero Carta</label><input class="lf-in" id="ck-card-num" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"/></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Scadenza</label><input class="lf-in" id="ck-card-exp" placeholder="MM/AA" maxlength="5"/></div>
+                  <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">CVV</label><input class="lf-in" id="ck-card-cvv" placeholder="123" maxlength="4" type="password"/></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome sulla Carta</label><input class="lf-in" id="ck-card-name" placeholder="MARIO ROSSI"/></div>
+              </div>
+            </div>
+
+            <!-- PayPal -->
+            <label style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid #e0e0e0;cursor:pointer;" onclick="selectPayment('paypal')">
+              <span id="pay-radio-paypal" style="width:20px;height:20px;border:2px solid #e0e0e0;border-radius:50%;flex-shrink:0;transition:all .2s;"></span>
+              <div>
+                <p style="font-size:12px;font-weight:500;">🅿 PayPal</p>
+                <p style="font-size:10px;color:var(--dim);">Verrai reindirizzato su PayPal per completare il pagamento.</p>
+              </div>
+              <span style="margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#003087;letter-spacing:1px;">PAY<span style="color:#009cde">PAL</span></span>
+            </label>
+            <div id="pay-paypal-fields" style="display:none;padding:16px 18px;border-bottom:1px solid #e0e0e0;background:#f0f7ff;">
+              <p style="font-size:11px;color:#003087;line-height:1.7;">Clicca "Conferma Ordine" e verrai reindirizzato su PayPal per completare il pagamento in modo sicuro. Non è necessario avere un conto PayPal — puoi pagare con carta anche tramite PayPal.</p>
+            </div>
+
+            <!-- Bonifico -->
+            <label style="display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;" onclick="selectPayment('bonifico')">
+              <span id="pay-radio-bonifico" style="width:20px;height:20px;border:2px solid #e0e0e0;border-radius:50%;flex-shrink:0;transition:all .2s;"></span>
+              <div>
+                <p style="font-size:12px;font-weight:500;">🏦 Bonifico Bancario</p>
+                <p style="font-size:10px;color:var(--dim);">L'ordine viene confermato alla ricezione del bonifico (1–3 giorni).</p>
+              </div>
+              <span style="margin-left:auto;font-size:20px;">🏦</span>
+            </label>
+            <div id="pay-bonifico-fields" style="display:none;padding:16px 18px;background:#f8f8f8;">
+              <p style="font-size:10px;font-weight:600;margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;">Dati Bancari</p>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--mid);">
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #e0e0e0;padding-bottom:6px;"><span>Intestatario</span><strong>LILLOFIND SRL</strong></div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #e0e0e0;padding-bottom:6px;"><span>IBAN</span><strong>IT60 X054 2811 1010 0000 0123 456</strong></div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #e0e0e0;padding-bottom:6px;"><span>BIC/SWIFT</span><strong>BLOPIT22XXX</strong></div>
+                <div style="display:flex;justify-content:space-between;"><span>Causale</span><strong id="bonifico-causale">LILLO-ORDER</strong></div>
+              </div>
+              <p style="font-size:10px;color:var(--dim);margin-top:10px;line-height:1.6;">⚠️ Inserisci il numero ordine come causale. L'ordine sarà elaborato entro 24h dalla ricezione del bonifico. I LFPOINTS verranno accreditati alla conferma del pagamento.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+          <p class="bb" style="font-size:22px;margin-bottom:16px;">📝 Note sull'Ordine</p>
+          <textarea class="lf-in" id="ck-notes" placeholder="Istruzioni di consegna, orari preferiti..." style="min-height:80px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Right: summary -->
+      <div>
+        <div style="border:2px solid var(--k);padding:24px;position:sticky;top:130px;">
+          <p class="bb" style="font-size:20px;margin-bottom:16px;">📋 Il Tuo Ordine</p>
+          <div id="ck-order-items" style="margin-bottom:16px;border-bottom:1px solid #e0e0e0;padding-bottom:16px;max-height:280px;overflow-y:auto;"></div>
+          <div style="display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #e0e0e0;padding-bottom:16px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--mid);">Subtotale</span><span id="ck-sub">€0.00</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--mid);">Spedizione DHL</span><span id="ck-ship">—</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--mid);color:var(--led);">Sconto</span><span id="ck-disc" style="color:var(--led);">—</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span class="bb" style="font-size:22px;">Totale</span>
+            <span class="bb" style="font-size:22px;" id="ck-total">€0.00</span>
+          </div>
+          <p id="ck-pts-preview" style="font-size:9px;color:var(--led);letter-spacing:1px;margin-bottom:20px;"></p>
+          <button onclick="placeOrder()" class="btn-led" style="width:100%;font-size:13px;padding:18px;">🔒 Conferma Ordine →</button>
+          <div style="margin-top:12px;text-align:center;">
+            <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Pagamento sicuro SSL 256-bit</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div id="pg-lfpoints" class="pg">
 
   <!-- Hero -->
@@ -828,7 +1008,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       <div style="padding:32px 24px;border-right:1px solid var(--k);">
         <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">01</p>
         <h3 class="bb" style="font-size:26px;margin:10px 0 8px;">🛒 Acquista</h3>
-        <p style="font-size:11px;color:var(--mid);line-height:1.9;">Ogni prodotto genera LFPOINTS pari al prezzo in euro. €89 = 89 pts. Automatico, immediato.</p>
+        <p style="font-size:11px;color:var(--mid);line-height:1.9;">Ogni prodotto genera LFPOINTS pari al prezzo in euro. €89 = 89 pts. Accreditati al completamento dell'acquisto.</p>
       </div>
       <div style="padding:32px 24px;border-right:1px solid var(--k);">
         <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">02</p>
@@ -1574,6 +1754,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   <button class="bnav-btn" id="bn-home" onclick="showPg('home')"><span class="bnav-icon">🏠</span>Home</button>
   <button class="bnav-btn" id="bn-shop" onclick="showPg('shop')"><span class="bnav-icon">🛍️</span>Shop</button>
   <button class="bnav-btn" id="bn-lfp" onclick="showPg('lfpoints')"><span class="bnav-icon">⬡</span>Points</button>
+  <button class="bnav-btn" onclick="showPg('cart')" style="position:relative;"><span class="bnav-icon">🛒</span>Carrello<span class="cart-badge" style="position:absolute;top:6px;right:calc(50% - 20px);background:var(--led);color:var(--k);width:16px;height:16px;border-radius:50%;font-size:8px;font-weight:bold;display:none;align-items:center;justify-content:center;"></span></button>
   <button class="bnav-btn" id="bn-profile" onclick="showPg('profile')"><span class="bnav-icon">👤</span>Profilo</button>
 </nav>
 
@@ -1851,25 +2032,158 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     }).join('');
   }
 
-  // ── Buy ────────────────────────────────────────────────
-  window.buy=async function(pid,price){
-    if(!user){showToast('Accedi per acquistare 👆');showPg('auth');return;}
-    const fb=window.__fb, pts=Math.floor(price);
-    const ref=fb.doc(fb.db,'users',user.uid);
-    const snap=await fb.getDoc(ref);
-    const d=snap.exists()?snap.data():{};
-    const np=(d.lfpoints||0)+pts, ns=(d.totalSpent||0)+price;
-    await fb.updateDoc(ref,{lfpoints:np,totalSpent:ns});
-    udata={...udata,lfpoints:np,totalSpent:ns};
-    updateNav(user,udata); updateHomeDisplay();
-    // Check if reward unlocked
-    const prev=np-pts;
-    const newReward=REWARDS.find(r=>prev<r.pts&&np>=r.pts);
-    if(newReward) showToast(`🎁 Premio sbloccato: ${newReward.label}!`);
-    else showToast(`+${pts} LFPOINTS accreditati!`);
+  // ── Cart ───────────────────────────────────────────────
+  let cart=JSON.parse(localStorage.getItem('lf_cart')||'[]');
+  
+  function saveCart(){localStorage.setItem('lf_cart',JSON.stringify(cart));}
+  
+  function updateCartBadge(){
+    const count=cart.reduce((s,i)=>s+i.qty,0);
+    document.querySelectorAll('.cart-badge').forEach(b=>{
+      b.textContent=count;
+      b.style.display=count>0?'flex':'none';
+    });
+  }
+  
+  function renderCart(){
+    const wrap=document.getElementById('cart-items');
+    const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const pts=Math.floor(total);
+    if(!wrap)return;
+    if(!cart.length){
+      wrap.innerHTML=`<div style="padding:60px;text-align:center;">
+        <p class="bb" style="font-size:36px;margin-bottom:8px;">Carrello Vuoto</p>
+        <p style="font-size:11px;color:var(--dim);margin-bottom:24px;">Aggiungi qualcosa dallo shop!</p>
+        <button class="btn-led" onclick="showPg('shop')">Shop →</button>
+      </div>`;
+      document.getElementById('cart-summary').style.display='none';
+      return;
+    }
+    document.getElementById('cart-summary').style.display='block';
+    wrap.innerHTML=cart.map((item,idx)=>`
+      <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #e0e0e0;align-items:center;">
+        <div style="width:72px;height:72px;background:#f0f0f0;flex-shrink:0;overflow:hidden;">
+          ${item.img?`<img src="${item.img}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#ccc;">IMG</div>'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          ${item.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">${item.brand}</p>`:''}
+          <p style="font-size:12px;font-weight:500;margin:2px 0;">${item.name}</p>
+          ${item.size?`<p style="font-size:10px;color:var(--dim);">SZ ${item.size}</p>`:''}
+          <p style="font-size:9px;color:var(--led);letter-spacing:1px;margin-top:2px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <button onclick="changeQty(${idx},-1)" style="width:28px;height:28px;border:1.5px solid var(--k);background:none;cursor:pointer;font-size:14px;">−</button>
+          <span style="font-size:12px;min-width:16px;text-align:center;">${item.qty}</span>
+          <button onclick="changeQty(${idx},1)" style="width:28px;height:28px;border:1.5px solid var(--k);background:none;cursor:pointer;font-size:14px;">+</button>
+        </div>
+        <div style="text-align:right;flex-shrink:0;min-width:70px;">
+          <p class="bb" style="font-size:18px;">€${(item.price*item.qty).toFixed(2)}</p>
+          <button onclick="removeCart(${idx})" style="font-size:9px;color:#c00;background:none;border:none;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:4px;">Rimuovi</button>
+        </div>
+      </div>`).join('');
+    const ship=total>=80?0:6.90;
+    document.getElementById('cart-subtotal').textContent='€'+total.toFixed(2);
+    document.getElementById('cart-ship').textContent=ship===0?'Gratis':'€'+ship.toFixed(2);
+    document.getElementById('cart-total').textContent='€'+(total+ship).toFixed(2);
+    document.getElementById('cart-pts-preview').textContent='+'+pts+' LFPOINTS al completamento';
+  }
+  
+  window.changeQty=function(idx,delta){
+    cart[idx].qty=Math.max(1,cart[idx].qty+delta);
+    saveCart();updateCartBadge();renderCart();
+  };
+  window.removeCart=function(idx){
+    cart.splice(idx,1);saveCart();updateCartBadge();renderCart();
   };
 
-  // ── Profile ────────────────────────────────────────────
+  // ── Buy ────────────────────────────────────────────────
+  window.buy=function(pid,price){
+    if(!user){showToast('Accedi per acquistare 👆');showPg('auth');return;}
+    const prod=products.find(p=>p.id===pid)||{id:pid,price};
+    const existing=cart.find(i=>i.id===pid);
+    if(existing){existing.qty++;showToast('Quantità aggiornata nel carrello!');}
+    else{cart.push({id:pid,name:prod.name||'Prodotto',price,brand:prod.brand||'',size:prod.size||'',img:prod.imageUrl||'',qty:1});}
+    saveCart();updateCartBadge();
+    showToast(`🛒 Aggiunto al carrello! +${Math.floor(price)} LFPTS al checkout`);
+  };
+
+  let selectedPayment='card';
+  window.selectPayment=function(method){
+    selectedPayment=method;
+    ['card','paypal','bonifico'].forEach(m=>{
+      const radio=document.getElementById('pay-radio-'+m);
+      const fields=document.getElementById('pay-'+m+'-fields');
+      if(radio){radio.style.background=m===method?'var(--led)':'transparent';radio.style.borderColor=m===method?'var(--led)':'#e0e0e0';}
+      if(fields) fields.style.display=m===method?'block':'none';
+    });
+  };
+  window.formatCard=function(input){
+    let v=input.value.replace(/\D/g,'').substring(0,16);
+    input.value=v.replace(/(.{4})/g,'$1 ').trim();
+  };
+  window.applyCoupon=function(){
+    const code=document.getElementById('cart-coupon').value.trim().toUpperCase();
+    const msg=document.getElementById('cart-coupon-msg');
+    if(!msg)return;
+    if(!code){showToast('Inserisci un codice.');return;}
+    if(code==='LILLO10'){msg.style.display='block';msg.textContent='✅ Sconto 10% applicato!';showToast('✅ Codice valido!');}
+    else{msg.style.display='block';msg.style.color='#c00';msg.textContent='⚠️ Codice non valido o scaduto.';}
+  };
+  function renderCheckoutSummary(){
+    const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const ship=total>=80?0:6.90;
+    const pts=Math.floor(total);
+    const items=document.getElementById('ck-order-items');
+    if(items) items.innerHTML=cart.map(i=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid #f0f0f0;">
+      <span>${i.name}${i.qty>1?' x'+i.qty:''}</span><span class="bb">€${(i.price*i.qty).toFixed(2)}</span></div>`).join('');
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+    set('ck-sub','€'+total.toFixed(2));
+    set('ck-ship',ship===0?'Gratis':'€'+ship.toFixed(2));
+    set('ck-disc','—');
+    set('ck-total','€'+(total+ship).toFixed(2));
+    set('ck-pts-preview','+'+pts+' LFPOINTS al completamento');
+    // Update bonifico causale with a random order ID
+    const causale='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
+    const bc=document.getElementById('bonifico-causale');
+    if(bc&&bc.textContent==='LILLO-ORDER') bc.textContent=causale;
+  }
+  window.placeOrder=async function(){
+    if(!user){showToast('Accedi per completare l\'ordine');showPg('auth');return;}
+    if(!cart.length){showToast('Carrello vuoto!');return;}
+    const fname=document.getElementById('ck-fname')?.value.trim();
+    const lname=document.getElementById('ck-lname')?.value.trim();
+    const street=document.getElementById('ck-street')?.value.trim();
+    const city=document.getElementById('ck-city')?.value.trim();
+    const zip=document.getElementById('ck-zip')?.value.trim();
+    if(!fname||!lname||!street||!city||!zip){showToast('⚠️ Compila tutti i campi obbligatori.');return;}
+    const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const ship=total>=80?0:6.90;
+    const pts=Math.floor(total);
+    if(selectedPayment==='paypal'){
+      showToast('🔄 Reindirizzamento a PayPal...');
+      setTimeout(()=>showToast('✅ Demo: PayPal completato!'),2000);
+    }
+    // Credit LFPOINTS
+    const fb=window.__fb;
+    try{
+      const ref=fb.doc(fb.db,'users',user.uid);
+      const snap=await fb.getDoc(ref);
+      const d=snap.exists()?snap.data():{};
+      const np=(d.lfpoints||0)+pts, ns=(d.totalSpent||0)+total;
+      await fb.updateDoc(ref,{lfpoints:np,totalSpent:ns});
+      udata={...udata,lfpoints:np,totalSpent:ns};
+      updateNav(user,udata); updateHomeDisplay();
+      const prev=np-pts;
+      const newReward=REWARDS.find(r=>prev<r.pts&&np>=r.pts);
+      cart=[];saveCart();updateCartBadge();
+      showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
+      if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
+      setTimeout(()=>showPg('profile'),1000);
+    } catch(e){showToast('⚠️ Errore: '+e.message);}
+  };
+  updateCartBadge();
+
+
   function renderProfile(){
     if(!user||!udata)return;
     const pts=udata.lfpoints||0, spent=udata.totalSpent||0;
@@ -2600,7 +2914,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     const id=bulkRowCount++;
     const div=document.createElement('div');
     div.id='bkrow-'+id;
-    div.style.cssText='display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:10px;align-items:end;border:1px solid #e0e0e0;padding:12px;';
+    div.style.cssText='display:grid;grid-template-columns:2fr 1fr 1.5fr 80px auto;gap:10px;align-items:end;border:1px solid #e0e0e0;padding:12px;';
     div.innerHTML=`
       <div style="display:flex;flex-direction:column;gap:4px;">
         <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Nome Prodotto *</label>
@@ -2611,11 +2925,27 @@ textarea.lf-in{resize:vertical;min-height:90px;}
         <input class="lf-in" id="bkp-${id}" type="number" step="0.01" placeholder="89.99"/>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;">
-        <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">URL Immagine</label>
-        <input class="lf-in" id="bki-${id}" placeholder="https://photo.yupoo.com/..."/>
+        <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Carica Immagine</label>
+        <input class="lf-in" id="bki-${id}" type="file" accept="image/*" style="padding:8px;font-size:10px;cursor:pointer;" onchange="handleBulkImg(this,${id})"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+        <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Preview</label>
+        <img id="bkprev-${id}" style="width:60px;height:60px;object-fit:cover;display:none;border:1px solid #e0e0e0;" alt=""/>
       </div>
       <button onclick="document.getElementById('bkrow-${id}').remove()" style="background:none;border:1px solid #ddd;padding:12px;cursor:pointer;color:#999;font-size:14px;min-height:48px;" title="Rimuovi">✕</button>`;
     rows.appendChild(div);
+  };
+
+  window.handleBulkImg=function(input,id){
+    const file=input.files[0];
+    if(!file)return;
+    const prev=document.getElementById('bkprev-'+id);
+    const reader=new FileReader();
+    reader.onload=e=>{
+      input.dataset.b64=e.target.result;
+      if(prev){prev.src=e.target.result;prev.style.display='block';}
+    };
+    reader.readAsDataURL(file);
   };
 
   window.saveBulkProducts=async function(){
@@ -2634,7 +2964,8 @@ textarea.lf-in{resize:vertical;min-height:90px;}
       const id=row.id.replace('bkrow-','');
       const name=document.getElementById('bkn-'+id)?.value.trim();
       const price=parseFloat(document.getElementById('bkp-'+id)?.value);
-      const imgUrl=document.getElementById('bki-'+id)?.value.trim()||'';
+      const imgInput=document.getElementById('bki-'+id);
+      const imgUrl=imgInput?.dataset.b64||'';
       if(!name||isNaN(price)){errors++;continue;}
       try{
         await fb.addDoc(fb.collection(fb.db,'products'),{
@@ -2660,6 +2991,8 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   window.showPg=function(id){
     _origShowPg(id);
     if(id==='admin') setTimeout(initBulkImport,100);
+    if(id==='cart'){setTimeout(()=>{renderCart();},50);}
+    if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');},50);}
   };
 
 </script>

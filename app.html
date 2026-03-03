@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<title>LilloFind — Tornei Beach Volley</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+<style>
+:root{
+  --k:#0a0a0a;
+  --w:#f5f5f5;
+  --led:#C8FF00;
+  --led2:#00FFB2;
+  --sand:#f0e6c8;
+  --sand2:#e8d5a0;
+  --ocean:#0077b6;
+  --ocean2:#00b4d8;
+  --mid:#555;
+  --dim:#999;
+  --border:#222;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
+body{font-family:'IBM Plex Mono',monospace;background:var(--w);color:var(--k);overflow-x:hidden;}
+.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+
+/* LED */
+.led-strip{height:3px;width:100%;background:linear-gradient(90deg,transparent 0%,var(--led) 20%,var(--led2) 50%,var(--led) 80%,transparent 100%);box-shadow:0 0 12px var(--led),0 0 24px rgba(200,255,0,.3);}
+.led-strip-sm{height:2px;background:linear-gradient(90deg,transparent,var(--led),transparent);box-shadow:0 0 8px var(--led);}
+
+/* Ticker */
+.ticker-w{overflow:hidden;white-space:nowrap;}
+.ticker{display:inline-flex;animation:tick 32s linear infinite;}
+.ticker span{padding:0 36px;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* Inputs/Buttons */
+.lf-in{background:transparent;border:1.5px solid var(--k);padding:13px 16px;width:100%;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--k);outline:none;border-radius:0;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+.lf-in:focus{border-color:var(--led);box-shadow:0 0 0 3px rgba(200,255,0,.15);}
+.lf-in::placeholder{color:var(--dim);}
+select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.btn-k{display:inline-flex;align-items:center;justify-content:center;background:var(--k);color:var(--w);border:none;padding:12px 24px;min-height:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;user-select:none;-webkit-appearance:none;border-radius:0;}
+.btn-k:active{transform:scale(.97);}
+.btn-k:hover{opacity:.75;}
+.btn-led{display:inline-flex;align-items:center;justify-content:center;background:var(--led);color:var(--k);border:none;padding:12px 24px;min-height:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,box-shadow .2s;box-shadow:0 0 16px rgba(200,255,0,.4);-webkit-appearance:none;border-radius:0;}
+.btn-led:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.6);}
+.btn-g{display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--k);border:1.5px solid var(--k);padding:10px 20px;min-height:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;-webkit-appearance:none;border-radius:0;}
+.btn-g:hover{background:var(--k);color:var(--w);}
+
+/* Toast */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--k);color:var(--w);padding:13px 22px;font-size:11px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;border-radius:0;opacity:0;transition:opacity .3s;pointer-events:none;border-bottom:2px solid var(--led);}
+#toast.show{opacity:1;}
+@media(min-width:769px){#toast{bottom:24px;}}
+
+/* Pages */
+.pg{display:none;}
+.pg.on{display:block;}
+.fadein{animation:fadeup .35s ease forwards;}
+@keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* Nav */
+.nbtn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--k);transition:opacity .2s;padding:8px 4px;min-height:44px;display:inline-flex;align-items:center;}
+.nbtn:hover{opacity:.45;}
+.nbtn.active{color:var(--led);border-bottom:2px solid var(--led);}
+
+/* Cards */
+.card{border:1.5px solid #e0e0e0;background:#fff;transition:border-color .2s,transform .2s,box-shadow .2s;}
+.card:hover{border-color:var(--k);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.08);}
+
+/* Tabs */
+.tab-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;background:none;border:none;border-bottom:3px solid transparent;padding:14px 20px;cursor:pointer;color:#555;transition:all .2s;flex:1;min-height:48px;}
+.tab-btn.on{border-bottom-color:var(--led);color:var(--k);}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-radius:0;}
+.badge-gold{background:#ffd700;color:#333;}
+.badge-silver{background:#c0c0c0;color:#333;}
+.badge-bronze{background:#cd7f32;color:#fff;}
+.badge-led{background:rgba(200,255,0,.15);color:var(--led);border:1px solid var(--led);}
+.badge-green{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;}
+.badge-red{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;}
+.badge-blue{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{background:var(--k);color:var(--w);padding:10px 14px;text-align:left;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.tbl td{padding:12px 14px;border-bottom:1px solid #f0f0f0;}
+.tbl tr:hover td{background:#fafafa;}
+
+/* Live indicator */
+@keyframes pulse-led{0%,100%{box-shadow:0 0 8px var(--led);}50%{box-shadow:0 0 20px var(--led),0 0 40px rgba(200,255,0,.4);}}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--led);box-shadow:0 0 8px var(--led);animation:pulse-led 2s ease-in-out infinite;display:inline-block;}
+
+/* Mobile bottom nav */
+#app-bottom-nav{display:none;position:fixed;bottom:0;left:0;width:100%;z-index:100;background:var(--k);border-top:1px solid #222;padding-bottom:env(safe-area-inset-bottom);}
+@media(max-width:768px){#app-bottom-nav{display:flex;}body{padding-bottom:calc(60px + env(safe-area-inset-bottom));}}
+.abn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;gap:3px;min-height:52px;transition:color .2s;}
+.abn-btn.active,.abn-btn:hover{color:var(--led);}
+.abn-icon{font-size:16px;line-height:1;}
+
+/* Score live match */
+.match-card{border:2px solid var(--k);padding:20px;background:#fff;margin-bottom:12px;}
+.match-card.live{border-color:var(--led);box-shadow:0 0 12px rgba(200,255,0,.2);}
+
+/* Bracket */
+.bracket-round{display:flex;flex-direction:column;gap:24px;align-items:center;min-width:160px;}
+.bracket-match{border:1.5px solid #e0e0e0;background:#fff;padding:8px 12px;width:150px;}
+.bracket-match.winner{border-color:var(--led);background:rgba(200,255,0,.05);}
+
+/* Responsive utils */
+@media(max-width:768px){
+  .hide-mob{display:none !important;}
+  .full-mob{width:100%!important;}
+  .grid-1-mob{grid-template-columns:1fr !important;}
+  .pad-mob{padding:20px 16px !important;}
+}
+@media(min-width:769px){.mob-only{display:none !important;}}
+
+/* Hero gradient */
+#app-hero{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a0a 40%,#0a1a0a 100%);}
+
+/* Prize medal colors */
+.prize-1{color:#ffd700;}
+.prize-2{color:#c0c0c0;}
+.prize-3{color:#cd7f32;}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ══════════ HEADER ══════════ -->
+<header style="background:var(--k);color:var(--w);position:sticky;top:0;z-index:90;">
+  <!-- ticker -->
+  <div class="ticker-w" style="padding:6px 0;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;border-bottom:1px solid #1a1a1a;">
+    <div class="ticker">
+      <span>🏐 LILLOFIND BEACH VOLLEY — TORNEI UFFICIALI 2025</span>
+      <span>🏆 ISCRIVITI E VINCI — PREMI ESCLUSIVI IN PALIO</span>
+      <span>📊 CLASSIFICHE LIVE IN TEMPO REALE</span>
+      <span>⬡ LFPOINTS BONUS PER CHI PARTECIPA</span>
+      <span>🏐 LILLOFIND BEACH VOLLEY — TORNEI UFFICIALI 2025</span>
+      <span>🏆 ISCRIVITI E VINCI — PREMI ESCLUSIVI IN PALIO</span>
+      <span>📊 CLASSIFICHE LIVE IN TEMPO REALE</span>
+      <span>⬡ LFPOINTS BONUS PER CHI PARTECIPA</span>
+    </div>
+  </div>
+  <!-- main header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;">
+    <a href="index.html" style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#555;text-decoration:none;transition:color .2s;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#555'">← LILLOFIND</a>
+    <button onclick="showPg('home')" style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--w);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">🏐</span> BEACH VOLLEY
+    </button>
+    <nav class="hide-mob" style="display:flex;gap:20px;align-items:center;">
+      <button class="nbtn" id="nb-home" style="color:var(--w);" onclick="showPg('home')">Home</button>
+      <button class="nbtn" id="nb-iscritti" style="color:var(--w);" onclick="showPg('iscritti')">Iscritti</button>
+      <button class="nbtn" id="nb-premi" style="color:var(--w);" onclick="showPg('premi')">Premi</button>
+      <button class="nbtn" id="nb-classifica" style="color:var(--w);" onclick="showPg('classifica')">Classifica</button>
+      <button class="nbtn" id="nb-live" style="color:var(--w);" onclick="showPg('live')">
+        <span class="live-dot" style="margin-right:6px;"></span>Live
+      </button>
+    </nav>
+  </div>
+  <div class="led-strip"></div>
+</header>
+
+<!-- ══════════ MOBILE BOTTOM NAV ══════════ -->
+<nav id="app-bottom-nav">
+  <button class="abn-btn active" id="abn-home" onclick="showPg('home')"><span class="abn-icon">🏠</span>Home</button>
+  <button class="abn-btn" id="abn-iscritti" onclick="showPg('iscritti')"><span class="abn-icon">👥</span>Iscritti</button>
+  <button class="abn-btn" id="abn-premi" onclick="showPg('premi')"><span class="abn-icon">🏆</span>Premi</button>
+  <button class="abn-btn" id="abn-classifica" onclick="showPg('classifica')"><span class="abn-icon">📊</span>Classifica</button>
+  <button class="abn-btn" id="abn-live" onclick="showPg('live')"><span class="abn-icon live-dot" style="width:14px;height:14px;border-radius:50%;margin-bottom:2px;"></span>Live</button>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     HOME PAGE
+═══════════════════════════════════════ -->
+<div id="pg-home" class="pg on">
+  <!-- Hero -->
+  <section id="app-hero" style="min-height:60vh;display:flex;flex-direction:column;justify-content:flex-end;padding:48px 32px;position:relative;overflow:hidden;border-bottom:3px solid var(--k);" class="pad-mob">
+    <!-- BG animated net pattern -->
+    <canvas id="net-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.35;"></canvas>
+    <div style="position:relative;z-index:2;">
+      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(200,255,0,.35);padding:5px 14px;margin-bottom:24px;background:rgba(200,255,0,.05);">
+        <span class="live-dot"></span>
+        <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--led);">Stagione 2025 — Attiva</span>
+      </div>
+      <h1 class="bb" style="font-size:clamp(56px,10vw,130px);line-height:.88;color:var(--w);margin-bottom:20px;">LILLOFIND<br/>BEACH<br/><span style="color:var(--led);">VOLLEY.</span></h1>
+      <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.8;max-width:460px;margin-bottom:32px;">La piattaforma ufficiale per la gestione dei tornei beach volley LilloFind. Iscrizioni, classifiche, premi e partite live — tutto in un posto.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn-led" onclick="openModal('iscriviti-modal')" style="font-size:12px;padding:14px 28px;">🏐 Iscriviti ora</button>
+        <button onclick="showPg('live')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w);padding:14px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:0;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--led)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'"><span class="live-dot"></span>Guarda Live</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats bar -->
+  <section style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--k);" class="grid-1-mob">
+    <div style="padding:24px;border-right:1px solid #e0e0e0;text-align:center;" class="grid-1-mob">
+      <p class="bb" style="font-size:40px;" id="stat-teams">24</p>
+      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Squadre Iscritte</p>
+    </div>
+    <div style="padding:24px;border-right:1px solid #e0e0e0;text-align:center;">
+      <p class="bb" style="font-size:40px;">3</p>
+      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Tornei Attivi</p>
+    </div>
+    <div style="padding:24px;border-right:1px solid #e0e0e0;text-align:center;">
+      <p class="bb" style="font-size:40px;color:var(--led);" id="stat-live">2</p>
+      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Partite Live</p>
+    </div>
+    <div style="padding:24px;text-align:center;">
+      <p class="bb" style="font-size:40px;">€850</p>
+      <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Montepremi</p>
+    </div>
+  </section>
+
+  <!-- Tornei cards -->
+  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;flex-wrap:wrap;gap:8px;">
+      <h2 class="bb" style="font-size:clamp(28px,5vw,48px);">Tornei Attivi</h2>
+      <button class="btn-g" onclick="openModal('nuovo-torneo-modal')" style="font-size:10px;padding:8px 16px;">+ Nuovo Torneo</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;" id="tornei-grid"></div>
+  </section>
+
+  <!-- Prossimi iscritti -->
+  <section style="padding:48px 24px;">
+    <h2 class="bb" style="font-size:clamp(28px,5vw,48px);margin-bottom:24px;">Ultime Iscrizioni</h2>
+    <div id="home-iscritti" style="display:flex;flex-direction:column;gap:0;border:2px solid var(--k);overflow:hidden;"></div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ISCRITTI PAGE
+═══════════════════════════════════════ -->
+<div id="pg-iscritti" class="pg">
+  <div style="padding:32px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
+      <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Iscritti</h1>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <input class="lf-in" id="search-iscritti" placeholder="Cerca squadra o giocatore..." style="max-width:260px;" oninput="filterIscritti(this.value)"/>
+        <button class="btn-led" onclick="openModal('iscriviti-modal')">+ Iscriviti</button>
+      </div>
+    </div>
+    <!-- Filter chips -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;" id="torneo-filter-chips"></div>
+    <!-- Table -->
+    <div style="overflow-x:auto;border:2px solid var(--k);">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Squadra</th>
+            <th>Giocatori</th>
+            <th>Torneo</th>
+            <th>Stato</th>
+            <th class="hide-mob">LFPoints Bonus</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="iscritti-tbody"></tbody>
+      </table>
+    </div>
+    <p id="iscritti-empty" style="display:none;text-align:center;padding:40px;font-size:11px;color:var(--dim);letter-spacing:2px;">NESSUN ISCRITTO TROVATO</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PREMI PAGE
+═══════════════════════════════════════ -->
+<div id="pg-premi" class="pg">
+  <div style="padding:32px 24px;">
+    <h1 class="bb" style="font-size:clamp(36px,5vw,64px);margin-bottom:8px;">Premi</h1>
+    <div class="led-strip" style="margin-bottom:32px;"></div>
+
+    <!-- Prize blocks -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--k);margin-bottom:32px;" class="grid-1-mob">
+      <div style="padding:36px 28px;border-right:1px solid var(--k);text-align:center;background:linear-gradient(135deg,#fffde7,#fff);">
+        <p style="font-size:48px;margin-bottom:8px;">🥇</p>
+        <p class="bb prize-1" style="font-size:36px;">1° Posto</p>
+        <p class="bb" style="font-size:48px;margin:12px 0;">€400</p>
+        <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">Voucher LilloFind · Trofeo · Coppa · 500 LFPOINTS bonus</p>
+        <div style="border:1.5px solid #ffd700;padding:10px;background:rgba(255,215,0,.08);">
+          <p style="font-size:10px;color:#9a7800;letter-spacing:1px;">🏆 Jersey Personalizzata + Foto Team</p>
+        </div>
+      </div>
+      <div style="padding:36px 28px;border-right:1px solid var(--k);text-align:center;background:linear-gradient(135deg,#fafafa,#fff);">
+        <p style="font-size:48px;margin-bottom:8px;">🥈</p>
+        <p class="bb prize-2" style="font-size:36px;">2° Posto</p>
+        <p class="bb" style="font-size:48px;margin:12px 0;">€250</p>
+        <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">Voucher LilloFind · Medaglie · 300 LFPOINTS bonus</p>
+        <div style="border:1.5px solid #c0c0c0;padding:10px;background:rgba(192,192,192,.08);">
+          <p style="font-size:10px;color:#666;letter-spacing:1px;">🎽 Kit Streetwear Limited Edition</p>
+        </div>
+      </div>
+      <div style="padding:36px 28px;text-align:center;background:linear-gradient(135deg,#fff8f0,#fff);">
+        <p style="font-size:48px;margin-bottom:8px;">🥉</p>
+        <p class="bb prize-3" style="font-size:36px;">3° Posto</p>
+        <p class="bb" style="font-size:48px;margin:12px 0;">€200</p>
+        <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">Voucher LilloFind · Medaglie · 150 LFPOINTS bonus</p>
+        <div style="border:1.5px solid #cd7f32;padding:10px;background:rgba(205,127,50,.08);">
+          <p style="font-size:10px;color:#7a4000;letter-spacing:1px;">👟 Sneaker Pack Esclusivo</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Premi speciali -->
+    <h2 class="bb" style="font-size:36px;margin-bottom:20px;">Premi Speciali</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:40px;" id="premi-speciali-grid"></div>
+
+    <!-- Admin: gestione premi -->
+    <div style="border:2px solid var(--k);padding:28px;">
+      <p class="bb" style="font-size:24px;margin-bottom:20px;">⚙️ Gestisci Premi</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Premio</label><input class="lf-in" id="pr-nome" placeholder="es. MVP del Torneo"/></div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Valore</label><input class="lf-in" id="pr-valore" placeholder="es. €50 voucher"/></div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Emoji/Icona</label><input class="lf-in" id="pr-emoji" placeholder="🏐"/></div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Categoria</label>
+          <select class="lf-in" id="pr-cat"><option>Individuale</option><option>Squadra</option><option>Fair Play</option><option>Tecnico</option></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><input class="lf-in" id="pr-desc" placeholder="Descrizione del premio..."/></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn-led" onclick="aggiungiPremio()">+ Aggiungi Premio</button>
+        <button class="btn-g" onclick="document.getElementById('pr-nome').value='';document.getElementById('pr-valore').value='';document.getElementById('pr-desc').value='';document.getElementById('pr-emoji').value='';">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CLASSIFICA PAGE
+═══════════════════════════════════════ -->
+<div id="pg-classifica" class="pg">
+  <div style="padding:32px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Classifica</h1>
+      <div style="font-size:10px;color:var(--dim);letter-spacing:2px;display:flex;align-items:center;gap:8px;"><span class="live-dot"></span>AGGIORNATA IN TEMPO REALE</div>
+    </div>
+    <div class="led-strip" style="margin-bottom:24px;"></div>
+
+    <!-- Tabs per torneo -->
+    <div style="display:flex;border-bottom:2px solid var(--k);margin-bottom:24px;overflow-x:auto;" id="class-tabs"></div>
+
+    <!-- Classifica table -->
+    <div style="overflow-x:auto;border:2px solid var(--k);">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:50px;">#</th>
+            <th>Squadra</th>
+            <th>G</th>
+            <th>V</th>
+            <th>P</th>
+            <th>Set+</th>
+            <th>Set-</th>
+            <th class="hide-mob">Punti x Set</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody id="class-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- MVP section -->
+    <div style="margin-top:40px;">
+      <h2 class="bb" style="font-size:32px;margin-bottom:20px;">🌟 MVP della Settimana</h2>
+      <div id="mvp-card" style="border:2px solid var(--led);padding:24px;background:rgba(200,255,0,.04);box-shadow:0 0 20px rgba(200,255,0,.1);max-width:400px;">
+        <div style="display:flex;gap:20px;align-items:center;">
+          <div style="width:64px;height:64px;border-radius:50%;background:var(--k);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">🏐</div>
+          <div>
+            <p style="font-size:9px;color:var(--led);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;">MVP Settimana 22</p>
+            <p class="bb" style="font-size:28px;" id="mvp-name">Marco Rossi</p>
+            <p style="font-size:11px;color:var(--mid);" id="mvp-team">Team LILLO ⚡</p>
+            <p style="font-size:10px;color:var(--led);margin-top:4px;" id="mvp-stats">18 ace · 94% in ricezione</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LIVE PAGE
+═══════════════════════════════════════ -->
+<div id="pg-live" class="pg">
+  <div style="padding:32px 24px;">
+    <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px;flex-wrap:wrap;">
+      <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Live</h1>
+      <span style="display:flex;align-items:center;gap:6px;background:var(--k);color:var(--led);padding:4px 12px;font-size:10px;letter-spacing:2px;text-transform:uppercase;"><span class="live-dot" style="width:8px;height:8px;"></span>LIVE NOW</span>
+    </div>
+    <div class="led-strip" style="margin-bottom:28px;"></div>
+
+    <!-- Struttura torneo: tabs -->
+    <div style="display:flex;border-bottom:2px solid var(--k);margin-bottom:24px;overflow-x:auto;">
+      <button class="tab-btn on" id="lv-matches" onclick="switchLiveTab('matches')">⚡ Partite Live</button>
+      <button class="tab-btn" id="lv-bracket" onclick="switchLiveTab('bracket')">🏆 Tabellone</button>
+      <button class="tab-btn" id="lv-schedule" onclick="switchLiveTab('schedule')">📅 Programma</button>
+    </div>
+
+    <!-- Live matches -->
+    <div id="ltab-matches">
+      <div id="live-matches-container"></div>
+      <!-- No live -->
+      <div id="no-live" style="display:none;text-align:center;padding:60px;">
+        <p style="font-size:48px;margin-bottom:16px;">😴</p>
+        <p class="bb" style="font-size:28px;margin-bottom:8px;">Nessuna Partita Live</p>
+        <p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Controlla il programma per i prossimi incontri.</p>
+      </div>
+      <!-- Admin: aggiorna score -->
+      <div style="border:2px solid var(--k);padding:24px;margin-top:32px;">
+        <p class="bb" style="font-size:22px;margin-bottom:16px;">⚙️ Aggiorna Punteggio</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Partita</label>
+            <select class="lf-in" id="score-match-sel" style="font-size:11px;"></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Score Team A</label>
+            <input class="lf-in" id="score-a" type="number" min="0" placeholder="0"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Score Team B</label>
+            <input class="lf-in" id="score-b" type="number" min="0" placeholder="0"/>
+          </div>
+          <button class="btn-led" onclick="updateScore()">Aggiorna</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn-k" onclick="endMatch()">Chiudi Partita</button>
+          <button class="btn-g" onclick="addNewMatch()">+ Nuova Partita</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bracket -->
+    <div id="ltab-bracket" style="display:none;">
+      <div style="overflow-x:auto;padding-bottom:20px;">
+        <div id="bracket-container" style="display:flex;gap:48px;padding:24px;min-width:600px;"></div>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div id="ltab-schedule" style="display:none;">
+      <div id="schedule-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODALS
+═══════════════════════════════════════ -->
+
+<!-- Iscriviti Modal -->
+<div id="iscriviti-modal" class="modal-bg">
+  <div class="modal-box" style="padding:0;">
+    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <p class="bb" style="font-size:24px;">🏐 Iscrizione Torneo</p>
+      <button onclick="closeModal('iscriviti-modal')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div class="led-strip-sm"></div>
+    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Squadra *</label><input class="lf-in" id="iscr-team" placeholder="es. Team LILLO ⚡"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Giocatore 1 *</label><input class="lf-in" id="iscr-p1" placeholder="Mario Rossi"/></div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Giocatore 2 *</label><input class="lf-in" id="iscr-p2" placeholder="Luigi Bianchi"/></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Seleziona Torneo *</label>
+        <select class="lf-in" id="iscr-torneo"></select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Contatto (email/tel)</label><input class="lf-in" id="iscr-contact" placeholder="email o numero di telefono"/></div>
+      <button class="btn-led" onclick="iscriviSquadra()" style="margin-top:4px;">Conferma Iscrizione →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nuovo Torneo Modal -->
+<div id="nuovo-torneo-modal" class="modal-bg">
+  <div class="modal-box" style="padding:0;">
+    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <p class="bb" style="font-size:24px;">+ Nuovo Torneo</p>
+      <button onclick="closeModal('nuovo-torneo-modal')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div class="led-strip-sm"></div>
+    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Torneo *</label><input class="lf-in" id="nt-nome" placeholder="es. Torneo Estivo 2025"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Data Inizio</label><input class="lf-in" id="nt-date" type="date"/></div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Max Squadre</label><input class="lf-in" id="nt-max" type="number" placeholder="16"/></div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Formato</label>
+          <select class="lf-in" id="nt-format"><option>Gironi + Eliminazione</option><option>Solo Gironi</option><option>Eliminazione Diretta</option><option>Round Robin</option></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Montepremi €</label><input class="lf-in" id="nt-prize" type="number" placeholder="500"/></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Luogo</label><input class="lf-in" id="nt-luogo" placeholder="es. Spiaggia di Rimini, Campo 3"/></div>
+      <button class="btn-led" onclick="creaTorneo()" style="margin-top:4px;">Crea Torneo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dettaglio Squadra Modal -->
+<div id="squadra-modal" class="modal-bg">
+  <div class="modal-box" style="padding:0;">
+    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <p class="bb" style="font-size:24px;" id="sq-modal-title">Squadra</p>
+      <button onclick="closeModal('squadra-modal')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div class="led-strip-sm"></div>
+    <div style="padding:24px;" id="sq-modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+let tornei=[
+  {id:'t1',nome:'Torneo Estivo 2025',data:'2025-06-15',max:16,formato:'Gironi + Eliminazione',montepremi:500,luogo:'Rimini Spiaggia 42',status:'attivo'},
+  {id:'t2',nome:'Coppa LilloFind',data:'2025-07-20',max:8,formato:'Eliminazione Diretta',montepremi:250,luogo:'Milano Idroscalo',status:'iscrizioni'},
+  {id:'t3',nome:'Trofeo Beach 2025',data:'2025-08-10',max:12,formato:'Round Robin',montepremi:100,luogo:'Riccione Beach',status:'pianificato'},
+];
+
+let iscritti=[
+  {id:'sq1',team:'Team LILLO ⚡',p1:'Marco Rossi',p2:'Luca Ferrari',torneo:'t1',status:'confermato',contact:'marco@lillo.it',pts:0,vinti:3,persi:1,setVinti:7,setPersi:3},
+  {id:'sq2',team:'SandStorm 🌪️',p1:'Andrea Bianchi',p2:'Stefano Conti',torneo:'t1',status:'confermato',contact:'',pts:0,vinti:2,persi:2,setVinti:5,setPersi:5},
+  {id:'sq3',team:'Beach Kings 👑',p1:'Giorgio Villa',p2:'Matteo Russo',torneo:'t1',status:'confermato',contact:'',pts:0,vinti:2,persi:1,setVinti:5,setPersi:3},
+  {id:'sq4',team:'Spike Force 💥',p1:'Davide Marini',p2:'Paolo Greco',torneo:'t1',status:'in attesa',contact:'',pts:0,vinti:1,persi:3,setVinti:3,setPersi:7},
+  {id:'sq5',team:'Sunset Duo 🌅',p1:'Chiara Moretti',p2:'Sara Gallo',torneo:'t2',status:'confermato',contact:'',pts:0,vinti:4,persi:0,setVinti:8,setPersi:2},
+  {id:'sq6',team:'Block Party 🧱',p1:'Roberto Costa',p2:'Federico Mori',torneo:'t2',status:'confermato',contact:'',pts:0,vinti:3,persi:1,setVinti:6,setPersi:4},
+  {id:'sq7',team:'Net Crushers 🏐',p1:'Alessio Bruno',p2:'Simone Riva',torneo:'t3',status:'confermato',contact:'',pts:0,vinti:2,persi:0,setVinti:4,setPersi:1},
+];
+
+let partite=[
+  {id:'p1',teamA:'Team LILLO ⚡',teamB:'SandStorm 🌪️',scoreA:2,scoreB:1,torneo:'t1',status:'live',set:[{a:21,b:19},{a:18,b:21},{a:15,b:10}]},
+  {id:'p2',teamA:'Beach Kings 👑',teamB:'Spike Force 💥',scoreA:0,scoreB:0,torneo:'t1',status:'live',set:[]},
+  {id:'p3',teamA:'Sunset Duo 🌅',teamB:'Block Party 🧱',scoreA:2,scoreB:0,torneo:'t2',status:'finita',set:[{a:21,b:15},{a:21,b:18}]},
+  {id:'p4',teamA:'Net Crushers 🏐',teamB:'TBD',scoreA:0,scoreB:0,torneo:'t3',status:'programmata',set:[]},
+];
+
+let premiSpeciali=[
+  {emoji:'🎯',nome:'Ace Master',valore:'€30 voucher',desc:'Il giocatore con più ace del torneo',cat:'Individuale'},
+  {emoji:'🛡️',nome:'Miglior Difensore',valore:'€30 voucher',desc:'Miglior % di ricezione del torneo',cat:'Individuale'},
+  {emoji:'🤝',nome:'Fair Play',valore:'Kit LilloFind',desc:'Assegnato per sportività e correttezza',cat:'Fair Play'},
+  {emoji:'🏐',nome:'Miglior Attacco',valore:'€20 voucher',desc:'Il team con più punti in attacco',cat:'Squadra'},
+];
+
+let activeTorneo='t1';
+let activeLiveTab='matches';
+
+// ── UTILS ──────────────────────────────────────────────────
+function showToast(msg,dur=3000){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+function showPg(id){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  const pg=document.getElementById('pg-'+id);
+  if(pg){pg.classList.add('on');pg.classList.add('fadein');setTimeout(()=>pg.classList.remove('fadein'),500);}
+  // Update navs
+  ['home','iscritti','premi','classifica','live'].forEach(n=>{
+    const nb=document.getElementById('nb-'+n);
+    if(nb) nb.style.color=n===id?'var(--led)':'var(--w)';
+    const ab=document.getElementById('abn-'+n);
+    if(ab) ab.classList.toggle('active',n===id);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='iscritti') renderIscritti();
+  if(id==='classifica') renderClassifica();
+  if(id==='live') renderLive();
+  if(id==='home') renderHome();
+}
+
+// ── RENDER TORNEI ──────────────────────────────────────────
+const STATUS_COLOR={attivo:'badge-green',iscrizioni:'badge-blue',pianificato:'badge-led',concluso:'badge-red'};
+const STATUS_LABEL={attivo:'Attivo',iscrizioni:'Aperto Iscrizioni',pianificato:'In Arrivo',concluso:'Concluso'};
+
+function renderHome(){
+  const grid=document.getElementById('tornei-grid');
+  if(grid) grid.innerHTML=tornei.map(t=>{
+    const iscr=iscritti.filter(i=>i.torneo===t.id);
+    return `<div class="card" style="overflow:hidden;">
+      <div style="background:var(--k);color:var(--w);padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <p class="bb" style="font-size:22px;">${t.nome}</p>
+          <span class="badge ${STATUS_COLOR[t.status]}">${STATUS_LABEL[t.status]}</span>
+        </div>
+        <p style="font-size:10px;color:#444;letter-spacing:1px;">📍 ${t.luogo}</p>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="text-align:center;"><p class="bb" style="font-size:24px;">${iscr.length}/${t.max}</p><p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Squadre</p></div>
+          <div style="text-align:center;"><p class="bb" style="font-size:24px;">€${t.montepremi}</p><p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Montepremi</p></div>
+          <div style="text-align:center;"><p class="bb" style="font-size:24px;">${new Date(t.data).toLocaleDateString('it-IT',{day:'2-digit',month:'short'})}</p><p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Data</p></div>
+        </div>
+        <p style="font-size:10px;color:var(--mid);letter-spacing:1px;margin-bottom:14px;">📋 ${t.formato}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${t.status!=='concluso'?`<button class="btn-led" onclick="openModal('iscriviti-modal');document.getElementById('iscr-torneo').value='${t.id}';" style="padding:8px 16px;font-size:10px;">Iscriviti</button>`:''}
+          <button class="btn-g" onclick="showPg('live');activeTorneo='${t.id}';" style="padding:8px 14px;font-size:10px;">Live →</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Home iscritti list (latest 5)
+  const hi=document.getElementById('home-iscritti');
+  if(hi) hi.innerHTML=iscritti.slice(-5).reverse().map((sq,i)=>{
+    const t=tornei.find(t=>t.id===sq.torneo);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='transparent'">
+      <div>
+        <p style="font-size:12px;font-weight:500;">${sq.team}</p>
+        <p style="font-size:10px;color:var(--dim);">${sq.p1} · ${sq.p2}</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="font-size:10px;color:var(--dim);">${t?.nome||'—'}</p>
+        <span class="badge ${STATUS_COLOR[sq.status]==='badge-green'?'badge-green':'badge-blue'}" style="font-size:8px;">${sq.status}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Populate tornei select
+  const sel=document.getElementById('iscr-torneo');
+  if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+}
+
+// ── RENDER ISCRITTI ──────────────────────────────────────
+function renderIscritti(filter='',torneoFilter=''){
+  const tbody=document.getElementById('iscritti-tbody');
+  const empty=document.getElementById('iscritti-empty');
+  let data=iscritti;
+  if(torneoFilter) data=data.filter(i=>i.torneo===torneoFilter);
+  if(filter) data=data.filter(i=>
+    i.team.toLowerCase().includes(filter.toLowerCase())||
+    i.p1.toLowerCase().includes(filter.toLowerCase())||
+    i.p2.toLowerCase().includes(filter.toLowerCase())
+  );
+  if(!tbody)return;
+  if(!data.length){tbody.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty) empty.style.display='none';
+  tbody.innerHTML=data.map((sq,i)=>{
+    const t=tornei.find(t=>t.id===sq.torneo);
+    return `<tr>
+      <td class="bb" style="font-size:20px;">${i+1}</td>
+      <td>
+        <p style="font-weight:500;font-size:13px;">${sq.team}</p>
+      </td>
+      <td style="font-size:11px;color:var(--mid);">${sq.p1}<br/>${sq.p2}</td>
+      <td style="font-size:11px;">${t?.nome||'—'}</td>
+      <td><span class="badge ${sq.status==='confermato'?'badge-green':sq.status==='in attesa'?'badge-blue':'badge-red'}">${sq.status}</span></td>
+      <td class="hide-mob" style="color:var(--led);font-size:11px;">+100 pts</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button onclick="viewSquadra('${sq.id}')" class="btn-g" style="padding:4px 10px;font-size:9px;">Info</button>
+          <button onclick="removeSquadra('${sq.id}')" style="background:none;border:1px solid #ffcdd2;color:#c62828;padding:4px 8px;font-size:9px;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;text-transform:uppercase;">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Filter chips
+  const chips=document.getElementById('torneo-filter-chips');
+  if(chips) chips.innerHTML=`
+    <span onclick="renderIscritti(document.getElementById('search-iscritti').value,'')" style="cursor:pointer;border:1.5px solid ${!torneoFilter?'var(--k)':'#e0e0e0'};padding:5px 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;background:${!torneoFilter?'var(--k)':'transparent'};color:${!torneoFilter?'var(--w)':'var(--k)'};display:inline-flex;align-items:center;">Tutti</span>
+    ${tornei.map(t=>`<span onclick="renderIscritti(document.getElementById('search-iscritti').value,'${t.id}')" style="cursor:pointer;border:1.5px solid ${torneoFilter===t.id?'var(--k)':'#e0e0e0'};padding:5px 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;background:${torneoFilter===t.id?'var(--k)':'transparent'};color:${torneoFilter===t.id?'var(--w)':'var(--k)'};display:inline-flex;align-items:center;margin-left:6px;">${t.nome}</span>`).join('')}`;
+}
+
+window.filterIscritti=function(v){renderIscritti(v,'');};
+
+window.viewSquadra=function(id){
+  const sq=iscritti.find(s=>s.id===id);
+  if(!sq)return;
+  const t=tornei.find(t=>t.id===sq.torneo);
+  document.getElementById('sq-modal-title').textContent=sq.team;
+  document.getElementById('sq-modal-body').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div style="border:1.5px solid var(--led);padding:16px;background:rgba(200,255,0,.04);">
+        <p style="font-size:9px;color:var(--led);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;">Giocatori</p>
+        <p style="font-size:14px;margin-bottom:4px;">🏐 ${sq.p1}</p>
+        <p style="font-size:14px;">🏐 ${sq.p2}</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="border:1px solid #e0e0e0;padding:14px;text-align:center;"><p class="bb" style="font-size:28px;color:var(--led);">${sq.vinti}</p><p style="font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;">Vinte</p></div>
+        <div style="border:1px solid #e0e0e0;padding:14px;text-align:center;"><p class="bb" style="font-size:28px;">${sq.persi}</p><p style="font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;">Perse</p></div>
+        <div style="border:1px solid #e0e0e0;padding:14px;text-align:center;"><p class="bb" style="font-size:28px;">${sq.setVinti}</p><p style="font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;">Set Vinti</p></div>
+        <div style="border:1px solid #e0e0e0;padding:14px;text-align:center;"><p class="bb" style="font-size:28px;">${sq.setPersi}</p><p style="font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;">Set Persi</p></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;border:1px solid #e0e0e0;padding:14px;">
+        <span>Torneo</span><strong>${t?.nome||'—'}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;border:1px solid #e0e0e0;padding:14px;">
+        <span>Stato</span><span class="badge ${sq.status==='confermato'?'badge-green':'badge-blue'}">${sq.status}</span>
+      </div>
+      ${sq.contact?`<div style="display:flex;justify-content:space-between;font-size:11px;border:1px solid #e0e0e0;padding:14px;"><span>Contatto</span><strong>${sq.contact}</strong></div>`:''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        ${sq.status!=='confermato'?`<button class="btn-led" onclick="confirmSquadra('${sq.id}');closeModal('squadra-modal');">Conferma</button>`:''}
+        <button class="btn-g" onclick="closeModal('squadra-modal')">Chiudi</button>
+      </div>
+    </div>`;
+  openModal('squadra-modal');
+};
+
+window.confirmSquadra=function(id){
+  const sq=iscritti.find(s=>s.id===id);
+  if(sq){sq.status='confermato';renderIscritti();showToast('✅ Squadra confermata!');}
+};
+window.removeSquadra=function(id){
+  if(confirm('Rimuovere questa squadra?')){
+    iscritti=iscritti.filter(s=>s.id!==id);
+    renderIscritti();renderClassifica();showToast('Squadra rimossa.');
+  }
+};
+
+// ── RENDER CLASSIFICA ───────────────────────────────────
+function renderClassifica(){
+  const tabs=document.getElementById('class-tabs');
+  if(tabs) tabs.innerHTML=tornei.map(t=>`
+    <button class="tab-btn ${activeTorneo===t.id?'on':''}" onclick="activeTorneo='${t.id}';renderClassificaTable();">${t.nome}</button>`).join('');
+  renderClassificaTable();
+}
+
+function renderClassificaTable(){
+  const tbody=document.getElementById('class-tbody');
+  if(!tbody)return;
+  let data=iscritti.filter(sq=>sq.torneo===activeTorneo);
+  // Sort: wins desc, then set diff
+  data=data.sort((a,b)=>{
+    const ptA=a.vinti*3-(a.persi*0);
+    const ptB=b.vinti*3-(b.persi*0);
+    if(ptB!==ptA) return ptB-ptA;
+    return (b.setVinti-b.setPersi)-(a.setVinti-a.setPersi);
+  });
+  const medals=['🥇','🥈','🥉'];
+  tbody.innerHTML=data.map((sq,i)=>{
+    const pts=sq.vinti*3;
+    const setDiff=sq.setVinti-sq.setPersi;
+    const isTop3=i<3;
+    return `<tr style="${i===0?'background:rgba(255,215,0,.05);':i===1?'background:rgba(192,192,192,.05);':i===2?'background:rgba(205,127,50,.05)':''}">
+      <td><span class="bb" style="font-size:${isTop3?'22':'16'}px;">${medals[i]||i+1}</span></td>
+      <td>
+        <p style="font-weight:500;font-size:13px;">${sq.team}</p>
+        <p style="font-size:10px;color:var(--dim);">${sq.p1} · ${sq.p2}</p>
+      </td>
+      <td class="bb" style="font-size:16px;">${sq.vinti+sq.persi}</td>
+      <td class="bb" style="font-size:16px;color:${sq.vinti>0?'var(--led)':'var(--dim)'};">${sq.vinti}</td>
+      <td class="bb" style="font-size:16px;">${sq.persi}</td>
+      <td style="font-size:12px;">${sq.setVinti}</td>
+      <td style="font-size:12px;">${sq.setPersi}</td>
+      <td class="hide-mob" style="font-size:12px;color:${setDiff>=0?'var(--led)':'#c00'};">${setDiff>0?'+':''}${setDiff}</td>
+      <td><span class="bb" style="font-size:20px;${i===0?'color:var(--led)':''}">${pts}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Update tabs active state
+  document.querySelectorAll('#class-tabs .tab-btn').forEach((btn,i)=>{
+    btn.classList.toggle('on',tornei[i]?.id===activeTorneo);
+  });
+}
+
+// ── RENDER LIVE ──────────────────────────────────────────
+function renderLive(){
+  renderLiveMatches();
+  renderBracket();
+  renderSchedule();
+  // Update match selector
+  const sel=document.getElementById('score-match-sel');
+  if(sel) sel.innerHTML=partite.filter(p=>p.status==='live'||p.status==='programmata').map(p=>`<option value="${p.id}">${p.teamA} vs ${p.teamB}</option>`).join('');
+}
+
+function renderLiveMatches(){
+  const container=document.getElementById('live-matches-container');
+  const noLive=document.getElementById('no-live');
+  if(!container)return;
+  const liveMatches=partite.filter(p=>p.status==='live');
+  if(!liveMatches.length){container.innerHTML='';if(noLive)noLive.style.display='block';return;}
+  if(noLive) noLive.style.display='none';
+  container.innerHTML=liveMatches.map(p=>{
+    const t=tornei.find(t=>t.id===p.torneo);
+    const setsHtml=p.set.map((s,i)=>`<div style="text-align:center;font-size:11px;color:var(--dim);">Set ${i+1}<br/><strong>${s.a}-${s.b}</strong></div>`).join('');
+    return `<div class="match-card live">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:9px;color:var(--led);letter-spacing:2px;text-transform:uppercase;">${t?.nome||''}</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--led);letter-spacing:1px;text-transform:uppercase;"><span class="live-dot"></span>LIVE</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin-bottom:16px;">
+        <div style="text-align:center;">
+          <p class="bb" style="font-size:20px;margin-bottom:4px;">${p.teamA}</p>
+          <p class="bb" style="font-size:64px;line-height:1;color:${p.scoreA>p.scoreB?'var(--led)':'var(--k)'};">${p.scoreA}</p>
+        </div>
+        <div style="text-align:center;">
+          <p class="bb" style="font-size:18px;color:var(--dim);">VS</p>
+        </div>
+        <div style="text-align:center;">
+          <p class="bb" style="font-size:20px;margin-bottom:4px;">${p.teamB}</p>
+          <p class="bb" style="font-size:64px;line-height:1;color:${p.scoreB>p.scoreA?'var(--led)':'var(--k)'};">${p.scoreB}</p>
+        </div>
+      </div>
+      ${p.set.length?`<div style="display:flex;gap:16px;justify-content:center;padding:12px;border-top:1px solid #f0f0f0;">${setsHtml}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderBracket(){
+  const container=document.getElementById('bracket-container');
+  if(!container)return;
+  // Simple visual bracket
+  const rounds=[
+    {label:'Quarti di Finale',matches:[
+      {a:'Team LILLO ⚡',b:'SandStorm 🌪️',done:true,winnerA:true},
+      {a:'Beach Kings 👑',b:'Spike Force 💥',done:false},
+      {a:'Sunset Duo 🌅',b:'Block Party 🧱',done:true,winnerA:true},
+      {a:'Net Crushers 🏐',b:'TBD',done:false},
+    ]},
+    {label:'Semifinali',matches:[
+      {a:'Team LILLO ⚡',b:'?',done:false},
+      {a:'Sunset Duo 🌅',b:'?',done:false},
+    ]},
+    {label:'Finale',matches:[
+      {a:'?',b:'?',done:false},
+    ]},
+  ];
+  container.innerHTML=rounds.map(r=>`
+    <div class="bracket-round">
+      <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;white-space:nowrap;">${r.label}</p>
+      ${r.matches.map(m=>`<div class="bracket-match ${m.done&&m.winnerA?'winner':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f0f0;">
+          <span style="font-size:10px;${m.done&&m.winnerA?'font-weight:600;color:var(--led)':''}">${m.a}</span>
+          ${m.done?`<span class="bb" style="font-size:12px;${m.winnerA?'color:var(--led)':''}">W</span>`:''}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+          <span style="font-size:10px;${m.done&&!m.winnerA?'font-weight:600;color:var(--led)':''}">${m.b}</span>
+          ${m.done?`<span class="bb" style="font-size:12px;${!m.winnerA?'color:var(--led)':''}">W</span>`:''}
+        </div>
+      </div>`).join('<div style="height:20px;width:2px;background:#e0e0e0;margin:0 auto;"></div>')}
+    </div>`).join('<div style="width:2px;background:linear-gradient(180deg,transparent,var(--led),transparent);margin-top:50px;"></div>');
+}
+
+function renderSchedule(){
+  const container=document.getElementById('schedule-container');
+  if(!container)return;
+  const schedule=[
+    {ora:'10:00',campo:'A',teamA:'Team LILLO ⚡',teamB:'SandStorm 🌪️',status:'live'},
+    {ora:'10:00',campo:'B',teamA:'Beach Kings 👑',teamB:'Spike Force 💥',status:'live'},
+    {ora:'11:30',campo:'A',teamA:'Sunset Duo 🌅',teamB:'Net Crushers 🏐',status:'programmata'},
+    {ora:'11:30',campo:'B',teamA:'Block Party 🧱',teamB:'TBD',status:'programmata'},
+    {ora:'14:00',campo:'A',teamA:'Semifinale 1',teamB:'Semifinale 2',status:'attesa'},
+    {ora:'15:30',campo:'A',teamA:'Finale 🏆',teamB:'Finale 🏆',status:'attesa'},
+  ];
+  container.innerHTML=`<div style="display:flex;flex-direction:column;gap:0;border:2px solid var(--k);overflow:hidden;">
+    ${schedule.map(s=>`<div style="display:grid;grid-template-columns:80px 60px 1fr 1fr auto;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:12px;background:${s.status==='live'?'rgba(200,255,0,.05)':'transparent'}" class="grid-1-mob">
+      <span class="bb" style="font-size:18px;">${s.ora}</span>
+      <span style="font-size:10px;color:var(--dim);letter-spacing:1px;">Campo ${s.campo}</span>
+      <span style="font-size:12px;">${s.teamA}</span>
+      <span style="font-size:12px;">${s.teamB}</span>
+      <span class="badge ${s.status==='live'?'badge-led':s.status==='programmata'?'badge-green':'badge-red'}" style="font-size:8px;">${s.status}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function switchLiveTab(tab){
+  activeLiveTab=tab;
+  ['matches','bracket','schedule'].forEach(t=>{
+    const btn=document.getElementById('lv-'+t);
+    const panel=document.getElementById('ltab-'+t);
+    if(btn) btn.classList.toggle('on',t===tab);
+    if(panel) panel.style.display=t===tab?'block':'none';
+  });
+}
+
+// ── UPDATE SCORE ──────────────────────────────────────────
+window.updateScore=function(){
+  const sel=document.getElementById('score-match-sel');
+  const a=parseInt(document.getElementById('score-a').value)||0;
+  const b=parseInt(document.getElementById('score-b').value)||0;
+  if(!sel?.value)return;
+  const match=partite.find(p=>p.id===sel.value);
+  if(match){match.scoreA=a;match.scoreB=b;match.status='live';}
+  renderLiveMatches();showToast('📊 Punteggio aggiornato!');
+};
+window.endMatch=function(){
+  const sel=document.getElementById('score-match-sel');
+  if(!sel?.value)return;
+  const match=partite.find(p=>p.id===sel.value);
+  if(match){
+    const a=parseInt(document.getElementById('score-a').value)||match.scoreA;
+    const b=parseInt(document.getElementById('score-b').value)||match.scoreB;
+    match.scoreA=a;match.scoreB=b;match.status='finita';
+    // Update standings
+    const winTeam=a>b?match.teamA:match.teamB;
+    const loseTeam=a>b?match.teamB:match.teamA;
+    const winner=iscritti.find(s=>s.team===winTeam);
+    const loser=iscritti.find(s=>s.team===loseTeam);
+    if(winner){winner.vinti++;winner.setVinti+=Math.max(a,b);winner.setPersi+=Math.min(a,b);}
+    if(loser){loser.persi++;loser.setVinti+=Math.min(a,b);loser.setPersi+=Math.max(a,b);}
+  }
+  renderLiveMatches();renderClassificaTable();showToast('✅ Partita conclusa! Classifica aggiornata.');
+};
+window.addNewMatch=function(){
+  const id='p'+Date.now();
+  partite.push({id,teamA:'Squadra A',teamB:'Squadra B',scoreA:0,scoreB:0,torneo:'t1',status:'live',set:[]});
+  renderLive();showToast('+ Nuova partita aggiunta!');
+};
+
+// ── ISCRIZIONE ────────────────────────────────────────────
+window.iscriviSquadra=function(){
+  const team=document.getElementById('iscr-team').value.trim();
+  const p1=document.getElementById('iscr-p1').value.trim();
+  const p2=document.getElementById('iscr-p2').value.trim();
+  const torneo=document.getElementById('iscr-torneo').value;
+  const contact=document.getElementById('iscr-contact').value.trim();
+  if(!team||!p1||!p2||!torneo){showToast('⚠️ Compila tutti i campi obbligatori.');return;}
+  const t=tornei.find(t=>t.id===torneo);
+  const currentCount=iscritti.filter(i=>i.torneo===torneo).length;
+  if(t&&currentCount>=t.max){showToast('⚠️ Torneo al completo!');return;}
+  iscritti.push({
+    id:'sq'+Date.now(),team,p1,p2,torneo,contact,
+    status:'in attesa',pts:0,vinti:0,persi:0,setVinti:0,setPersi:0
+  });
+  // Update stat
+  const stat=document.getElementById('stat-teams');
+  if(stat) stat.textContent=iscritti.length;
+  closeModal('iscriviti-modal');
+  document.getElementById('iscr-team').value='';
+  document.getElementById('iscr-p1').value='';
+  document.getElementById('iscr-p2').value='';
+  document.getElementById('iscr-contact').value='';
+  showToast('🏐 Iscrizione completata! +100 LFPOINTS in palio.');
+  renderHome();
+};
+
+// ── TORNEO NUOVO ──────────────────────────────────────────
+window.creaTorneo=function(){
+  const nome=document.getElementById('nt-nome').value.trim();
+  const date=document.getElementById('nt-date').value;
+  const max=parseInt(document.getElementById('nt-max').value)||16;
+  const formato=document.getElementById('nt-format').value;
+  const montepremi=parseInt(document.getElementById('nt-prize').value)||0;
+  const luogo=document.getElementById('nt-luogo').value.trim();
+  if(!nome){showToast('⚠️ Inserisci il nome del torneo.');return;}
+  tornei.push({id:'t'+Date.now(),nome,data:date||new Date().toISOString().split('T')[0],max,formato,montepremi,luogo:luogo||'—',status:'iscrizioni'});
+  closeModal('nuovo-torneo-modal');
+  document.getElementById('nt-nome').value='';
+  showToast('✅ Torneo creato!');
+  renderHome();
+  // Update iscr select
+  const sel=document.getElementById('iscr-torneo');
+  if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+};
+
+// ── PREMI ─────────────────────────────────────────────────
+function renderPremiSpeciali(){
+  const grid=document.getElementById('premi-speciali-grid');
+  if(!grid)return;
+  grid.innerHTML=premiSpeciali.map(p=>`<div class="card" style="padding:20px;text-align:center;">
+    <p style="font-size:36px;margin-bottom:8px;">${p.emoji}</p>
+    <p class="bb" style="font-size:20px;margin-bottom:4px;">${p.nome}</p>
+    <p style="font-size:12px;color:var(--led);margin-bottom:8px;">${p.valore}</p>
+    <p style="font-size:10px;color:var(--mid);line-height:1.7;">${p.desc}</p>
+    <span class="badge badge-led" style="margin-top:10px;">${p.cat}</span>
+  </div>`).join('');
+}
+
+window.aggiungiPremio=function(){
+  const nome=document.getElementById('pr-nome').value.trim();
+  const valore=document.getElementById('pr-valore').value.trim();
+  const emoji=document.getElementById('pr-emoji').value.trim()||'🎁';
+  const cat=document.getElementById('pr-cat').value;
+  const desc=document.getElementById('pr-desc').value.trim();
+  if(!nome){showToast('⚠️ Inserisci il nome del premio.');return;}
+  premiSpeciali.push({emoji,nome,valore,desc,cat});
+  renderPremiSpeciali();
+  document.getElementById('pr-nome').value='';
+  document.getElementById('pr-valore').value='';
+  document.getElementById('pr-emoji').value='';
+  document.getElementById('pr-desc').value='';
+  showToast('🏆 Premio aggiunto!');
+};
+
+// ── CANVAS NET ANIMATION ─────────────────────────────────
+(function(){
+  const canvas=document.getElementById('net-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  let W,H,t=0;
+  function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight;}
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='rgba(200,255,0,0.4)';
+    ctx.lineWidth=0.5;
+    const spacing=60;
+    const cols=Math.ceil(W/spacing)+2;
+    const rows=Math.ceil(H/spacing)+2;
+    for(let i=-1;i<cols;i++){
+      for(let j=-1;j<rows;j++){
+        const x=i*spacing+Math.sin(j*0.5+t)*8;
+        const y=j*spacing+Math.sin(i*0.3+t*1.2)*6;
+        const nx=x+spacing+Math.sin((j+1)*0.5+t)*8;
+        const ny=j*spacing+Math.sin((i+1)*0.3+t*1.2)*6;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(nx,ny);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(j*0.5+t+1)*8,y+spacing+Math.sin(i*0.3+t*1.2+1)*6);ctx.stroke();
+      }
+    }
+    // Ball
+    const bx=W*0.7+Math.sin(t*1.5)*W*0.1;
+    const by=H*0.4+Math.sin(t*2.3)*H*0.15;
+    ctx.beginPath();ctx.arc(bx,by,18,0,Math.PI*2);
+    ctx.strokeStyle='rgba(200,255,0,0.6)';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(bx,by,14,0,Math.PI*2);
+    ctx.strokeStyle='rgba(200,255,0,0.2)';ctx.lineWidth=0.5;ctx.stroke();
+    t+=0.008;requestAnimationFrame(draw);
+  }
+  resize();draw();
+  window.addEventListener('resize',resize);
+})();
+
+// ── INIT ──────────────────────────────────────────────────
+renderHome();
+renderPremiSpeciali();
+</script>
+</body>
+</html>
