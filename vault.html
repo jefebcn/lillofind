@@ -880,10 +880,29 @@ function doInvest() {
   state.investments.push(inv);
   saveState();
   closeModal('modal-confirm');
-  showToast('✅ Investimento avviato con successo!');
+  showToast('✅ Investimento avviato! Apertura notifica WhatsApp...');
   renderDash();
   renderPortfolio();
   showPg('portfolio');
+  setTimeout(() => notifyWhatsApp(inv), 600);
+}
+
+function notifyWhatsApp(inv) {
+  const start = new Date(inv.startDate).toLocaleDateString('it-IT');
+  const end   = new Date(inv.endDate).toLocaleDateString('it-IT');
+  const tipo  = inv.type === 'locked' ? '🔒 Bloccato' : '📈 Flessibile';
+  const msg =
+    `🔔 *NUOVO INVESTIMENTO — LF VAULT*\n\n` +
+    `📋 ID: ${inv.id}\n` +
+    `💶 Capitale: €${fmtNum(inv.capital)}\n` +
+    `⏱ Durata: ${inv.months} mesi\n` +
+    `📌 Tipo: ${tipo}\n` +
+    `📈 Rendimento: +${inv.rate}%\n` +
+    `💰 Profitto previsto: +€${fmtNum(inv.profit)}\n` +
+    `🏁 Totale a scadenza: €${fmtNum(inv.capital + inv.profit)}\n` +
+    `📅 Inizio: ${start}\n` +
+    `📅 Scadenza: ${end}`;
+  window.open('https://wa.me/393513339543?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ══════════════════════════════════════════════════
@@ -1190,6 +1209,15 @@ function doEarlyExit() {
   showToast('✅ Disdetta inviata. Fondi in elaborazione.');
   renderDash();
   renderPortfolio();
+  // Notify owner
+  const msg =
+    `⚠️ *DISDETTA ANTICIPATA — LF VAULT*\n\n` +
+    `📋 ID: ${inv.id}\n` +
+    `💶 Capitale: €${fmtNum(inv.capital)}\n` +
+    `💰 Profitto maturato: +€${fmtNum(inv.profit)}\n` +
+    `🏁 Totale da restituire: €${fmtNum(inv.capital + inv.profit)}\n` +
+    `📅 Data disdetta: ${new Date().toLocaleDateString('it-IT')}`;
+  setTimeout(() => window.open('https://wa.me/393513339543?text=' + encodeURIComponent(msg), '_blank'), 600);
 }
 // ══════════════════════════════════════════════════
 function renderRequests() {
