@@ -1265,12 +1265,24 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="ad-price" type="number" step="0.01" placeholder="129.99"/></div>
       <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="ad-model" placeholder="es. Oversized"/></div>
       <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Marchio</label><input class="lf-in" id="ad-brand" placeholder="es. Carhartt"/></div>
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia</label>
-        <select class="lf-in" id="ad-size"><option value="">—</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>Unica</option></select>
-      </div>
       <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile</label>
         <select class="lf-in" id="ad-style"><option value="">—</option><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
       </div>
+      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Colori Disponibili</label><input class="lf-in" id="ad-colors" placeholder="es. Nero, Bianco, Verde"/><p style="font-size:8px;color:var(--dim);margin-top:3px;">Separati da virgola</p></div>
+    </div>
+    <!-- TAGLIE DISPONIBILI -->
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
+      <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglie Disponibili</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ad-sizes-wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XS"><input type="checkbox" value="XS" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XS')"/>XS</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-S"><input type="checkbox" value="S" class="sz-chk" style="display:none;" onchange="toggleSzLabel('S')"/>S</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-M"><input type="checkbox" value="M" class="sz-chk" style="display:none;" onchange="toggleSzLabel('M')"/>M</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-L"><input type="checkbox" value="L" class="sz-chk" style="display:none;" onchange="toggleSzLabel('L')"/>L</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XL"><input type="checkbox" value="XL" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XL')"/>XL</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XXL"><input type="checkbox" value="XXL" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XXL')"/>XXL</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-Unica"><input type="checkbox" value="Unica" class="sz-chk" style="display:none;" onchange="toggleSzLabel('Unica')"/>UNICA</label>
+      </div>
+      <p style="font-size:8px;color:var(--dim);">Clicca per selezionare/deselezionare le taglie disponibili</p>
     </div>
     <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><textarea class="lf-in" id="ad-desc" placeholder="Descrizione breve..."></textarea></div>
     <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
@@ -1667,6 +1679,22 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ════════════════════════════════════════════════════════
      PRODUCT DETAIL MODAL
 ════════════════════════════════════════════════════════ -->
+<!-- ══ SIZE/COLOR PICKER MODAL ══ -->
+<div class="modal-bg" id="size-picker-modal" onclick="if(event.target===this)this.classList.remove('open')" style="align-items:flex-end;">
+  <div style="background:#fff;width:100%;max-width:480px;padding:28px 22px;border-top:3px solid var(--k);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <p style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;">Scegli Opzioni</p>
+      <button onclick="document.getElementById('size-picker-modal').classList.remove('open')" style="background:none;border:none;font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div id="size-picker-body"></div>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:16px;display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #f0f0f0;padding-top:12px;">
+      <span>Taglia: <strong id="picker-selsize">—</strong></span>
+      <span>Colore: <strong id="picker-selcolor">—</strong></span>
+    </div>
+    <button onclick="confirmAddToCart()" class="btn-led" style="width:100%;font-size:13px;padding:16px;letter-spacing:3px;">🛒 AGGIUNGI AL CARRELLO →</button>
+  </div>
+</div>
+
 <div id="prod-modal" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box" style="padding:0;max-width:780px;">
     <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
@@ -2037,7 +2065,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="padding:12px 10px;">
         ${p.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
         <h4 style="font-size:12px;margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${p.name}</h4>
-        ${p.size?`<p style="font-size:10px;color:var(--dim);margin-bottom:4px;">SZ ${p.size}</p>`:''}
+        ${(p.sizes&&p.sizes.length)?`<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px;">${p.sizes.map(s=>`<span style="border:1px solid #ddd;padding:1px 5px;font-size:8px;letter-spacing:1px;">${s}</span>`).join('')}</div>`:p.size?`<p style="font-size:10px;color:var(--dim);margin-bottom:4px;">SZ ${p.size}</p>`:''}
+        ${(p.colors&&p.colors.length)?`<p style="font-size:9px;color:var(--dim);margin-bottom:3px;">🎨 ${p.colors.join(' · ')}</p>`:''}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
           <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
           <button class="btn-k" style="padding:6px 10px;font-size:9px;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">ADD+</button>
@@ -2081,10 +2110,11 @@ img{ -webkit-user-drag:none; user-select:none; }
             ${p.model?`<p style="font-size:11px;color:var(--mid);letter-spacing:1px;">Modello: ${p.model}</p>`:''}
             ${p.description?`<p style="font-size:12px;color:var(--mid);line-height:1.8;margin-top:8px;">${p.description}</p>`:''}
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            ${p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${p.size}</span>`:''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${s}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${p.size}</span>`:''}
             ${p.style?`<span style="border:1.5px solid #e0e0e0;padding:5px 14px;font-size:11px;letter-spacing:2px;color:var(--mid);">${p.style}</span>`:''}
           </div>
+          ${(p.colors&&p.colors.length)?`<div style="margin-top:4px;font-size:10px;color:var(--mid);">🎨 Colori: ${p.colors.join(' · ')}</div>`:''}
           <div style="border-top:1px solid #e0e0e0;padding-top:16px;">
             <p style="font-family:'Bebas Neue',sans-serif;font-size:42px;margin-bottom:6px;">€${(p.price||0).toFixed(2)}</p>
             <div style="border:1px solid rgba(200,255,0,.4);padding:5px 10px;background:rgba(200,255,0,.05);display:inline-flex;align-items:center;gap:6px;">
@@ -2221,15 +2251,83 @@ img{ -webkit-user-drag:none; user-select:none; }
     cart.splice(idx,1);saveCart();updateCartBadge();renderCart();
   };
 
-  // ── Buy ────────────────────────────────────────────────
+  // ── Buy — shows size/color picker ─────────────────────
+  let _buyPid=null,_buyPrice=0;
   window.buy=function(pid,price){
     if(!user){showToast('Accedi per acquistare 👆');showPg('auth');return;}
+    _buyPid=pid; _buyPrice=price;
     const prod=products.find(p=>p.id===pid)||{id:pid,price};
-    const existing=cart.find(i=>i.id===pid);
-    if(existing){existing.qty++;showToast('Quantità aggiornata nel carrello!');}
-    else{cart.push({id:pid,name:prod.name||'Prodotto',price,brand:prod.brand||'',size:prod.size||'',img:prod.imageUrl||'',qty:1});}
+    const sizes=prod.sizes&&prod.sizes.length?prod.sizes:(prod.size?[prod.size]:[]);
+    const colors=prod.colors&&prod.colors.length?prod.colors:[];
+    const modal=document.getElementById('size-picker-modal');
+    const body=document.getElementById('size-picker-body');
+    if(!modal||!body)return;
+    body.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        ${prod.imageUrl?`<img src="${prod.imageUrl}" style="width:60px;height:60px;object-fit:cover;border:1px solid #e0e0e0;" onerror="this.style.display='none'">`:''}
+        <div><p style="font-size:9px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:'Bebas Neue',sans-serif;font-size:22px;">${prod.name||'Prodotto'}</p><p style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--led);">€${price.toFixed(2)}</p></div>
+      </div>
+      ${sizes.length?`<div style="margin-bottom:18px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Seleziona Taglia *</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="picker-sizes">
+          ${sizes.map(s=>`<button onclick="pickSz('${s}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${s}</button>`).join('')}
+        </div>
+        <p id="sz-err" style="font-size:9px;color:red;margin-top:6px;display:none;">Seleziona una taglia</p>
+      </div>`:''}
+      ${colors.length?`<div style="margin-bottom:18px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Colore Desiderato *</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="picker-colors">
+          ${colors.map(c=>`<button onclick="pickCol('${c}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${c}</button>`).join('')}
+        </div>
+        <p id="col-err" style="font-size:9px;color:red;margin-top:6px;display:none;">Seleziona un colore</p>
+      </div>`:`<div style="margin-bottom:18px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Colore Desiderato</p>
+        <input id="picker-color-input" class="lf-in" placeholder="es. Nero, Bianco, Verde militare..."/>
+      </div>`}`;
+    document.getElementById('picker-selsize').textContent = '';
+    document.getElementById('picker-selcolor').textContent = '';
+    modal.classList.add('open');
+  };
+  let _pickedSz='', _pickedCol='';
+  window.pickSz=function(s,btn){
+    _pickedSz=s;
+    document.querySelectorAll('#picker-sizes button').forEach(b=>{b.style.background='';b.style.color='';});
+    btn.style.background='var(--k)';btn.style.color='var(--w)';
+    const e=document.getElementById('sz-err'); if(e) e.style.display='none';
+    document.getElementById('picker-selsize').textContent=s;
+  };
+  window.pickCol=function(c,btn){
+    _pickedCol=c;
+    document.querySelectorAll('#picker-colors button').forEach(b=>{b.style.background='';b.style.color='';});
+    btn.style.background='var(--k)';btn.style.color='var(--w)';
+    const e=document.getElementById('col-err'); if(e) e.style.display='none';
+    document.getElementById('picker-selcolor').textContent=c;
+  };
+  window.confirmAddToCart=function(){
+    const prod=products.find(p=>p.id===_buyPid)||{id:_buyPid,price:_buyPrice};
+    const sizes=prod.sizes&&prod.sizes.length?prod.sizes:(prod.size?[prod.size]:[]);
+    const colors=prod.colors&&prod.colors.length?prod.colors:[];
+    // Validate size
+    if(sizes.length&&!_pickedSz){
+      const e=document.getElementById('sz-err'); if(e)e.style.display='block'; return;
+    }
+    // Color: either picked from chips or typed
+    let finalColor=_pickedCol;
+    if(!finalColor){
+      const inp=document.getElementById('picker-color-input');
+      if(inp) finalColor=inp.value.trim();
+    }
+    if(colors.length&&!_pickedCol){
+      const e=document.getElementById('col-err'); if(e)e.style.display='block'; return;
+    }
+    const sz=_pickedSz||prod.size||'';
+    const existing=cart.find(i=>i.id===_buyPid&&i.size===sz&&i.color===finalColor);
+    if(existing){existing.qty++;}
+    else{cart.push({id:_buyPid,name:prod.name||'Prodotto',price:_buyPrice,brand:prod.brand||'',size:sz,color:finalColor,img:prod.imageUrl||'',qty:1});}
     saveCart();updateCartBadge();
-    showToast(`🛒 Aggiunto al carrello! +${Math.floor(price)} LFPTS al checkout`);
+    document.getElementById('size-picker-modal').classList.remove('open');
+    _pickedSz=''; _pickedCol='';
+    showToast(`🛒 Aggiunto! Taglia: ${sz||'—'} · Colore: ${finalColor||'—'}`);
   };
 
   let selectedPayment='card';
@@ -2260,7 +2358,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const pts=Math.floor(total);
     const items=document.getElementById('ck-order-items');
     if(items) items.innerHTML=cart.map(i=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid #f0f0f0;">
-      <span>${i.name}${i.qty>1?' x'+i.qty:''}</span><span class="bb">€${(i.price*i.qty).toFixed(2)}</span></div>`).join('');
+      <span>${i.name}${i.size?' — '+i.size:''}${i.color?' / '+i.color:''}${i.qty>1?' x'+i.qty:''}</span><span class="bb">€${(i.price*i.qty).toFixed(2)}</span></div>`).join('');
     const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     set('ck-sub','€'+total.toFixed(2));
     set('ck-ship',ship===0?'Gratis':'€'+ship.toFixed(2));
@@ -2284,6 +2382,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
     const ship=total>=80?0:6.90;
     const pts=Math.floor(total);
+    const _orderItems=[...cart]; // snapshot before clearing
+    localStorage.setItem('lf_cart_snapshot',JSON.stringify(_orderItems));
     if(selectedPayment==='paypal'){
       showToast('🔄 Reindirizzamento a PayPal...');
       setTimeout(()=>showToast('✅ Demo: PayPal completato!'),2000);
@@ -2303,7 +2403,45 @@ img{ -webkit-user-drag:none; user-select:none; }
       cart=[];saveCart();updateCartBadge();
       showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
       if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
-      setTimeout(()=>showPg('profile'),1000);
+      // ── WhatsApp notification to owner ──────────────────
+      const itemLines=JSON.parse(localStorage.getItem('lf_cart_snapshot')||'[]').length
+        ? JSON.parse(localStorage.getItem('lf_cart_snapshot')||'[]')
+        : [];
+      // Build order summary from snapshot stored before clearing cart
+      const phone=document.getElementById('ck-phone')?.value.trim()||'—';
+      const country=document.getElementById('ck-country')?.value||'Italia';
+      const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
+      const waMsg=
+        `🛍️ *NUOVO ORDINE — LILLOFIND*
+
+`+
+        `📋 ID Ordine: ${orderId}
+`+
+        `👤 Cliente: ${fname} ${lname}
+`+
+        `📧 Email: ${user.email}
+`+
+        `📞 Tel: ${phone}
+
+`+
+        `📦 Indirizzo:
+${street}, ${city} ${zip} (${country})
+
+`+
+        `🧾 Articoli:
+${_orderItems.map(i=>`  • ${i.name}${i.size?' — Taglia: '+i.size:''}${i.color?' — Colore: '+i.color:''} x${i.qty} → €${(i.price*i.qty).toFixed(2)}`).join('
+')}
+
+`+
+        `💶 Subtotale: €${total.toFixed(2)}
+`+
+        `🚚 Spedizione: ${ship===0?'Gratis':'€'+ship.toFixed(2)}
+`+
+        `💰 TOTALE: €${(total+ship).toFixed(2)}
+`+
+        `⬡ LFPOINTS: +${pts}`;
+      setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
+      setTimeout(()=>showPg('profile'),1200);
     } catch(e){showToast('⚠️ Errore: '+e.message);}
   };
   updateCartBadge();
@@ -2402,11 +2540,24 @@ img{ -webkit-user-drag:none; user-select:none; }
     reader.readAsDataURL(file);
   };
 
-  window.adminSave=async function(){
+  window.toggleSzLabel=function(sz){
+    const lbl=document.getElementById('sz-lbl-'+sz);
+    const chk=lbl.querySelector('input');
+    if(chk.checked){lbl.style.background='var(--k)';lbl.style.color='var(--w)';}
+    else{lbl.style.background='';lbl.style.color='';}
+  };
+
+    window.adminSave=async function(){
     const fb=window.__fb;
     const name=document.getElementById('ad-name').value.trim();
     const price=parseFloat(document.getElementById('ad-price').value);
     if(!name||isNaN(price))return showToast('⚠️ Nome e Prezzo obbligatori.');
+    // Read selected sizes
+    const sizes=[...document.querySelectorAll('.sz-chk:checked')].map(c=>c.value);
+    if(!sizes.length)return showToast('⚠️ Seleziona almeno una taglia.');
+    // Read colors
+    const colorsRaw=document.getElementById('ad-colors').value.trim();
+    const colors=colorsRaw?colorsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
     const btn=document.getElementById('ad-btn');
     btn.textContent='...'; btn.disabled=true;
     try{
@@ -2415,14 +2566,16 @@ img{ -webkit-user-drag:none; user-select:none; }
         description:document.getElementById('ad-desc').value.trim(),
         model:document.getElementById('ad-model').value.trim(),
         brand:document.getElementById('ad-brand').value.trim(),
-        size:document.getElementById('ad-size').value,
+        sizes, colors,
+        size:sizes.join(', '), // backward compat for filters
         style:document.getElementById('ad-style').value,
         imageUrl:document.getElementById('ad-img').value.trim(),
         createdAt:fb.serverTimestamp()
       });
       showToast('✅ Prodotto salvato!');
-      ['ad-name','ad-price','ad-desc','ad-model','ad-brand','ad-img'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-      document.getElementById('ad-size').value='';
+      ['ad-name','ad-price','ad-desc','ad-model','ad-brand','ad-img','ad-colors'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      document.querySelectorAll('.sz-chk').forEach(c=>{c.checked=false;});
+      document.querySelectorAll('[id^="sz-lbl-"]').forEach(l=>{l.style.background='';l.style.color='';});
       document.getElementById('ad-style').value='';
       const ip=document.getElementById('img-prev'); if(ip) ip.style.display='none';
       products=[];
