@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LilloFind — Importa Prodotti</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+<!-- Firebase -->
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getFirestore,collection,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
+const app=initializeApp(cfg);
+const db=getFirestore(app);
+const auth=getAuth(app);
+window.__imp={db,auth,collection,addDoc,serverTimestamp,signInWithEmailAndPassword,onAuthStateChanged};
+</script>
+
+<style>
+:root{
+  --k:#080808;--w:#f5f5f5;--led:#C8FF00;
+  --dim:#777;--border:#1a1a1a;
+  --card:#111;--card2:#161616;--card3:#1e1e1e;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--k);}
+body{font-family:'IBM Plex Mono',monospace;background:var(--k);color:var(--w);min-height:100vh;}
+.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.led-strip{height:3px;background:linear-gradient(90deg,transparent,var(--led) 30%,#00FFB2 60%,var(--led) 80%,transparent);box-shadow:0 0 12px var(--led);}
+
+/* ── LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;background:var(--k);z-index:999;
+  display:flex;align-items:center;justify-content:center;
+}
+.login-box{
+  width:360px;padding:40px 32px;border:2px solid var(--border);
+  background:var(--card);
+}
+.lf-in{
+  width:100%;background:#0f0f0f;border:1.5px solid #2a2a2a;color:var(--w);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;
+  padding:12px 14px;outline:none;transition:border-color .15s;
+}
+.lf-in:focus{border-color:var(--led);}
+.btn-led{
+  background:var(--led);color:var(--k);border:none;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;padding:14px 24px;transition:opacity .15s;
+  box-shadow:0 0 16px rgba(200,255,0,.3);
+}
+.btn-led:hover{opacity:.88;}
+.btn-led:disabled{opacity:.4;cursor:not-allowed;}
+.btn-g{
+  background:var(--card3);color:var(--w);border:1.5px solid #333;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;padding:10px 18px;transition:all .15s;
+}
+.btn-g:hover{border-color:var(--led);color:var(--led);}
+.btn-red{
+  background:rgba(255,71,87,.1);color:#FF4757;border:1.5px solid rgba(255,71,87,.3);
+  cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;
+  padding:8px 14px;transition:all .15s;
+}
+.btn-red:hover{background:rgba(255,71,87,.2);}
+
+/* ── HEADER ── */
+#app-header{
+  background:var(--k);border-bottom:2px solid var(--border);
+  padding:0 24px;height:60px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:10;
+}
+
+/* ── LAYOUT ── */
+#app-body{max-width:1300px;margin:0 auto;padding:28px 20px 80px;}
+
+/* ── BRAND CHIPS ── */
+.brand-chip{
+  display:inline-flex;align-items:center;padding:7px 14px;
+  border:1.5px solid #2a2a2a;font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;cursor:pointer;transition:all .15s;
+  background:var(--card);color:#aaa;user-select:none;
+}
+.brand-chip:hover{border-color:#555;color:var(--w);}
+.brand-chip.on{border-color:var(--led);background:rgba(200,255,0,.08);color:var(--led);}
+
+/* ── MODEL CHIPS ── */
+.model-chip{
+  display:inline-flex;align-items:center;padding:5px 12px;
+  border:1px solid #222;font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;cursor:pointer;transition:all .15s;
+  background:var(--card2);color:#777;
+}
+.model-chip:hover{border-color:#444;color:#ccc;}
+.model-chip.on{border-color:#aaa;background:#1a1a1a;color:var(--w);}
+
+/* ── PRODUCT ROW ── */
+.prod-row{
+  background:var(--card);border:1.5px solid #1e1e1e;
+  padding:16px;margin-bottom:10px;
+  transition:border-color .15s;position:relative;
+}
+.prod-row:focus-within{border-color:#333;}
+.prod-row.saved-ok{border-color:rgba(200,255,0,.4);background:rgba(200,255,0,.03);}
+.prod-row.saved-err{border-color:rgba(255,71,87,.4);}
+.row-grid{
+  display:grid;
+  grid-template-columns:60px 1.8fr 90px 1.2fr 1fr 1fr auto;
+  gap:10px;align-items:start;
+}
+.row-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+
+/* ── IMAGE PREVIEW ── */
+.img-prev{
+  width:60px;height:60px;object-fit:cover;
+  border:1px solid #2a2a2a;background:#111;
+  display:block;
+}
+.img-placeholder{
+  width:60px;height:60px;border:1.5px dashed #2a2a2a;background:#0d0d0d;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;
+}
+
+/* ── SIZE TOGGLES ── */
+.sz-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:28px;border:1.5px solid #2a2a2a;font-size:9px;
+  letter-spacing:1px;cursor:pointer;background:var(--card);color:#555;
+  transition:all .12s;user-select:none;
+}
+.sz-toggle:hover{border-color:#555;color:#aaa;}
+.sz-toggle.on{border-color:var(--led);background:rgba(200,255,0,.1);color:var(--led);}
+
+/* ── STATS BAR ── */
+#stats-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--card);border-top:2px solid var(--border);
+  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
+  z-index:20;
+}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  background:var(--led);color:var(--k);padding:10px 20px;
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  pointer-events:none;opacity:0;transition:opacity .25s;z-index:100;
+}
+#toast.show{opacity:1;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--k);}
+::-webkit-scrollbar-thumb{background:#333;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .row-grid{grid-template-columns:50px 1fr 80px;gap:8px;}
+  .row-grid>*:nth-child(n+4){grid-column:span 3;}
+}
+</style>
+</head>
+<body>
+
+<!-- ════ LOGIN ════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <p style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:6px;">LILLOFIND</p>
+    <p class="bb" style="font-size:36px;margin-bottom:4px;">IMPORTA<br>PRODOTTI</p>
+    <div class="led-strip" style="margin-bottom:28px;"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <p class="row-label" style="margin-bottom:5px;">Email Admin</p>
+        <input class="lf-in" id="lg-email" type="email" placeholder="admin@lillofind.it" autocomplete="email"/>
+      </div>
+      <div>
+        <p class="row-label" style="margin-bottom:5px;">Password</p>
+        <input class="lf-in" id="lg-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button class="btn-led" id="lg-btn" onclick="doLogin()" style="width:100%;margin-top:6px;">ACCEDI →</button>
+      <p id="lg-err" style="font-size:10px;color:#FF4757;display:none;margin-top:4px;"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ════ APP ════ -->
+<header id="app-header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="bb" style="font-size:28px;letter-spacing:3px;">LILLOFIND</span>
+    <div style="width:1px;height:24px;background:#222;"></div>
+    <span style="font-size:10px;color:var(--dim);letter-spacing:2px;">IMPORTA PRODOTTI</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span id="hdr-user" style="font-size:10px;color:var(--dim);"></span>
+    <a href="index.html" class="btn-g" style="text-decoration:none;font-size:10px;padding:8px 14px;">← TORNA AL SITO</a>
+  </div>
+</header>
+<div class="led-strip"></div>
+
+<div id="app-body">
+
+  <!-- ── STEP 1: BRAND ── -->
+  <div style="margin-bottom:28px;">
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
+      <span style="font-size:10px;color:var(--led);letter-spacing:3px;">01</span>
+      <span class="bb" style="font-size:26px;">SCEGLI BRAND</span>
+      <span id="sel-brand-lbl" style="font-size:11px;color:var(--led);margin-left:8px;"></span>
+    </div>
+    <div id="brand-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+      <input class="lf-in" id="custom-brand" placeholder="Oppure scrivi brand manuale..." style="max-width:260px;padding:8px 12px;font-size:10px;" oninput="onCustomBrand(this.value)"/>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: CATEGORIA ── -->
+  <div style="margin-bottom:28px;">
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
+      <span style="font-size:10px;color:var(--led);letter-spacing:3px;">02</span>
+      <span class="bb" style="font-size:26px;">TIPO PRODOTTO</span>
+      <span id="sel-model-lbl" style="font-size:11px;color:#aaa;margin-left:8px;"></span>
+    </div>
+    <div id="model-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+  </div>
+
+  <!-- ── STEP 3: PRODOTTI ── -->
+  <div style="margin-bottom:20px;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:baseline;gap:12px;">
+        <span style="font-size:10px;color:var(--led);letter-spacing:3px;">03</span>
+        <span class="bb" style="font-size:26px;">PRODOTTI</span>
+        <span id="row-count-lbl" style="font-size:11px;color:var(--dim);">0 righe</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-g" onclick="addRow()" style="font-size:10px;padding:9px 16px;">+ AGGIUNGI RIGA</button>
+        <button class="btn-g" onclick="addRows(5)" style="font-size:10px;padding:9px 16px;">+ 5 RIGHE</button>
+        <button class="btn-red" onclick="clearDone()" style="font-size:10px;padding:9px 14px;">🗑 RIMUOVI SALVATI</button>
+      </div>
+    </div>
+
+    <!-- COLUMN HEADERS -->
+    <div style="display:grid;grid-template-columns:60px 1.8fr 90px 1.2fr 1fr 1fr auto;gap:10px;padding:6px 16px;margin-bottom:4px;" id="col-headers">
+      <span class="row-label">Img</span>
+      <span class="row-label">Nome Prodotto *</span>
+      <span class="row-label">Prezzo € *</span>
+      <span class="row-label">URL Immagine</span>
+      <span class="row-label">Taglie</span>
+      <span class="row-label">Colori</span>
+      <span class="row-label" style="width:32px;"></span>
+    </div>
+
+    <div id="rows-container"></div>
+  </div>
+
+  <!-- ── ISTRUZIONI ── -->
+  <div style="border:1px solid #1e1e1e;padding:20px 22px;background:#0d0d0d;margin-top:32px;">
+    <p class="bb" style="font-size:20px;margin-bottom:12px;color:var(--led);">💡 COME USARLO IN MODO VELOCE</p>
+    <ol style="font-size:10px;color:#777;line-height:2.4;padding-left:16px;letter-spacing:0.5px;">
+      <li>Apri <strong style="color:#aaa;">huskyreps.x.yupoo.com</strong> in un altro tab del browser</li>
+      <li>Naviga in un album → clicca su un prodotto → <strong style="color:#aaa;">tasto destro sull'immagine → "Copia indirizzo immagine"</strong></li>
+      <li>Torna qui → incolla il link nel campo <strong style="color:#aaa;">URL Immagine</strong> → l'anteprima appare in automatico</li>
+      <li>Compila nome e prezzo → seleziona le taglie cliccando → scrivi i colori disponibili</li>
+      <li>Premi <strong style="color:var(--led);">SALVA TUTTO</strong> quando hai finito tutte le righe</li>
+    </ol>
+    <p style="font-size:9px;color:#444;margin-top:14px;letter-spacing:1px;">💡 TRUCCO: Aggiungi più righe prima di iniziare, poi tab tra i campi senza toccare il mouse. Il tasto Invio nel campo nome passa al prezzo.</p>
+  </div>
+
+</div>
+
+<!-- ════ STATS BAR ════ -->
+<div id="stats-bar">
+  <div style="display:flex;align-items:center;gap:20px;">
+    <div>
+      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;">BRAND</p>
+      <p class="bb" style="font-size:16px;color:var(--led);" id="sb-brand">—</p>
+    </div>
+    <div style="width:1px;height:30px;background:#222;"></div>
+    <div>
+      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;">TIPO</p>
+      <p class="bb" style="font-size:16px;" id="sb-model">—</p>
+    </div>
+    <div style="width:1px;height:30px;background:#222;"></div>
+    <div>
+      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;">RIGHE</p>
+      <p class="bb" style="font-size:16px;" id="sb-rows">0</p>
+    </div>
+    <div>
+      <p style="font-size:8px;color:var(--led);letter-spacing:2px;">SALVATI</p>
+      <p class="bb" style="font-size:16px;color:var(--led);" id="sb-saved">0</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <p id="save-status" style="font-size:10px;color:var(--dim);letter-spacing:1px;"></p>
+    <button class="btn-led" id="save-btn" onclick="saveAll()" style="font-size:12px;padding:14px 32px;letter-spacing:3px;">
+      💾 SALVA TUTTO →
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+// ── Wait for Firebase ──
+function waitFB(cb){ window.__imp ? cb() : setTimeout(()=>waitFB(cb),80); }
+
+// ── State ──
+let currentBrand = '';
+let currentModel = '';
+let rowId = 0;
+let savedCount = 0;
+let user = null;
+
+const SIZES_ALL = ['XS','S','M','L','XL','XXL','Unica'];
+
+const BRANDS = [
+  'Nike','Adidas','Jordan','New Balance','Asics','Puma','Reebok','Converse',
+  'Ralph Lauren','Tommy Hilfiger','Lacoste','Fred Perry','Stone Island',
+  'Moncler','Canada Goose','Arc\'teryx','Patagonia','The North Face',
+  'Stussy','Supreme','Palace','Carhartt WIP','Dickies','Wrangler',
+  'Off-White','Vetements','Raf Simons','Rick Owens','Fear of God','Essentials',
+  'Balenciaga','Gucci','Versace','Prada','Fendi','Dior','LV','Burberry','YSL',
+  'Broken Planet','RTA','Alo Yoga','Lululemon','Vuori',
+  'New Era','Mitchell & Ness','Kangol','Red Bull',
+  'Stefano Ricci','Ferragamo','Guess','The Couture Club','Born x Raised',
+  'Moschino','Marni','A.P.C.','Ami Paris','Kenzo','Isabel Marant',
+  'Tuff Crowd','Derschutze','Morta','Autre',
+];
+
+const MODELS = [
+  'T-Shirt','Polo','Longsleeve','Hoodie','Crewneck','Zip Hoodie',
+  'Jacket','Bomber','Parka','Puffer','Vest',
+  'Pants','Cargo Pants','Shorts','Jeans','Jogger',
+  'Sneakers','Boots','Sandals','Slides',
+  'Cap','Hat','Beanie',
+  'Bag','Backpack','Belt','Wallet',
+  'Set Completo','Altro',
+];
+
+// ── Toast ──
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── Login ──
+window.doLogin=async function(){
+  const imp=window.__imp;
+  const email=document.getElementById('lg-email').value.trim();
+  const pass=document.getElementById('lg-pass').value;
+  const btn=document.getElementById('lg-btn');
+  const err=document.getElementById('lg-err');
+  err.style.display='none';
+  btn.textContent='...'; btn.disabled=true;
+  try{
+    await imp.signInWithEmailAndPassword(imp.auth,email,pass);
+  } catch(e){
+    err.textContent='Email o password errati';
+    err.style.display='block';
+    btn.textContent='ACCEDI →'; btn.disabled=false;
+  }
+};
+
+waitFB(()=>{
+  const imp=window.__imp;
+  imp.onAuthStateChanged(imp.auth, u=>{
+    user=u;
+    if(u){
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('hdr-user').textContent=u.email;
+      initApp();
+    } else {
+      document.getElementById('login-screen').style.display='flex';
+    }
+  });
+});
+
+function initApp(){
+  // Build brand chips
+  const bc=document.getElementById('brand-chips');
+  bc.innerHTML=BRANDS.map(b=>`<span class="brand-chip" onclick="selectBrand('${b.replace(/'/g,"\\'")}',this)">${b}</span>`).join('');
+
+  // Build model chips
+  const mc=document.getElementById('model-chips');
+  mc.innerHTML=MODELS.map(m=>`<span class="model-chip" onclick="selectModel('${m}',this)">${m}</span>`).join('');
+
+  // Start with 5 rows
+  addRows(5);
+  updateStats();
+}
+
+// ── Brand / Model ──
+window.selectBrand=function(brand, el){
+  currentBrand=brand;
+  document.querySelectorAll('.brand-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('custom-brand').value='';
+  document.getElementById('sel-brand-lbl').textContent='→ '+brand;
+  document.getElementById('sb-brand').textContent=brand;
+  updateStats();
+};
+
+window.onCustomBrand=function(val){
+  if(val){
+    currentBrand=val;
+    document.querySelectorAll('.brand-chip').forEach(c=>c.classList.remove('on'));
+    document.getElementById('sel-brand-lbl').textContent='→ '+val;
+    document.getElementById('sb-brand').textContent=val;
+  }
+};
+
+window.selectModel=function(model,el){
+  currentModel=model;
+  document.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('sel-model-lbl').textContent='→ '+model;
+  document.getElementById('sb-model').textContent=model;
+  updateStats();
+};
+
+// ── Add Rows ──
+window.addRow=function(){ addRows(1); }
+
+window.addRows=function(n){
+  for(let i=0;i<n;i++) createRow();
+  updateStats();
+};
+
+function createRow(){
+  const id=rowId++;
+  const container=document.getElementById('rows-container');
+  const div=document.createElement('div');
+  div.className='prod-row';
+  div.id='row-'+id;
+
+  div.innerHTML=`
+    <div class="row-grid">
+      <!-- IMAGE PREVIEW -->
+      <div>
+        <div class="img-placeholder" id="ph-${id}" onclick="document.getElementById('rfi-${id}').click()" title="Clicca per caricare da file">
+          <span style="font-size:14px;">📷</span>
+        </div>
+        <img class="img-prev" id="prev-${id}" style="display:none;" alt=""/>
+        <input type="file" id="rfi-${id}" accept="image/*" style="display:none;" onchange="handleFile(this,${id})"/>
+      </div>
+
+      <!-- NAME -->
+      <div>
+        <p class="row-label">Nome Prodotto *</p>
+        <input class="lf-in" id="rn-${id}" placeholder="es. Nike Dunk Low Panda"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('rp-${id}').focus();}"
+          oninput="updateRowPreview(${id})"/>
+      </div>
+
+      <!-- PRICE -->
+      <div>
+        <p class="row-label">€ *</p>
+        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" placeholder="89.99"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('ru-${id}').focus();}"/>
+      </div>
+
+      <!-- URL -->
+      <div>
+        <p class="row-label">URL Yupoo / Immagine</p>
+        <input class="lf-in" id="ru-${id}" placeholder="Incolla link immagine da Yupoo..."
+          oninput="handleUrlPaste(this,${id})"
+          onpaste="setTimeout(()=>handleUrlPaste(this,${id}),50)"/>
+      </div>
+
+      <!-- SIZES -->
+      <div>
+        <p class="row-label">Taglie</p>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
+          ${SIZES_ALL.map(s=>`<span class="sz-toggle" id="szt-${id}-${s}" onclick="toggleSize(${id},'${s}',this)">${s}</span>`).join('')}
+        </div>
+        <button onclick="toggleAllSizes(${id})" style="background:none;border:none;font-size:9px;color:var(--dim);cursor:pointer;margin-top:4px;padding:0;letter-spacing:1px;">TUTTE</button>
+      </div>
+
+      <!-- COLORS -->
+      <div>
+        <p class="row-label">Colori disponibili</p>
+        <input class="lf-in" id="rc-${id}" placeholder="es. Nero, Bianco, Verde" style="margin-bottom:4px;"/>
+        <p style="font-size:8px;color:var(--dim);">separati da virgola</p>
+      </div>
+
+      <!-- REMOVE -->
+      <div style="padding-top:16px;">
+        <button class="btn-red" onclick="removeRow(${id})" title="Rimuovi" style="padding:8px 10px;font-size:12px;">✕</button>
+      </div>
+    </div>
+
+    <!-- STATUS indicator -->
+    <div id="row-status-${id}" style="display:none;margin-top:8px;font-size:9px;letter-spacing:2px;padding:4px 0;"></div>
+  `;
+  container.appendChild(div);
+}
+
+window.removeRow=function(id){
+  const el=document.getElementById('row-'+id);
+  if(el) el.remove();
+  updateStats();
+};
+
+window.clearDone=function(){
+  document.querySelectorAll('.prod-row.saved-ok').forEach(r=>r.remove());
+  updateStats();
+  toast('🗑 Righe salvate rimosse');
+};
+
+// ── Image handling ──
+window.handleFile=function(input,id){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    showPreview(id, e.target.result);
+    document.getElementById('row-'+id).dataset.imgB64=e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.handleUrlPaste=function(input,id){
+  const url=input.value.trim();
+  if(!url)return;
+  // Try to show preview from URL
+  const img=document.getElementById('prev-'+id);
+  const ph=document.getElementById('ph-'+id);
+  img.src=url;
+  img.onload=()=>{ img.style.display='block'; ph.style.display='none'; };
+  img.onerror=()=>{ img.style.display='none'; ph.style.display='flex'; };
+};
+
+function showPreview(id,src){
+  const img=document.getElementById('prev-'+id);
+  const ph=document.getElementById('ph-'+id);
+  if(img){ img.src=src; img.style.display='block'; }
+  if(ph) ph.style.display='none';
+}
+
+// ── Size toggles ──
+window.toggleSize=function(id,sz,el){
+  el.classList.toggle('on');
+};
+
+window.toggleAllSizes=function(id){
+  const toggles=document.querySelectorAll(`#sz-${id} .sz-toggle`);
+  const allOn=[...toggles].every(t=>t.classList.contains('on'));
+  toggles.forEach(t=>{ allOn?t.classList.remove('on'):t.classList.add('on'); });
+};
+
+function getRowSizes(id){
+  return [...document.querySelectorAll(`#sz-${id} .sz-toggle.on`)].map(t=>t.textContent.trim());
+}
+
+// ── Stats ──
+function updateStats(){
+  const rows=document.querySelectorAll('.prod-row');
+  const count=rows.length;
+  document.getElementById('row-count-lbl').textContent=count+' '+(count===1?'riga':'righe');
+  document.getElementById('sb-rows').textContent=count;
+  document.getElementById('sb-saved').textContent=savedCount;
+}
+
+// ── SAVE ALL ──
+window.saveAll=async function(){
+  if(!user){ toast('⚠️ Non autenticato'); return; }
+  if(!currentBrand){ toast('⚠️ Seleziona un brand prima'); return; }
+
+  const imp=window.__imp;
+  const btn=document.getElementById('save-btn');
+  const status=document.getElementById('save-status');
+  btn.textContent='Salvando...'; btn.disabled=true;
+
+  const rows=document.querySelectorAll('.prod-row:not(.saved-ok)');
+  let saved=0, errors=0, skipped=0;
+
+  for(const row of rows){
+    const id=row.id.replace('row-','');
+    const name=document.getElementById('rn-'+id)?.value.trim();
+    const priceStr=document.getElementById('rp-'+id)?.value;
+    const price=parseFloat(priceStr);
+
+    if(!name||isNaN(price)||price<=0){
+      skipped++;
+      continue;
+    }
+
+    const urlEl=document.getElementById('ru-'+id);
+    const imgUrl=urlEl?.value.trim()||'';
+    const imgB64=row.dataset.imgB64||'';
+    const colorsRaw=document.getElementById('rc-'+id)?.value.trim()||'';
+    const colors=colorsRaw?colorsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
+    const sizes=getRowSizes(id);
+
+    const rowStatus=document.getElementById('row-status-'+id);
+
+    try{
+      await imp.addDoc(imp.collection(imp.db,'products'),{
+        name,
+        price,
+        brand: currentBrand,
+        model: currentModel||'',
+        style: currentModel||'',
+        sizes: sizes.length?sizes:['S','M','L','XL'],
+        size: sizes.join(', '),
+        colors,
+        imageUrl: imgUrl||imgB64||'',
+        description: '',
+        createdAt: imp.serverTimestamp()
+      });
+      saved++;
+      savedCount++;
+      row.classList.add('saved-ok');
+      if(rowStatus){
+        rowStatus.style.display='block';
+        rowStatus.style.color='var(--led)';
+        rowStatus.textContent='✅ SALVATO';
+      }
+      status.textContent=`${savedCount} salvati...`;
+    } catch(e){
+      errors++;
+      row.classList.add('saved-err');
+      if(rowStatus){
+        rowStatus.style.display='block';
+        rowStatus.style.color='#FF4757';
+        rowStatus.textContent='❌ ERRORE: '+e.message;
+      }
+    }
+  }
+
+  btn.textContent='💾 SALVA TUTTO →'; btn.disabled=false;
+  updateStats();
+
+  let msg=`✅ ${saved} prodotti salvati!`;
+  if(skipped) msg+=` (${skipped} vuoti saltati)`;
+  if(errors) msg+=` ⚠️ ${errors} errori`;
+  toast(msg);
+  status.textContent=msg;
+
+  // Auto-add new empty rows after saving
+  if(saved>0) setTimeout(()=>{ addRows(3); toast('➕ 3 nuove righe pronte'); }, 800);
+};
+
+// ── Keyboard shortcut: Ctrl+S = Save ──
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){
+    e.preventDefault();
+    saveAll();
+  }
+});
+</script>
+</body>
+</html>
