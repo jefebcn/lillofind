@@ -571,10 +571,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="display:flex;gap:20px;color:#444;">
         <span>🇮🇹 IT / EUR</span><span style="color:#222;">|</span><span>DHL Express</span><span style="color:#222;">|</span><span>🔒 SSL Secured</span>
       </div>
-      <div style="display:flex;gap:20px;align-items:center;">
-        <button id="u-li" onclick="showPg('auth')" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;min-height:32px;">Accedi</button>
-        <button id="u-reg" onclick="showPg('auth')" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;min-height:32px;">Registrati</button>
-        <button id="u-out" onclick="handleLogout()" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;min-height:32px;">Esci</button>
+<div style="display:flex;gap:20px;align-items:center;">
+        <button id="u-out" onclick="handleLogout()" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;">Esci</button>
         <span id="u-pts" style="display:none;color:var(--led);">⬡ <span id="u-pts-n">0</span> PTS</span>
       </div>
     </div>
@@ -1926,7 +1924,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function updateNav(u,ud){
     const li=!!u;
     // Desktop
-    ['u-li','u-reg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display=li?'none':''; });
+    // u-li/u-reg removed from DOM
     const uOut=document.getElementById('u-out'); if(uOut) uOut.style.display=li?'':'none';
     const uPts=document.getElementById('u-pts'); if(uPts) uPts.style.display=li?'':'none';
     if(li){ const n=document.getElementById('u-pts-n'); if(n) n.textContent=ud?.lfpoints??0; }
@@ -2411,35 +2409,20 @@ img{ -webkit-user-drag:none; user-select:none; }
       const phone=document.getElementById('ck-phone')?.value.trim()||'—';
       const country=document.getElementById('ck-country')?.value||'Italia';
       const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
-      const waMsg=
-        `🛍️ *NUOVO ORDINE — LILLOFIND*
-
-`+
-        `📋 ID Ordine: ${orderId}
-`+
-        `👤 Cliente: ${fname} ${lname}
-`+
-        `📧 Email: ${user.email}
-`+
-        `📞 Tel: ${phone}
-
-`+
-        `📦 Indirizzo:
-${street}, ${city} ${zip} (${country})
-
-`+
-        `🧾 Articoli:
-${_orderItems.map(i=>`  • ${i.name}${i.size?' — Taglia: '+i.size:''}${i.color?' — Colore: '+i.color:''} x${i.qty} → €${(i.price*i.qty).toFixed(2)}`).join('
-')}
-
-`+
-        `💶 Subtotale: €${total.toFixed(2)}
-`+
-        `🚚 Spedizione: ${ship===0?'Gratis':'€'+ship.toFixed(2)}
-`+
-        `💰 TOTALE: €${(total+ship).toFixed(2)}
-`+
-        `⬡ LFPOINTS: +${pts}`;
+      const _itemLines=_orderItems.map(function(i){
+        return '  ' + i.name + (i.size?' — Taglia: '+i.size:'') + (i.color?' — Colore: '+i.color:'') + ' x' + i.qty + ' → €' + (i.price*i.qty).toFixed(2);
+      }).join('\n');
+      const waMsg = '🛍 *NUOVO ORDINE — LILLOFIND*\n\n' +
+        '📋 ID: ' + orderId + '\n' +
+        '👤 Cliente: ' + fname + ' ' + lname + '\n' +
+        '📧 Email: ' + user.email + '\n' +
+        '📞 Tel: ' + phone + '\n\n' +
+        '📦 Indirizzo:\n' + street + ', ' + city + ' ' + zip + ' (' + country + ')\n\n' +
+        '🧾 Articoli:\n' + _itemLines + '\n\n' +
+        '💶 Subtotale: €' + total.toFixed(2) + '\n' +
+        '🚚 Spedizione: ' + (ship===0?'Gratis':'€'+ship.toFixed(2)) + '\n' +
+        '💰 TOTALE: €' + (total+ship).toFixed(2) + '\n' +
+        '⬡ LFPOINTS: +' + pts;
       setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
       setTimeout(()=>showPg('profile'),1200);
     } catch(e){showToast('⚠️ Errore: '+e.message);}
