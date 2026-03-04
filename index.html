@@ -1257,7 +1257,16 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div class="led-strip"></div>
   <div style="max-width:700px;margin:48px auto;padding:0 20px;">
     <p class="slbl" style="margin-bottom:6px;">Pannello Admin</p>
-    <h2 class="bb" style="font-size:48px;margin-bottom:36px;">Aggiungi Prodotto</h2>
+    <h2 class="bb" style="font-size:48px;margin-bottom:16px;">Aggiungi Prodotto</h2>
+    <!-- Importer shortcut -->
+    <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:12px;background:#080808;border:2px solid var(--led);padding:14px 22px;text-decoration:none;margin-bottom:32px;transition:opacity .15s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+      <span style="font-size:22px;">🚀</span>
+      <div>
+        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--led);">IMPORTA IN BULK DA YUPOO</p>
+        <p style="font-size:9px;color:#777;letter-spacing:1px;margin-top:2px;">Apre lo strumento veloce — carica decine di prodotti in pochi minuti</p>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:18px;color:var(--led);margin-left:8px;">→</span>
+    </a>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
       <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ad-name" placeholder="es. Cargo Pants"/></div>
       <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="ad-price" type="number" step="0.01" placeholder="129.99"/></div>
