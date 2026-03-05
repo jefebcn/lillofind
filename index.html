@@ -7,6 +7,15 @@
 <meta name="description" content="LILLOFIND — Streetwear autentico. Shop, LFPoints loyalty program, spedizione DHL."/>
 <title>LILLOFIND — DROP YOUR STYLE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="LilloFind"/>
+<meta name="theme-color" content="#080808"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 
 <!-- Firebase -->
@@ -1361,6 +1370,63 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
 
     <!-- ── IMPORT RAPIDO PRODOTTI ── -->
+    <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;">
+      <p class="slbl" style="margin-bottom:6px;">Gestione Catalogo</p>
+      <h3 class="bb" style="font-size:36px;margin-bottom:8px;">✏️ Modifica / Elimina Prodotti</h3>
+      <p style="font-size:11px;color:var(--mid);margin-bottom:20px;line-height:1.8;">Tutti i prodotti nel catalogo. Clicca su un prodotto per modificare nome, prezzo, taglie e colori.</p>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <input class="lf-in" id="cat-search" placeholder="Cerca per nome o brand..." style="flex:1;min-width:200px;padding:10px 14px;" oninput="renderAdminCatalog()"/>
+        <button class="btn-g" onclick="loadAdminCatalog()" style="padding:10px 18px;font-size:10px;">🔄 Aggiorna</button>
+      </div>
+      <div id="admin-catalog-list" style="display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto;padding-right:4px;"></div>
+    </div>
+
+    <!-- ── EDIT PRODUCT MODAL ── -->
+    <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;">
+      <div style="background:#fff;width:min(560px,94vw);max-height:90vh;overflow-y:auto;padding:32px 28px;position:relative;">
+        <button onclick="closeEditModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;">✕</button>
+        <p style="font-size:9px;letter-spacing:3px;color:#aaa;margin-bottom:4px;">MODIFICA PRODOTTO</p>
+        <h3 class="bb" style="font-size:32px;margin-bottom:20px;" id="edit-modal-title">—</h3>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="grid-1-mob">
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="edit-name" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="edit-price" type="number" step="0.01" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Brand</label><input class="lf-in" id="edit-brand" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="edit-model" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Colori (separati da virgola)</label>
+            <input class="lf-in" id="edit-colors" placeholder="es. Nero, Bianco, Verde" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglie disponibili</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-sizes-row">
+              <span class="edit-sz-btn" id="esz-XS"   onclick="toggleEditSz('XS',this)"   style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">XS</span>
+              <span class="edit-sz-btn" id="esz-S"    onclick="toggleEditSz('S',this)"    style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">S</span>
+              <span class="edit-sz-btn" id="esz-M"    onclick="toggleEditSz('M',this)"    style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">M</span>
+              <span class="edit-sz-btn" id="esz-L"    onclick="toggleEditSz('L',this)"    style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">L</span>
+              <span class="edit-sz-btn" id="esz-XL"   onclick="toggleEditSz('XL',this)"   style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">XL</span>
+              <span class="edit-sz-btn" id="esz-XXL"  onclick="toggleEditSz('XXL',this)"  style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">XXL</span>
+              <span class="edit-sz-btn" id="esz-Unica" onclick="toggleEditSz('Unica',this)" style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">Unica</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">URL Immagine</label>
+            <input class="lf-in" id="edit-img" placeholder="https://..." style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;" oninput="updateEditPreview()"/>
+            <img id="edit-img-prev" style="max-height:100px;max-width:120px;object-fit:cover;margin-top:6px;display:none;border:1px solid #eee;"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label>
+            <textarea class="lf-in" id="edit-desc" rows="2" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;resize:vertical;"></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
+          <button class="btn-led" id="edit-save-btn" onclick="saveEditProduct()" style="flex:1;">💾 SALVA MODIFICHE →</button>
+          <button onclick="closeEditModal()" style="padding:12px 20px;border:1.5px solid #ddd;background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;">Annulla</button>
+        </div>
+        <input type="hidden" id="edit-pid"/>
+      </div>
+    </div>
     <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;">
       <p class="slbl" style="margin-bottom:6px;">Import Veloce</p>
       <h3 class="bb" style="font-size:36px;margin-bottom:8px;">🚀 Carica Prodotti in Bulk</h3>
@@ -3269,11 +3335,149 @@ img{ -webkit-user-drag:none; user-select:none; }
     showToast(`✅ ${saved} prodotti caricati!`);
   };
 
-  // Init bulk import when admin page loads
+  // ══════════════════════════════════════════════════
+  // ADMIN CATALOG MANAGER
+  // ══════════════════════════════════════════════════
+  let adminCatalogProducts = [];
+  let editCurrentPid = null;
+
+  window.loadAdminCatalog = async function(){
+    const fb = window.__fb;
+    if(!fb) return;
+    const list = document.getElementById('admin-catalog-list');
+    if(!list) return;
+    list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
+    try{
+      const q = fb.query(fb.collection(fb.db,'products'), fb.orderBy('createdAt','desc'));
+      const snap = await fb.getDocs(q);
+      adminCatalogProducts = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderAdminCatalog();
+    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
+  };
+
+  window.renderAdminCatalog = function(){
+    const list = document.getElementById('admin-catalog-list');
+    if(!list) return;
+    const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
+    const filtered = adminCatalogProducts.filter(p=>
+      !q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q)
+    );
+    if(!filtered.length){
+      list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:12px 0;">Nessun prodotto trovato.</p>';
+      return;
+    }
+    list.innerHTML = filtered.map(p=>`
+      <div style="display:grid;grid-template-columns:48px 1fr auto auto;gap:12px;align-items:center;padding:12px 14px;border:1.5px solid #e8e8e8;background:#fff;transition:border-color .15s;" onmouseover="this.style.borderColor='#ccc'" onmouseout="this.style.borderColor='#e8e8e8'">
+        ${p.imageUrl
+          ? `<img src="${p.imageUrl}" style="width:48px;height:48px;object-fit:cover;border:1px solid #eee;" onerror="this.style.display='none'">`
+          : `<div style="width:48px;height:48px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>`}
+        <div>
+          <p style="font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:500;">${p.name||'—'}</p>
+          <p style="font-size:10px;color:#777;margin-top:2px;">${p.brand||''} ${p.model?'· '+p.model:''} ${(p.sizes&&p.sizes.length)?'· '+p.sizes.join(' '):(p.size?'· '+p.size:'')}</p>
+        </div>
+        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;">€${(p.price||0).toFixed(2)}</p>
+        <div style="display:flex;gap:6px;">
+          <button onclick="openEditModal('${p.id}')" style="background:var(--k);color:var(--w);border:none;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">✏️ MODIFICA</button>
+          <button onclick="deleteProd('${p.id}','${(p.name||'').replace(/'/g,"\\'")}');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:8px 10px;cursor:pointer;font-size:12px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor='#ff4757';this.style.color='#ff4757'" onmouseout="this.style.borderColor='#ddd';this.style.color='#ccc'">🗑</button>
+        </div>
+      </div>`
+    ).join('');
+  };
+
+  window.openEditModal = function(pid){
+    const p = adminCatalogProducts.find(x=>x.id===pid);
+    if(!p) return;
+    editCurrentPid = pid;
+    document.getElementById('edit-pid').value = pid;
+    document.getElementById('edit-modal-title').textContent = p.name||'Prodotto';
+    document.getElementById('edit-name').value  = p.name||'';
+    document.getElementById('edit-price').value = p.price||'';
+    document.getElementById('edit-brand').value = p.brand||'';
+    document.getElementById('edit-model').value = p.model||'';
+    document.getElementById('edit-colors').value = (p.colors||[]).join(', ');
+    document.getElementById('edit-desc').value   = p.description||'';
+    const imgUrl = p.imageUrl||'';
+    document.getElementById('edit-img').value = imgUrl;
+    const imgPrev = document.getElementById('edit-img-prev');
+    if(imgUrl){ imgPrev.src=imgUrl; imgPrev.style.display='block'; } else { imgPrev.style.display='none'; }
+    // Sizes
+    const allSizes = ['XS','S','M','L','XL','XXL','Unica'];
+    const activeSizes = p.sizes||(p.size?p.size.split(',').map(s=>s.trim()):[]);
+    allSizes.forEach(s=>{
+      const btn = document.getElementById('esz-'+s);
+      if(!btn) return;
+      const on = activeSizes.includes(s);
+      btn.style.background = on ? 'var(--k)' : '';
+      btn.style.color      = on ? 'var(--w)' : '';
+      btn.style.borderColor= on ? 'var(--k)' : '#ccc';
+      btn.dataset.on = on ? '1' : '0';
+    });
+    document.getElementById('edit-modal').style.display = 'flex';
+  };
+
+  window.closeEditModal = function(){
+    document.getElementById('edit-modal').style.display = 'none';
+  };
+
+  window.toggleEditSz = function(sz, el){
+    const on = el.dataset.on === '1';
+    el.dataset.on = on ? '0' : '1';
+    el.style.background  = on ? '' : 'var(--k)';
+    el.style.color        = on ? '' : 'var(--w)';
+    el.style.borderColor  = on ? '#ccc' : 'var(--k)';
+  };
+
+  window.updateEditPreview = function(){
+    const url = document.getElementById('edit-img').value.trim();
+    const prev = document.getElementById('edit-img-prev');
+    if(url){ prev.src=url; prev.style.display='block'; }
+    else { prev.style.display='none'; }
+  };
+
+  window.saveEditProduct = async function(){
+    const fb = window.__fb;
+    const pid = document.getElementById('edit-pid').value;
+    if(!pid) return;
+    const name   = document.getElementById('edit-name').value.trim();
+    const price  = parseFloat(document.getElementById('edit-price').value);
+    if(!name||isNaN(price)) return showToast('⚠️ Nome e prezzo obbligatori');
+    const brand  = document.getElementById('edit-brand').value.trim();
+    const model  = document.getElementById('edit-model').value.trim();
+    const desc   = document.getElementById('edit-desc').value.trim();
+    const imgUrl = document.getElementById('edit-img').value.trim();
+    const colorsRaw = document.getElementById('edit-colors').value.trim();
+    const colors = colorsRaw ? colorsRaw.split(',').map(c=>c.trim()).filter(Boolean) : [];
+    const sizes  = ['XS','S','M','L','XL','XXL','Unica'].filter(s=>{
+      const btn = document.getElementById('esz-'+s);
+      return btn && btn.dataset.on === '1';
+    });
+    const btn = document.getElementById('edit-save-btn');
+    btn.textContent = 'Salvando...'; btn.disabled = true;
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'products',pid),{
+        name, price, brand, model, description:desc,
+        imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')
+      });
+      // Update local cache
+      const idx = adminCatalogProducts.findIndex(p=>p.id===pid);
+      if(idx>=0) adminCatalogProducts[idx] = {...adminCatalogProducts[idx], name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')};
+      // Update main products array too
+      const pi = products.findIndex(p=>p.id===pid);
+      if(pi>=0) products[pi] = {...products[pi], name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')};
+      closeEditModal();
+      renderAdminCatalog();
+      showToast('✅ Prodotto aggiornato!');
+    } catch(e){ showToast('⚠️ Errore: '+e.message); }
+    btn.textContent = '💾 SALVA MODIFICHE →'; btn.disabled = false;
+  };
+
+  // Auto-load catalog when admin page opens
+
   const _origShowPg=window.showPg;
   window.showPg=function(id){
     _origShowPg(id);
-    if(id==='admin') setTimeout(initBulkImport,100);
+  // Init bulk import + catalog when admin page opens
+    if(id==='admin') setTimeout(()=>{ initBulkImport(); loadAdminCatalog(); }, 100);
     if(id==='cart'){setTimeout(()=>{renderCart();},50);}
     if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');},50);}
   };
