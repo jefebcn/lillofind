@@ -151,6 +151,18 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--k);color:var(--w);mi
 }
 #toast.show{opacity:1;}
 
+/* ── DRAG DROP ZONE ── */
+#drop-zone{
+  border:2px dashed #2a2a2a;padding:36px 24px;text-align:center;
+  background:#0a0a0a;cursor:pointer;transition:all .2s;
+  margin-bottom:20px;position:relative;
+}
+#drop-zone.drag-over{
+  border-color:var(--led);background:rgba(200,255,0,.05);
+  box-shadow:0 0 24px rgba(200,255,0,.2);
+}
+#drop-zone:hover{border-color:#444;}
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:var(--k);}
@@ -202,6 +214,20 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--k);color:var(--w);mi
 
 <div id="app-body">
 
+  <!-- ── IMGBB SETUP ── -->
+  <div id="imgbb-setup" style="background:#0d0d0d;border:2px solid rgba(200,255,0,.3);padding:14px 22px;margin-bottom:28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:260px;">
+      <p style="font-size:9px;color:var(--led);letter-spacing:3px;margin-bottom:6px;">📸 IMGBB API KEY — <span style="color:#777;">necessaria per caricare immagini da Yupoo</span></p>
+      <input class="lf-in" id="imgbb-key" placeholder="API key configurata" oninput="saveKey(this.value)"/>
+    </div>
+    <div style="font-size:9px;color:#555;line-height:2.2;min-width:220px;">
+      1. Vai su <a href="https://imgbb.com" target="_blank" style="color:var(--led);">imgbb.com</a> → Registrati gratis<br>
+      2. <a href="https://api.imgbb.com" target="_blank" style="color:var(--led);">api.imgbb.com</a> → clicca "Get API Key"<br>
+      3. Incolla key qui → immagini Yupoo caricate in automatico ✅
+    </div>
+    <div id="key-status" style="font-size:10px;letter-spacing:1px;"></div>
+  </div>
+
   <!-- ── STEP 1: BRAND ── -->
   <div style="margin-bottom:28px;">
     <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
@@ -239,6 +265,28 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--k);color:var(--w);mi
         <button class="btn-red" onclick="clearDone()" style="font-size:10px;padding:9px 14px;">🗑 RIMUOVI SALVATI</button>
       </div>
     </div>
+
+
+  <!-- ── DRAG & DROP BATCH ── -->
+  <div id="drop-zone" onclick="document.getElementById('drop-zone-input').click()"
+    ondragover="event.preventDefault();this.classList.add('drag-over')"
+    ondragleave="this.classList.remove('drag-over')"
+    ondrop="handleDrop(event)">
+    <input type="file" id="drop-zone-input" multiple accept="image/*" onchange="handleDropInput(this)"/>
+    <p style="font-size:32px;margin-bottom:10px;">📥</p>
+    <p class="bb" style="font-size:24px;color:var(--led);margin-bottom:6px;">TRASCINA LE IMMAGINI QUI</p>
+    <p style="font-size:10px;color:var(--dim);letter-spacing:1px;line-height:1.8;">
+      Scarica gli album da <strong style="color:#aaa;">yudownloader.com</strong> →<br>
+      seleziona tutti i file → trascinali qui → una riga per ogni immagine
+    </p>
+    <p style="font-size:9px;color:#444;margin-top:10px;letter-spacing:2px;">OPPURE CLICCA PER SCEGLIERE FILE</p>
+    <div id="drop-progress" style="display:none;margin-top:14px;">
+      <div style="background:#1a1a1a;height:4px;width:100%;position:relative;">
+        <div id="drop-bar" style="background:var(--led);height:4px;width:0%;transition:width .2s;box-shadow:0 0 8px var(--led);"></div>
+      </div>
+      <p id="drop-label" style="font-size:10px;color:var(--led);margin-top:6px;letter-spacing:2px;"></p>
+    </div>
+  </div>
 
     <!-- COLUMN HEADERS -->
     <div style="display:grid;grid-template-columns:60px 1.8fr 90px 1.2fr 1fr 1fr auto;gap:10px;padding:6px 16px;margin-bottom:4px;" id="col-headers">
@@ -379,6 +427,7 @@ waitFB(()=>{
 });
 
 function initApp(){
+  loadSavedKey();
   // Build brand chips
   const bc=document.getElementById('brand-chips');
   bc.innerHTML=BRANDS.map(b=>`<span class="brand-chip" onclick="selectBrand('${b.replace(/'/g,"\\'")}',this)">${b}</span>`).join('');
@@ -510,33 +559,126 @@ window.clearDone=function(){
   toast('🗑 Righe salvate rimosse');
 };
 
+// ── ImgBB Key ──
+let imgbbKey = localStorage.getItem('lf_imgbb_key') || '4e0f0e5bfe97cdcf39838aa5a82abb75';
+
+window.saveKey = function(val){
+  imgbbKey = val.trim();
+  localStorage.setItem('lf_imgbb_key', imgbbKey);
+  const st = document.getElementById('key-status');
+  if(imgbbKey){ st.style.color='var(--led)'; st.textContent='✅ Key salvata'; }
+  else { st.style.color='#777'; st.textContent=''; }
+};
+
+function loadSavedKey(){
+  const inp = document.getElementById('imgbb-key');
+  const st  = document.getElementById('key-status');
+  if(inp) inp.value = imgbbKey ? imgbbKey.slice(0,8)+'••••••••••••••••••••••••' : '';
+  if(st && imgbbKey){ st.style.color='var(--led)'; st.textContent='✅ ImgBB configurato — upload automatico attivo'; }
+}
+
+// Upload image to ImgBB
+async function uploadToImgBB(base64OrUrl){
+  if(!imgbbKey) return null;
+  try{
+    const data = base64OrUrl.startsWith('data:') ? base64OrUrl.split(',')[1] : null;
+    const form = new FormData();
+    form.append('key', imgbbKey);
+    form.append('image', data || base64OrUrl);
+    const res = await fetch('https://api.imgbb.com/1/upload', { method:'POST', body:form });
+    const json = await res.json();
+    if(json.success) return json.data.url;
+    return null;
+  } catch(e){ return null; }
+}
+
+// Fetch Yupoo image via CORS proxy → base64
+async function fetchViaProxy(url){
+  const proxies = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+    'https://corsproxy.io/?' + encodeURIComponent(url),
+  ];
+  for(const proxy of proxies){
+    try{
+      const res = await fetch(proxy);
+      if(!res.ok) continue;
+      const blob = await res.blob();
+      return new Promise(resolve=>{
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(blob);
+      });
+    } catch(e){ continue; }
+  }
+  return null;
+}
+
+function setRowLoading(id, loading){
+  const ph = document.getElementById('ph-'+id);
+  if(!ph) return;
+  if(loading){
+    ph.innerHTML = '<span style="font-size:11px;">⏳</span>';
+  } else {
+    ph.innerHTML = '<span style="font-size:14px;cursor:pointer;">📷</span>';
+    ph.onclick = function(){ const fi=document.getElementById('rfi-'+id); if(fi)fi.click(); };
+  }
+}
+
 // ── Image handling ──
-window.handleFile=function(input,id){
-  const file=input.files[0]; if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    showPreview(id, e.target.result);
-    document.getElementById('row-'+id).dataset.imgB64=e.target.result;
+window.handleFile = function(input, id){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const b64 = e.target.result;
+    setRowLoading(id, true);
+    let finalUrl = b64;
+    if(imgbbKey){
+      const hosted = await uploadToImgBB(b64);
+      if(hosted) finalUrl = hosted;
+    }
+    showPreview(id, finalUrl);
+    document.getElementById('row-'+id).dataset.imgUrl = finalUrl;
+    setRowLoading(id, false);
   };
   reader.readAsDataURL(file);
 };
 
-window.handleUrlPaste=function(input,id){
-  const url=input.value.trim();
-  if(!url)return;
-  // Try to show preview from URL
-  const img=document.getElementById('prev-'+id);
-  const ph=document.getElementById('ph-'+id);
-  img.src=url;
-  img.onload=()=>{ img.style.display='block'; ph.style.display='none'; };
-  img.onerror=()=>{ img.style.display='none'; ph.style.display='flex'; };
+window.handleUrlPaste = async function(input, id){
+  const url = input.value.trim();
+  if(!url) return;
+  const row = document.getElementById('row-'+id);
+  const img = document.getElementById('prev-'+id);
+  const ph  = document.getElementById('ph-'+id);
+
+  // Try direct load first (non-Yupoo URLs work fine)
+  const testImg = new Image();
+  testImg.crossOrigin = 'anonymous';
+  testImg.onload = () => { showPreview(id, url); row.dataset.imgUrl = url; };
+  testImg.onerror = async () => {
+    // CORS blocked (Yupoo) — use proxy + ImgBB
+    setRowLoading(id, true);
+    toast('⏳ Download da Yupoo...');
+    const b64 = await fetchViaProxy(url);
+    if(!b64){ setRowLoading(id,false); toast('❌ Impossibile scaricare immagine'); return; }
+    let finalUrl = b64;
+    if(imgbbKey){
+      toast('⏳ Carico su ImgBB...');
+      const hosted = await uploadToImgBB(b64);
+      if(hosted){ finalUrl = hosted; toast('✅ Immagine caricata!'); }
+      else { toast('⚠️ ImgBB non disponibile, uso base64'); }
+    }
+    showPreview(id, finalUrl);
+    row.dataset.imgUrl = finalUrl;
+    setRowLoading(id, false);
+  };
+  testImg.src = url;
 };
 
-function showPreview(id,src){
-  const img=document.getElementById('prev-'+id);
-  const ph=document.getElementById('ph-'+id);
-  if(img){ img.src=src; img.style.display='block'; }
-  if(ph) ph.style.display='none';
+function showPreview(id, src){
+  const img = document.getElementById('prev-'+id);
+  const ph  = document.getElementById('ph-'+id);
+  if(img){ img.src = src; img.style.display = 'block'; }
+  if(ph) ph.style.display = 'none';
 }
 
 // ── Size toggles ──
@@ -606,7 +748,7 @@ window.saveAll=async function(){
         sizes: sizes.length?sizes:['S','M','L','XL'],
         size: sizes.join(', '),
         colors,
-        imageUrl: imgUrl||imgB64||'',
+        imageUrl: imgUrl||'',
         description: '',
         createdAt: imp.serverTimestamp()
       });
@@ -642,6 +784,89 @@ window.saveAll=async function(){
   // Auto-add new empty rows after saving
   if(saved>0) setTimeout(()=>{ addRows(3); toast('➕ 3 nuove righe pronte'); }, 800);
 };
+
+
+// ── DRAG & DROP BATCH IMPORT ──────────────────────────
+window.handleDrop=function(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
+  if(!files.length){ toast('⚠️ Nessuna immagine trovata'); return; }
+  processDroppedFiles(files);
+};
+
+window.handleDropInput=function(input){
+  const files=[...input.files].filter(f=>f.type.startsWith('image/'));
+  if(!files.length) return;
+  processDroppedFiles(files);
+  input.value=''; // reset so same files can be dropped again
+};
+
+async function processDroppedFiles(files){
+  const prog=document.getElementById('drop-progress');
+  const bar=document.getElementById('drop-bar');
+  const lbl=document.getElementById('drop-label');
+  prog.style.display='block';
+  lbl.textContent='Caricamento in corso...';
+
+  // Sort files by name for consistent order
+  files.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const total=files.length;
+  let done=0;
+
+  // Read all files as base64, create rows
+  for(const file of files){
+    await new Promise(resolve=>{
+      const reader=new FileReader();
+      reader.onload=e=>{
+        // Create a new row
+        createRow();
+        const id=rowId-1; // just created
+        const row=document.getElementById('row-'+id);
+
+        // Set image
+        showPreview(id, e.target.result);
+        row.dataset.imgB64=e.target.result;
+
+        // Pre-fill name from filename (strip extension, clean up)
+        const rawName=file.name.replace(/\.[^.]+$/,'') // remove extension
+          .replace(/[-_]/g,' ')           // dashes/underscores → spaces
+          .replace(/\w/g,c=>c.toUpperCase()); // capitalize words
+        const nameEl=document.getElementById('rn-'+id);
+        if(nameEl && currentBrand){
+          // Prepend brand if not already in filename
+          const hasBrand=rawName.toLowerCase().includes(currentBrand.toLowerCase());
+          nameEl.value=hasBrand ? rawName : currentBrand+' '+rawName;
+        } else if(nameEl){
+          nameEl.value=rawName;
+        }
+
+        // Auto-toggle all sizes
+        document.querySelectorAll('#sz-'+id+' .sz-toggle').forEach(t=>t.classList.add('on'));
+
+        done++;
+        const pct=Math.round((done/total)*100);
+        bar.style.width=pct+'%';
+        lbl.textContent=done+' / '+total+' immagini caricate';
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  updateStats();
+  setTimeout(()=>{
+    prog.style.display='none';
+    bar.style.width='0%';
+  }, 2000);
+
+  toast(`📥 ${total} immagini caricate! Aggiungi prezzi e salva.`);
+
+  // Scroll to first new row
+  const firstNew=document.getElementById('row-'+(rowId-total));
+  if(firstNew) firstNew.scrollIntoView({behavior:'smooth',block:'center'});
+}
 
 // ── Keyboard shortcut: Ctrl+S = Save ──
 document.addEventListener('keydown', e=>{
