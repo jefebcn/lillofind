@@ -6,410 +6,312 @@
 <title>LilloFind — Importa Prodotti</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 
-<!-- Firebase -->
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getFirestore,collection,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
-const db=getFirestore(app);
-const auth=getAuth(app);
-window.__imp={db,auth,collection,addDoc,serverTimestamp,signInWithEmailAndPassword,onAuthStateChanged};
+window.__imp={db:getFirestore(app),auth:getAuth(app),collection,addDoc,serverTimestamp,signInWithEmailAndPassword,onAuthStateChanged};
 </script>
 
 <style>
 :root{
-  --k:#080808;--w:#f5f5f5;--led:#C8FF00;
-  --dim:#777;--border:#1a1a1a;
-  --card:#111;--card2:#161616;--card3:#1e1e1e;
+  --k:#080808;--w:#f0f0f0;--led:#C8FF00;
+  --dim:#555;--border:#1a1a1a;
+  --card:#0f0f0f;--card2:#141414;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html{background:var(--k);}
-body{font-family:'IBM Plex Mono',monospace;background:var(--k);color:var(--w);min-height:100vh;}
+html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospace;min-height:100vh;}
 .bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
-.led-strip{height:3px;background:linear-gradient(90deg,transparent,var(--led) 30%,#00FFB2 60%,var(--led) 80%,transparent);box-shadow:0 0 12px var(--led);}
+.led-strip{height:3px;background:linear-gradient(90deg,transparent,var(--led) 30%,#00FFB2 60%,var(--led) 80%,transparent);box-shadow:0 0 10px var(--led);}
 
-/* ── LOGIN ── */
-#login-screen{
-  position:fixed;inset:0;background:var(--k);z-index:999;
-  display:flex;align-items:center;justify-content:center;
-}
-.login-box{
-  width:360px;padding:40px 32px;border:2px solid var(--border);
-  background:var(--card);
-}
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--k);z-index:999;display:flex;align-items:center;justify-content:center;}
+.login-box{width:380px;padding:44px 36px;border:2px solid #1e1e1e;background:#0d0d0d;}
+
+/* INPUTS */
 .lf-in{
-  width:100%;background:#0f0f0f;border:1.5px solid #2a2a2a;color:var(--w);
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;
-  padding:12px 14px;outline:none;transition:border-color .15s;
+  width:100%;background:#0c0c0c;border:1.5px solid #222;color:var(--w);
+  font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.5px;
+  padding:13px 14px;outline:none;transition:border-color .15s;
 }
 .lf-in:focus{border-color:var(--led);}
+.lf-in::placeholder{color:#333;}
+
+/* BUTTONS */
 .btn-led{
   background:var(--led);color:var(--k);border:none;cursor:pointer;
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;
-  text-transform:uppercase;padding:14px 24px;transition:opacity .15s;
-  box-shadow:0 0 16px rgba(200,255,0,.3);
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;padding:14px 28px;
+  transition:opacity .15s;box-shadow:0 0 20px rgba(200,255,0,.2);
 }
-.btn-led:hover{opacity:.88;}
-.btn-led:disabled{opacity:.4;cursor:not-allowed;}
+.btn-led:hover{opacity:.85;}
+.btn-led:disabled{opacity:.35;cursor:not-allowed;}
 .btn-g{
-  background:var(--card3);color:var(--w);border:1.5px solid #333;cursor:pointer;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;
+  background:var(--card2);color:#bbb;border:1.5px solid #242424;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;
   text-transform:uppercase;padding:10px 18px;transition:all .15s;
 }
 .btn-g:hover{border-color:var(--led);color:var(--led);}
 .btn-red{
-  background:rgba(255,71,87,.1);color:#FF4757;border:1.5px solid rgba(255,71,87,.3);
-  cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;
-  padding:8px 14px;transition:all .15s;
+  background:rgba(255,71,87,.07);color:#FF4757;
+  border:1.5px solid rgba(255,71,87,.2);
+  cursor:pointer;font-family:'IBM Plex Mono',monospace;
+  font-size:11px;padding:10px 14px;transition:all .15s;
 }
-.btn-red:hover{background:rgba(255,71,87,.2);}
+.btn-red:hover{background:rgba(255,71,87,.16);}
 
-/* ── HEADER ── */
-#app-header{
+/* HEADER */
+#hdr{
   background:var(--k);border-bottom:2px solid var(--border);
-  padding:0 24px;height:60px;display:flex;align-items:center;
+  padding:0 28px;height:64px;display:flex;align-items:center;
   justify-content:space-between;position:sticky;top:0;z-index:10;
 }
 
-/* ── LAYOUT ── */
-#app-body{max-width:1300px;margin:0 auto;padding:28px 20px 80px;}
+/* BODY */
+#app-body{max-width:1200px;margin:0 auto;padding:40px 24px 110px;}
 
-/* ── BRAND CHIPS ── */
+/* SECTIONS */
+.sec-wrap{margin-bottom:44px;padding-bottom:44px;border-bottom:1px solid #141414;}
+.sec-num{font-size:10px;color:var(--led);letter-spacing:4px;margin-bottom:6px;text-transform:uppercase;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;margin-bottom:18px;line-height:1;}
+
+/* CHIPS */
 .brand-chip{
-  display:inline-flex;align-items:center;padding:7px 14px;
-  border:1.5px solid #2a2a2a;font-size:10px;letter-spacing:1.5px;
-  text-transform:uppercase;cursor:pointer;transition:all .15s;
-  background:var(--card);color:#aaa;user-select:none;
+  display:inline-flex;align-items:center;padding:9px 16px;
+  border:1.5px solid #1e1e1e;font-size:12px;font-weight:500;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+  background:var(--card);color:#777;transition:all .15s;user-select:none;
 }
-.brand-chip:hover{border-color:#555;color:var(--w);}
+.brand-chip:hover{border-color:#444;color:var(--w);}
 .brand-chip.on{border-color:var(--led);background:rgba(200,255,0,.08);color:var(--led);}
 
-/* ── MODEL CHIPS ── */
 .model-chip{
-  display:inline-flex;align-items:center;padding:5px 12px;
-  border:1px solid #222;font-size:9px;letter-spacing:1.5px;
-  text-transform:uppercase;cursor:pointer;transition:all .15s;
-  background:var(--card2);color:#777;
+  display:inline-flex;align-items:center;padding:8px 15px;
+  border:1px solid #1a1a1a;font-size:11px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;background:#0c0c0c;color:#555;transition:all .15s;
 }
-.model-chip:hover{border-color:#444;color:#ccc;}
-.model-chip.on{border-color:#aaa;background:#1a1a1a;color:var(--w);}
+.model-chip:hover{border-color:#3a3a3a;color:#bbb;}
+.model-chip.on{border-color:#ccc;background:#1a1a1a;color:var(--w);font-weight:600;}
 
-/* ── PRODUCT ROW ── */
-.prod-row{
-  background:var(--card);border:1.5px solid #1e1e1e;
-  padding:16px;margin-bottom:10px;
-  transition:border-color .15s;position:relative;
+/* DROP ZONE */
+#drop-zone{
+  border:2px dashed #222;padding:50px 20px;text-align:center;
+  cursor:pointer;transition:all .2s;background:#090909;margin-bottom:0;
 }
-.prod-row:focus-within{border-color:#333;}
-.prod-row.saved-ok{border-color:rgba(200,255,0,.4);background:rgba(200,255,0,.03);}
-.prod-row.saved-err{border-color:rgba(255,71,87,.4);}
+#drop-zone:hover,#drop-zone.drag-over{
+  border-color:var(--led);background:rgba(200,255,0,.02);
+  box-shadow:inset 0 0 60px rgba(200,255,0,.03);
+}
+#drop-zone input[type=file]{display:none;}
+
+/* PRODUCT ROW */
+.prod-row{
+  background:var(--card);border:1.5px solid #181818;
+  padding:18px 16px;margin-bottom:8px;transition:border-color .2s;
+}
+.prod-row:focus-within{border-color:#282828;}
+.prod-row.saved-ok{border-color:rgba(200,255,0,.3);background:rgba(200,255,0,.015);}
+.prod-row.saved-err{border-color:rgba(255,71,87,.3);}
+
 .row-grid{
   display:grid;
-  grid-template-columns:60px 1.8fr 90px 1.2fr 1fr 1fr auto;
-  gap:10px;align-items:start;
+  grid-template-columns:72px 2fr 100px 1.2fr 1fr 38px;
+  gap:12px;align-items:start;
 }
-.row-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+.row-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#383838;margin-bottom:5px;}
 
-/* ── IMAGE PREVIEW ── */
-.img-prev{
-  width:60px;height:60px;object-fit:cover;
-  border:1px solid #2a2a2a;background:#111;
-  display:block;
-}
-.img-placeholder{
-  width:60px;height:60px;border:1.5px dashed #2a2a2a;background:#0d0d0d;
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;cursor:pointer;
+/* IMAGE */
+.img-prev{width:72px;height:72px;object-fit:cover;border:1px solid #1e1e1e;display:block;}
+.img-ph{
+  width:72px;height:72px;border:1.5px dashed #1e1e1e;background:#0a0a0a;
+  display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;
 }
 
-/* ── SIZE TOGGLES ── */
+/* SIZES */
 .sz-toggle{
   display:inline-flex;align-items:center;justify-content:center;
-  width:34px;height:28px;border:1.5px solid #2a2a2a;font-size:9px;
-  letter-spacing:1px;cursor:pointer;background:var(--card);color:#555;
-  transition:all .12s;user-select:none;
+  width:36px;height:30px;border:1.5px solid #1e1e1e;font-size:10px;font-weight:600;
+  cursor:pointer;background:var(--card);color:#333;transition:all .12s;user-select:none;
 }
-.sz-toggle:hover{border-color:#555;color:#aaa;}
+.sz-toggle:hover{border-color:#444;color:#888;}
 .sz-toggle.on{border-color:var(--led);background:rgba(200,255,0,.1);color:var(--led);}
 
-/* ── STATS BAR ── */
+/* STATS BAR */
 #stats-bar{
-  position:fixed;bottom:0;left:0;right:0;
-  background:var(--card);border-top:2px solid var(--border);
-  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
-  z-index:20;
+  position:fixed;bottom:0;left:0;right:0;background:#0a0a0a;
+  border-top:2px solid #141414;padding:14px 28px;
+  display:flex;align-items:center;justify-content:space-between;z-index:20;
 }
+.stat-item p:first-child{font-size:8px;color:var(--dim);letter-spacing:2px;margin-bottom:3px;text-transform:uppercase;}
+.stat-item p:last-child{font-family:'Bebas Neue',sans-serif;font-size:22px;}
 
-/* ── TOAST ── */
+/* TOAST */
 #toast{
-  position:fixed;top:20px;left:50%;transform:translateX(-50%);
-  background:var(--led);color:var(--k);padding:10px 20px;
-  font-size:11px;letter-spacing:2px;text-transform:uppercase;
-  pointer-events:none;opacity:0;transition:opacity .25s;z-index:100;
+  position:fixed;top:22px;left:50%;transform:translateX(-50%);
+  background:var(--led);color:var(--k);padding:12px 26px;
+  font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  pointer-events:none;opacity:0;transition:opacity .2s;z-index:300;white-space:nowrap;
 }
 #toast.show{opacity:1;}
 
-/* ── DRAG DROP ZONE ── */
-#drop-zone{
-  border:2px dashed #2a2a2a;padding:36px 24px;text-align:center;
-  background:#0a0a0a;cursor:pointer;transition:all .2s;
-  margin-bottom:20px;position:relative;
-}
-#drop-zone.drag-over{
-  border-color:var(--led);background:rgba(200,255,0,.05);
-  box-shadow:0 0 24px rgba(200,255,0,.2);
-}
-#drop-zone:hover{border-color:#444;}
-
-
-/* ── IMGBB GALLERY ── */
-#imgbb-gallery-panel{
-  display:none;
-  background:#0a0a0a;border:2px solid #1e1e1e;
-  padding:20px;margin-bottom:20px;
-}
-.gal-img{
-  width:100%;aspect-ratio:1;object-fit:cover;
-  border:2px solid transparent;cursor:pointer;
-  transition:all .15s;display:block;background:#111;
-}
-.gal-item{position:relative;}
-.gal-item:hover .gal-img{border-color:#555;transform:scale(1.02);}
-.gal-item.selected .gal-img{border-color:var(--led);box-shadow:0 0 12px rgba(200,255,0,.4);}
-.gal-item.selected::after{
-  content:'✓';position:absolute;top:6px;right:6px;
-  background:var(--led);color:var(--k);
-  width:22px;height:22px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:bold;
-}
-.gal-item.used .gal-img{opacity:.3;border-color:#333;}
-.gal-item.used::after{
-  content:'✓ ADD';position:absolute;top:6px;right:6px;
-  background:#333;color:#777;padding:2px 5px;font-size:8px;letter-spacing:1px;
-}
-#gal-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
-  gap:6px;max-height:480px;overflow-y:auto;
-  margin-top:14px;padding-right:4px;
-}
-
-/* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:var(--k);}
-::-webkit-scrollbar-thumb{background:#333;}
+::-webkit-scrollbar-thumb{background:#252525;}
 
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  .row-grid{grid-template-columns:50px 1fr 80px;gap:8px;}
+@media(max-width:800px){
+  .row-grid{grid-template-columns:60px 1fr 80px;gap:8px;}
   .row-grid>*:nth-child(n+4){grid-column:span 3;}
 }
 </style>
 </head>
 <body>
 
-<!-- ════ LOGIN ════ -->
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <p style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:6px;">LILLOFIND</p>
-    <p class="bb" style="font-size:36px;margin-bottom:4px;">IMPORTA<br>PRODOTTI</p>
-    <div class="led-strip" style="margin-bottom:28px;"></div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
+    <p style="font-size:9px;color:var(--dim);letter-spacing:4px;margin-bottom:10px;">LILLOFIND</p>
+    <p class="bb" style="font-size:52px;line-height:.9;margin-bottom:4px;">IMPORTA<br>PRODOTTI</p>
+    <div class="led-strip" style="margin:22px 0 30px;"></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
       <div>
-        <p class="row-label" style="margin-bottom:5px;">Email Admin</p>
+        <p style="font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:6px;">EMAIL ADMIN</p>
         <input class="lf-in" id="lg-email" type="email" placeholder="admin@lillofind.it" autocomplete="email"/>
       </div>
       <div>
-        <p class="row-label" style="margin-bottom:5px;">Password</p>
+        <p style="font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:6px;">PASSWORD</p>
         <input class="lf-in" id="lg-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
       </div>
-      <button class="btn-led" id="lg-btn" onclick="doLogin()" style="width:100%;margin-top:6px;">ACCEDI →</button>
-      <p id="lg-err" style="font-size:10px;color:#FF4757;display:none;margin-top:4px;"></p>
+      <button class="btn-led" id="lg-btn" onclick="doLogin()" style="width:100%;margin-top:6px;font-size:13px;padding:16px;">ACCEDI →</button>
+      <p id="lg-err" style="font-size:11px;color:#FF4757;display:none;margin-top:2px;"></p>
     </div>
   </div>
 </div>
 
-<!-- ════ APP ════ -->
-<header id="app-header">
-  <div style="display:flex;align-items:center;gap:16px;">
-    <span class="bb" style="font-size:28px;letter-spacing:3px;">LILLOFIND</span>
-    <div style="width:1px;height:24px;background:#222;"></div>
-    <span style="font-size:10px;color:var(--dim);letter-spacing:2px;">IMPORTA PRODOTTI</span>
+<!-- HEADER -->
+<header id="hdr">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span class="bb" style="font-size:28px;letter-spacing:3px;color:var(--led);">LILLOFIND</span>
+    <span style="color:#1e1e1e;">|</span>
+    <span style="font-size:11px;color:#333;letter-spacing:2px;text-transform:uppercase;">Importa Prodotti</span>
   </div>
-  <div style="display:flex;align-items:center;gap:16px;">
+  <div style="display:flex;align-items:center;gap:14px;">
     <span id="hdr-user" style="font-size:10px;color:var(--dim);"></span>
-    <a href="index.html" class="btn-g" style="text-decoration:none;font-size:10px;padding:8px 14px;">← TORNA AL SITO</a>
+    <a href="index.html" class="btn-g" style="text-decoration:none;">← SITO</a>
   </div>
 </header>
 <div class="led-strip"></div>
 
 <div id="app-body">
 
-  <!-- ── IMGBB SETUP ── -->
-  <div id="imgbb-setup" style="background:#0d0d0d;border:2px solid rgba(200,255,0,.3);padding:14px 22px;margin-bottom:28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-    <div style="flex:1;min-width:260px;">
-      <p style="font-size:9px;color:var(--led);letter-spacing:3px;margin-bottom:6px;">📸 IMGBB API KEY — <span style="color:#777;">necessaria per caricare immagini da Yupoo</span></p>
-      <input class="lf-in" id="imgbb-key" placeholder="API key configurata" oninput="saveKey(this.value)"/>
-    </div>
-    <div style="font-size:9px;color:#555;line-height:2.2;min-width:220px;">
-      1. Vai su <a href="https://imgbb.com" target="_blank" style="color:var(--led);">imgbb.com</a> → Registrati gratis<br>
-      2. <a href="https://api.imgbb.com" target="_blank" style="color:var(--led);">api.imgbb.com</a> → clicca "Get API Key"<br>
-      3. Incolla key qui → immagini Yupoo caricate in automatico ✅
-    </div>
-    <div id="key-status" style="font-size:10px;letter-spacing:1px;"></div>
-  </div>
-
-  <!-- ── STEP 1: BRAND ── -->
-  <div style="margin-bottom:28px;">
-    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
-      <span style="font-size:10px;color:var(--led);letter-spacing:3px;">01</span>
-      <span class="bb" style="font-size:26px;">SCEGLI BRAND</span>
-      <span id="sel-brand-lbl" style="font-size:11px;color:var(--led);margin-left:8px;"></span>
-    </div>
-    <div id="brand-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
-      <input class="lf-in" id="custom-brand" placeholder="Oppure scrivi brand manuale..." style="max-width:260px;padding:8px 12px;font-size:10px;" oninput="onCustomBrand(this.value)"/>
-    </div>
-  </div>
-
-  <!-- ── STEP 2: CATEGORIA ── -->
-  <div style="margin-bottom:28px;">
-    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
-      <span style="font-size:10px;color:var(--led);letter-spacing:3px;">02</span>
-      <span class="bb" style="font-size:26px;">TIPO PRODOTTO</span>
-      <span id="sel-model-lbl" style="font-size:11px;color:#aaa;margin-left:8px;"></span>
-    </div>
-    <div id="model-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
-  </div>
-
-
-  <!-- ── IMGBB GALLERY MODE ── -->
-  <div style="margin-bottom:20px;">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
-      <div style="display:flex;align-items:baseline;gap:12px;">
-        <span style="font-size:10px;color:var(--led);letter-spacing:3px;">02b</span>
-        <span class="bb" style="font-size:22px;">CARICA DA IMGBB</span>
-        <span style="font-size:10px;color:var(--dim);letter-spacing:1px;">— le tue foto già caricate</span>
-      </div>
-      <button class="btn-g" id="gal-toggle-btn" onclick="toggleGallery()" style="font-size:10px;padding:9px 18px;">📷 APRI GALLERIA IMGBB</button>
-    </div>
-
-    <div id="imgbb-gallery-panel">
-      <!-- toolbar -->
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-        <button class="btn-g" id="gal-load-btn" onclick="loadImgBBGallery(1)" style="font-size:10px;padding:8px 16px;">🔄 Carica immagini</button>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <button onclick="galPage(-1)" id="gal-prev" style="background:#1a1a1a;border:1px solid #333;color:#aaa;padding:6px 12px;cursor:pointer;font-size:12px;" disabled>‹</button>
-          <span id="gal-page-lbl" style="font-size:10px;color:var(--dim);letter-spacing:1px;min-width:60px;text-align:center;">—</span>
-          <button onclick="galPage(1)" id="gal-next" style="background:#1a1a1a;border:1px solid #333;color:#aaa;padding:6px 12px;cursor:pointer;font-size:12px;" disabled>›</button>
-        </div>
-        <span id="gal-sel-count" style="font-size:10px;color:var(--led);letter-spacing:1px;"></span>
-        <button onclick="galSelectAll()" class="btn-g" style="font-size:9px;padding:6px 12px;">SELEZIONA TUTTE</button>
-        <button onclick="galDeselectAll()" class="btn-g" style="font-size:9px;padding:6px 12px;">DESELEZIONA</button>
-        <button onclick="addSelectedToRows()" class="btn-led" id="gal-add-btn" style="font-size:10px;padding:9px 18px;margin-left:auto;" disabled>
-          ➕ AGGIUNGI SELEZIONATE COME RIGHE
-        </button>
-      </div>
-
-      <div id="gal-status" style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;"></div>
-      <div id="gal-grid"></div>
-    </div>
-  </div>
-
-  <!-- ── STEP 3: PRODOTTI ── -->
-  <div style="margin-bottom:20px;">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px;">
-      <div style="display:flex;align-items:baseline;gap:12px;">
-        <span style="font-size:10px;color:var(--led);letter-spacing:3px;">03</span>
-        <span class="bb" style="font-size:26px;">PRODOTTI</span>
-        <span id="row-count-lbl" style="font-size:11px;color:var(--dim);">0 righe</span>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn-g" onclick="addRow()" style="font-size:10px;padding:9px 16px;">+ AGGIUNGI RIGA</button>
-        <button class="btn-g" onclick="addRows(5)" style="font-size:10px;padding:9px 16px;">+ 5 RIGHE</button>
-        <button class="btn-red" onclick="clearDone()" style="font-size:10px;padding:9px 14px;">🗑 RIMUOVI SALVATI</button>
-      </div>
-    </div>
-
-
-  <!-- ── DRAG & DROP BATCH ── -->
-  <div id="drop-zone" onclick="document.getElementById('drop-zone-input').click()"
-    ondragover="event.preventDefault();this.classList.add('drag-over')"
-    ondragleave="this.classList.remove('drag-over')"
-    ondrop="handleDrop(event)">
-    <input type="file" id="drop-zone-input" multiple accept="image/*" onchange="handleDropInput(this)"/>
-    <p style="font-size:32px;margin-bottom:10px;">📥</p>
-    <p class="bb" style="font-size:24px;color:var(--led);margin-bottom:6px;">TRASCINA LE IMMAGINI QUI</p>
-    <p style="font-size:10px;color:var(--dim);letter-spacing:1px;line-height:1.8;">
-      Scarica gli album da <strong style="color:#aaa;">yudownloader.com</strong> →<br>
-      seleziona tutti i file → trascinali qui → una riga per ogni immagine
+  <!-- 01 BRAND -->
+  <div class="sec-wrap">
+    <p class="sec-num">01 — Brand</p>
+    <p class="sec-title">
+      SCEGLI IL BRAND
+      <span id="sel-brand-lbl" style="color:var(--led);font-size:36px;"></span>
     </p>
-    <p style="font-size:9px;color:#444;margin-top:10px;letter-spacing:2px;">OPPURE CLICCA PER SCEGLIERE FILE</p>
-    <div id="drop-progress" style="display:none;margin-top:14px;">
-      <div style="background:#1a1a1a;height:4px;width:100%;position:relative;">
-        <div id="drop-bar" style="background:var(--led);height:4px;width:0%;transition:width .2s;box-shadow:0 0 8px var(--led);"></div>
-      </div>
-      <p id="drop-label" style="font-size:10px;color:var(--led);margin-top:6px;letter-spacing:2px;"></p>
+    <div id="brand-chips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;"></div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:10px;color:var(--dim);letter-spacing:2px;white-space:nowrap;">O SCRIVI:</span>
+      <input class="lf-in" id="custom-brand" placeholder="Brand non in lista..." style="max-width:300px;font-size:13px;" oninput="onCustomBrand(this.value)"/>
     </div>
   </div>
 
-    <!-- COLUMN HEADERS -->
-    <div style="display:grid;grid-template-columns:60px 1.8fr 90px 1.2fr 1fr 1fr auto;gap:10px;padding:6px 16px;margin-bottom:4px;" id="col-headers">
-      <span class="row-label">Img</span>
-      <span class="row-label">Nome Prodotto *</span>
-      <span class="row-label">Prezzo € *</span>
-      <span class="row-label">URL Immagine</span>
-      <span class="row-label">Taglie</span>
-      <span class="row-label">Colori</span>
-      <span class="row-label" style="width:32px;"></span>
+  <!-- 02 TIPO -->
+  <div class="sec-wrap">
+    <p class="sec-num">02 — Tipo Prodotto</p>
+    <p class="sec-title">
+      COSA STAI CARICANDO?
+      <span id="sel-model-lbl" style="color:#888;font-size:32px;"></span>
+    </p>
+    <div id="model-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+  </div>
+
+  <!-- 03 FOTO -->
+  <div class="sec-wrap">
+    <p class="sec-num">03 — Foto</p>
+    <p class="sec-title">TRASCINA LE FOTO</p>
+    <div id="drop-zone"
+      onclick="document.getElementById('drop-input').click()"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="handleDrop(event)">
+      <input type="file" id="drop-input" multiple accept="image/*" onchange="handleDropInput(this)"/>
+      <p style="font-size:56px;margin-bottom:16px;">📥</p>
+      <p class="bb" style="font-size:40px;color:var(--led);margin-bottom:12px;letter-spacing:3px;">TRASCINA LE FOTO QUI</p>
+      <p style="font-size:14px;color:#666;line-height:2.2;">
+        Seleziona <strong style="color:var(--w);">tutte le foto insieme</strong> e trascinale qui<br>
+        Ogni foto diventa una riga · Upload automatico su ImgBB<br>
+        <strong style="color:var(--led);">Compila solo nome e prezzo</strong> poi salva
+      </p>
+      <p style="font-size:10px;color:#2a2a2a;margin-top:14px;letter-spacing:3px;">OPPURE CLICCA PER SCEGLIERE FILE</p>
+      <div id="drop-progress" style="display:none;margin-top:22px;max-width:440px;margin-left:auto;margin-right:auto;">
+        <div style="background:#161616;height:5px;width:100%;border-radius:3px;">
+          <div id="drop-bar" style="background:var(--led);height:5px;width:0%;transition:width .15s;box-shadow:0 0 10px var(--led);border-radius:3px;"></div>
+        </div>
+        <p id="drop-label" style="font-size:12px;color:var(--led);margin-top:10px;letter-spacing:1px;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 RIGHE -->
+  <div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <p class="sec-num">04 — Prodotti</p>
+        <p class="sec-title" style="margin-bottom:0;">
+          RIGHE
+          <span id="row-count-lbl" style="color:var(--dim);font-size:32px;"></span>
+        </p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:6px;">
+        <button class="btn-g" onclick="addRow()">+ RIGA VUOTA</button>
+        <button class="btn-red" onclick="clearDone()">🗑 RIMUOVI SALVATI</button>
+      </div>
+    </div>
+
+    <!-- Headers -->
+    <div style="display:grid;grid-template-columns:72px 2fr 100px 1.2fr 1fr 38px;gap:12px;padding:6px 16px 10px;" id="col-hdr">
+      <span class="row-label" style="color:#2a2a2a;">IMG</span>
+      <span class="row-label" style="color:#555;font-size:10px;">NOME PRODOTTO *</span>
+      <span class="row-label" style="color:#555;font-size:10px;">PREZZO € *</span>
+      <span class="row-label" style="color:#555;font-size:10px;">TAGLIE</span>
+      <span class="row-label" style="color:#555;font-size:10px;">COLORI</span>
+      <span></span>
     </div>
 
     <div id="rows-container"></div>
   </div>
 
-  <!-- ── ISTRUZIONI ── -->
-  <div style="border:1px solid #1e1e1e;padding:20px 22px;background:#0d0d0d;margin-top:32px;">
-    <p class="bb" style="font-size:20px;margin-bottom:12px;color:var(--led);">💡 COME USARLO IN MODO VELOCE</p>
-    <ol style="font-size:10px;color:#777;line-height:2.4;padding-left:16px;letter-spacing:0.5px;">
-      <li>Apri <strong style="color:#aaa;">huskyreps.x.yupoo.com</strong> in un altro tab del browser</li>
-      <li>Naviga in un album → clicca su un prodotto → <strong style="color:#aaa;">tasto destro sull'immagine → "Copia indirizzo immagine"</strong></li>
-      <li>Torna qui → incolla il link nel campo <strong style="color:#aaa;">URL Immagine</strong> → l'anteprima appare in automatico</li>
-      <li>Compila nome e prezzo → seleziona le taglie cliccando → scrivi i colori disponibili</li>
-      <li>Premi <strong style="color:var(--led);">SALVA TUTTO</strong> quando hai finito tutte le righe</li>
-    </ol>
-    <p style="font-size:9px;color:#444;margin-top:14px;letter-spacing:1px;">💡 TRUCCO: Aggiungi più righe prima di iniziare, poi tab tra i campi senza toccare il mouse. Il tasto Invio nel campo nome passa al prezzo.</p>
-  </div>
-
 </div>
 
-<!-- ════ STATS BAR ════ -->
+<!-- STATS BAR -->
 <div id="stats-bar">
-  <div style="display:flex;align-items:center;gap:20px;">
-    <div>
-      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;">BRAND</p>
-      <p class="bb" style="font-size:16px;color:var(--led);" id="sb-brand">—</p>
+  <div style="display:flex;align-items:center;gap:28px;">
+    <div class="stat-item">
+      <p>Brand</p>
+      <p style="color:var(--led);" id="sb-brand">—</p>
     </div>
-    <div style="width:1px;height:30px;background:#222;"></div>
-    <div>
-      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;">TIPO</p>
-      <p class="bb" style="font-size:16px;" id="sb-model">—</p>
+    <div style="width:1px;height:36px;background:#1a1a1a;"></div>
+    <div class="stat-item">
+      <p>Tipo</p>
+      <p id="sb-model">—</p>
     </div>
-    <div style="width:1px;height:30px;background:#222;"></div>
-    <div>
-      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;">RIGHE</p>
-      <p class="bb" style="font-size:16px;" id="sb-rows">0</p>
+    <div style="width:1px;height:36px;background:#1a1a1a;"></div>
+    <div class="stat-item">
+      <p>Righe</p>
+      <p id="sb-rows">0</p>
     </div>
-    <div>
-      <p style="font-size:8px;color:var(--led);letter-spacing:2px;">SALVATI</p>
-      <p class="bb" style="font-size:16px;color:var(--led);" id="sb-saved">0</p>
+    <div class="stat-item">
+      <p style="color:var(--led);">Salvati ✓</p>
+      <p style="color:var(--led);" id="sb-saved">0</p>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <p id="save-status" style="font-size:10px;color:var(--dim);letter-spacing:1px;"></p>
-    <button class="btn-led" id="save-btn" onclick="saveAll()" style="font-size:12px;padding:14px 32px;letter-spacing:3px;">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <p id="save-status" style="font-size:11px;color:var(--dim);letter-spacing:1px;max-width:260px;text-align:right;"></p>
+    <button class="btn-led" id="save-btn" onclick="saveAll()" style="font-size:14px;padding:18px 40px;letter-spacing:3px;">
       💾 SALVA TUTTO →
     </button>
   </div>
@@ -418,17 +320,11 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--k);color:var(--w);mi
 <div id="toast"></div>
 
 <script type="module">
-// ── Wait for Firebase ──
 function waitFB(cb){ window.__imp ? cb() : setTimeout(()=>waitFB(cb),80); }
 
-// ── State ──
-let currentBrand = '';
-let currentModel = '';
-let rowId = 0;
-let savedCount = 0;
-let user = null;
-
+const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
 const SIZES_ALL = ['XS','S','M','L','XL','XXL','Unica'];
+let currentBrand='', currentModel='', rowId=0, savedCount=0, user=null;
 
 const BRANDS = [
   'Nike','Adidas','Jordan','New Balance','Asics','Puma','Reebok','Converse',
@@ -441,9 +337,8 @@ const BRANDS = [
   'New Era','Mitchell & Ness','Kangol','Red Bull',
   'Stefano Ricci','Ferragamo','Guess','The Couture Club','Born x Raised',
   'Moschino','Marni','A.P.C.','Ami Paris','Kenzo','Isabel Marant',
-  'Tuff Crowd','Derschutze','Morta','Autre',
+  'Tuff Crowd','Derschutze','Morta','Altro',
 ];
-
 const MODELS = [
   'T-Shirt','Polo','Longsleeve','Hoodie','Crewneck','Zip Hoodie',
   'Jacket','Bomber','Parka','Puffer','Vest',
@@ -454,7 +349,6 @@ const MODELS = [
   'Set Completo','Altro',
 ];
 
-// ── Toast ──
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -462,321 +356,206 @@ function toast(msg){
   window._tt=setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-// ── Login ──
+// LOGIN
 window.doLogin=async function(){
   const imp=window.__imp;
   const email=document.getElementById('lg-email').value.trim();
   const pass=document.getElementById('lg-pass').value;
   const btn=document.getElementById('lg-btn');
   const err=document.getElementById('lg-err');
-  err.style.display='none';
-  btn.textContent='...'; btn.disabled=true;
-  try{
-    await imp.signInWithEmailAndPassword(imp.auth,email,pass);
-  } catch(e){
-    err.textContent='Email o password errati';
-    err.style.display='block';
-    btn.textContent='ACCEDI →'; btn.disabled=false;
-  }
+  err.style.display='none'; btn.textContent='...'; btn.disabled=true;
+  try{ await imp.signInWithEmailAndPassword(imp.auth,email,pass); }
+  catch(e){ err.textContent='Email o password errati'; err.style.display='block'; btn.textContent='ACCEDI →'; btn.disabled=false; }
 };
 
 waitFB(()=>{
-  const imp=window.__imp;
-  imp.onAuthStateChanged(imp.auth, u=>{
+  window.__imp.onAuthStateChanged(window.__imp.auth, u=>{
     user=u;
-    if(u){
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('hdr-user').textContent=u.email;
-      initApp();
-    } else {
-      document.getElementById('login-screen').style.display='flex';
-    }
+    if(u){ document.getElementById('login-screen').style.display='none'; document.getElementById('hdr-user').textContent=u.email; initApp(); }
+    else  { document.getElementById('login-screen').style.display='flex'; }
   });
 });
 
 function initApp(){
-  loadSavedKey();
-  // Build brand chips
-  const bc=document.getElementById('brand-chips');
-  bc.innerHTML=BRANDS.map(b=>`<span class="brand-chip" onclick="selectBrand('${b.replace(/'/g,"\\'")}',this)">${b}</span>`).join('');
-
-  // Build model chips
-  const mc=document.getElementById('model-chips');
-  mc.innerHTML=MODELS.map(m=>`<span class="model-chip" onclick="selectModel('${m}',this)">${m}</span>`).join('');
-
-  // Start with 5 rows
-  addRows(5);
+  document.getElementById('brand-chips').innerHTML=BRANDS.map(b=>`<span class="brand-chip" onclick="selectBrand('${b.replace(/'/g,"\\'")}',this)">${b}</span>`).join('');
+  document.getElementById('model-chips').innerHTML=MODELS.map(m=>`<span class="model-chip" onclick="selectModel('${m}',this)">${m}</span>`).join('');
   updateStats();
 }
 
-// ── Brand / Model ──
-window.selectBrand=function(brand, el){
+// BRAND / MODEL
+window.selectBrand=function(brand,el){
   currentBrand=brand;
   document.querySelectorAll('.brand-chip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
   document.getElementById('custom-brand').value='';
   document.getElementById('sel-brand-lbl').textContent='→ '+brand;
   document.getElementById('sb-brand').textContent=brand;
-  updateStats();
 };
-
 window.onCustomBrand=function(val){
-  if(val){
-    currentBrand=val;
-    document.querySelectorAll('.brand-chip').forEach(c=>c.classList.remove('on'));
-    document.getElementById('sel-brand-lbl').textContent='→ '+val;
-    document.getElementById('sb-brand').textContent=val;
-  }
+  if(!val) return;
+  currentBrand=val;
+  document.querySelectorAll('.brand-chip').forEach(c=>c.classList.remove('on'));
+  document.getElementById('sel-brand-lbl').textContent='→ '+val;
+  document.getElementById('sb-brand').textContent=val;
 };
-
 window.selectModel=function(model,el){
   currentModel=model;
   document.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
   document.getElementById('sel-model-lbl').textContent='→ '+model;
   document.getElementById('sb-model').textContent=model;
-  updateStats();
 };
 
-// ── Add Rows ──
-window.addRow=function(){ addRows(1); }
-
-window.addRows=function(n){
-  for(let i=0;i<n;i++) createRow();
-  updateStats();
-};
-
-function createRow(){
-  const id=rowId++;
-  const container=document.getElementById('rows-container');
-  const div=document.createElement('div');
-  div.className='prod-row';
-  div.id='row-'+id;
-
-  div.innerHTML=`
-    <div class="row-grid">
-      <!-- IMAGE PREVIEW -->
-      <div>
-        <div class="img-placeholder" id="ph-${id}" onclick="document.getElementById('rfi-${id}').click()" title="Clicca per caricare da file">
-          <span style="font-size:14px;">📷</span>
-        </div>
-        <img class="img-prev" id="prev-${id}" style="display:none;" alt=""/>
-        <input type="file" id="rfi-${id}" accept="image/*" style="display:none;" onchange="handleFile(this,${id})"/>
-      </div>
-
-      <!-- NAME -->
-      <div>
-        <p class="row-label">Nome Prodotto *</p>
-        <input class="lf-in" id="rn-${id}" placeholder="es. Nike Dunk Low Panda"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('rp-${id}').focus();}"
-          oninput="updateRowPreview(${id})"/>
-      </div>
-
-      <!-- PRICE -->
-      <div>
-        <p class="row-label">€ *</p>
-        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" placeholder="89.99"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('ru-${id}').focus();}"/>
-      </div>
-
-      <!-- URL -->
-      <div>
-        <p class="row-label">URL Yupoo / Immagine</p>
-        <input class="lf-in" id="ru-${id}" placeholder="Incolla link immagine da Yupoo..."
-          oninput="handleUrlPaste(this,${id})"
-          onpaste="setTimeout(()=>handleUrlPaste(this,${id}),50)"/>
-      </div>
-
-      <!-- SIZES -->
-      <div>
-        <p class="row-label">Taglie</p>
-        <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
-          ${SIZES_ALL.map(s=>`<span class="sz-toggle" id="szt-${id}-${s}" onclick="toggleSize(${id},'${s}',this)">${s}</span>`).join('')}
-        </div>
-        <button onclick="toggleAllSizes(${id})" style="background:none;border:none;font-size:9px;color:var(--dim);cursor:pointer;margin-top:4px;padding:0;letter-spacing:1px;">TUTTE</button>
-      </div>
-
-      <!-- COLORS -->
-      <div>
-        <p class="row-label">Colori disponibili</p>
-        <input class="lf-in" id="rc-${id}" placeholder="es. Nero, Bianco, Verde" style="margin-bottom:4px;"/>
-        <p style="font-size:8px;color:var(--dim);">separati da virgola</p>
-      </div>
-
-      <!-- REMOVE -->
-      <div style="padding-top:16px;">
-        <button class="btn-red" onclick="removeRow(${id})" title="Rimuovi" style="padding:8px 10px;font-size:12px;">✕</button>
-      </div>
-    </div>
-
-    <!-- STATUS indicator -->
-    <div id="row-status-${id}" style="display:none;margin-top:8px;font-size:9px;letter-spacing:2px;padding:4px 0;"></div>
-  `;
-  container.appendChild(div);
-}
-
-window.removeRow=function(id){
-  const el=document.getElementById('row-'+id);
-  if(el) el.remove();
-  updateStats();
-};
-
-window.clearDone=function(){
-  document.querySelectorAll('.prod-row.saved-ok').forEach(r=>r.remove());
-  updateStats();
-  toast('🗑 Righe salvate rimosse');
-};
-
-// ── ImgBB Key ──
-let imgbbKey = localStorage.getItem('lf_imgbb_key') || '4e0f0e5bfe97cdcf39838aa5a82abb75';
-
-window.saveKey = function(val){
-  imgbbKey = val.trim();
-  localStorage.setItem('lf_imgbb_key', imgbbKey);
-  const st = document.getElementById('key-status');
-  if(imgbbKey){ st.style.color='var(--led)'; st.textContent='✅ Key salvata'; }
-  else { st.style.color='#777'; st.textContent=''; }
-};
-
-function loadSavedKey(){
-  const inp = document.getElementById('imgbb-key');
-  const st  = document.getElementById('key-status');
-  if(inp) inp.value = imgbbKey ? imgbbKey.slice(0,8)+'••••••••••••••••••••••••' : '';
-  if(st && imgbbKey){ st.style.color='var(--led)'; st.textContent='✅ ImgBB configurato — upload automatico attivo'; }
-}
-
-// Upload image to ImgBB
-async function uploadToImgBB(base64OrUrl){
-  if(!imgbbKey) return null;
+// IMGBB
+async function uploadToImgBB(b64){
   try{
-    const data = base64OrUrl.startsWith('data:') ? base64OrUrl.split(',')[1] : null;
-    const form = new FormData();
-    form.append('key', imgbbKey);
-    form.append('image', data || base64OrUrl);
-    const res = await fetch('https://api.imgbb.com/1/upload', { method:'POST', body:form });
-    const json = await res.json();
-    if(json.success) return json.data.url;
-    return null;
+    const form=new FormData();
+    form.append('key',IMGBB_KEY);
+    form.append('image', b64.startsWith('data:') ? b64.split(',')[1] : b64);
+    const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
+    const json=await res.json();
+    return json.success ? json.data.url : null;
   } catch(e){ return null; }
 }
 
-// Fetch Yupoo image via CORS proxy → base64
-async function fetchViaProxy(url){
-  const proxies = [
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-    'https://corsproxy.io/?' + encodeURIComponent(url),
-  ];
-  for(const proxy of proxies){
-    try{
-      const res = await fetch(proxy);
-      if(!res.ok) continue;
-      const blob = await res.blob();
-      return new Promise(resolve=>{
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.readAsDataURL(blob);
-      });
-    } catch(e){ continue; }
-  }
-  return null;
-}
-
-function setRowLoading(id, loading){
-  const ph = document.getElementById('ph-'+id);
-  if(!ph) return;
-  if(loading){
-    ph.innerHTML = '<span style="font-size:11px;">⏳</span>';
-  } else {
-    ph.innerHTML = '<span style="font-size:14px;cursor:pointer;">📷</span>';
-    ph.onclick = function(){ const fi=document.getElementById('rfi-'+id); if(fi)fi.click(); };
-  }
-}
-
-// ── Image handling ──
-window.handleFile = function(input, id){
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const b64 = e.target.result;
-    setRowLoading(id, true);
-    let finalUrl = b64;
-    if(imgbbKey){
-      const hosted = await uploadToImgBB(b64);
-      if(hosted) finalUrl = hosted;
-    }
-    showPreview(id, finalUrl);
-    document.getElementById('row-'+id).dataset.imgUrl = finalUrl;
-    setRowLoading(id, false);
-  };
-  reader.readAsDataURL(file);
+// DRAG & DROP
+window.handleDrop=function(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
+  if(!files.length){ toast('⚠️ Nessuna immagine'); return; }
+  processFiles(files);
+};
+window.handleDropInput=function(input){
+  const files=[...input.files].filter(f=>f.type.startsWith('image/'));
+  if(files.length) processFiles(files);
+  input.value='';
 };
 
-window.handleUrlPaste = async function(input, id){
-  const url = input.value.trim();
-  if(!url) return;
-  const row = document.getElementById('row-'+id);
-  const img = document.getElementById('prev-'+id);
-  const ph  = document.getElementById('ph-'+id);
+async function processFiles(files){
+  const prog=document.getElementById('drop-progress');
+  const bar=document.getElementById('drop-bar');
+  const lbl=document.getElementById('drop-label');
+  prog.style.display='block';
+  files.sort((a,b)=>a.name.localeCompare(b.name));
+  const total=files.length, firstId=rowId;
+  let done=0;
 
-  // Try direct load first (non-Yupoo URLs work fine)
-  const testImg = new Image();
-  testImg.crossOrigin = 'anonymous';
-  testImg.onload = () => { showPreview(id, url); row.dataset.imgUrl = url; };
-  testImg.onerror = async () => {
-    // CORS blocked (Yupoo) — use proxy + ImgBB
-    setRowLoading(id, true);
-    toast('⏳ Download da Yupoo...');
-    const b64 = await fetchViaProxy(url);
-    if(!b64){ setRowLoading(id,false); toast('❌ Impossibile scaricare immagine'); return; }
-    let finalUrl = b64;
-    if(imgbbKey){
-      toast('⏳ Carico su ImgBB...');
-      const hosted = await uploadToImgBB(b64);
-      if(hosted){ finalUrl = hosted; toast('✅ Immagine caricata!'); }
-      else { toast('⚠️ ImgBB non disponibile, uso base64'); }
-    }
-    showPreview(id, finalUrl);
-    row.dataset.imgUrl = finalUrl;
-    setRowLoading(id, false);
-  };
-  testImg.src = url;
-};
+  for(const file of files){
+    lbl.textContent='📤 Upload '+(done+1)+' / '+total+'  — '+file.name;
+    const b64=await new Promise(r=>{ const rd=new FileReader(); rd.onload=e=>r(e.target.result); rd.readAsDataURL(file); });
+    let url=b64;
+    const hosted=await uploadToImgBB(b64);
+    if(hosted) url=hosted;
+    createRow(url, file.name);
+    done++;
+    bar.style.width=Math.round((done/total)*100)+'%';
+  }
 
-function showPreview(id, src){
-  const img = document.getElementById('prev-'+id);
-  const ph  = document.getElementById('ph-'+id);
-  if(img){ img.src = src; img.style.display = 'block'; }
-  if(ph) ph.style.display = 'none';
+  updateStats();
+  lbl.textContent='✅ '+total+' foto caricate — inserisci nome e prezzo!';
+  setTimeout(()=>{ prog.style.display='none'; bar.style.width='0%'; },3000);
+  toast('✅ '+total+' foto pronte!');
+  const first=document.getElementById('row-'+firstId);
+  if(first) first.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-// ── Size toggles ──
-window.toggleSize=function(id,sz,el){
-  el.classList.toggle('on');
+// CREATE ROW
+window.addRow=function(){ createRow('',''); updateStats(); };
+
+function createRow(imgUrl, fileName){
+  const id=rowId++;
+  const container=document.getElementById('rows-container');
+  const div=document.createElement('div');
+  div.className='prod-row'; div.id='row-'+id;
+  if(imgUrl) div.dataset.imgUrl=imgUrl;
+
+  let autoName='';
+  if(fileName){
+    autoName=fileName.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ').replace(/image\s*\d+/gi,'').replace(/\s+/g,' ').trim().replace(/\b\w/g,c=>c.toUpperCase());
+    if(currentBrand && !autoName.toLowerCase().includes(currentBrand.toLowerCase()))
+      autoName=(currentBrand+' '+autoName).trim();
+  }
+
+  div.innerHTML=`
+    <div class="row-grid">
+      <div>
+        ${imgUrl
+          ? `<img class="img-prev" src="${imgUrl}" alt="" onerror="this.style.opacity='.2'"/>`
+          : `<div class="img-ph" id="ph-${id}" onclick="document.getElementById('rfi-${id}').click()">📷</div>
+             <input type="file" id="rfi-${id}" accept="image/*" style="display:none;" onchange="handleInlineFile(this,${id})"/>`
+        }
+      </div>
+      <div>
+        <p class="row-label">Nome Prodotto *</p>
+        <input class="lf-in" id="rn-${id}" value="${autoName}" placeholder="es. Nike Dunk Low Panda"
+          style="font-size:14px;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('rp-${id}').focus();}"/>
+      </div>
+      <div>
+        <p class="row-label">Prezzo €</p>
+        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" placeholder="89.99"
+          style="font-size:16px;font-weight:600;color:var(--led);"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();const nx=document.querySelector('#row-${id} ~ .prod-row input.lf-in');if(nx)nx.focus();}"/>
+      </div>
+      <div>
+        <p class="row-label">
+          Taglie
+          <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button>
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
+          ${SIZES_ALL.map(s=>`<span class="sz-toggle on" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
+        </div>
+      </div>
+      <div>
+        <p class="row-label">Colori</p>
+        <input class="lf-in" id="rc-${id}" placeholder="Nero, Bianco, Verde" style="font-size:12px;"/>
+        <p style="font-size:8px;color:#252525;margin-top:4px;letter-spacing:1px;">separati da virgola</p>
+      </div>
+      <div style="padding-top:20px;">
+        <button class="btn-red" onclick="removeRow(${id})" style="padding:10px;font-size:14px;">✕</button>
+      </div>
+    </div>
+    <div id="rst-${id}" style="display:none;margin-top:8px;font-size:10px;letter-spacing:2px;padding:3px 0;"></div>`;
+
+  container.appendChild(div);
+}
+
+window.removeRow=function(id){ const el=document.getElementById('row-'+id); if(el){el.remove();updateStats();} };
+window.clearDone=function(){ document.querySelectorAll('.prod-row.saved-ok').forEach(r=>r.remove()); updateStats(); toast('🗑 Rimossi'); };
+
+window.handleInlineFile=async function(input,id){
+  const file=input.files[0]; if(!file) return;
+  const b64=await new Promise(r=>{const rd=new FileReader();rd.onload=e=>r(e.target.result);rd.readAsDataURL(file);});
+  let url=b64;
+  const hosted=await uploadToImgBB(b64);
+  if(hosted) url=hosted;
+  const ph=document.getElementById('ph-'+id);
+  if(ph) ph.outerHTML=`<img class="img-prev" src="${url}" alt=""/>`;
+  document.getElementById('row-'+id).dataset.imgUrl=url;
 };
 
 window.toggleAllSizes=function(id){
-  const toggles=document.querySelectorAll(`#sz-${id} .sz-toggle`);
-  const allOn=[...toggles].every(t=>t.classList.contains('on'));
-  toggles.forEach(t=>{ allOn?t.classList.remove('on'):t.classList.add('on'); });
+  const t=document.querySelectorAll('#sz-'+id+' .sz-toggle');
+  const allOn=[...t].every(x=>x.classList.contains('on'));
+  t.forEach(x=>{ allOn?x.classList.remove('on'):x.classList.add('on'); });
 };
 
 function getRowSizes(id){
-  return [...document.querySelectorAll(`#sz-${id} .sz-toggle.on`)].map(t=>t.textContent.trim());
+  return [...document.querySelectorAll('#sz-'+id+' .sz-toggle.on')].map(t=>t.textContent.trim());
 }
 
-// ── Stats ──
 function updateStats(){
-  const rows=document.querySelectorAll('.prod-row');
-  const count=rows.length;
-  document.getElementById('row-count-lbl').textContent=count+' '+(count===1?'riga':'righe');
-  document.getElementById('sb-rows').textContent=count;
+  const n=document.querySelectorAll('.prod-row').length;
+  document.getElementById('row-count-lbl').textContent=n?'— '+n:'';
+  document.getElementById('sb-rows').textContent=n;
   document.getElementById('sb-saved').textContent=savedCount;
 }
 
-// ── SAVE ALL ──
+// SAVE ALL
 window.saveAll=async function(){
   if(!user){ toast('⚠️ Non autenticato'); return; }
-  if(!currentBrand){ toast('⚠️ Seleziona un brand prima'); return; }
+  if(!currentBrand){ toast('⚠️ Scegli il brand al punto 01'); return; }
 
   const imp=window.__imp;
   const btn=document.getElementById('save-btn');
@@ -784,344 +563,47 @@ window.saveAll=async function(){
   btn.textContent='Salvando...'; btn.disabled=true;
 
   const rows=document.querySelectorAll('.prod-row:not(.saved-ok)');
-  let saved=0, errors=0, skipped=0;
+  let saved=0,errors=0,skipped=0;
 
   for(const row of rows){
     const id=row.id.replace('row-','');
     const name=document.getElementById('rn-'+id)?.value.trim();
-    const priceStr=document.getElementById('rp-'+id)?.value;
-    const price=parseFloat(priceStr);
+    const price=parseFloat(document.getElementById('rp-'+id)?.value);
+    if(!name||isNaN(price)||price<=0){ skipped++; continue; }
 
-    if(!name||isNaN(price)||price<=0){
-      skipped++;
-      continue;
-    }
-
-    const urlEl=document.getElementById('ru-'+id);
-    const imgUrl=urlEl?.value.trim()||'';
-    const imgB64=row.dataset.imgB64||'';
+    const imgUrl=row.dataset.imgUrl||'';
     const colorsRaw=document.getElementById('rc-'+id)?.value.trim()||'';
     const colors=colorsRaw?colorsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
     const sizes=getRowSizes(id);
-
-    const rowStatus=document.getElementById('row-status-'+id);
+    const rst=document.getElementById('rst-'+id);
 
     try{
       await imp.addDoc(imp.collection(imp.db,'products'),{
-        name,
-        price,
-        brand: currentBrand,
-        model: currentModel||'',
-        style: currentModel||'',
-        sizes: sizes.length?sizes:['S','M','L','XL'],
-        size: sizes.join(', '),
-        colors,
-        imageUrl: imgUrl||'',
-        description: '',
-        createdAt: imp.serverTimestamp()
+        name,price,brand:currentBrand,model:currentModel||'',style:currentModel||'',
+        sizes:sizes.length?sizes:['S','M','L','XL'],size:sizes.join(', '),
+        colors,imageUrl:imgUrl,description:'',createdAt:imp.serverTimestamp()
       });
-      saved++;
-      savedCount++;
+      saved++; savedCount++;
       row.classList.add('saved-ok');
-      if(rowStatus){
-        rowStatus.style.display='block';
-        rowStatus.style.color='var(--led)';
-        rowStatus.textContent='✅ SALVATO';
-      }
-      status.textContent=`${savedCount} salvati...`;
+      if(rst){ rst.style.display='block'; rst.style.color='var(--led)'; rst.textContent='✅ SALVATO'; }
+      status.textContent=savedCount+' salvati...';
     } catch(e){
       errors++;
       row.classList.add('saved-err');
-      if(rowStatus){
-        rowStatus.style.display='block';
-        rowStatus.style.color='#FF4757';
-        rowStatus.textContent='❌ ERRORE: '+e.message;
-      }
+      if(rst){ rst.style.display='block'; rst.style.color='#FF4757'; rst.textContent='❌ '+e.message; }
     }
   }
 
   btn.textContent='💾 SALVA TUTTO →'; btn.disabled=false;
   updateStats();
-
-  let msg=`✅ ${saved} prodotti salvati!`;
-  if(skipped) msg+=` (${skipped} vuoti saltati)`;
-  if(errors) msg+=` ⚠️ ${errors} errori`;
-  toast(msg);
-  status.textContent=msg;
-
-  // Auto-add new empty rows after saving
-  if(saved>0) setTimeout(()=>{ addRows(3); toast('➕ 3 nuove righe pronte'); }, 800);
+  let msg='✅ '+saved+' prodotti salvati!';
+  if(skipped) msg+=' ('+skipped+' vuoti saltati)';
+  if(errors)  msg+=' ⚠️ '+errors+' errori';
+  toast(msg); status.textContent=msg;
+  if(saved>0) setTimeout(()=>{ addRow(); updateStats(); },600);
 };
 
-
-// ── DRAG & DROP BATCH IMPORT ──────────────────────────
-window.handleDrop=function(e){
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('drag-over');
-  const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
-  if(!files.length){ toast('⚠️ Nessuna immagine trovata'); return; }
-  processDroppedFiles(files);
-};
-
-window.handleDropInput=function(input){
-  const files=[...input.files].filter(f=>f.type.startsWith('image/'));
-  if(!files.length) return;
-  processDroppedFiles(files);
-  input.value=''; // reset so same files can be dropped again
-};
-
-async function processDroppedFiles(files){
-  const prog=document.getElementById('drop-progress');
-  const bar=document.getElementById('drop-bar');
-  const lbl=document.getElementById('drop-label');
-  prog.style.display='block';
-  lbl.textContent='Caricamento in corso...';
-
-  // Sort files by name for consistent order
-  files.sort((a,b)=>a.name.localeCompare(b.name));
-
-  const total=files.length;
-  let done=0;
-
-  // Read all files as base64, create rows
-  for(const file of files){
-    await new Promise(resolve=>{
-      const reader=new FileReader();
-      reader.onload=e=>{
-        // Create a new row
-        createRow();
-        const id=rowId-1; // just created
-        const row=document.getElementById('row-'+id);
-
-        // Set image
-        showPreview(id, e.target.result);
-        row.dataset.imgB64=e.target.result;
-
-        // Pre-fill name from filename (strip extension, clean up)
-        const rawName=file.name.replace(/\.[^.]+$/,'') // remove extension
-          .replace(/[-_]/g,' ')           // dashes/underscores → spaces
-          .replace(/\w/g,c=>c.toUpperCase()); // capitalize words
-        const nameEl=document.getElementById('rn-'+id);
-        if(nameEl && currentBrand){
-          // Prepend brand if not already in filename
-          const hasBrand=rawName.toLowerCase().includes(currentBrand.toLowerCase());
-          nameEl.value=hasBrand ? rawName : currentBrand+' '+rawName;
-        } else if(nameEl){
-          nameEl.value=rawName;
-        }
-
-        // Auto-toggle all sizes
-        document.querySelectorAll('#sz-'+id+' .sz-toggle').forEach(t=>t.classList.add('on'));
-
-        done++;
-        const pct=Math.round((done/total)*100);
-        bar.style.width=pct+'%';
-        lbl.textContent=done+' / '+total+' immagini caricate';
-        resolve();
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  updateStats();
-  setTimeout(()=>{
-    prog.style.display='none';
-    bar.style.width='0%';
-  }, 2000);
-
-  toast(`📥 ${total} immagini caricate! Aggiungi prezzi e salva.`);
-
-  // Scroll to first new row
-  const firstNew=document.getElementById('row-'+(rowId-total));
-  if(firstNew) firstNew.scrollIntoView({behavior:'smooth',block:'center'});
-}
-
-
-// ══════════════════════════════════════════════
-// IMGBB GALLERY MODE
-// ══════════════════════════════════════════════
-let galCurrentPage = 1;
-let galTotalPages  = 1;
-let galImages      = [];   // [{url, thumb, id}]
-let galSelected    = new Set();
-let galUsed        = new Set();
-let galOpen        = false;
-
-window.toggleGallery = function(){
-  const panel = document.getElementById('imgbb-gallery-panel');
-  const btn   = document.getElementById('gal-toggle-btn');
-  galOpen = !galOpen;
-  panel.style.display = galOpen ? 'block' : 'none';
-  btn.textContent = galOpen ? '✕ CHIUDI GALLERIA' : '📷 APRI GALLERIA IMGBB';
-  if(galOpen && galImages.length === 0) loadImgBBGallery(1);
-};
-
-window.loadImgBBGallery = async function(page){
-  const status = document.getElementById('gal-status');
-  const grid   = document.getElementById('gal-grid');
-  const btn    = document.getElementById('gal-load-btn');
-  btn.textContent = 'Caricamento...'; btn.disabled = true;
-  status.textContent = '⏳ Recupero immagini dal tuo account ImgBB...';
-  grid.innerHTML = '';
-
-  try{
-    // ImgBB API: list account images
-    const res  = await fetch(`https://api.imgbb.com/1/account/images?key=${imgbbKey}&page=${page}&perpage=100`);
-    const json = await res.json();
-
-    if(!json.success){
-      status.textContent = '❌ Errore: ' + (json.error?.message || 'API non disponibile');
-      btn.textContent = '🔄 Riprova'; btn.disabled = false;
-      return;
-    }
-
-    galImages      = json.data || [];
-    galCurrentPage = page;
-    galTotalPages  = Math.ceil((json.pagination?.total || galImages.length) / 100) || 1;
-
-    document.getElementById('gal-page-lbl').textContent = `Pag ${galCurrentPage}/${galTotalPages}`;
-    document.getElementById('gal-prev').disabled = galCurrentPage <= 1;
-    document.getElementById('gal-next').disabled = galCurrentPage >= galTotalPages;
-
-    status.textContent = `${galImages.length} immagini caricate`;
-    renderGalGrid();
-  } catch(e){
-    status.textContent = '❌ Errore connessione: ' + e.message;
-  }
-  btn.textContent = '🔄 Aggiorna'; btn.disabled = false;
-};
-
-function renderGalGrid(){
-  const grid = document.getElementById('gal-grid');
-  if(!galImages.length){
-    grid.innerHTML = '<p style="font-size:10px;color:#555;padding:20px;letter-spacing:1px;">Nessuna immagine trovata nel tuo account ImgBB.</p>';
-    return;
-  }
-  grid.innerHTML = galImages.map((img, i) => {
-    const thumb = img.thumb?.url || img.medium?.url || img.url;
-    const sel   = galSelected.has(img.id) ? 'selected' : '';
-    const used  = galUsed.has(img.id) ? 'used' : '';
-    return `<div class="gal-item ${sel} ${used}" id="gal-item-${img.id}" onclick="galToggle('${img.id}',${i})">
-      <img class="gal-img" src="${thumb}" alt="" loading="lazy" onerror="this.src='${img.url}'"/>
-    </div>`;
-  }).join('');
-  updateGalCount();
-}
-
-window.galToggle = function(id, idx){
-  if(galUsed.has(id)) return; // already added
-  const item = document.getElementById('gal-item-'+id);
-  if(galSelected.has(id)){
-    galSelected.delete(id);
-    item.classList.remove('selected');
-  } else {
-    galSelected.add(id);
-    item.classList.add('selected');
-  }
-  updateGalCount();
-};
-
-window.galSelectAll = function(){
-  galImages.forEach(img=>{ if(!galUsed.has(img.id)) galSelected.add(img.id); });
-  renderGalGrid();
-};
-
-window.galDeselectAll = function(){
-  galSelected.clear();
-  renderGalGrid();
-};
-
-function updateGalCount(){
-  const n = galSelected.size;
-  document.getElementById('gal-sel-count').textContent = n ? `${n} selezionate` : '';
-  document.getElementById('gal-add-btn').disabled = n === 0;
-}
-
-window.galPage = function(dir){
-  const next = galCurrentPage + dir;
-  if(next < 1 || next > galTotalPages) return;
-  galSelected.clear();
-  loadImgBBGallery(next);
-};
-
-window.addSelectedToRows = function(){
-  if(!galSelected.size) return;
-  const selectedImgs = galImages.filter(img => galSelected.has(img.id));
-
-  selectedImgs.forEach(img => {
-    const id = rowId++;
-    const container = document.getElementById('rows-container');
-    const div = document.createElement('div');
-    div.className = 'prod-row';
-    div.id = 'row-' + id;
-    div.dataset.imgUrl = img.url;
-
-    div.innerHTML = `
-      <div class="row-grid">
-        <!-- IMAGE -->
-        <div>
-          <img class="img-prev" id="prev-${id}" src="${img.thumb?.url||img.url}" style="display:block;width:60px;height:60px;object-fit:cover;border:1px solid #2a2a2a;" alt=""/>
-        </div>
-        <!-- NAME -->
-        <div>
-          <p class="row-label">Nome Prodotto *</p>
-          <input class="lf-in" id="rn-${id}" placeholder="es. Nike Dunk Low Panda"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('rp-${id}').focus();}"/>
-        </div>
-        <!-- PRICE -->
-        <div>
-          <p class="row-label">€ *</p>
-          <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" placeholder="89.99"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();const nx=document.querySelector('#row-${id} ~ .prod-row input.lf-in');if(nx)nx.focus();}"/>
-        </div>
-        <!-- URL (hidden, already set) -->
-        <div>
-          <p class="row-label">URL Immagine</p>
-          <input class="lf-in" id="ru-${id}" value="${img.url}" style="font-size:9px;color:#555;" readonly/>
-        </div>
-        <!-- SIZES -->
-        <div>
-          <p class="row-label">Taglie</p>
-          <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
-            ${SIZES_ALL.map(s=>`<span class="sz-toggle" id="szt-${id}-${s}" onclick="toggleSize(${id},'${s}',this)">${s}</span>`).join('')}
-          </div>
-          <button onclick="toggleAllSizes(${id})" style="background:none;border:none;font-size:9px;color:var(--dim);cursor:pointer;margin-top:4px;padding:0;letter-spacing:1px;">TUTTE</button>
-        </div>
-        <!-- COLORS -->
-        <div>
-          <p class="row-label">Colori</p>
-          <input class="lf-in" id="rc-${id}" placeholder="es. Nero, Bianco"/>
-        </div>
-        <!-- REMOVE -->
-        <div style="padding-top:16px;">
-          <button class="btn-red" onclick="removeRow(${id})" style="padding:8px 10px;font-size:12px;">✕</button>
-        </div>
-      </div>
-      <div id="row-status-${id}" style="display:none;margin-top:8px;font-size:9px;letter-spacing:2px;padding:4px 0;"></div>`;
-
-    container.appendChild(div);
-    // Mark as used in gallery
-    galUsed.add(img.id);
-    galSelected.delete(img.id);
-    const galItem = document.getElementById('gal-item-'+img.id);
-    if(galItem){ galItem.classList.remove('selected'); galItem.classList.add('used'); }
-  });
-
-  updateGalCount();
-  updateStats();
-  // Scroll to rows
-  document.getElementById('rows-container').scrollIntoView({behavior:'smooth', block:'start'});
-  toast(`✅ ${selectedImgs.length} immagini aggiunte — compila nome e prezzo!`);
-};
-
-
-// ── Keyboard shortcut: Ctrl+S = Save ──
-document.addEventListener('keydown', e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key==='s'){
-    e.preventDefault();
-    saveAll();
-  }
-});
+document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveAll();} });
 </script>
 </body>
 </html>
