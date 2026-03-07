@@ -299,6 +299,81 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 #cookie-bar.show{transform:translateY(0);}
 @media(max-width:768px){#cookie-bar{padding-bottom:calc(16px + 60px + env(safe-area-inset-bottom));}}
 
+/* ── PROMO BANNER ────────────────────────────────── */
+#promo-banner{
+  position:relative;z-index:200;
+  background:linear-gradient(90deg,#0a3d0a,#1a6b1a,#0a3d0a);
+  color:var(--w);padding:10px 48px 10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;
+  text-transform:uppercase;cursor:pointer;text-decoration:none;
+  border-bottom:2px solid #2ecc71;
+  animation:banner-pulse 4s ease-in-out infinite;
+  overflow:hidden;
+}
+#promo-banner:hover{opacity:.9;}
+#promo-banner::before{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+  animation:banner-shine 5s linear infinite;
+}
+#promo-banner .promo-badge{
+  background:#2ecc71;color:#000;padding:2px 8px;font-size:9px;
+  letter-spacing:2px;font-weight:700;white-space:nowrap;flex-shrink:0;
+}
+#promo-banner .promo-close{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;
+  cursor:pointer;line-height:1;padding:4px;min-width:28px;min-height:28px;
+  display:flex;align-items:center;justify-content:center;
+}
+#promo-banner .promo-close:hover{color:#fff;}
+@keyframes banner-pulse{0%,100%{border-bottom-color:#2ecc71;}50%{border-bottom-color:#57e88e;}}
+@keyframes banner-shine{0%{left:-100%;}100%{left:200%;}}
+
+/* ── CHECKOUT STEPS (Hick's Law — step chunking) ── */
+.ck-steps{display:flex;align-items:center;gap:0;margin-bottom:28px;padding:0 4px;}
+.ck-step{
+  display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--dim);flex:1;
+}
+.ck-step.active{color:var(--k);}
+.ck-step.done{color:var(--led);}
+.ck-step-num{
+  width:26px;height:26px;border-radius:50%;border:2px solid currentColor;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  flex-shrink:0;transition:all .3s;
+}
+.ck-step.active .ck-step-num{background:var(--k);color:var(--w);border-color:var(--k);}
+.ck-step.done .ck-step-num{background:var(--led);color:var(--k);border-color:var(--led);}
+.ck-step-line{flex:1;height:1px;background:#ddd;margin:0 6px;}
+.ck-step.done~.ck-step-line{background:var(--led);}
+
+/* ── VON RESTORFF — PRIMARY CTA PULSE ───────────── */
+.cta-primary-glow{
+  position:relative;
+  animation:cta-glow-pulse 2.5s ease-in-out infinite !important;
+}
+@keyframes cta-glow-pulse{
+  0%,100%{box-shadow:0 0 16px rgba(200,255,0,.4);}
+  50%{box-shadow:0 0 32px rgba(200,255,0,.85),0 4px 24px rgba(200,255,0,.4);}
+}
+
+/* ── ADMIN ORDERS ────────────────────────────────── */
+.admin-order-card{
+  border:1.5px solid #e0e0e0;background:#fff;padding:16px 18px;
+  transition:border-color .2s;
+}
+.admin-order-card:hover{border-color:var(--k);}
+.admin-order-card.pending{border-left:4px solid var(--led);background:rgba(200,255,0,.02);}
+.admin-order-card.confirmed{border-left:4px solid #2ecc71;opacity:.65;}
+#admin-orders-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--led);color:var(--k);min-width:20px;height:20px;
+  border-radius:50%;font-size:10px;font-weight:bold;padding:0 4px;
+  box-shadow:0 0 8px rgba(200,255,0,.5);margin-left:6px;
+}
+
 /* ── BACK TO TOP ─────────────────────────────── */
 #back-top{
   display:none;position:fixed;bottom:80px;right:16px;z-index:80;
@@ -483,6 +558,14 @@ img{ -webkit-user-drag:none; user-select:none; }
 </style>
 </head>
 <body>
+
+<!-- ══════════ PROMO BANNER — NutriTrack ══════════ -->
+<a id="promo-banner" href="https://nutritrack.it" target="_blank" rel="noopener noreferrer">
+  <span class="promo-badge">🌿 PARTNER</span>
+  <span>Traccia la tua alimentazione con <strong>NutriTrack.it</strong> — il tracker nutrizionale più smart d'Italia</span>
+  <span style="font-size:14px;margin-left:4px;">→</span>
+  <button class="promo-close" onclick="event.preventDefault();event.stopPropagation();document.getElementById('promo-banner').style.display='none';" title="Chiudi">✕</button>
+</a>
 
 <!-- ══════════ TOAST ══════════ -->
 <div id="toast"></div>
@@ -719,7 +802,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <p id="hero-tagline" style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.5;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">Streetwear premium, senza compromessi.</p>
         <p id="hero-sub" style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.4px;line-height:1.9;font-family:'IBM Plex Mono',monospace;margin-bottom:22px;">Nike · Jordan · Bape · Supreme · e molto altro<br/>Qualità 1:1 · Spedizione DHL · Reso 30gg gratis</p>
         <div id="hero-cta" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0;">
-          <button class="btn-led" onclick="showPg('shop')" style="flex:1;min-width:140px;font-size:12px;padding:16px 20px;text-align:center;">Shop the Drop →</button>
+          <button class="btn-led cta-primary-glow" onclick="showPg('shop')" style="flex:1;min-width:140px;font-size:12px;padding:16px 20px;text-align:center;">Shop the Drop →</button>
           <button onclick="showPg('lfpoints')" style="flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w);padding:16px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">⦡ LFPoints</button>
         </div>
       </div>
@@ -829,13 +912,21 @@ img{ -webkit-user-drag:none; user-select:none; }
     </aside>
     <!-- Main -->
     <main style="flex:1;padding:24px 16px;min-width:0;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <h2 class="bb" style="font-size:44px;">Shop</h2>
         <div style="display:flex;align-items:center;gap:12px;">
           <p id="s-count" style="font-size:11px;color:var(--dim);letter-spacing:1px;"></p>
           <!-- Mobile filter button -->
           <button onclick="toggleMobFilter()" class="btn-g mob-only" style="padding:8px 14px;font-size:10px;">⚙ Filtri</button>
         </div>
+      </div>
+      <!-- Jakob's Law: universal search pattern users expect -->
+      <div style="display:flex;gap:0;margin-bottom:20px;">
+        <div style="position:relative;flex:1;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;color:var(--dim);">🔍</span>
+          <input class="lf-in" id="shop-search" placeholder="Cerca prodotto, brand, modello..." style="padding-left:36px;" oninput="searchShop(this.value)"/>
+        </div>
+        <button onclick="document.getElementById('shop-search').value='';searchShop('');" class="btn-k" style="padding:0 14px;font-size:18px;flex-shrink:0;" title="Cancella ricerca">✕</button>
       </div>
       <!-- Mobile filter row -->
       <div id="mob-filters" style="display:none;margin-bottom:20px;border:1.5px solid var(--k);padding:16px;">
@@ -913,13 +1004,33 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-checkout" class="pg">
   <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
     <h1 class="bb" style="font-size:clamp(36px,5vw,64px);margin-bottom:8px;">Checkout</h1>
-    <div class="led-strip" style="margin-bottom:32px;"></div>
+    <div class="led-strip" style="margin-bottom:24px;"></div>
+    <!-- Hick's Law: step progress indicator reduces perceived complexity -->
+    <div class="ck-steps" style="margin-bottom:32px;">
+      <div class="ck-step done">
+        <span class="ck-step-num">✓</span>
+        <span class="hide-mob">Carrello</span>
+      </div>
+      <div class="ck-step-line"></div>
+      <div class="ck-step active">
+        <span class="ck-step-num">2</span>
+        <span>Dati &amp; Pagamento</span>
+      </div>
+      <div class="ck-step-line"></div>
+      <div class="ck-step">
+        <span class="ck-step-num">3</span>
+        <span class="hide-mob">Conferma</span>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 360px;gap:32px;" class="grid-1-mob">
       <!-- Left: form -->
       <div>
         <!-- Shipping -->
         <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
-          <p class="bb" style="font-size:22px;margin-bottom:20px;">📦 Indirizzo di Spedizione</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">1</span>
+            <p class="bb" style="font-size:22px;">📦 Indirizzo di Spedizione</p>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ck-fname" placeholder="Mario"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Cognome *</label><input class="lf-in" id="ck-lname" placeholder="Rossi"/></div>
@@ -935,7 +1046,10 @@ img{ -webkit-user-drag:none; user-select:none; }
 
         <!-- Payment method -->
         <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
-          <p class="bb" style="font-size:22px;margin-bottom:20px;">💳 Metodo di Pagamento</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">2</span>
+            <p class="bb" style="font-size:22px;">💳 Metodo di Pagamento</p>
+          </div>
           <div style="display:flex;flex-direction:column;gap:0;border:1.5px solid #e0e0e0;">
             
             <!-- Card -->
@@ -999,7 +1113,10 @@ img{ -webkit-user-drag:none; user-select:none; }
 
         <!-- Notes -->
         <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
-          <p class="bb" style="font-size:22px;margin-bottom:16px;">📝 Note sull'Ordine</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">3</span>
+            <p class="bb" style="font-size:22px;">📝 Note sull'Ordine</p>
+          </div>
           <textarea class="lf-in" id="ck-notes" placeholder="Istruzioni di consegna, orari preferiti..." style="min-height:80px;"></textarea>
         </div>
       </div>
@@ -1019,7 +1136,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <span class="bb" style="font-size:22px;" id="ck-total">€0.00</span>
           </div>
           <p id="ck-pts-preview" style="font-size:9px;color:var(--led);letter-spacing:1px;margin-bottom:20px;"></p>
-          <button onclick="placeOrder()" class="btn-led" style="width:100%;font-size:13px;padding:18px;">🔒 Conferma Ordine →</button>
+          <button onclick="placeOrder()" class="btn-led cta-primary-glow" style="width:100%;font-size:13px;padding:18px;">🔒 Conferma Ordine →</button>
           <div style="margin-top:12px;text-align:center;">
             <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">Pagamento sicuro SSL 256-bit</p>
           </div>
@@ -1266,7 +1383,30 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div class="led-strip"></div>
   <div style="max-width:700px;margin:48px auto;padding:0 20px;">
     <p class="slbl" style="margin-bottom:6px;">Pannello Admin</p>
-    <h2 class="bb" style="font-size:48px;margin-bottom:16px;">Aggiungi Prodotto</h2>
+    <h2 class="bb" style="font-size:48px;margin-bottom:24px;">Admin Panel</h2>
+
+    <!-- ══ ORDINI RICEVUTI ══ -->
+    <div style="border:2px solid var(--led);padding:24px;margin-bottom:40px;background:rgba(200,255,0,.03);">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <p class="bb" style="font-size:32px;">📋 Ordini Ricevuti</p>
+          <span id="admin-orders-count" style="display:none;">0</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <select id="orders-filter" class="lf-in" style="padding:8px 12px;font-size:10px;width:auto;" onchange="renderAdminOrders()">
+            <option value="all">Tutti gli ordini</option>
+            <option value="pending">⏳ In attesa</option>
+            <option value="confirmed">✅ Confermati</option>
+          </select>
+          <button class="btn-k" onclick="loadAdminOrders()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna</button>
+        </div>
+      </div>
+      <div id="admin-orders-list" style="display:flex;flex-direction:column;gap:10px;">
+        <p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Clicca "Aggiorna" per caricare gli ordini.</p>
+      </div>
+    </div>
+
+    <h2 class="bb" style="font-size:36px;margin-bottom:16px;">➕ Aggiungi Prodotto</h2>
     <!-- Importer shortcut -->
     <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:12px;background:#080808;border:2px solid var(--led);padding:14px 22px;text-decoration:none;margin-bottom:32px;transition:opacity .15s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
       <span style="font-size:22px;">🚀</span>
@@ -2121,6 +2261,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     renderShop();
   };
 
+  window.searchShop=function(q){
+    renderShop();
+  };
+
   function cardHTML(p){
     const isNew=(p.createdAt?.seconds&&(Date.now()/1000-p.createdAt.seconds)<604800);
     const inWish=wishlist.includes(p.id);
@@ -2218,11 +2362,13 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   function renderShop(){
+    const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     const filtered=products.filter(p=>
       (!filters.model||p.model===filters.model)&&
       (!filters.brand||p.brand===filters.brand)&&
       (!filters.size ||p.size ===filters.size )&&
-      (!filters.style||p.style===filters.style)
+      (!filters.style||p.style===filters.style)&&
+      (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
     document.getElementById('s-load').style.display='none';
     const sc=document.getElementById('s-count');
@@ -2473,6 +2619,31 @@ img{ -webkit-user-drag:none; user-select:none; }
       updateNav(user,udata); updateHomeDisplay();
       const prev=np-pts;
       const newReward=REWARDS.find(r=>prev<r.pts&&np>=r.pts);
+      // ── Build order data ────────────────────────────────
+      const phone=document.getElementById('ck-phone')?.value.trim()||'—';
+      const country=document.getElementById('ck-country')?.value||'Italia';
+      const notes=document.getElementById('ck-notes')?.value.trim()||'';
+      const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
+      // ── Save order to Firestore for admin panel ──────────
+      try{
+        await fb.addDoc(fb.collection(fb.db,'orders'),{
+          orderId,
+          uid:user.uid,
+          email:user.email,
+          name:fname+' '+lname,
+          phone,
+          address:{street,city,zip,country},
+          notes,
+          items:_orderItems.map(i=>({name:i.name,price:i.price,qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||''})),
+          subtotal:total,
+          shipping:ship,
+          total:total+ship,
+          payment:selectedPayment||'card',
+          lfpoints:pts,
+          status:'pending',
+          createdAt:fb.serverTimestamp()
+        });
+      }catch(_){}
       cart=[];saveCart();updateCartBadge();
       showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
       if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
@@ -2481,9 +2652,6 @@ img{ -webkit-user-drag:none; user-select:none; }
         ? JSON.parse(localStorage.getItem('lf_cart_snapshot')||'[]')
         : [];
       // Build order summary from snapshot stored before clearing cart
-      const phone=document.getElementById('ck-phone')?.value.trim()||'—';
-      const country=document.getElementById('ck-country')?.value||'Italia';
-      const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
       const _itemLines=_orderItems.map(function(i){
         return '  ' + i.name + (i.size?' — Taglia: '+i.size:'') + (i.color?' — Colore: '+i.color:'') + ' x' + i.qty + ' → €' + (i.price*i.qty).toFixed(2);
       }).join('\n');
@@ -3336,6 +3504,105 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ══════════════════════════════════════════════════
+  // ADMIN ORDERS MANAGER
+  // ══════════════════════════════════════════════════
+  let adminOrders = [];
+
+  window.loadAdminOrders = async function(){
+    const fb = window.__fb;
+    if(!fb) return;
+    const list = document.getElementById('admin-orders-list');
+    if(!list) return;
+    list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento ordini...</p>';
+    try{
+      const q = fb.query(fb.collection(fb.db,'orders'), fb.orderBy('createdAt','desc'));
+      const snap = await fb.getDocs(q);
+      adminOrders = snap.docs.map(d=>({_docId:d.id,...d.data()}));
+      renderAdminOrders();
+    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
+  };
+
+  window.renderAdminOrders = function(){
+    const list = document.getElementById('admin-orders-list');
+    if(!list) return;
+    const filter = document.getElementById('orders-filter')?.value || 'all';
+    const filtered = filter==='all' ? adminOrders : adminOrders.filter(o=>o.status===filter);
+    const pending = adminOrders.filter(o=>o.status==='pending').length;
+    const badge = document.getElementById('admin-orders-count');
+    if(badge){ badge.textContent = pending; badge.style.display = pending>0?'inline-flex':'none'; }
+    if(!filtered.length){
+      list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:16px 0;">Nessun ordine trovato.</p>';
+      return;
+    }
+    list.innerHTML = filtered.map(o=>{
+      const isPending = o.status === 'pending';
+      const ts = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000).toLocaleString('it-IT') : '—';
+      const payEmoji = {card:'💳',paypal:'🅿',bonifico:'🏦'}[o.payment]||'💳';
+      const itemsSummary = (o.items||[]).map(i=>`${i.name}${i.size?' – Sz '+i.size:''} x${i.qty}`).join(' · ');
+      const orderJsonSafe = JSON.stringify(o).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return `
+      <div class="admin-order-card ${isPending?'pending':'confirmed'}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span class="bb" style="font-size:18px;">${o.orderId||'—'}</span>
+              <span style="font-size:9px;padding:2px 8px;letter-spacing:1px;text-transform:uppercase;${isPending?'background:var(--led);color:var(--k);':'background:#e8f5e9;color:#2e7d32;'}">${isPending?'⏳ IN ATTESA':'✅ CONFERMATO'}</span>
+            </div>
+            <p style="font-size:11px;color:var(--mid);">${ts}</p>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <p class="bb" style="font-size:22px;">€${(o.total||0).toFixed(2)}</p>
+            <p style="font-size:10px;color:var(--dim);">${payEmoji} ${o.payment||'—'}</p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;padding:12px;background:#f8f8f8;border-left:3px solid #e0e0e0;">
+          <div>
+            <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:2px;">Cliente</p>
+            <p style="font-size:12px;font-weight:500;">${o.name||'—'}</p>
+            <p style="font-size:10px;color:var(--mid);">${o.email||'—'}</p>
+            <p style="font-size:10px;color:var(--mid);">${o.phone||'—'}</p>
+          </div>
+          <div>
+            <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:2px;">Spedizione</p>
+            <p style="font-size:11px;">${(o.address?.street)||'—'}</p>
+            <p style="font-size:11px;color:var(--mid);">${(o.address?.zip)||''} ${(o.address?.city)||''}</p>
+            <p style="font-size:11px;color:var(--mid);">${(o.address?.country)||''}</p>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Articoli</p>
+          <p style="font-size:11px;">${itemsSummary||'—'}</p>
+        </div>
+        ${o.notes?`<div style="font-size:10px;color:var(--mid);font-style:italic;margin-bottom:10px;">📝 ${o.notes}</div>`:''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          ${isPending?`<button onclick="confirmAdminOrder('${o._docId}',this)" class="btn-led" style="padding:9px 18px;font-size:10px;">✅ Conferma Ordine</button>`:''}
+          <button onclick="sendTrackingFromOrder('${(o.email||'').replace(/'/g,"\\'")}','${(o.name||'').replace(/'/g,"\\'")}')" class="btn-k" style="padding:9px 18px;font-size:10px;">📦 Assegna Tracking</button>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  window.confirmAdminOrder = async function(docId, btn){
+    const fb = window.__fb;
+    if(!docId) return;
+    if(btn){ btn.textContent='...'; btn.disabled=true; }
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'orders',docId),{status:'confirmed'});
+      const idx = adminOrders.findIndex(o=>o._docId===docId);
+      if(idx>=0) adminOrders[idx].status='confirmed';
+      renderAdminOrders();
+      showToast('✅ Ordine confermato!');
+    } catch(e){ showToast('⚠️ Errore: '+e.message); }
+    if(btn){ btn.textContent='✅ Conferma Ordine'; btn.disabled=false; }
+  };
+
+  window.sendTrackingFromOrder = function(email, name){
+    const el = document.getElementById('tr-email');
+    if(el){ el.value=email; el.scrollIntoView({behavior:'smooth',block:'center'}); el.focus(); }
+    showToast('📦 Email pre-compilata per '+name);
+  };
+
+  // ══════════════════════════════════════════════════
   // ADMIN CATALOG MANAGER
   // ══════════════════════════════════════════════════
   let adminCatalogProducts = [];
@@ -3477,7 +3744,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.showPg=function(id){
     _origShowPg(id);
   // Init bulk import + catalog when admin page opens
-    if(id==='admin') setTimeout(()=>{ initBulkImport(); loadAdminCatalog(); }, 100);
+    if(id==='admin') setTimeout(()=>{ initBulkImport(); loadAdminCatalog(); loadAdminOrders(); }, 100);
     if(id==='cart'){setTimeout(()=>{renderCart();},50);}
     if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');},50);}
   };
