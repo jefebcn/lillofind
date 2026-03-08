@@ -16,7 +16,7 @@
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 
 <!-- Firebase -->
 <script type="module">
@@ -47,7 +47,14 @@ window.__fb={db:getFirestore(app),auth:getAuth(app),collection,addDoc,getDocs,do
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
 body{font-family:'IBM Plex Mono',monospace;background:var(--w);color:var(--k);overflow-x:hidden;}
-.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.bb{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
+h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
+h1.bb,h2.bb,.bb{font-size:clamp(28px,7vw,96px);line-height:.93;}
+/* Preserve Bebas for hero LED animation and brand wordmark */
+#led-word *,[class*="hero-h1"]{font-family:'Bebas Neue',sans-serif!important;}
+/* Body uses Inter for readability */
+body{font-family:'Inter','IBM Plex Mono',monospace;}
+p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif;}
 
 /* ── LED STRIP ──────────────────────────────── */
 .led-strip{
@@ -240,13 +247,18 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 }
 .bnav-btn{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 4px;font-family:'IBM Plex Mono',monospace;font-size:9px;
+  padding:8px 4px;font-family:'IBM Plex Mono',monospace;font-size:9px;
   letter-spacing:1px;text-transform:uppercase;color:#555;
-  background:none;border:none;cursor:pointer;gap:4px;min-height:52px;
-  transition:color .2s;
+  background:none;border:none;cursor:pointer;gap:4px;
+  min-height:56px;min-width:48px;
+  transition:color .2s;touch-action:manipulation;
 }
 .bnav-btn.active,.bnav-btn:hover{color:var(--led);}
-.bnav-icon{font-size:18px;line-height:1;}
+.bnav-btn.active .bnav-icon svg{filter:drop-shadow(0 0 5px rgba(200,255,0,.6));}
+.bnav-btn:active{transform:scale(.9);}
+.bnav-icon{display:flex;align-items:center;justify-content:center;width:28px;height:28px;}
+.bnav-icon svg{transition:filter .2s;}
+.bnav-lbl{font-size:9px;letter-spacing:1px;line-height:1;}
 
 /* ── DESKTOP HEADER ──────────────────────────── */
 #site-hdr{position:sticky;top:0;z-index:90;background:var(--w);}
@@ -570,6 +582,97 @@ input,textarea,select{ font-size:16px !important; }
 body{ -webkit-overflow-scrolling:touch; overscroll-behavior-y:none; }
 button{ touch-action:manipulation; }
 img{ -webkit-user-drag:none; user-select:none; }
+
+
+/* ── SIZE BOX FILTERS (mobile) ──────────────────── */
+.size-box-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.size-box{
+  min-width:44px;min-height:44px;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid #ddd;background:var(--w);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;
+  cursor:pointer;transition:all .15s;padding:0 10px;
+  touch-action:manipulation;
+}
+.size-box:hover{border-color:var(--k);}
+.size-box.on{border:2px solid var(--led);color:var(--led);background:rgba(200,255,0,.06);box-shadow:0 0 8px rgba(200,255,0,.2);}
+
+/* ── COLOR SWATCH FILTERS ───────────────────────── */
+.swatch-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.swatch{
+  width:36px;height:36px;border-radius:50%;
+  cursor:pointer;border:2px solid transparent;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);
+  transition:border-color .15s, transform .1s;
+  touch-action:manipulation;flex-shrink:0;
+}
+.swatch:hover{transform:scale(1.1);}
+.swatch.on{border:2.5px solid var(--led);box-shadow:0 0 8px rgba(200,255,0,.4);}
+.swatch-label{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:3px;text-align:center;}
+.swatch-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;}
+/* ── SKELETON LOADING ────────────────────────────── */
+.skel{background:#e8e8e8;border-radius:0;animation:skel-pulse 1.5s ease-in-out infinite;}
+@keyframes skel-pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+.skel-card{border:1.5px solid #e8e8e8;padding:0;overflow:hidden;background:#fff;}
+.skel-img{width:100%;aspect-ratio:4/3;background:#e0e0e0;animation:skel-pulse 1.5s ease-in-out infinite;}
+.skel-body{padding:14px;}
+.skel-line{height:12px;background:#e0e0e0;margin-bottom:8px;border-radius:0;animation:skel-pulse 1.5s ease-in-out infinite;}
+.skel-line.short{width:55%;}
+.skel-line.price{width:35%;height:18px;margin-top:10px;}
+
+/* ── LIVE SEARCH DROPDOWN ────────────────────────── */
+#search-dropdown{
+  position:absolute;top:100%;left:0;right:0;z-index:300;
+  background:var(--w);border:1.5px solid var(--k);
+  border-top:none;box-shadow:0 8px 24px rgba(0,0,0,.12);
+  display:none;max-height:320px;overflow-y:auto;
+}
+#search-dropdown.open{display:block;}
+.search-drop-item{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .1s;
+}
+.search-drop-item:last-child{border-bottom:none;}
+.search-drop-item:hover{background:#f8f8f8;}
+.search-drop-thumb{width:44px;height:44px;object-fit:cover;background:#f0f0f0;flex-shrink:0;}
+.search-drop-info{flex:1;min-width:0;}
+.search-drop-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.search-drop-brand{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;}
+.search-drop-price{font-family:"Bebas Neue",sans-serif;font-size:16px;flex-shrink:0;}
+.search-drop-empty{padding:14px;font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+
+/* ── STICKY ADD TO CART (mobile modal) ──────────── */
+#sticky-atc{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:600;
+  background:var(--k);padding:12px 16px 16px;
+  border-top:2px solid var(--led);
+  box-shadow:0 -4px 24px rgba(0,0,0,.3);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+#sticky-atc.visible{transform:translateY(0);}
+#sticky-atc-inner{display:flex;gap:10px;align-items:center;max-width:600px;margin:0 auto;}
+#sticky-atc-info{flex:1;min-width:0;}
+#sticky-atc-name{font-size:11px;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
+#sticky-atc-price{font-family:"Bebas Neue",sans-serif;font-size:20px;color:var(--led);}
+#sticky-atc-btn{background:var(--led);color:var(--k);border:none;padding:12px 20px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;box-shadow:0 0 12px rgba(200,255,0,.4);flex-shrink:0;}
+@media(min-width:769px){#sticky-atc{display:none!important;}}
+
+/* ── SOCIAL PROOF TOAST ──────────────────────────── */
+#sp-toast{
+  position:fixed;bottom:80px;left:16px;z-index:8000;
+  background:var(--k);color:var(--w);
+  padding:12px 16px;max-width:280px;min-width:220px;
+  border-left:3px solid var(--led);
+  box-shadow:0 4px 20px rgba(0,0,0,.25);
+  transform:translateX(-120%);transition:transform .4s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+#sp-toast.show{transform:translateX(0);}
+#sp-toast-name{font-size:10px;font-weight:600;color:var(--led);letter-spacing:1px;margin-bottom:3px;}
+#sp-toast-msg{font-size:10px;color:#ccc;line-height:1.5;}
+#sp-toast-dot{display:inline-block;width:7px;height:7px;background:#2ecc71;border-radius:50%;margin-right:6px;animation:dot-blink 1s ease-in-out infinite;}
+@keyframes dot-blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+@media(min-width:769px){#sp-toast{bottom:32px;}}
 </style>
 </head>
 <body>
@@ -599,6 +702,12 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 <!-- ══════════ TOAST ══════════ -->
 <div id="toast"></div>
+
+<!-- ══════════ SOCIAL PROOF TOAST ══════════ -->
+<div id="sp-toast">
+  <div id="sp-toast-name"><span id="sp-toast-dot"></span><span id="sp-toast-who"></span></div>
+  <div id="sp-toast-msg"></div>
+</div>
 
 <!-- ══════════ BACK TO TOP ══════════ -->
 <button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Torna su">↑</button>
@@ -659,6 +768,10 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button onclick="showPg('shop');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Shop</button>
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="showPg('cart');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Carrello</button>
+        <button onclick="showPg('shop');closeDrawer();setTimeout(sortByNewest,80)" class="drawer-link" style="color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Drop della Settimana</button>
+        <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('model','Sneaker'),80)" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg> Sneakers</button>
+        <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('style','Streetwear'),80)" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Apparel</button>
+        <div style="height:1px;background:var(--border);margin:12px 0;"></div>
         <a href="app.html" class="drawer-link" style="text-decoration:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> Tornei Beach Volley</a>
         <a href="vault.html" class="drawer-link" style="text-decoration:none;color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> LF Vault — Investimenti</a>
         <div style="height:1px;background:var(--border);margin:12px 0;"></div>
@@ -726,9 +839,10 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div id="top-nav" style="border-bottom:2px solid var(--k);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:56px;">
     <nav style="display:flex;gap:24px;align-items:center;">
       <button class="nbtn" onclick="showPg('shop')">Shop</button>
+      <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('style','Streetwear'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Apparel</button>
+      <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneaker'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg>Sneakers</button>
+      <button class="nbtn" onclick="showPg('shop');setTimeout(sortByNewest,80)" style="display:flex;align-items:center;gap:5px;color:var(--led);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Drop</button>
       <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
-      <a href="app.html" class="nbtn" style="text-decoration:none;color:var(--k);">🏐 Tornei</a>
-      <a href="vault.html" class="nbtn" style="text-decoration:none;color:var(--k);font-weight:500;">⬡ Vault</a>
     </nav>
     <div style="position:absolute;left:50%;transform:translateX(-50%);">
       <button onclick="showPg('home')" style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:4px;color:var(--k);background:none;border:none;cursor:pointer;">LILLOFIND</button>
@@ -1039,6 +1153,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Marchio</p><div id="ch-brand"></div></div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Taglia</p><div id="ch-size"></div></div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Stile</p><div id="ch-style"></div></div>
+      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Colore</p><div id="ch-color"></div></div>
       <button id="rst-btn" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset</button>
     </aside>
     <!-- Main -->
@@ -1054,8 +1169,9 @@ img{ -webkit-user-drag:none; user-select:none; }
       <!-- Jakob's Law: universal search pattern users expect -->
       <div style="display:flex;gap:0;margin-bottom:20px;">
         <div style="position:relative;flex:1;">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;color:var(--dim);">🔍</span>
-          <input class="lf-in" id="shop-search" placeholder="Cerca prodotto, brand, modello..." style="padding-left:36px;" oninput="searchShop(this.value)"/>
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;color:var(--dim);z-index:1;">🔍</span>
+          <input class="lf-in" id="shop-search" placeholder="Cerca prodotto, brand, modello..." style="padding-left:36px;" oninput="liveSearch(this.value)" autocomplete="off"/>
+          <div id="search-dropdown"></div>
         </div>
         <button onclick="document.getElementById('shop-search').value='';searchShop('');" class="btn-k" style="padding:0 14px;font-size:18px;flex-shrink:0;" title="Cancella ricerca">✕</button>
       </div>
@@ -1065,9 +1181,10 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Marchio</p><div id="ch-brand-m"></div></div>
         <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Taglia</p><div id="ch-size-m"></div></div>
         <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Stile</p><div id="ch-style-m"></div></div>
+        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Colore</p><div id="ch-color-m"></div></div>
         <button id="rst-btn-m" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset Filtri</button>
       </div>
-      <div id="s-load" style="padding:60px;text-align:center;font-size:10px;letter-spacing:3px;color:var(--dim);">LOADING...</div>
+      <div id="s-load"><div class="pgrid" id="skel-grid"></div></div>
       <div id="s-grid" class="pgrid" style="display:none;"></div>
       <div id="s-empty" style="display:none;text-align:center;padding:60px;">
         <p class="bb" style="font-size:36px;margin-bottom:8px;">No Items Found</p>
@@ -1105,6 +1222,15 @@ img{ -webkit-user-drag:none; user-select:none; }
               <span style="color:var(--mid);">Spedizione DHL</span><span id="cart-ship">—</span>
             </div>
             <div style="font-size:9px;color:var(--dim);letter-spacing:1px;">Gratuita sopra €80</div>
+          </div>
+          <!-- UPSELL SHIPPING BAR -->
+          <div id="free-ship-bar" style="margin:12px 0 4px;display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span id="free-ship-msg" style="font-size:10px;color:var(--k);letter-spacing:.5px;line-height:1.5;"></span>
+            </div>
+            <div style="background:#e8e8e8;height:6px;width:100%;overflow:hidden;">
+              <div id="free-ship-fill" style="height:6px;background:linear-gradient(90deg,var(--led),var(--led2));transition:width .7s cubic-bezier(.4,0,.2,1);width:0%;box-shadow:0 0 8px rgba(200,255,0,.5);"></div>
+            </div>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
             <span class="bb" style="font-size:20px;">Totale</span>
@@ -1830,6 +1956,17 @@ img{ -webkit-user-drag:none; user-select:none; }
   </div>
 </div>
 
+<!-- ══ STICKY ADD TO CART BAR (mobile) ══ -->
+<div id="sticky-atc">
+  <div id="sticky-atc-inner">
+    <div id="sticky-atc-info">
+      <div id="sticky-atc-name"></div>
+      <div id="sticky-atc-price"></div>
+    </div>
+    <button id="sticky-atc-btn" onclick="stickBuy()">Aggiungi →</button>
+  </div>
+</div>
+
 <div id="prod-modal" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box" style="padding:0;max-width:780px;">
     <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
@@ -1850,17 +1987,55 @@ img{ -webkit-user-drag:none; user-select:none; }
       <button onclick="document.getElementById('size-modal').classList.remove('open')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
     </div>
     <div class="led-strip-sm"></div>
-    <div style="padding:24px;overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:320px;">
-        <thead><tr style="background:#f5f5f5;">
-          <th style="padding:10px;border:1px solid #e0e0e0;text-align:left;letter-spacing:1px;">Taglia</th>
-          <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Petto (cm)</th>
-          <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Vita (cm)</th>
-          <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Fianchi (cm)</th>
-        </tr></thead>
-        <tbody id="size-table-body"></tbody>
-      </table>
-      <p style="font-size:10px;color:var(--dim);margin-top:16px;letter-spacing:1px;">📏 Consiglio: per un fit oversized, scegli una taglia in più rispetto alle misure. Per dubbi scrivi a <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cbb8bebbbba4b9bf8ba7a2a7a7a4ada2a5afe5a8a4a6">[email&#160;protected]</a></p>
+    <div style="padding:24px;">
+      <!-- TAB switcher -->
+      <div style="display:flex;border-bottom:2px solid #e8e8e8;margin-bottom:24px;">
+        <button class="tbtn on" id="ff-tab-finder" onclick="switchFitTab('finder')">🎯 Fit Finder</button>
+        <button class="tbtn" id="ff-tab-table" onclick="switchFitTab('table')">📐 Tabella Taglie</button>
+      </div>
+
+      <!-- FIT FINDER QUIZ -->
+      <div id="ff-finder" style="display:block;">
+        <p style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:20px;">Inserisci le tue misure e ti suggeriremo la taglia perfetta.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Altezza (cm)</label>
+            <input class="lf-in" id="ff-height" type="number" placeholder="es. 178" min="140" max="220"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Peso (kg)</label>
+            <input class="lf-in" id="ff-weight" type="number" placeholder="es. 75" min="40" max="200"/>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Preferenza Fit</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="ff-fit-btn chip on" data-fit="slim" onclick="selectFit(this)">Stretto</button>
+            <button class="ff-fit-btn chip" data-fit="regular" onclick="selectFit(this)">Regolare</button>
+            <button class="ff-fit-btn chip" data-fit="oversize" onclick="selectFit(this)">Oversize</button>
+          </div>
+        </div>
+        <button class="btn-led" onclick="calcFit()" style="width:100%;margin-bottom:16px;">Calcola la mia taglia →</button>
+        <div id="ff-result" style="display:none;border:2px solid var(--led);padding:20px;background:rgba(200,255,0,.04);">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">La tua taglia consigliata</p>
+          <p id="ff-result-size" style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:var(--k);margin-bottom:4px;"></p>
+          <p id="ff-result-msg" style="font-size:11px;color:var(--mid);line-height:1.7;"></p>
+        </div>
+      </div>
+
+      <!-- SIZE TABLE -->
+      <div id="ff-table" style="display:none;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:320px;">
+          <thead><tr style="background:#f5f5f5;">
+            <th style="padding:10px;border:1px solid #e0e0e0;text-align:left;letter-spacing:1px;">Taglia</th>
+            <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Petto (cm)</th>
+            <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Vita (cm)</th>
+            <th style="padding:10px;border:1px solid #e0e0e0;letter-spacing:1px;">Fianchi (cm)</th>
+          </tr></thead>
+          <tbody id="size-table-body"></tbody>
+        </table>
+        <p style="font-size:10px;color:var(--dim);margin-top:16px;letter-spacing:1px;">📏 Per un fit oversized, scegli una taglia in più rispetto alle misure.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1973,11 +2148,27 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 <!-- ════════════ BOTTOM NAV (mobile) ════════════ -->
 <nav id="bottom-nav">
-  <button class="bnav-btn" id="bn-home" onclick="showPg('home')"><span class="bnav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home</button>
-  <button class="bnav-btn" id="bn-shop" onclick="showPg('shop')"><span class="bnav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>Shop</button>
-  <button class="bnav-btn" id="bn-lfp" onclick="showPg('lfpoints')"><span class="bnav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>Points</button>
-  <button class="bnav-btn" onclick="showPg('cart')" style="position:relative;"><span class="bnav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Carrello<span class="cart-badge" style="position:absolute;top:6px;right:calc(50% - 20px);background:var(--led);color:var(--k);width:16px;height:16px;border-radius:50%;font-size:8px;font-weight:bold;display:none;align-items:center;justify-content:center;"></span></button>
-  <button class="bnav-btn" id="bn-profile" onclick="showPg('profile')"><span class="bnav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profilo</button>
+  <button class="bnav-btn" id="bn-home" onclick="showPg('home')">
+    <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+    <span class="bnav-lbl">Home</span>
+  </button>
+  <button class="bnav-btn" id="bn-shop" onclick="showPg('shop')">
+    <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+    <span class="bnav-lbl">Shop</span>
+  </button>
+  <button class="bnav-btn" id="bn-lfp" onclick="showPg('lfpoints')">
+    <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+    <span class="bnav-lbl">Points</span>
+  </button>
+  <button class="bnav-btn" id="bn-cart" onclick="showPg('cart')" style="position:relative;">
+    <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+    <span class="bnav-lbl">Carrello</span>
+    <span class="cart-badge" style="position:absolute;top:4px;right:calc(50% - 22px);background:var(--led);color:var(--k);width:16px;height:16px;border-radius:50%;font-size:8px;font-weight:bold;display:none;align-items:center;justify-content:center;"></span>
+  </button>
+  <button class="bnav-btn" id="bn-profile" onclick="showPg('profile')">
+    <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+    <span class="bnav-lbl">Profilo</span>
+  </button>
 </nav>
 
 <!-- ════════════════════════════════════════════════════════
@@ -1988,7 +2179,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function waitFB(cb){ window.__fb ? cb() : setTimeout(()=>waitFB(cb), 80); }
 
   // ── State ──────────────────────────────────────────────
-  let products=[], filters={model:'',brand:'',size:'',style:''};
+  let products=[], filters={model:'',brand:'',size:'',style:'',color:''};
   let user=null, udata=null, authTab='li';
   let wishlist=[];
 
@@ -2156,18 +2347,51 @@ img{ -webkit-user-drag:none; user-select:none; }
     } catch(e){ document.getElementById('s-load').textContent='Errore caricamento.'; }
   }
 
+  // Color name → CSS color map
+  const COLOR_MAP={
+    bianco:'#fff',white:'#fff',nero:'#111',black:'#111',
+    rosso:'#e53e3e',red:'#e53e3e',blu:'#3182ce',blue:'#3182ce',
+    verde:'#38a169',green:'#38a169',giallo:'#ecc94b',yellow:'#ecc94b',
+    arancione:'#ed8936',orange:'#ed8936',viola:'#805ad5',purple:'#805ad5',
+    rosa:'#f687b3',pink:'#f687b3',grigio:'#a0aec0',grey:'#a0aec0',gray:'#a0aec0',
+    marrone:'#8b5e3c',brown:'#8b5e3c',beige:'#d4b896',
+    azzurro:'#63b3ed',navy:'#1a365d',cream:'#fffdd0',
+    silver:'#c0c0c0',gold:'#ffd700',
+  };
+
   function buildChips(){
-    ['model','brand','size','style'].forEach(k=>{
+    ['model','brand','size','style','color'].forEach(k=>{
       const vals=[...new Set(products.map(p=>p[k]).filter(Boolean))];
-      const html=vals.map(v=>`<span class="chip" data-key="${k}" data-val="${v}" onclick="toggleF('${k}','${v}')">${v}</span>`).join('');
+      let html='';
+      let htmlMob='';
+
+      if(k==='size'){
+        // Size boxes for desktop sidebar
+        html=`<div class="size-box-grid">${vals.map(v=>`<div class="size-box" data-key="size" data-val="${v}" onclick="toggleF('size','${v}')">${v}</div>`).join('')}</div>`;
+        htmlMob=html;
+      } else if(k==='color'){
+        // Color swatches
+        html=`<div class="swatch-grid">${vals.map(v=>{
+          const col=COLOR_MAP[v.toLowerCase()]||'#888';
+          return `<div class="swatch-wrap" onclick="toggleF('color','${v}')"><div class="swatch" data-key="color" data-val="${v}" style="background:${col};${col==='#fff'?'border:2px solid #ddd;':''}"></div><div class="swatch-label">${v}</div></div>`;
+        }).join('')}</div>`;
+        htmlMob=html;
+      } else {
+        html=vals.map(v=>`<span class="chip" data-key="${k}" data-val="${v}" onclick="toggleF('${k}','${v}')">${v}</span>`).join('');
+        htmlMob=html;
+      }
+
       const d=document.getElementById('ch-'+k); if(d) d.innerHTML=html;
-      const dm=document.getElementById('ch-'+k+'-m'); if(dm) dm.innerHTML=html;
+      const dm=document.getElementById('ch-'+k+'-m'); if(dm) dm.innerHTML=htmlMob;
     });
   }
 
   window.toggleF=function(k,v){
     filters[k]=filters[k]===v?'':v;
-    document.querySelectorAll(`.chip[data-key="${k}"]`).forEach(c=>c.classList.toggle('on',c.dataset.val===filters[k]));
+    // Update chip, size-box and swatch active states
+    document.querySelectorAll(`.chip[data-key="${k}"],.size-box[data-key="${k}"],.swatch[data-key="${k}"]`).forEach(c=>{
+      c.classList.toggle('on',c.dataset.val===filters[k]);
+    });
     const any=Object.values(filters).some(Boolean);
     const rb=document.getElementById('rst-btn'); if(rb) rb.style.display=any?'':'none';
     const rbm=document.getElementById('rst-btn-m'); if(rbm) rbm.style.display=any?'':'none';
@@ -2384,6 +2608,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       return;
     }
     document.getElementById('cart-summary').style.display='block';
+    setTimeout(updateShipBar, 80);
     wrap.innerHTML=cart.map((item,idx)=>`
       <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #e0e0e0;align-items:center;">
         <div style="width:72px;height:72px;background:#f0f0f0;flex-shrink:0;overflow:hidden;">
@@ -3232,6 +3457,285 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(id==='cart'){setTimeout(()=>{renderCart();if(typeof showQCOption==='function')showQCOption();},80);}
     if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');},50);}
   };
+
+
+  // ══════════════════════════════════════════════════════════════
+  // FEATURE 3 — Skeleton loading init
+  // ══════════════════════════════════════════════════════════════
+  (function initSkeleton(){
+    const grid = document.getElementById('skel-grid');
+    if(!grid) return;
+    const N = 8;
+    grid.innerHTML = Array.from({length:N}).map(()=>`
+      <div class="skel-card">
+        <div class="skel-img"></div>
+        <div class="skel-body">
+          <div class="skel-line" style="width:80%"></div>
+          <div class="skel-line short"></div>
+          <div class="skel-line price"></div>
+        </div>
+      </div>`).join('');
+  })();
+
+  // ══════════════════════════════════════════════════════════════
+  // FEATURE 5 — Nav helper functions (filter by category)
+  // ══════════════════════════════════════════════════════════════
+  window.setFilter = function(type, value){
+    // Reset all active chips first
+    document.querySelectorAll('.chip.on').forEach(c => c.classList.remove('on'));
+    // Set the filter variable and re-render
+    if(type === 'style') activeStyle = value;
+    if(type === 'model') activeModel = value;
+    if(typeof renderShop === 'function') renderShop();
+  };
+
+  window.sortByNewest = function(){
+    products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    if(typeof renderShop === 'function') renderShop();
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // FEATURE 6 — Free shipping upsell bar
+  // ══════════════════════════════════════════════════════════════
+  function updateShipBar(){
+    const FREE_THRESHOLD = 80;
+    const bar   = document.getElementById('free-ship-bar');
+    const fill  = document.getElementById('free-ship-fill');
+    const msg   = document.getElementById('free-ship-msg');
+    if(!bar||!fill||!msg) return;
+
+    const cart   = JSON.parse(localStorage.getItem('lf_cart')||'[]');
+    const subtot = cart.reduce((s,i)=>s+(i.price||0)*(i.qty||1),0);
+
+    if(subtot <= 0){ bar.style.display='none'; return; }
+    bar.style.display = 'block';
+
+    if(subtot >= FREE_THRESHOLD){
+      const pct = 100;
+      fill.style.width = pct + '%';
+      msg.innerHTML = '<span style="color:#2ecc71;font-weight:600;">✅ Spedizione DHL gratuita!</span>';
+    } else {
+      const remaining = FREE_THRESHOLD - subtot;
+      const pct = Math.min((subtot / FREE_THRESHOLD) * 100, 100);
+      fill.style.width = pct + '%';
+      msg.innerHTML = `Aggiungi altri <strong>€${remaining.toFixed(2)}</strong> per la <strong>spedizione DHL gratuita</strong> 🚀`;
+    }
+  }
+  // Hook into renderCart
+  const _origRC = typeof renderCart === 'function' ? renderCart : null;
+  if(_origRC){
+    const _patchedRC = function(){
+      _origRC();
+      setTimeout(updateShipBar, 80);
+    };
+    // We patch via showPg override below
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // FEATURE 8 — Social proof toast notifications
+  // ══════════════════════════════════════════════════════════════
+  (function initSocialToast(){
+    const ENTRIES = [
+      {name:'Luca M.', city:'Milano',     item:'Nike Dunk Low Panda'},
+      {name:'Sofia R.', city:'Roma',      item:'Supreme Box Logo Hoodie'},
+      {name:'Marco T.', city:'Torino',    item:'Jordan 4 Retro Black Cat'},
+      {name:'Giulia B.', city:'Napoli',   item:'Adidas Yeezy 350 V2'},
+      {name:'Andrea C.', city:'Firenze',  item:'Bape Shark Hoodie'},
+      {name:'Matteo P.', city:'Bologna',  item:'Off-White x Nike AF1'},
+      {name:'Chiara V.', city:'Venezia',  item:'New Balance 9060'},
+      {name:'Davide F.', city:'Palermo',  item:'CDG Play T-Shirt'},
+      {name:'Elena M.', city:'Genova',    item:'Carhartt WIP Detroit Jacket'},
+      {name:'Francesco L.', city:'Bari',  item:'Jordan 1 High OG'},
+    ];
+    const toast = document.getElementById('sp-toast');
+    const who   = document.getElementById('sp-toast-who');
+    const msgEl = document.getElementById('sp-toast-msg');
+    if(!toast||!who||!msgEl) return;
+
+    let idx = 0;
+    function showNext(){
+      const e = ENTRIES[idx % ENTRIES.length];
+      idx++;
+      who.textContent = e.name + ' da ' + e.city;
+      msgEl.textContent = 'ha appena acquistato ' + e.item;
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 4000);
+      // Next in 45-75s random
+      setTimeout(showNext, 45000 + Math.random() * 30000);
+    }
+    // First show after 12s
+    setTimeout(showNext, 12000);
+  })();
+
+  // ══════════════════════════════════════════════════════════════
+  // FEATURE 9 — Sticky Add to Cart
+  // ══════════════════════════════════════════════════════════════
+  let _stickyPid = null, _stickyPrice = 0;
+
+  window.stickBuy = function(){
+    if(_stickyPid) buy(_stickyPid, _stickyPrice);
+    // Close modal
+    document.getElementById('prod-modal').classList.remove('open');
+  };
+
+  function showStickyATC(pid, name, price){
+    _stickyPid   = pid;
+    _stickyPrice = price;
+    const bar = document.getElementById('sticky-atc');
+    if(!bar) return;
+    document.getElementById('sticky-atc-name').textContent  = name;
+    document.getElementById('sticky-atc-price').textContent = '€' + price.toFixed(2);
+    bar.style.display = 'flex';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>bar.classList.add('visible')));
+  }
+
+  function hideStickyATC(){
+    const bar = document.getElementById('sticky-atc');
+    if(!bar) return;
+    bar.classList.remove('visible');
+    setTimeout(()=>{ bar.style.display='none'; }, 320);
+    _stickyPid = null;
+  }
+
+  // Patch openProduct to trigger sticky bar on mobile
+  const _origOpenProduct = window.openProduct;
+  window.openProduct = function(pid){
+    _origOpenProduct(pid);
+    if(window.innerWidth < 769){
+      const p = (typeof products !== 'undefined') ? products.find(x=>x.id===pid) : null;
+      if(p) setTimeout(()=>showStickyATC(pid, p.name, p.price||0), 200);
+    }
+  };
+
+  // Hide sticky when modal closes
+  document.getElementById('prod-modal').addEventListener('click', function(e){
+    if(e.target === this) hideStickyATC();
+  });
+  document.querySelector('#prod-modal button[onclick*="classList.remove"]')?.addEventListener('click', hideStickyATC);
+
+  // ══════════════════════════════════════════════════════════════
+  // FEATURE 10 — Live Search with dropdown
+  // ══════════════════════════════════════════════════════════════
+  let _liveSearchTimer = null;
+
+  window.liveSearch = function(val){
+    // Still filter the grid
+    searchShop(val);
+
+    const dropdown = document.getElementById('search-dropdown');
+    if(!dropdown) return;
+    const q = val.trim().toLowerCase();
+
+    if(q.length < 2){
+      dropdown.classList.remove('open');
+      return;
+    }
+
+    clearTimeout(_liveSearchTimer);
+    _liveSearchTimer = setTimeout(()=>{
+      const prods = (typeof products !== 'undefined') ? products : [];
+      const matches = prods.filter(p =>
+        (p.name||'').toLowerCase().includes(q) ||
+        (p.brand||'').toLowerCase().includes(q) ||
+        (p.model||'').toLowerCase().includes(q)
+      ).slice(0, 4);
+
+      if(!matches.length){
+        dropdown.innerHTML = '<div class="search-drop-empty">Nessun risultato</div>';
+        dropdown.classList.add('open');
+        return;
+      }
+
+      dropdown.innerHTML = matches.map(p => `
+        <div class="search-drop-item" onclick="
+          document.getElementById('search-dropdown').classList.remove('open');
+          document.getElementById('shop-search').value='';
+          searchShop('');
+          openProduct('${p.id}');
+        ">
+          ${p.imageUrl
+            ? `<img src="${p.imageUrl}" class="search-drop-thumb" onerror="this.style.display='none'">`
+            : `<div class="search-drop-thumb" style="display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>`}
+          <div class="search-drop-info">
+            <div class="search-drop-name">${p.name||'—'}</div>
+            <div class="search-drop-brand">${p.brand||''}</div>
+          </div>
+          <div class="search-drop-price">€${(p.price||0).toFixed(0)}</div>
+        </div>`).join('');
+      dropdown.classList.add('open');
+    }, 150);
+  };
+
+  // Close dropdown on outside click
+  document.addEventListener('click', function(e){
+    const dd = document.getElementById('search-dropdown');
+    if(dd && !dd.closest('#shop-search')?.contains(e.target) && e.target.id !== 'shop-search'){
+      dd.classList.remove('open');
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // FEATURE 12 — Fit Finder logic
+  // ══════════════════════════════════════════════════════════════
+  let _selectedFit = 'slim';
+
+  window.switchFitTab = function(tab){
+    document.getElementById('ff-finder').style.display = tab==='finder' ? 'block' : 'none';
+    document.getElementById('ff-table').style.display  = tab==='table'  ? 'block' : 'none';
+    document.getElementById('ff-tab-finder').classList.toggle('on', tab==='finder');
+    document.getElementById('ff-tab-table').classList.toggle('on', tab==='table');
+  };
+
+  window.selectFit = function(el){
+    document.querySelectorAll('.ff-fit-btn').forEach(b=>b.classList.remove('on'));
+    el.classList.add('on');
+    _selectedFit = el.dataset.fit;
+  };
+
+  window.calcFit = function(){
+    const h = parseFloat(document.getElementById('ff-height').value);
+    const w = parseFloat(document.getElementById('ff-weight').value);
+    if(!h || !w || h<140 || h>220 || w<40 || w>200){
+      showToast('⚠️ Inserisci altezza e peso validi.');
+      return;
+    }
+    // BMI-based sizing
+    const bmi = w / ((h/100) ** 2);
+
+    // Base size from height + weight
+    let sizeIdx = 0; // 0=XS,1=S,2=M,3=L,4=XL,5=XXL
+    if(h < 165)      sizeIdx = 0;
+    else if(h < 170) sizeIdx = 1;
+    else if(h < 176) sizeIdx = 2;
+    else if(h < 182) sizeIdx = 3;
+    else if(h < 188) sizeIdx = 4;
+    else             sizeIdx = 5;
+
+    // Adjust for weight/BMI
+    if(bmi > 28)      sizeIdx = Math.min(sizeIdx + 2, 5);
+    else if(bmi > 24) sizeIdx = Math.min(sizeIdx + 1, 5);
+    else if(bmi < 19) sizeIdx = Math.max(sizeIdx - 1, 0);
+
+    // Adjust for fit preference
+    if(_selectedFit === 'oversize') sizeIdx = Math.min(sizeIdx + 1, 5);
+    if(_selectedFit === 'slim')     sizeIdx = Math.max(sizeIdx - 1, 0);
+
+    const sizes  = ['XS','S','M','L','XL','XXL'];
+    const result = sizes[sizeIdx];
+
+    const msgs = {
+      slim:     `Taglia ${result} per un fit aderente e definito — ideale per i capi strutturati.`,
+      regular:  `Taglia ${result} per un fit classico e versatile — la scelta più equilibrata.`,
+      oversize: `Taglia ${result} per un look oversize — drop shoulder e libertà di movimento garantiti.`,
+    };
+
+    document.getElementById('ff-result-size').textContent = result;
+    document.getElementById('ff-result-msg').textContent  = msgs[_selectedFit];
+    const resultEl = document.getElementById('ff-result');
+    resultEl.style.display = 'block';
+    resultEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+  };
+
 
 </script>
 </body>
