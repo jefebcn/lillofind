@@ -266,6 +266,26 @@ button{touch-action:manipulation;}
         <input class="lf-in" id="cat-search" placeholder="Cerca per nome o brand..." style="flex:1;min-width:200px;padding:10px 14px;" oninput="renderAdminCatalog()"/>
         <button class="btn-g" onclick="loadAdminCatalog()" style="padding:10px 18px;font-size:10px;">🔄 Aggiorna</button>
       </div>
+
+      <!-- ── BULK DELETE TOOLBAR ── -->
+      <div id="bulk-toolbar" style="display:none;align-items:center;justify-content:space-between;background:#fff0f0;border:1.5px solid #ff4757;padding:10px 16px;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;letter-spacing:1px;text-transform:uppercase;user-select:none;">
+            <input type="checkbox" id="bulk-select-all" onchange="toggleSelectAll(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;"/>
+            Seleziona tutti
+          </label>
+          <span id="bulk-count-label" style="font-size:11px;letter-spacing:1px;color:#ff4757;font-weight:500;"></span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-g" onclick="exitBulkMode()" style="padding:8px 16px;font-size:10px;border-color:#999;color:#999;">Annulla</button>
+          <button id="bulk-delete-btn" onclick="bulkDeleteSelected()" style="display:inline-flex;align-items:center;justify-content:center;background:#ff4757;color:#fff;border:none;padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:.5;pointer-events:none;">🗑 ELIMINA SELEZIONATI</button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <button id="bulk-mode-btn" onclick="enterBulkMode()" class="btn-g" style="padding:8px 16px;font-size:10px;letter-spacing:1px;border-color:#ff4757;color:#ff4757;">🗑 ELIMINA IN BLOCCO</button>
+      </div>
+
       <div id="admin-catalog-list" style="display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto;padding-right:4px;"></div>
     </div>
 
@@ -822,6 +842,73 @@ waitFB(()=>{
     } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
   };
 
+  let bulkMode = false;
+  let bulkSelected = new Set();
+
+  window.enterBulkMode = function(){
+    bulkMode = true;
+    bulkSelected.clear();
+    document.getElementById('bulk-toolbar').style.display = 'flex';
+    document.getElementById('bulk-mode-btn').style.display = 'none';
+    renderAdminCatalog();
+  };
+
+  window.exitBulkMode = function(){
+    bulkMode = false;
+    bulkSelected.clear();
+    document.getElementById('bulk-toolbar').style.display = 'none';
+    document.getElementById('bulk-mode-btn').style.display = '';
+    const sa = document.getElementById('bulk-select-all');
+    if(sa) sa.checked = false;
+    renderAdminCatalog();
+  };
+
+  window.toggleSelectAll = function(checked){
+    const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
+    const filtered = adminCatalogProducts.filter(p=>
+      !q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q)
+    );
+    if(checked) filtered.forEach(p=>bulkSelected.add(p.id));
+    else bulkSelected.clear();
+    updateBulkUI();
+    renderAdminCatalog();
+  };
+
+  window.toggleBulkItem = function(pid, checked){
+    if(checked) bulkSelected.add(pid);
+    else bulkSelected.delete(pid);
+    updateBulkUI();
+  };
+
+  function updateBulkUI(){
+    const n = bulkSelected.size;
+    const lbl = document.getElementById('bulk-count-label');
+    const btn = document.getElementById('bulk-delete-btn');
+    if(lbl) lbl.textContent = n > 0 ? n + ' selezionat' + (n===1?'o':'i') : '';
+    if(btn){
+      if(n > 0){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
+      else { btn.style.opacity='.5'; btn.style.pointerEvents='none'; }
+    }
+  }
+
+  window.bulkDeleteSelected = async function(){
+    if(!bulkSelected.size) return;
+    const n = bulkSelected.size;
+    if(!confirm('Stai per eliminare ' + n + ' prodott' + (n===1?'o':'i') + '. Questa azione e irreversibile. Confermi?')) return;
+    const fb = window.__fb;
+    const btn = document.getElementById('bulk-delete-btn');
+    if(btn){ btn.textContent = 'Eliminazione...'; btn.style.pointerEvents='none'; }
+    let deleted = 0;
+    const ids = [...bulkSelected];
+    for(const pid of ids){
+      try{ await fb.deleteDoc(fb.doc(fb.db,'products',pid)); deleted++; }
+      catch(e){ console.error('Errore eliminando',pid,e); }
+    }
+    showToast('Eliminat' + (deleted===1?'o':'i') + ' ' + deleted + ' prodott' + (deleted===1?'o':'i') + '.');
+    exitBulkMode();
+    loadAdminCatalog();
+  };
+
   window.renderAdminCatalog = function(){
     const list = document.getElementById('admin-catalog-list');
     if(!list) return;
@@ -833,22 +920,37 @@ waitFB(()=>{
       list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:12px 0;">Nessun prodotto trovato.</p>';
       return;
     }
-    list.innerHTML = filtered.map(p=>`
-      <div style="display:grid;grid-template-columns:48px 1fr auto auto;gap:12px;align-items:center;padding:12px 14px;border:1.5px solid #e8e8e8;background:#fff;transition:border-color .15s;" onmouseover="this.style.borderColor='#ccc'" onmouseout="this.style.borderColor='#e8e8e8'">
-        ${p.imageUrl
-          ? `<img src="${p.imageUrl}" style="width:48px;height:48px;object-fit:cover;border:1px solid #eee;" onerror="this.style.display='none'">`
-          : `<div style="width:48px;height:48px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>`}
-        <div>
-          <p style="font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:500;">${p.name||'—'}</p>
-          <p style="font-size:10px;color:#777;margin-top:2px;">${p.brand||''} ${p.model?'· '+p.model:''} ${(p.sizes&&p.sizes.length)?'· '+p.sizes.join(' '):(p.size?'· '+p.size:'')}</p>
-        </div>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;">€${(p.price||0).toFixed(2)}</p>
-        <div style="display:flex;gap:6px;">
-          <button onclick="openEditModal('${p.id}')" style="background:var(--k);color:var(--w);border:none;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">✏️ MODIFICA</button>
-          <button onclick="deleteProd('${p.id}','${(p.name||'').replace(/'/g,"\\'")}');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:8px 10px;cursor:pointer;font-size:12px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor='#ff4757';this.style.color='#ff4757'" onmouseout="this.style.borderColor='#ddd';this.style.color='#ccc'">🗑</button>
-        </div>
-      </div>`
-    ).join('');
+    list.innerHTML = filtered.map(function(p){
+      const sel = bulkSelected.has(p.id);
+      const rowStyle = bulkMode && sel
+        ? 'background:#fff5f5;border-color:#ff4757;'
+        : 'background:#fff;';
+      const cols = bulkMode ? '38px 48px 1fr auto' : '48px 1fr auto auto';
+      const chkHtml = bulkMode
+        ? '<input type="checkbox" id="chk-' + p.id + '" ' + (sel?'checked':'') + ' onclick="event.stopPropagation();toggleBulkItem(\'' + p.id + '\',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;flex-shrink:0;">'
+        : '';
+      const imgHtml = p.imageUrl
+        ? '<img src="' + p.imageUrl + '" style="width:48px;height:48px;object-fit:cover;border:1px solid #eee;" onerror="this.style.display=\'none\'">'
+        : '<div style="width:48px;height:48px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>';
+      const sizeStr = (p.sizes&&p.sizes.length) ? '· '+p.sizes.join(' ') : (p.size ? '· '+p.size : '');
+      const actionsHtml = bulkMode ? '' : '<div style="display:flex;gap:6px;">'
+        + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:8px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">✏️ MODIFICA</button>'
+        + '<button onclick="deleteProd(\'' + p.id + '\',\'' + (p.name||'').replace(/'/g,"\\'") + '\');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:8px 10px;cursor:pointer;font-size:12px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor=\'#ff4757\';this.style.color=\'#ff4757\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#ccc\'">🗑</button>'
+        + '</div>';
+      const rowClick = bulkMode
+        ? 'onclick="var cb=document.getElementById(\'chk-' + p.id + '\');cb.checked=!cb.checked;toggleBulkItem(\'' + p.id + '\',cb.checked);"'
+        : 'onmouseover="this.style.borderColor=\'#ccc\'" onmouseout="this.style.borderColor=\'#e8e8e8\'"';
+      return '<div style="display:grid;grid-template-columns:' + cols + ';gap:12px;align-items:center;padding:12px 14px;border:1.5px solid #e8e8e8;' + rowStyle + 'transition:border-color .15s;' + (bulkMode?'cursor:pointer;':'') + '" ' + rowClick + '>'
+        + chkHtml
+        + imgHtml
+        + '<div>'
+          + '<p style="font-size:12px;font-family:\'IBM Plex Mono\',monospace;font-weight:500;">' + (p.name||'—') + '</p>'
+          + '<p style="font-size:10px;color:#777;margin-top:2px;">' + (p.brand||'') + ' ' + (p.model?'· '+p.model:'') + ' ' + sizeStr + '</p>'
+        + '</div>'
+        + '<p style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">€' + (p.price||0).toFixed(2) + '</p>'
+        + actionsHtml
+        + '</div>';
+    }).join('');
   };
 
   window.openEditModal = function(pid){
