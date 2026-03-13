@@ -173,6 +173,7 @@ img { -webkit-user-drag:none; user-select:none; }
       <button class="nbtn" id="nb-premi" style="color:var(--w);" onclick="showPg('premi')">Premi</button>
       <button class="nbtn" id="nb-classifica" style="color:var(--w);" onclick="showPg('classifica')">Classifica</button>
       <button class="nbtn" id="nb-live" style="color:var(--w);" onclick="showPg('live')"><span class="live-dot" style="margin-right:6px;"></span>Live</button>
+      <button class="nbtn" id="nb-regolamento" style="color:var(--w);" onclick="showPg('regolamento')">📋 Regolamento</button>
       <div id="admin-status" style="display:none;align-items:center;gap:6px;background:rgba(200,255,0,.12);border:1px solid var(--led);padding:3px 10px;"><span style="font-size:9px;color:var(--led);letter-spacing:2px;text-transform:uppercase;">⚙️ ADMIN</span></div>
       <button id="admin-login-btn" onclick="openModal('admin-login-modal')" class="nbtn" style="color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;" onmouseover="this.style.color='var(--led)';" onmouseout="this.style.color='#666';">🔑 Admin</button>
       <button id="admin-logout-btn" onclick="adminLogout()" class="nbtn" style="display:none;color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;">✕ Esci</button>
@@ -188,6 +189,7 @@ img { -webkit-user-drag:none; user-select:none; }
   <button class="abn-btn" id="abn-premi" onclick="showPg('premi')"><span class="abn-icon">🏆</span>Premi</button>
   <button class="abn-btn" id="abn-classifica" onclick="showPg('classifica')"><span class="abn-icon">📊</span>Classifica</button>
   <button class="abn-btn" id="abn-live" onclick="showPg('live')"><span class="abn-icon live-dot" style="width:14px;height:14px;border-radius:50%;margin-bottom:2px;"></span>Live</button>
+  <button class="abn-btn" id="abn-regolamento" onclick="showPg('regolamento')"><span class="abn-icon">📋</span>Regola</button>
 </nav>
 
 
@@ -579,6 +581,254 @@ img { -webkit-user-drag:none; user-select:none; }
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════
+     REGOLAMENTO
+═══════════════════════════════════════ -->
+<div id="pg-regolamento" class="pg">
+
+  <!-- Hero strip -->
+  <div style="background:var(--k);color:var(--w);padding:40px 24px 32px;">
+    <div class="led-strip-sm" style="margin-bottom:24px;"></div>
+    <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#444;margin-bottom:10px;">Beach Volley — LilloFind</p>
+    <h1 class="bb" style="font-size:clamp(48px,10vw,96px);line-height:.9;color:var(--led);">REGOLA<br/>MENTO</h1>
+    <p style="font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-top:12px;">Sistema Plus/Minus — Fase a gironi + Finale</p>
+    <div class="led-strip-sm" style="margin-top:24px;"></div>
+  </div>
+
+  <div style="max-width:760px;margin:0 auto;padding:32px 20px;">
+
+    <!-- ── PRINCIPIO BASE ── -->
+    <section style="margin-bottom:40px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <span style="background:var(--led);color:var(--k);font-family:'Bebas Neue',sans-serif;font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
+        <h2 class="bb" style="font-size:clamp(22px,4vw,34px);">Punteggio Individuale</h2>
+      </div>
+      <div style="border-left:3px solid var(--led);padding:16px 20px;background:rgba(200,255,0,.04);margin-bottom:16px;">
+        <p style="font-size:12px;line-height:1.9;color:#333;">
+          Ogni giocatore ha il proprio <strong>saldo Plus/Minus individuale</strong>, indipendente dal compagno di turno.<br/>
+          Il torneo si gioca a coppie ma la classifica è <strong>sempre individuale</strong>.
+        </p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="grid-1-mob">
+        <div style="border:1.5px solid #e0e0e0;padding:18px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Coppia vincente</p>
+          <p class="bb" style="font-size:28px;color:#2ecc71;">+Δ PUNTI</p>
+          <p style="font-size:11px;color:#555;margin-top:6px;line-height:1.7;">Entrambi i giocatori della coppia che vince ricevono la differenza punti in positivo al loro saldo personale.</p>
+        </div>
+        <div style="border:1.5px solid #e0e0e0;padding:18px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Coppia perdente</p>
+          <p class="bb" style="font-size:28px;color:#e74c3c;">−Δ PUNTI</p>
+          <p style="font-size:11px;color:#555;margin-top:6px;line-height:1.7;">Entrambi i giocatori della coppia che perde ricevono la differenza punti in negativo al loro saldo personale.</p>
+        </div>
+      </div>
+      <!-- Esempio visivo -->
+      <div style="border:1.5px solid var(--k);padding:20px;margin-top:16px;background:#fafafa;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">📐 Esempio partita</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="text-align:center;flex:1;min-width:100px;">
+            <p style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;">LUCA + MARCO</p>
+            <p class="bb" style="font-size:36px;color:#2ecc71;">15</p>
+          </div>
+          <div style="text-align:center;flex-shrink:0;">
+            <p class="bb" style="font-size:20px;color:#333;">vs</p>
+            <p style="font-size:9px;color:var(--led);letter-spacing:1px;margin-top:4px;">Δ = +4</p>
+          </div>
+          <div style="text-align:center;flex:1;min-width:100px;">
+            <p style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;">SOFIA + ANNA</p>
+            <p class="bb" style="font-size:36px;color:#e74c3c;">11</p>
+          </div>
+        </div>
+        <div style="border-top:1px solid #e0e0e0;margin-top:14px;padding-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="border:1.5px solid #2ecc71;padding:4px 12px;font-size:10px;color:#2ecc71;letter-spacing:1px;">Luca +4</span>
+          <span style="border:1.5px solid #2ecc71;padding:4px 12px;font-size:10px;color:#2ecc71;letter-spacing:1px;">Marco +4</span>
+          <span style="border:1.5px solid #e74c3c;padding:4px 12px;font-size:10px;color:#e74c3c;letter-spacing:1px;">Sofia −4</span>
+          <span style="border:1.5px solid #e74c3c;padding:4px 12px;font-size:10px;color:#e74c3c;letter-spacing:1px;">Anna −4</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="led-strip-sm" style="margin-bottom:40px;"></div>
+
+    <!-- ── FASE A GIRONI ── -->
+    <section style="margin-bottom:40px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <span style="background:var(--led);color:var(--k);font-family:'Bebas Neue',sans-serif;font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
+        <h2 class="bb" style="font-size:clamp(22px,4vw,34px);">Fase a Gironi</h2>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="border:1.5px solid #e0e0e0;padding:18px 20px;display:flex;gap:16px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;margin-top:2px;">🔄</span>
+          <div>
+            <p style="font-size:12px;font-weight:600;margin-bottom:5px;">Cambio compagno a ogni partita</p>
+            <p style="font-size:11px;color:#555;line-height:1.8;">Ad ogni partita si cambia partner. Le coppie vengono formate volta per volta seguendo il calendario prestabilito o l'accordo tra i giocatori.</p>
+          </div>
+        </div>
+        <div style="border:1.5px solid #e0e0e0;padding:18px 20px;display:flex;gap:16px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;margin-top:2px;">🎯</span>
+          <div>
+            <p style="font-size:12px;font-weight:600;margin-bottom:5px;">Numero partite per giocatore</p>
+            <p style="font-size:11px;color:#555;line-height:1.8;">Prima dell'inizio si decide quante partite deve giocare ogni giocatore. Le opzioni più comuni:</p>
+            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+              <div style="border:2px solid var(--led);padding:10px 18px;text-align:center;background:rgba(200,255,0,.06);">
+                <p class="bb" style="font-size:28px;color:var(--led);">4</p>
+                <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#555;">partite</p>
+                <p style="font-size:9px;color:var(--dim);margin-top:3px;">Format veloce</p>
+              </div>
+              <div style="border:2px solid var(--k);padding:10px 18px;text-align:center;">
+                <p class="bb" style="font-size:28px;">6</p>
+                <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#555;">partite</p>
+                <p style="font-size:9px;color:var(--dim);margin-top:3px;">Format standard</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="border:1.5px solid #e0e0e0;padding:18px 20px;display:flex;gap:16px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;margin-top:2px;">📊</span>
+          <div>
+            <p style="font-size:12px;font-weight:600;margin-bottom:5px;">Classifica in tempo reale</p>
+            <p style="font-size:11px;color:#555;line-height:1.8;">La classifica individuale viene aggiornata dopo ogni partita. L'ordine è determinato dal <strong>saldo Plus/Minus</strong> di ogni giocatore.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="led-strip-sm" style="margin-bottom:40px;"></div>
+
+    <!-- ── FASE FINALE ── -->
+    <section style="margin-bottom:40px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <span style="background:var(--led);color:var(--k);font-family:'Bebas Neue',sans-serif;font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
+        <h2 class="bb" style="font-size:clamp(22px,4vw,34px);">Fase Finale</h2>
+      </div>
+      <div style="border-left:3px solid var(--led);padding:16px 20px;background:rgba(200,255,0,.04);margin-bottom:20px;">
+        <p style="font-size:12px;line-height:1.9;color:#333;">
+          Al termine dei gironi, i <strong>4 giocatori col miglior Plus/Minus</strong> accedono alla fase finale.<br/>
+          Le coppie sono <strong>fisse</strong> per tutta la fase eliminatoria (semifinali + finale).
+        </p>
+      </div>
+
+      <!-- Snake draft -->
+      <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">🎲 Formazione Coppie — Snake Draft</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+        <div style="border:2px solid var(--led);padding:16px 18px;display:flex;align-items:center;gap:16px;background:rgba(200,255,0,.06);">
+          <div style="background:var(--led);color:var(--k);font-family:'Bebas Neue',sans-serif;font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1°</div>
+          <div style="flex:1;">
+            <p style="font-size:11px;font-weight:600;margin-bottom:3px;">1° classificato — Scelta prioritaria</p>
+            <p style="font-size:10px;color:#555;line-height:1.7;">Sceglie per primo il proprio compagno tra tutti gli altri partecipanti del torneo.</p>
+          </div>
+          <span style="font-size:18px;">👑</span>
+        </div>
+        <div style="border:1.5px solid var(--k);padding:16px 18px;display:flex;align-items:center;gap:16px;">
+          <div style="background:var(--k);color:var(--w);font-family:'Bebas Neue',sans-serif;font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2°</div>
+          <div style="flex:1;">
+            <p style="font-size:11px;font-weight:600;margin-bottom:3px;">2° classificato</p>
+            <p style="font-size:10px;color:#555;line-height:1.7;">Sceglie tra i giocatori rimasti disponibili.</p>
+          </div>
+          <span style="font-size:18px;">🥈</span>
+        </div>
+        <div style="border:1.5px solid var(--k);padding:16px 18px;display:flex;align-items:center;gap:16px;">
+          <div style="background:var(--k);color:var(--w);font-family:'Bebas Neue',sans-serif;font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3°</div>
+          <div style="flex:1;">
+            <p style="font-size:11px;font-weight:600;margin-bottom:3px;">3° classificato</p>
+            <p style="font-size:10px;color:#555;line-height:1.7;">Sceglie tra i giocatori rimasti disponibili.</p>
+          </div>
+          <span style="font-size:18px;">🥉</span>
+        </div>
+        <div style="border:1.5px solid var(--k);padding:16px 18px;display:flex;align-items:center;gap:16px;">
+          <div style="background:var(--k);color:var(--w);font-family:'Bebas Neue',sans-serif;font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4°</div>
+          <div style="flex:1;">
+            <p style="font-size:11px;font-weight:600;margin-bottom:3px;">4° classificato</p>
+            <p style="font-size:10px;color:#555;line-height:1.7;">Si accoppia con l'ultimo giocatore rimasto disponibile.</p>
+          </div>
+          <span style="font-size:18px;">4️⃣</span>
+        </div>
+      </div>
+
+      <!-- Schema tabellone -->
+      <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">🏆 Schema Tabellone</p>
+      <div style="border:1.5px solid var(--k);padding:20px;background:#fafafa;">
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;" class="grid-1-mob">
+          <div>
+            <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Semifinale 1</p>
+            <div style="border:1.5px solid var(--led);padding:10px 14px;background:rgba(200,255,0,.05);margin-bottom:6px;">
+              <p style="font-size:11px;font-weight:600;">Coppia A</p>
+              <p style="font-size:9px;color:var(--dim);">1° + compagno scelto</p>
+            </div>
+            <p style="font-size:9px;color:var(--dim);text-align:center;margin:4px 0;">vs</p>
+            <div style="border:1.5px solid #e0e0e0;padding:10px 14px;">
+              <p style="font-size:11px;font-weight:600;">Coppia D</p>
+              <p style="font-size:9px;color:var(--dim);">4° + compagno scelto</p>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <p class="bb" style="font-size:24px;color:var(--led);">→</p>
+            <p style="font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:4px;">Finale</p>
+          </div>
+          <div>
+            <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Semifinale 2</p>
+            <div style="border:1.5px solid var(--k);padding:10px 14px;margin-bottom:6px;">
+              <p style="font-size:11px;font-weight:600;">Coppia B</p>
+              <p style="font-size:9px;color:var(--dim);">2° + compagno scelto</p>
+            </div>
+            <p style="font-size:9px;color:var(--dim);text-align:center;margin:4px 0;">vs</p>
+            <div style="border:1.5px solid #e0e0e0;padding:10px 14px;">
+              <p style="font-size:11px;font-weight:600;">Coppia C</p>
+              <p style="font-size:9px;color:var(--dim);">3° + compagno scelto</p>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #e0e0e0;margin-top:16px;padding-top:12px;text-align:center;">
+          <p style="font-size:10px;color:#555;line-height:1.8;">Vincitori delle semifinali → <strong>Finale 🏆</strong> &nbsp;·&nbsp; Perdenti → <strong>Finale 3°/4° posto</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="led-strip-sm" style="margin-bottom:40px;"></div>
+
+    <!-- ── RIEPILOGO ── -->
+    <section style="margin-bottom:48px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <span style="background:var(--led);color:var(--k);font-family:'Bebas Neue',sans-serif;font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📋</span>
+        <h2 class="bb" style="font-size:clamp(22px,4vw,34px);">Riepilogo Regole</h2>
+      </div>
+      <div style="border:2px solid var(--k);overflow:hidden;">
+        <div style="background:var(--k);color:var(--w);padding:12px 18px;font-size:9px;letter-spacing:2px;text-transform:uppercase;">Regole essenziali</div>
+        <div style="display:flex;flex-direction:column;">
+          <div style="display:grid;grid-template-columns:32px 1fr;gap:14px;padding:14px 18px;border-bottom:1px solid #f0f0f0;align-items:start;">
+            <span class="bb" style="font-size:20px;color:var(--led);">01</span>
+            <p style="font-size:11px;line-height:1.8;color:#333;">La classifica è <strong>individuale</strong>: ogni giocatore ha il suo saldo Plus/Minus personale.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:32px 1fr;gap:14px;padding:14px 18px;border-bottom:1px solid #f0f0f0;align-items:start;background:#fafafa;">
+            <span class="bb" style="font-size:20px;color:var(--led);">02</span>
+            <p style="font-size:11px;line-height:1.8;color:#333;">Le partite si giocano <strong>a coppie</strong>. Si cambia compagno a ogni partita della fase a gironi.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:32px 1fr;gap:14px;padding:14px 18px;border-bottom:1px solid #f0f0f0;align-items:start;">
+            <span class="bb" style="font-size:20px;color:var(--led);">03</span>
+            <p style="font-size:11px;line-height:1.8;color:#333;">Vincitori: <strong>+Δ</strong> al saldo. Perdenti: <strong>−Δ</strong> al saldo. Δ = differenza di punti della partita.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:32px 1fr;gap:14px;padding:14px 18px;border-bottom:1px solid #f0f0f0;align-items:start;background:#fafafa;">
+            <span class="bb" style="font-size:20px;color:var(--led);">04</span>
+            <p style="font-size:11px;line-height:1.8;color:#333;">Prima del torneo si decide il numero di partite per giocatore: <strong>4</strong> (veloce) o <strong>6</strong> (standard).</p>
+          </div>
+          <div style="display:grid;grid-template-columns:32px 1fr;gap:14px;padding:14px 18px;border-bottom:1px solid #f0f0f0;align-items:start;">
+            <span class="bb" style="font-size:20px;color:var(--led);">05</span>
+            <p style="font-size:11px;line-height:1.8;color:#333;">I <strong>top 4</strong> per Plus/Minus accedono alla fase finale con coppie <strong>fisse</strong> per semifinali e finale.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:32px 1fr;gap:14px;padding:14px 18px;align-items:start;background:#fafafa;">
+            <span class="bb" style="font-size:20px;color:var(--led);">06</span>
+            <p style="font-size:11px;line-height:1.8;color:#333;">Snake draft: <strong>1° sceglie</strong> il compagno, poi 2°, poi 3°. Il 4° si accoppia con l'ultimo rimasto.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div style="text-align:center;padding-bottom:20px;">
+      <button class="btn-led" onclick="showPg('home')" style="padding:14px 32px;font-size:12px;">🏐 Torna ai Tornei →</button>
+    </div>
+
+  </div>
+</div>
+
 <script>
 
 // ── ADMIN AUTH ─────────────────────────────────────────────
@@ -670,7 +920,7 @@ function showPg(id){
   const pg=document.getElementById('pg-'+id);
   if(pg){pg.classList.add('on');pg.classList.add('fadein');setTimeout(()=>pg.classList.remove('fadein'),500);}
   // Update navs
-  ['home','iscritti','premi','classifica','live'].forEach(n=>{
+  ['home','iscritti','premi','classifica','live','regolamento'].forEach(n=>{
     const nb=document.getElementById('nb-'+n);
     if(nb) nb.style.color=n===id?'var(--led)':'var(--w)';
     const ab=document.getElementById('abn-'+n);
