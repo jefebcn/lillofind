@@ -95,7 +95,7 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .live-dot{width:8px;height:8px;border-radius:50%;background:var(--led);box-shadow:0 0 8px var(--led);animation:pulse-led 2s ease-in-out infinite;display:inline-block;}
 
 /* Mobile bottom nav */
-#app-bottom-nav{display:none;position:fixed;bottom:0;left:0;width:100%;z-index:100;background:var(--k);border-top:1px solid #222;padding-bottom:env(safe-area-inset-bottom);}
+#app-bottom-nav{display:none;position:fixed;bottom:0;left:0;width:100%;z-index:100;background:var(--k);border-top:1px solid #222;padding-bottom:env(safe-area-inset-bottom);overflow-x:auto;-webkit-overflow-scrolling:touch;}
 @media(max-width:768px){#app-bottom-nav{display:flex;}body{padding-bottom:calc(60px + env(safe-area-inset-bottom));}}
 .abn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#555;background:none;border:none;cursor:pointer;gap:3px;min-height:52px;transition:color .2s;}
 .abn-btn.active,.abn-btn:hover{color:var(--led);}
@@ -174,6 +174,7 @@ img { -webkit-user-drag:none; user-select:none; }
       <button class="nbtn" id="nb-classifica" style="color:var(--w);" onclick="showPg('classifica')">Classifica</button>
       <button class="nbtn" id="nb-live" style="color:var(--w);" onclick="showPg('live')"><span class="live-dot" style="margin-right:6px;"></span>Live</button>
       <button class="nbtn" id="nb-regolamento" style="color:var(--w);" onclick="showPg('regolamento')">📋 Regolamento</button>
+      <button class="nbtn" id="nb-chicece" style="color:var(--led);font-weight:700;border:1px solid var(--led);padding:5px 12px;" onclick="showPg('chicece')">🏐 Chicece</button>
       <div id="admin-status" style="display:none;align-items:center;gap:6px;background:rgba(200,255,0,.12);border:1px solid var(--led);padding:3px 10px;"><span style="font-size:9px;color:var(--led);letter-spacing:2px;text-transform:uppercase;">⚙️ ADMIN</span></div>
       <button id="admin-login-btn" onclick="openModal('admin-login-modal')" class="nbtn" style="color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;" onmouseover="this.style.color='var(--led)';" onmouseout="this.style.color='#666';">🔑 Admin</button>
       <button id="admin-logout-btn" onclick="adminLogout()" class="nbtn" style="display:none;color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;">✕ Esci</button>
@@ -190,6 +191,7 @@ img { -webkit-user-drag:none; user-select:none; }
   <button class="abn-btn" id="abn-classifica" onclick="showPg('classifica')"><span class="abn-icon">📊</span>Classifica</button>
   <button class="abn-btn" id="abn-live" onclick="showPg('live')"><span class="abn-icon live-dot" style="width:14px;height:14px;border-radius:50%;margin-bottom:2px;"></span>Live</button>
   <button class="abn-btn" id="abn-regolamento" onclick="showPg('regolamento')"><span class="abn-icon">📋</span>Regola</button>
+  <button class="abn-btn" id="abn-chicece" onclick="showPg('chicece')" style="color:var(--led);flex-shrink:0;min-width:52px;"><span class="abn-icon">🏐</span>Chicece</button>
 </nav>
 
 
@@ -920,7 +922,7 @@ function showPg(id){
   const pg=document.getElementById('pg-'+id);
   if(pg){pg.classList.add('on');pg.classList.add('fadein');setTimeout(()=>pg.classList.remove('fadein'),500);}
   // Update navs
-  ['home','iscritti','premi','classifica','live','regolamento'].forEach(n=>{
+  ['home','iscritti','premi','classifica','live','regolamento','chicece'].forEach(n=>{
     const nb=document.getElementById('nb-'+n);
     if(nb) nb.style.color=n===id?'var(--led)':'var(--w)';
     const ab=document.getElementById('abn-'+n);
@@ -931,6 +933,7 @@ function showPg(id){
   if(id==='classifica') renderClassifica();
   if(id==='live') renderLive();
   if(id==='home') renderHome();
+  if(id==='chicece') renderChicece();
 }
 
 // ── RENDER TORNEI ──────────────────────────────────────────
@@ -1394,6 +1397,695 @@ window.aggiungiPremio=function(){if(!isAdmin){showToast("⚠️ Solo l'admin pu�
   window.addEventListener('resize',resize);
 })();
 
+// ══════════════════════════════════════════════════════════════
+// 🏐 CHICECE — Sistema Torneo Plus/Minus
+// ══════════════════════════════════════════════════════════════
+
+let chic = {
+  status:'setup', players:[], matchesPerPlayer:4, rounds:[],
+  draftOrder:[], draftPicks:[], draftCurrentIdx:0, draftAvailable:[],
+  finalsMatches:[]
+};
+try{ const _cs=localStorage.getItem('lf_chic'); if(_cs) chic=JSON.parse(_cs); }catch(e){}
+function chicSave(){ try{localStorage.setItem('lf_chic',JSON.stringify(chic));}catch(e){} }
+function chicName(id){ return (chic.players.find(p=>p.id===id)||{}).name||'?'; }
+function chicShuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+
+function chicCalcPM(){
+  const pm={};
+  chic.players.forEach(p=>{ pm[p.id]=0; });
+  chic.rounds.forEach(r=>r.forEach(m=>{
+    if(!m.done||m.s1===null||m.s2===null)return;
+    const d=Math.abs(m.s1-m.s2);
+    if(m.s1>m.s2){ m.team1.forEach(id=>pm[id]+=d); m.team2.forEach(id=>pm[id]-=d); }
+    else if(m.s2>m.s1){ m.team2.forEach(id=>pm[id]+=d); m.team1.forEach(id=>pm[id]-=d); }
+  }));
+  return chic.players.map(p=>({...p,pm:pm[p.id]||0})).sort((a,b)=>b.pm-a.pm||(a.name<b.name?-1:1));
+}
+
+function chicSchedule(pids,R){
+  const n=pids.length, mpr=n/4;
+  const freq={};
+  pids.forEach(a=>{freq[a]={};pids.forEach(b=>{if(a!==b)freq[a][b]=0;});});
+  return Array.from({length:R},(_,r)=>{
+    let best=null,bs=Infinity;
+    for(let t=0;t<300;t++){
+      const s=chicShuffle(pids); let sc=0;
+      for(let m=0;m<mpr;m++) sc+=(freq[s[m*4]][s[m*4+1]]||0)+(freq[s[m*4+2]][s[m*4+3]]||0);
+      if(sc<bs){bs=sc;best=s;if(!sc)break;}
+    }
+    return Array.from({length:mpr},(_,m)=>{
+      const t1=[best[m*4],best[m*4+1]],t2=[best[m*4+2],best[m*4+3]];
+      freq[t1[0]][t1[1]]=freq[t1[1]][t1[0]]=(freq[t1[0]][t1[1]]||0)+1;
+      freq[t2[0]][t2[1]]=freq[t2[1]][t2[0]]=(freq[t2[0]][t2[1]]||0)+1;
+      return {id:'r'+r+'m'+m,round:r,team1:t1,team2:t2,s1:null,s2:null,done:false};
+    });
+  });
+}
+
+// ── RENDER DISPATCHER ──────────────────────────────────────
+function renderChicece(){
+  const w=document.getElementById('chic-wrap');
+  if(!w)return;
+  const map={setup:chicHtmlSetup,active:chicHtmlActive,finals_draft:chicHtmlDraft,finals:chicHtmlFinals,completed:chicHtmlCompleted};
+  w.innerHTML=(map[chic.status]||chicHtmlSetup)();
+}
+
+// ── SETUP ──────────────────────────────────────────────────
+function chicHtmlSetup(){
+  const n=chic.players.length;
+  const ok=n>=4&&n%4===0;
+  const warn=n>0&&n%4!==0;
+  const few=n>0&&n<4;
+  const mpr=chic.matchesPerPlayer;
+  return '<div style="background:var(--k);color:var(--w);padding:40px 24px 32px;">' +
+    '<div class="led-strip-sm" style="margin-bottom:20px;"></div>' +
+    '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#444;margin-bottom:6px;">Modalità Torneo</p>' +
+    '<h1 class="bb" style="font-size:clamp(72px,16vw,130px);line-height:.82;color:var(--led);">CHI<br/>CE<br/>CE</h1>' +
+    '<p style="font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-top:10px;">Plus/Minus System · Cambio Partner · Snake Draft Finals</p>' +
+    '<div class="led-strip-sm" style="margin-top:20px;"></div>' +
+  '</div>' +
+  '<div style="max-width:640px;margin:0 auto;padding:28px 20px;">' +
+
+    // — ADD PLAYER —
+    '<div style="margin-bottom:28px;">' +
+      '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;color:var(--dim);">Aggiungi Giocatori</p>' +
+      '<div style="display:flex;gap:0;">' +
+        '<input id="chic-inp" class="lf-in" placeholder="Nome giocatore..." maxlength="20" style="border-right:none;flex:1;" onkeydown="if(event.key===\'Enter\')chicAddPlayer()" />' +
+        '<button onclick="chicAddPlayer()" class="btn-led" style="padding:0 22px;flex-shrink:0;font-size:20px;letter-spacing:0;min-width:54px;">+</button>' +
+      '</div>' +
+    '</div>' +
+
+    // — PLAYER LIST —
+    '<div style="margin-bottom:28px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">' +
+        '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);">Iscritti (' + n + ')</p>' +
+        (n>0?'<button onclick="if(confirm(\'Rimuovere tutti?\'))chicClearAll()" style="font-size:9px;color:#888;background:none;border:none;cursor:pointer;letter-spacing:1px;text-transform:uppercase;">Azzera</button>':'') +
+      '</div>' +
+      (n===0 ?
+        '<div style="border:1.5px dashed #ddd;padding:32px;text-align:center;">' +
+          '<p style="font-size:14px;margin-bottom:8px;">🏐</p>' +
+          '<p style="font-size:11px;color:var(--dim);letter-spacing:1px;line-height:1.8;">Nessun giocatore.<br/>Ne servono almeno 4, multiplo di 4<br/>(es. 4, 8, 12...)</p>' +
+        '</div>'
+        :
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          chic.players.map((p,i)=>
+            '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid #e0e0e0;background:#fff;transition:border-color .2s;" onmouseover="this.style.borderColor=\'var(--k)\'" onmouseout="this.style.borderColor=\'#e0e0e0\'">' +
+              '<span class="bb" style="font-size:18px;color:var(--led);min-width:26px;">' + (i+1) + '</span>' +
+              '<span style="flex:1;font-size:12px;font-weight:500;">' + p.name + '</span>' +
+              '<button onclick="chicRemove(\'' + p.id + '\')" style="background:none;border:none;cursor:pointer;color:#ccc;font-size:18px;min-width:36px;min-height:36px;line-height:1;" title="Rimuovi">✕</button>' +
+            '</div>'
+          ).join('') +
+        '</div>'
+      ) +
+      (few?'<p style="font-size:10px;color:#e74c3c;margin-top:8px;letter-spacing:1px;">⚠️ Servono almeno 4 giocatori</p>':'') +
+      (warn&&!few?'<p style="font-size:10px;color:#e74c3c;margin-top:8px;letter-spacing:1px;">⚠️ Aggiungi ' + (4-n%4) + ' giocator' + (4-n%4===1?'e':'i') + ' (il totale deve essere multiplo di 4)</p>':'') +
+      (ok?'<p style="font-size:10px;color:#2ecc71;margin-top:8px;letter-spacing:1px;">✅ ' + n + ' giocatori pronti · ' + (n/4) + ' partite simultanee per round</p>':'') +
+    '</div>' +
+
+    // — FORMAT SELECTOR —
+    '<div style="margin-bottom:32px;">' +
+      '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Partite per Giocatore</p>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+        [4,6].map(f=>
+          '<button onclick="chicFmt(' + f + ')" style="border:' + (mpr===f?'2px solid var(--led)':'1.5px solid #e0e0e0') + ';background:' + (mpr===f?'rgba(200,255,0,.08)':'#fff') + ';padding:20px 12px;cursor:pointer;transition:all .2s;text-align:center;">' +
+            '<p class="bb" style="font-size:36px;' + (mpr===f?'color:var(--led);':'') + '">' + f + '</p>' +
+            '<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-top:4px;">Partite</p>' +
+            '<p style="font-size:9px;color:var(--dim);margin-top:3px;">' + (f===4?'Format veloce':'Format standard') + '</p>' +
+          '</button>'
+        ).join('') +
+      '</div>' +
+    '</div>' +
+
+    // — START BUTTON —
+    '<button onclick="chicStart()" class="btn-led" style="width:100%;font-size:14px;padding:20px;letter-spacing:3px;' + (!ok?'opacity:.35;cursor:not-allowed;':'') + '" ' + (!ok?'disabled':'') + '>' +
+      '🏐 INIZIA TORNEO →' +
+    '</button>' +
+
+    // — INFO BOX —
+    '<div style="margin-top:18px;padding:16px 18px;background:#fafafa;border:1px solid #e0e0e0;">' +
+      '<p style="font-size:10px;color:#555;line-height:1.9;">' +
+        '<strong>Come funziona Chicece:</strong> Ogni giocatore gioca ' + mpr + ' partite con partner sempre diversi. ' +
+        'Classifica individuale basata su Plus/Minus (Δ punti per partita). ' +
+        'I <strong>top 4</strong> accedono alle finali con <strong>Snake Draft</strong> per scegliere il compagno.' +
+        ' <button onclick="showPg(\'regolamento\')" style="background:none;border:none;color:var(--led);cursor:pointer;font-family:\'IBM Plex Mono\',monospace;font-size:10px;text-decoration:underline;padding:0;">Leggi il regolamento →</button>' +
+      '</p>' +
+    '</div>' +
+
+  '</div>';
+}
+
+// ── ACTIVE ─────────────────────────────────────────────────
+function chicHtmlActive(){
+  const standings=chicCalcPM();
+  const allMatches=chic.rounds.flat();
+  const doneM=allMatches.filter(m=>m.done).length;
+  const totalM=allMatches.length;
+  const doneR=chic.rounds.filter(r=>r.every(m=>m.done)).length;
+  const totalR=chic.rounds.length;
+  const allDone=doneM===totalM;
+  const activeR=chic.rounds.findIndex(r=>r.some(m=>!m.done));
+  const showR=activeR===-1?totalR-1:activeR;
+  const pct=totalM?Math.round((doneM/totalM)*100):0;
+
+  let html = '';
+
+  // Header
+  html += '<div style="background:var(--k);color:var(--w);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">' +
+    '<div>' +
+      '<p style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#444;margin-bottom:2px;">Torneo in Corso</p>' +
+      '<p class="bb" style="font-size:26px;color:var(--led);">🏐 CHICECE</p>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">' +
+      '<div style="text-align:center;">' +
+        '<p class="bb" style="font-size:20px;">' + doneM + '/' + totalM + '</p>' +
+        '<p style="font-size:8px;color:#555;letter-spacing:2px;text-transform:uppercase;">Partite</p>' +
+      '</div>' +
+      '<div style="text-align:center;">' +
+        '<p class="bb" style="font-size:20px;color:var(--led);">' + doneR + '/' + totalR + '</p>' +
+        '<p style="font-size:8px;color:#555;letter-spacing:2px;text-transform:uppercase;">Round</p>' +
+      '</div>' +
+      '<div style="text-align:center;">' +
+        '<p class="bb" style="font-size:20px;">' + pct + '%</p>' +
+        '<p style="font-size:8px;color:#555;letter-spacing:2px;text-transform:uppercase;">Avanzamento</p>' +
+      '</div>' +
+      '<button onclick="if(confirm(\'Azzerare il torneo?\'))chicReset()" style="background:none;border:1px solid #333;color:#666;padding:6px 12px;font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">↺ Reset</button>' +
+    '</div>' +
+  '</div>' +
+  '<div style="height:4px;background:#1a1a1a;">' +
+    '<div style="height:4px;background:linear-gradient(90deg,var(--led),var(--led2));width:' + pct + '%;transition:width .6s;box-shadow:0 0 10px var(--led);"></div>' +
+  '</div>';
+
+  // Layout grid
+  html += '<div style="max-width:1100px;margin:0 auto;">' +
+    '<div style="display:grid;grid-template-columns:240px 1fr;gap:0;" class="grid-1-mob">';
+
+  // Left: standings
+  html += '<div style="border-right:2px solid var(--k);padding:18px 14px;position:sticky;top:56px;max-height:calc(100vh - 56px);overflow-y:auto;" class="hide-mob">' +
+    '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;color:var(--dim);">📊 Classifica Live</p>';
+  standings.forEach((p,i)=>{
+    const col=p.pm>0?'#2ecc71':p.pm<0?'#e74c3c':'#999';
+    const med=['🥇','🥈','🥉'][i]||'';
+    const top=(i<4);
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:9px 0 9px ' + (top?'8':'0') + 'px;border-bottom:1px solid #f0f0f0;' + (top?'border-left:3px solid var(--led);margin-left:-' + (top?8:0) + 'px;':'') + '">' +
+      '<span style="font-size:' + (med?'14':'10') + 'px;color:var(--dim);min-width:22px;">' + (med||((i+1)+'.')) + '</span>' +
+      '<span style="flex:1;font-size:11px;font-weight:' + (top?'600':'400') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.name + '</span>' +
+      '<span class="bb" style="font-size:16px;color:' + col + ';">' + (p.pm>0?'+':'') + p.pm + '</span>' +
+    '</div>';
+  });
+  if(allDone){
+    html += '<div style="margin-top:16px;border-top:2px solid var(--k);padding-top:14px;">' +
+      '<p style="font-size:9px;color:var(--led);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">✅ Gironi Conclusi!</p>' +
+      '<button onclick="chicGoFinDraft()" class="btn-led" style="width:100%;font-size:10px;padding:12px;">🏆 Vai alle Finali →</button>' +
+    '</div>';
+  }
+  html += '</div>';
+
+  // Right: rounds
+  html += '<div style="padding:18px 16px;">';
+
+  // Mobile standings toggle
+  html += '<div class="mob-only" style="margin-bottom:16px;">' +
+    '<button onclick="var el=document.getElementById(\'chic-mob-st\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';" class="btn-g" style="width:100%;font-size:10px;padding:10px;">📊 Classifica Live</button>' +
+    '<div id="chic-mob-st" style="display:none;border:1.5px solid var(--k);padding:14px;margin-top:6px;">';
+  standings.forEach((p,i)=>{
+    const col=p.pm>0?'#2ecc71':p.pm<0?'#e74c3c':'#999';
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f0f0;">' +
+      '<span style="font-size:10px;color:var(--dim);min-width:18px;">' + (i+1) + '.</span>' +
+      '<span style="flex:1;font-size:11px;">' + p.name + '</span>' +
+      '<span class="bb" style="font-size:15px;color:' + col + ';">' + (p.pm>0?'+':'') + p.pm + '</span>' +
+    '</div>';
+  });
+  if(allDone) html += '<button onclick="chicGoFinDraft()" class="btn-led" style="width:100%;margin-top:12px;font-size:10px;">🏆 Vai alle Finali →</button>';
+  html += '</div></div>';
+
+  // Round tabs
+  html += '<div style="display:flex;gap:0;border-bottom:2px solid var(--k);margin-bottom:18px;overflow-x:auto;" id="chic-rtabs">';
+  chic.rounds.forEach((round,ri)=>{
+    const done=round.every(m=>m.done);
+    const active=(ri===showR);
+    html += '<button onclick="chicShowRound(' + ri + ')" style="padding:10px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:none;border:none;border-bottom:3px solid ' + (active?'var(--led)':'transparent') + ';color:' + (active?'var(--k)':done?'#aaa':'#666') + ';cursor:pointer;white-space:nowrap;flex-shrink:0;' + (done&&!active?'text-decoration:line-through;':'') + '">' +
+      'R' + (ri+1) + ' ' + (done?'✓':'') +
+    '</button>';
+  });
+  html += '</div>';
+
+  // Matches area
+  html += '<div id="chic-mzone">' + chicMatchesHtml(showR) + '</div>';
+
+  // Finals CTA (mobile)
+  if(allDone){
+    html += '<div class="mob-only" style="margin-top:20px;border-top:2px solid var(--k);padding-top:16px;">' +
+      '<button onclick="chicGoFinDraft()" class="btn-led" style="width:100%;font-size:12px;padding:14px;letter-spacing:2px;">🏆 Vai alle Finali →</button>' +
+    '</div>';
+  }
+
+  html += '</div></div></div>';
+  return html;
+}
+
+function chicMatchesHtml(ri){
+  const round=chic.rounds[ri];
+  if(!round)return '';
+  return round.map((m,mi)=>{
+    const n1=chicName(m.team1[0]),n2=chicName(m.team1[1]);
+    const n3=chicName(m.team2[0]),n4=chicName(m.team2[1]);
+    const w=m.done?(m.s1>m.s2?1:m.s2>m.s1?2:0):0;
+    const d=m.done?Math.abs(m.s1-m.s2):null;
+    return '<div style="border:2px solid ' + (m.done?'var(--k)':'#e0e0e0') + ';padding:18px;margin-bottom:12px;background:' + (m.done?'#fafafa':'#fff') + ';transition:all .2s;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">' +
+        '<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Partita ' + (mi+1) + ' · Round ' + (ri+1) + '</p>' +
+        (m.done?'<span style="font-size:9px;letter-spacing:2px;background:var(--k);color:var(--led);padding:2px 8px;text-transform:uppercase;">✓ Completata</span>'
+               :'<span style="font-size:9px;letter-spacing:1px;color:#aaa;border:1px solid #ddd;padding:2px 8px;text-transform:uppercase;">In attesa</span>') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;">' +
+
+        // Team 1
+        '<div style="border:' + (w===1?'2px solid var(--led)':'1px solid #e0e0e0') + ';padding:12px 14px;background:' + (w===1?'rgba(200,255,0,.06)':'#fff') + ';min-height:80px;">' +
+          '<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">TEAM 1</p>' +
+          '<p style="font-size:13px;font-weight:600;margin-bottom:2px;">' + n1 + '</p>' +
+          '<p style="font-size:11px;color:#666;">+ ' + n2 + '</p>' +
+          (w===1?'<p style="font-size:9px;color:var(--led);margin-top:5px;letter-spacing:1px;">▲ +' + d + ' PM ciascuno</p>':'') +
+          (w===2&&m.done?'<p style="font-size:9px;color:#e74c3c;margin-top:5px;letter-spacing:1px;">▼ −' + d + ' PM ciascuno</p>':'') +
+        '</div>' +
+
+        // Score center
+        '<div style="text-align:center;">' +
+          (m.done?
+            '<p class="bb" style="font-size:38px;line-height:1;letter-spacing:-1px;">' + m.s1 + '<span style="color:#ccc;">:</span>' + m.s2 + '</p>'
+            :
+            '<div style="display:flex;align-items:center;gap:4px;justify-content:center;">' +
+              '<input id="s1_' + m.id + '" type="number" min="0" max="99" placeholder="0" style="width:50px;height:50px;border:2px solid var(--k);background:transparent;font-family:\'Bebas Neue\',sans-serif;font-size:28px;text-align:center;outline:none;color:var(--k);-moz-appearance:textfield;" />' +
+              '<span class="bb" style="font-size:22px;color:#ccc;">:</span>' +
+              '<input id="s2_' + m.id + '" type="number" min="0" max="99" placeholder="0" style="width:50px;height:50px;border:2px solid var(--k);background:transparent;font-family:\'Bebas Neue\',sans-serif;font-size:28px;text-align:center;outline:none;color:var(--k);-moz-appearance:textfield;" />' +
+            '</div>' +
+            '<button onclick="chicSaveScore(\'' + m.id + '\')" class="btn-k" style="margin-top:8px;padding:8px 16px;font-size:10px;width:100%;">Salva ✓</button>'
+          ) +
+        '</div>' +
+
+        // Team 2
+        '<div style="border:' + (w===2?'2px solid var(--led)':'1px solid #e0e0e0') + ';padding:12px 14px;background:' + (w===2?'rgba(200,255,0,.06)':'#fff') + ';text-align:right;min-height:80px;">' +
+          '<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;text-align:right;">TEAM 2</p>' +
+          '<p style="font-size:13px;font-weight:600;margin-bottom:2px;">' + n3 + '</p>' +
+          '<p style="font-size:11px;color:#666;">' + n4 + ' +</p>' +
+          (w===2?'<p style="font-size:9px;color:var(--led);margin-top:5px;letter-spacing:1px;">▲ +' + d + ' PM ciascuno</p>':'') +
+          (w===1&&m.done?'<p style="font-size:9px;color:#e74c3c;margin-top:5px;letter-spacing:1px;">▼ −' + d + ' PM ciascuno</p>':'') +
+        '</div>' +
+
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── DRAFT ──────────────────────────────────────────────────
+function chicHtmlDraft(){
+  const st=chicCalcPM();
+  const top4=st.slice(0,4);
+  const ci=chic.draftCurrentIdx;
+  const picker=(ci<4)?top4[ci]:null;
+  const pickedPartners=chic.draftPicks.map(dp=>dp.partner);
+  const available=chic.draftAvailable.filter(id=>!pickedPartners.includes(id));
+
+  let html='<div style="background:var(--k);color:var(--w);padding:32px 24px;">' +
+    '<div class="led-strip-sm" style="margin-bottom:18px;"></div>' +
+    '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#444;margin-bottom:6px;">Fase Finale — Formazione Coppie</p>' +
+    '<h1 class="bb" style="font-size:clamp(44px,11vw,88px);line-height:.88;color:var(--led);">SNAKE<br/>DRAFT</h1>' +
+    '<p style="font-size:10px;color:#555;letter-spacing:1px;margin-top:8px;">I top 4 scelgono il compagno per semifinali e finale</p>' +
+    '<div class="led-strip-sm" style="margin-top:18px;"></div>' +
+  '</div>' +
+  '<div style="max-width:660px;margin:0 auto;padding:24px 20px;">';
+
+  // TOP 4 cards
+  html += '<div style="margin-bottom:28px;">' +
+    '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">🏆 Finalisti (Top 4)</p>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">';
+  top4.forEach((p,i)=>{
+    const pick=chic.draftPicks.find(dp=>dp.picker===p.id);
+    const isPicking=(i===ci);
+    const hasPicked=!!pick;
+    const medals=['👑','🥈','🥉','4️⃣'];
+    const pmcol=p.pm>=0?'#2ecc71':'#e74c3c';
+    html += '<div style="border:' + (isPicking?'2px solid var(--led)':hasPicked?'1.5px solid var(--k)':'1.5px solid #e0e0e0') + ';padding:14px 16px;display:flex;align-items:center;gap:12px;background:' + (isPicking?'rgba(200,255,0,.06)':hasPicked?'#fafafa':'#fff') + ';transition:all .3s;">' +
+      '<span style="font-size:20px;flex-shrink:0;">' + medals[i] + '</span>' +
+      '<div style="flex:1;">' +
+        '<p style="font-size:13px;font-weight:600;">' + p.name + '</p>' +
+        (hasPicked?'<p style="font-size:10px;color:var(--led);">🤝 con ' + chicName(pick.partner) + '</p>':
+         isPicking?'<p style="font-size:10px;color:var(--led);">👇 Sta scegliendo il compagno...</p>':
+         '<p style="font-size:10px;color:#aaa;">In attesa...</p>') +
+      '</div>' +
+      '<span class="bb" style="font-size:18px;color:' + pmcol + ';">' + (p.pm>0?'+':'') + p.pm + '</span>' +
+    '</div>';
+  });
+  html += '</div></div>';
+
+  // Picker UI
+  if(picker&&ci<4){
+    html += '<div style="border:2px solid var(--led);padding:20px;background:rgba(200,255,0,.04);margin-bottom:24px;">' +
+      '<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Scelta ' + (ci+1) + ' di 4</p>' +
+      '<p style="font-size:14px;font-weight:600;margin-bottom:16px;"><span style="color:var(--led);">' + picker.name + '</span> — scegli il tuo compagno:</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">';
+
+    if(ci===3&&available.length===1){
+      // Auto-assign last
+      const lastId=available[0];
+      html += '<div style="border:2px solid var(--led);padding:14px 18px;background:rgba(200,255,0,.08);text-align:center;">' +
+        '<p style="font-size:12px;font-weight:600;color:var(--led);margin-bottom:4px;">🏐 ' + chicName(lastId) + '</p>' +
+        '<p style="font-size:10px;color:#555;margin-bottom:12px;">Ultimo giocatore disponibile — assegnato automaticamente</p>' +
+        '<button onclick="chicPick(\'' + picker.id + '\',\'' + lastId + '\')" class="btn-led" style="width:100%;font-size:11px;padding:12px;">Conferma Coppia →</button>' +
+      '</div>';
+    } else {
+      available.forEach(id=>{
+        const ps=st.find(x=>x.id===id);
+        const pmc=(ps&&ps.pm>=0)?'#2ecc71':'#e74c3c';
+        html += '<button onclick="chicPick(\'' + picker.id + '\',\'' + id + '\')" ' +
+          'style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;width:100%;text-align:left;transition:all .15s;font-family:\'IBM Plex Mono\',monospace;" ' +
+          'onmouseover="this.style.borderColor=\'var(--led)\';this.style.background=\'rgba(200,255,0,.05)\'" ' +
+          'onmouseout="this.style.borderColor=\'#e0e0e0\';this.style.background=\'#fff\'">' +
+          '<span style="font-size:18px;">🏐</span>' +
+          '<span style="flex:1;font-size:13px;font-weight:500;">' + chicName(id) + '</span>' +
+          (ps?'<span class="bb" style="font-size:16px;color:' + pmc + ';">' + (ps.pm>0?'+':'') + ps.pm + '</span>':'') +
+          '<span style="font-size:11px;color:var(--led);letter-spacing:1px;white-space:nowrap;">Scegli →</span>' +
+        '</button>';
+      });
+    }
+    html += '</div></div>';
+  }
+
+  // Confirmed pairs
+  if(chic.draftPicks.length>0){
+    html += '<div style="margin-bottom:24px;">' +
+      '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Coppie Formate</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">';
+    chic.draftPicks.forEach((dp,i)=>{
+      html += '<div style="border:1.5px solid var(--k);padding:12px 16px;display:flex;align-items:center;gap:12px;background:#fafafa;">' +
+        '<span class="bb" style="font-size:20px;color:var(--led);min-width:24px;">' + (i+1) + '</span>' +
+        '<span style="font-size:12px;font-weight:600;">' + chicName(dp.picker) + '</span>' +
+        '<span style="font-size:16px;color:var(--dim);">+</span>' +
+        '<span style="font-size:12px;font-weight:600;">' + chicName(dp.partner) + '</span>' +
+        '<span style="margin-left:auto;font-size:14px;">🤝</span>' +
+      '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  if(chic.draftPicks.length===4){
+    html += '<button onclick="chicStartFinals()" class="btn-led" style="width:100%;font-size:14px;padding:20px;letter-spacing:3px;">🏆 INIZIA LE FINALI →</button>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ── FINALS ─────────────────────────────────────────────────
+function chicHtmlFinals(){
+  const fm=chic.finalsMatches;
+  if(!fm||fm.length<4)return '<p style="padding:20px;">Errore: finali non generate.</p>';
+  const [s1,s2,tp,fn]=fm;
+  const semisDown=s1.done&&s2.done;
+
+  function fmCard(m,label,icon){
+    if(!m)return '<div style="border:1.5px dashed #ddd;padding:24px;text-align:center;"><p style="font-size:10px;color:#aaa;">In attesa</p></div>';
+    const w=m.done?(m.s1>m.s2?1:2):0;
+    const n1=m.team1?m.team1.map(chicName).join(' + '):'TBD';
+    const n2=m.team2?m.team2.map(chicName).join(' + '):'TBD';
+    return '<div style="border:2px solid ' + (m.done?'var(--k)':'#e0e0e0') + ';padding:16px;background:' + (m.done?'#fafafa':'#fff') + ';margin-bottom:4px;">' +
+      '<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">' + icon + ' ' + label + '</p>' +
+
+      '<div style="border:' + (w===1?'2px solid var(--led)':'1px solid #e0e0e0') + ';padding:12px;margin-bottom:6px;background:' + (w===1?'rgba(200,255,0,.06)':'') + ';display:flex;align-items:center;gap:10px;">' +
+        '<span style="flex:1;font-size:12px;font-weight:600;">' + n1 + '</span>' +
+        (m.done?'<span class="bb" style="font-size:24px;' + (w===1?'color:var(--led);':'') + '">' + m.s1 + '</span>':'') +
+        (w===1?'<span style="color:var(--led);font-size:12px;">▲</span>':'') +
+      '</div>' +
+
+      '<div style="text-align:center;padding:6px 0;">' +
+        (!m.done&&m.team1&&m.team2?
+          '<div style="display:flex;justify-content:center;align-items:center;gap:6px;margin-bottom:8px;">' +
+            '<input id="fs1_' + m.id + '" type="number" min="0" max="99" placeholder="0" style="width:50px;height:50px;border:2px solid var(--k);background:transparent;font-family:\'Bebas Neue\',sans-serif;font-size:28px;text-align:center;outline:none;-moz-appearance:textfield;" />' +
+            '<span class="bb" style="font-size:20px;color:#ccc;">:</span>' +
+            '<input id="fs2_' + m.id + '" type="number" min="0" max="99" placeholder="0" style="width:50px;height:50px;border:2px solid var(--k);background:transparent;font-family:\'Bebas Neue\',sans-serif;font-size:28px;text-align:center;outline:none;-moz-appearance:textfield;" />' +
+          '</div>' +
+          '<button onclick="chicFinalScore(\'' + m.id + '\')" class="btn-k" style="padding:8px 20px;font-size:10px;">Salva ✓</button>'
+          :
+          (!m.done?'<p style="font-size:10px;color:#aaa;">In attesa delle semifinali</p>':'<span class="bb" style="font-size:16px;color:#ccc;">vs</span>')
+        ) +
+      '</div>' +
+
+      '<div style="border:' + (w===2?'2px solid var(--led)':'1px solid #e0e0e0') + ';padding:12px;background:' + (w===2?'rgba(200,255,0,.06)':'') + ';display:flex;align-items:center;gap:10px;">' +
+        '<span style="flex:1;font-size:12px;font-weight:600;">' + n2 + '</span>' +
+        (m.done?'<span class="bb" style="font-size:24px;' + (w===2?'color:var(--led);':'') + '">' + m.s2 + '</span>':'') +
+        (w===2?'<span style="color:var(--led);font-size:12px;">▲</span>':'') +
+      '</div>' +
+    '</div>';
+  }
+
+  let html = '<div style="background:var(--k);color:var(--w);padding:24px 20px;">' +
+    '<div class="led-strip-sm" style="margin-bottom:14px;"></div>' +
+    '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#444;margin-bottom:4px;">Fase Finale</p>' +
+    '<h1 class="bb" style="font-size:clamp(40px,10vw,72px);line-height:.9;color:var(--led);">FINALI</h1>' +
+    '<div class="led-strip-sm" style="margin-top:14px;"></div>' +
+  '</div>' +
+  '<div style="max-width:900px;margin:0 auto;padding:24px 20px;">';
+
+  // Semifinals
+  html += '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Semifinali</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;" class="grid-1-mob">' +
+      '<div>' + fmCard(s1,'Semifinale 1 — Coppia 1 vs 4','🏐') + '</div>' +
+      '<div>' + fmCard(s2,'Semifinale 2 — Coppia 2 vs 3','🏐') + '</div>' +
+    '</div>';
+
+  // Finals (unlocked after semis)
+  html += '<div style="border-top:2px solid ' + (semisDown?'var(--k)':'#e0e0e0') + ';padding-top:20px;">';
+  if(semisDown){
+    html += '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Finali</p>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">' +
+        '<div>' + fmCard(tp,'Finale 3°/4° Posto','🥉') + '</div>' +
+        '<div>' + fmCard(fn,'FINALE 🏆','🏆') + '</div>' +
+      '</div>';
+  } else {
+    html += '<div style="text-align:center;padding:24px;background:#fafafa;">' +
+      '<p style="font-size:24px;margin-bottom:8px;">⏳</p>' +
+      '<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Finale e 3°/4° posto si sbloccano<br/>al termine delle semifinali.</p>' +
+    '</div>';
+  }
+  html += '</div>';
+
+  if(fm.every(m=>m.done)){
+    html += '<div style="margin-top:24px;text-align:center;border-top:2px solid var(--k);padding-top:20px;">' +
+      '<button onclick="chicComplete()" class="btn-led" style="padding:16px 40px;font-size:13px;letter-spacing:3px;">🏆 Vedi Podio →</button>' +
+    '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ── COMPLETED ──────────────────────────────────────────────
+function chicHtmlCompleted(){
+  const fm=chic.finalsMatches;
+  const fn=fm?.[3],tp=fm?.[2];
+  const gW=m=>(!m||!m.done)?null:(m.s1>=m.s2?m.team1:m.team2);
+  const gL=m=>(!m||!m.done)?null:(m.s1>=m.s2?m.team2:m.team1);
+  const champ=gW(fn),second=gL(fn),third=gW(tp),fourth=gL(tp);
+  const st=chicCalcPM();
+
+  let html = '<div style="background:var(--k);color:var(--w);padding:40px 24px 32px;text-align:center;">' +
+    '<div class="led-strip-sm" style="margin-bottom:20px;"></div>' +
+    '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#444;margin-bottom:6px;">Torneo Concluso</p>' +
+    '<h1 class="bb" style="font-size:clamp(56px,13vw,110px);line-height:.84;color:var(--led);">PODIO<br/>FINALE</h1>' +
+    '<div class="led-strip-sm" style="margin-top:20px;"></div>' +
+  '</div>' +
+  '<div style="max-width:680px;margin:0 auto;padding:32px 20px;">';
+
+  // PODIO
+  if(champ){
+    html += '<div style="margin-bottom:32px;">' +
+      '<div style="background:linear-gradient(135deg,#f5c200,#ffe066);border:2px solid #f5c200;padding:28px 24px;text-align:center;box-shadow:0 0 40px rgba(245,194,0,.35);margin-bottom:10px;">' +
+        '<p style="font-size:48px;margin-bottom:8px;">🏆</p>' +
+        '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#7a5c00;margin-bottom:8px;">CAMPIONI CHICECE</p>' +
+        '<p class="bb" style="font-size:clamp(28px,7vw,52px);line-height:1;color:#3a2500;">' + champ.map(chicName).join(' & ') + '</p>' +
+        (fn?'<p class="bb" style="font-size:22px;color:#8a6200;margin-top:6px;">' + fn.s1 + ' – ' + fn.s2 + '</p>':'') +
+      '</div>';
+    if(second){
+      html += '<div style="background:#f2f2f2;border:1.5px solid #c0c0c0;padding:18px 24px;text-align:center;margin-bottom:8px;">' +
+        '<p style="font-size:28px;margin-bottom:4px;">🥈</p>' +
+        '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#666;margin-bottom:6px;">2° Posto</p>' +
+        '<p class="bb" style="font-size:clamp(20px,5vw,34px);color:#444;">' + second.map(chicName).join(' & ') + '</p>' +
+      '</div>';
+    }
+    if(third){
+      html += '<div style="background:#fdf3e7;border:1.5px solid #cd7f32;padding:18px 24px;text-align:center;">' +
+        '<p style="font-size:28px;margin-bottom:4px;">🥉</p>' +
+        '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#7a4f2d;margin-bottom:6px;">3° Posto</p>' +
+        '<p class="bb" style="font-size:clamp(20px,5vw,34px);color:#7a4f2d;">' + third.map(chicName).join(' & ') + '</p>' +
+      '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Classifica PM finale
+  html += '<div style="margin-bottom:32px;">' +
+    '<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">📊 Classifica Plus/Minus Finale</p>' +
+    '<div style="border:2px solid var(--k);overflow:hidden;">' +
+      '<div style="background:var(--k);color:var(--w);display:grid;grid-template-columns:36px 1fr 72px;padding:10px 16px;font-size:9px;letter-spacing:2px;text-transform:uppercase;">' +
+        '<span>#</span><span>Giocatore</span><span style="text-align:right;">±PM</span>' +
+      '</div>';
+  st.forEach((p,i)=>{
+    const med=['🥇','🥈','🥉'][i]||'';
+    const col=p.pm>0?'#2ecc71':p.pm<0?'#e74c3c':'#999';
+    html += '<div style="display:grid;grid-template-columns:36px 1fr 72px;padding:11px 16px;border-bottom:1px solid #f0f0f0;align-items:center;' + (i<4?'border-left:3px solid var(--led);':'') + '">' +
+      '<span>' + (med||('<span style="font-size:10px;color:var(--dim);">'+(i+1)+'</span>')) + '</span>' +
+      '<span style="font-size:12px;font-weight:' + (i<4?'600':'400') + ';">' + p.name + '</span>' +
+      '<span class="bb" style="font-size:18px;text-align:right;color:' + col + ';">' + (p.pm>0?'+':'') + p.pm + '</span>' +
+    '</div>';
+  });
+  html += '</div></div>';
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<button onclick="chicReset()" class="btn-led" style="padding:16px;font-size:12px;letter-spacing:2px;">🔄 Nuovo Torneo</button>' +
+    '<button onclick="showPg(\'home\')" class="btn-g" style="padding:16px;font-size:12px;">🏐 Home</button>' +
+  '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+// ── EVENT HANDLERS ─────────────────────────────────────────
+
+window.chicAddPlayer = function(){
+  const inp=document.getElementById('chic-inp');
+  if(!inp)return;
+  const name=inp.value.trim();
+  if(!name)return showToast('⚠️ Inserisci un nome.');
+  if(chic.players.find(p=>p.name.toLowerCase()===name.toLowerCase()))return showToast('⚠️ Giocatore già presente.');
+  if(chic.players.length>=20)return showToast('⚠️ Massimo 20 giocatori.');
+  chic.players.push({id:'p'+Date.now()+Math.random().toString(36).slice(2,6),name});
+  inp.value='';
+  chicSave(); renderChicece(); inp.focus();
+};
+
+window.chicRemove = function(id){
+  chic.players=chic.players.filter(p=>p.id!==id);
+  chicSave(); renderChicece();
+};
+
+window.chicClearAll = function(){
+  chic.players=[]; chicSave(); renderChicece();
+};
+
+window.chicFmt = function(n){
+  chic.matchesPerPlayer=n; chicSave(); renderChicece();
+};
+
+window.chicStart = function(){
+  const n=chic.players.length;
+  if(n<4||n%4!==0)return showToast('⚠️ Numero giocatori non valido.');
+  chic.rounds=chicSchedule(chic.players.map(p=>p.id),chic.matchesPerPlayer);
+  chic.status='active';
+  chicSave(); renderChicece();
+  showToast('🏐 Torneo Chicece iniziato!');
+};
+
+window.chicShowRound = function(ri){
+  const zone=document.getElementById('chic-mzone');
+  if(!zone)return;
+  zone.innerHTML=chicMatchesHtml(ri);
+  document.querySelectorAll('#chic-rtabs button').forEach((btn,i)=>{
+    const done=chic.rounds[i]&&chic.rounds[i].every(m=>m.done);
+    const active=(i===ri);
+    btn.style.borderBottomColor=active?'var(--led)':'transparent';
+    btn.style.color=active?'var(--k)':done?'#aaa':'#666';
+    btn.style.textDecoration=done&&!active?'line-through':'none';
+  });
+};
+
+window.chicSaveScore = function(mid){
+  let match=null;
+  chic.rounds.forEach(r=>r.forEach(m=>{if(m.id===mid)match=m;}));
+  if(!match||match.done)return;
+  const s1=parseInt(document.getElementById('s1_'+mid)?.value);
+  const s2=parseInt(document.getElementById('s2_'+mid)?.value);
+  if(isNaN(s1)||isNaN(s2)||s1<0||s2<0)return showToast('⚠️ Punteggi non validi.');
+  if(s1===s2)return showToast('⚠️ Pareggio non ammesso — rigioca!');
+  match.s1=s1; match.s2=s2; match.done=true;
+  chicSave();
+  const ri=match.round;
+  const w=s1>s2?match.team1:match.team2;
+  const d=Math.abs(s1-s2);
+  // Re-render the whole active view to refresh standings
+  const wrap=document.getElementById('chic-wrap');
+  if(wrap){ wrap.innerHTML=chicHtmlActive(); chicShowRound(ri); }
+  showToast('✅ ' + w.map(chicName).join(' & ') + ' +' + d + ' PM');
+};
+
+window.chicGoFinDraft = function(){
+  const st=chicCalcPM();
+  const top4=st.slice(0,4);
+  chic.draftOrder=top4.map(p=>p.id);
+  chic.draftPicks=[];
+  chic.draftCurrentIdx=0;
+  chic.draftAvailable=chic.players.filter(p=>!chic.draftOrder.includes(p.id)).map(p=>p.id);
+  chic.status='finals_draft';
+  chicSave(); renderChicece();
+};
+
+window.chicPick = function(pickerId,partnerId){
+  chic.draftPicks.push({picker:pickerId,partner:partnerId});
+  chic.draftCurrentIdx++;
+  // Se rimane 1 giocatore e si è al 3° pick, auto-assegna il 4°
+  if(chic.draftCurrentIdx===3){
+    const taken=chic.draftPicks.map(dp=>dp.partner);
+    const rem=chic.draftAvailable.filter(id=>!taken.includes(id));
+    if(rem.length===1){
+      chic.draftPicks.push({picker:chic.draftOrder[3],partner:rem[0]});
+      chic.draftCurrentIdx=4;
+    }
+  }
+  chicSave(); renderChicece();
+};
+
+window.chicStartFinals = function(){
+  const pairs=chic.draftPicks.map(dp=>[dp.picker,dp.partner]);
+  // Seeding: 1v4, 2v3
+  chic.finalsMatches=[
+    {id:'semi1',team1:pairs[0],team2:pairs[3],s1:null,s2:null,done:false},
+    {id:'semi2',team1:pairs[1],team2:pairs[2],s1:null,s2:null,done:false},
+    {id:'third',team1:null,team2:null,s1:null,s2:null,done:false},
+    {id:'final',team1:null,team2:null,s1:null,s2:null,done:false}
+  ];
+  chic.status='finals';
+  chicSave(); renderChicece();
+};
+
+window.chicFinalScore = function(mid){
+  const m=chic.finalsMatches.find(x=>x.id===mid);
+  if(!m||m.done)return;
+  const s1=parseInt(document.getElementById('fs1_'+mid)?.value);
+  const s2=parseInt(document.getElementById('fs2_'+mid)?.value);
+  if(isNaN(s1)||isNaN(s2)||s1<0||s2<0)return showToast('⚠️ Punteggi non validi.');
+  if(s1===s2)return showToast('⚠️ Pareggio non ammesso — rigioca!');
+  m.s1=s1; m.s2=s2; m.done=true;
+  // Dopo entrambe le semi → popola finale e terzo posto
+  const [s1m,s2m,tp,fn]=chic.finalsMatches;
+  if(s1m.done&&s2m.done&&(!fn.team1)){
+    const w1=s1m.s1>s1m.s2?s1m.team1:s1m.team2, l1=s1m.s1>s1m.s2?s1m.team2:s1m.team1;
+    const w2=s2m.s1>s2m.s2?s2m.team1:s2m.team2, l2=s2m.s1>s2m.s2?s2m.team2:s2m.team1;
+    tp.team1=l1; tp.team2=l2;
+    fn.team1=w1; fn.team2=w2;
+  }
+  chicSave(); renderChicece();
+  const winner=(s1>s2?m.team1:m.team2).map(chicName).join(' & ');
+  showToast('✅ ' + winner + ' avanza!');
+};
+
+window.chicComplete = function(){
+  chic.status='completed'; chicSave(); renderChicece();
+};
+
+window.chicReset = function(){
+  chic={status:'setup',players:[],matchesPerPlayer:4,rounds:[],draftOrder:[],draftPicks:[],draftCurrentIdx:0,draftAvailable:[],finalsMatches:[]};
+  chicSave(); renderChicece();
+};
+
 // ── INIT ──────────────────────────────────────────────────
 // Restore admin session
 if(localStorage.getItem('lf_bv_admin')==='1'){
@@ -1405,6 +2097,13 @@ if(localStorage.getItem('lf_bv_admin')==='1'){
 renderHome();
 renderPremiSpeciali();
 </script>
+
+<!-- ═══════════════════════════════════════
+     CHICECE — Modalità Torneo
+═══════════════════════════════════════ -->
+<div id="pg-chicece" class="pg">
+  <div id="chic-wrap"></div>
+</div>
 
 <!-- Admin Login Modal -->
 <div id="admin-login-modal" class="modal-bg">
