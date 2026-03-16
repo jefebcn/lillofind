@@ -685,6 +685,16 @@ img{ -webkit-user-drag:none; user-select:none; }
 #sp-toast-dot{display:inline-block;width:7px;height:7px;background:#2ecc71;border-radius:50%;margin-right:6px;animation:dot-blink 1s ease-in-out infinite;}
 @keyframes dot-blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 @media(min-width:769px){#sp-toast{bottom:32px;}}
+
+/* ── PERFORMANCE — layout containment & compositing hints ── */
+.pcard{contain:layout style;}
+#s-grid .pcard{content-visibility:auto;contain-intrinsic-size:0 260px;}
+#pg-shop{contain:layout;}
+.pgrid .pcard{contain:layout style;}
+/* Remove card scale hover on touch devices (saves main-thread work) */
+@media(hover:none){
+  .pcard:hover{transform:none !important;box-shadow:none !important;}
+}
 </style>
 </head>
 <body>
@@ -853,10 +863,10 @@ img{ -webkit-user-drag:none; user-select:none; }
       <button class="nbtn" onclick="showPg('shop')">Shop</button>
       <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('style','Streetwear'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Apparel</button>
       <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneaker'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg>Sneakers</button>
-      <button class="nbtn" onclick="showPg('shop');setTimeout(sortByNewest,80)" style="display:flex;align-items:center;gap:5px;color:var(--led);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Drop</button>
+      <button class="nbtn" onclick="showPg('shop');setTimeout(sortByNewest,80)" style="display:flex;align-items:center;gap:5px;color:var(--k);font-weight:600;"><span style="width:6px;height:6px;border-radius:50%;background:var(--led);display:inline-block;flex-shrink:0;box-shadow:0 0 6px var(--led);"></span>Drop</button>
       <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
       <a href="app.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>Beach Volley</a>
-      <a href="vault.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:var(--led);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>LF Vault</a>
+      <a href="vault.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:var(--k);font-weight:600;border:1px solid var(--led);padding:4px 10px;box-shadow:0 0 8px rgba(200,255,0,.2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>LF Vault</a>
     </nav>
     <div style="position:absolute;left:50%;transform:translateX(-50%);">
       <button onclick="showPg('home')" style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:4px;color:var(--k);background:none;border:none;cursor:pointer;">LILLOFIND</button>
@@ -1087,7 +1097,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;" id="brand-grid-home">
 
         <!-- Nike -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Nike'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Nike'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg" width="52" height="20"><path d="M0 30 Q50-10 100 5 L60 30 Z" fill="#111"/></svg>
           </div>
@@ -1095,13 +1105,13 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Jordan -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Jordan'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Jordan'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:32px;">🏀</div>
           <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">JORDAN</span>
         </div>
 
         <!-- Adidas -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Adidas'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Adidas'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <svg viewBox="0 0 60 50" xmlns="http://www.w3.org/2000/svg" width="40" height="34"><polygon points="30,2 58,48 2,48" fill="none" stroke="#111" stroke-width="5"/><line x1="15" y1="38" x2="45" y2="38" stroke="#111" stroke-width="5"/><line x1="20" y1="27" x2="40" y2="27" stroke="#111" stroke-width="5"/></svg>
           </div>
@@ -1109,7 +1119,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Supreme -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Supreme'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Supreme'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:28px;background:#e8111a;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial Black',sans-serif;font-size:9px;font-weight:900;color:#fff;letter-spacing:.5px;">Supreme</span>
           </div>
@@ -1117,13 +1127,13 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Bape -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Bape'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Bape'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:30px;">🦍</div>
           <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">BAPE</span>
         </div>
 
         <!-- Off-White -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Off-White'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Off-White'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial',sans-serif;font-size:9px;font-weight:900;color:#111;letter-spacing:.5px;text-align:center;line-height:1.4;">OFF<br/>WHITE</span>
           </div>
@@ -1131,7 +1141,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- New Balance -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','New Balance'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','New Balance'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial Black',sans-serif;font-size:28px;font-weight:900;color:#c8102e;">N</span>
           </div>
@@ -1139,7 +1149,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Stüssy -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Stussy'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Stussy'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Georgia',serif;font-size:22px;font-weight:700;color:#111;font-style:italic;">Stüssy</span>
           </div>
@@ -2343,23 +2353,28 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
 
   // ── Page nav ───────────────────────────────────────────
+  // Cache visible page ref to avoid full querySelectorAll on every nav
+  let _activePg = null;
   window.showPg=function(id){
     if(id==='profile'&&!user){showPg('auth');return;}
-    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+    // Hide only the currently visible page (O(1) vs O(n))
+    if(_activePg) _activePg.classList.remove('on');
     const el=document.getElementById('pg-'+id);
     if(!el)return;
     el.classList.add('on');
-    // Bottom nav active
-    ['home','shop','lfpoints','profile'].forEach(k=>{
-      const map={home:'home',shop:'shop',lfpoints:'lfp',profile:'profile'};
-      const btn=document.getElementById('bn-'+map[k]);
+    _activePg = el;
+    // Bottom nav active — direct getElementById, no loop
+    const bnMap={home:'home',shop:'shop',lfpoints:'lfp',profile:'profile'};
+    Object.keys(bnMap).forEach(k=>{
+      const btn=document.getElementById('bn-'+bnMap[k]);
       if(btn) btn.classList.toggle('active',k===id);
     });
     if(id==='shop') loadProds();
     if(id==='profile'){if(typeof window._fullRenderProfile==='function')window._fullRenderProfile();else renderProfile();}
     if(id==='home') updateHomeDisplay();
     if(id==='lfpoints') renderRewardsTable();
-    window.scrollTo({top:0,behavior:'smooth'});
+    // Instant scroll on mobile (smooth blocks the main thread on low-end devices)
+    window.scrollTo({top:0,behavior:window.innerWidth<769?'instant':'smooth'});
   };
 
   // ── Nav update ─────────────────────────────────────────
@@ -2541,7 +2556,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       :(p.style?`<span style="position:absolute;top:8px;left:8px;background:var(--k);color:var(--w);font-size:9px;letter-spacing:2px;padding:3px 8px;z-index:3;">${p.style.toUpperCase()}</span>`:'');
     return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" onclick="openProduct('${p.id}')">
       <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
-        ${p.imageUrl?`<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;transition:transform .4s ease;" loading="lazy" onerror="this.style.display='none'" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
+        ${p.imageUrl?`<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
         ${stockBadge}
         ${delBtn}
         <button class="wish-btn ${inWish?'active':''}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">${inWish?'❤️':'♡'}</button>
@@ -2567,11 +2582,15 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.openProduct=function(pid){
     const p=products.find(x=>x.id===pid);
     if(!p)return;
-    const isNew=(p.createdAt?.seconds&&(Date.now()/1000-p.createdAt.seconds)<604800);
-    const inWish=wishlist.includes(p.id);
     const modal=document.getElementById('prod-modal');
     const body=document.getElementById('prod-modal-body');
     if(!modal||!body)return;
+    // Open modal shell immediately — fill content on next frame (avoids click lag)
+    modal.classList.add('open');
+    body.innerHTML='<div style="padding:60px;text-align:center;"><div class="skel" style="width:60px;height:8px;margin:0 auto;"></div></div>';
+    requestAnimationFrame(()=>{
+    const isNew=(p.createdAt?.seconds&&(Date.now()/1000-p.createdAt.seconds)<604800);
+    const inWish=wishlist.includes(p.id);
     body.innerHTML=`
       <div style="display:grid;grid-template-columns:1fr 1fr;" id="prod-modal-grid">
         <div style="background:#f0f0f0;position:relative;min-height:340px;">
@@ -2641,7 +2660,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Make grid responsive
     const grid=document.getElementById('prod-modal-grid');
     if(grid&&window.innerWidth<600) grid.style.gridTemplateColumns='1fr';
-    modal.classList.add('open');
+    // modal was already opened before rAF, no need to add class again
+    }); // end requestAnimationFrame
   };
 
     window.toggleWish=function(pid,btn){
@@ -2650,29 +2670,51 @@ img{ -webkit-user-drag:none; user-select:none; }
     else{wishlist.push(pid);btn.classList.add('active');btn.textContent='❤️';showToast('❤️ Aggiunto alla wishlist!');}
   };
 
-  function renderShop(){
+  // Cache shop DOM refs once (populated on first renderShop call)
+  let _sGrid=null,_sEmpty=null,_sLoad=null,_sCount=null,_renderTimer=null;
+  function _doRenderShop(){
+    _sGrid  = _sGrid  || document.getElementById('s-grid');
+    _sEmpty = _sEmpty || document.getElementById('s-empty');
+    _sLoad  = _sLoad  || document.getElementById('s-load');
+    _sCount = _sCount || document.getElementById('s-count');
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     const filtered=products.filter(p=>
       (!filters.model||p.model===filters.model)&&
       (!filters.brand||p.brand===filters.brand)&&
-      (!filters.size ||p.size ===filters.size )&&
+      (!filters.size ||(p.sizes&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.style||p.style===filters.style)&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
-    document.getElementById('s-load').style.display='none';
-    const sc=document.getElementById('s-count');
-    if(sc) sc.textContent=filtered.length+' item'+(filtered.length!==1?'s':'');
-    const g=document.getElementById('s-grid'), e=document.getElementById('s-empty');
-    if(!filtered.length){if(g)g.style.display='none';if(e)e.style.display='block';return;}
-    if(e)e.style.display='none'; if(g){g.style.display='grid';g.innerHTML=filtered.map(cardHTML).join('');}
+    if(_sLoad) _sLoad.style.display='none';
+    if(_sCount) _sCount.textContent=filtered.length+' item'+(filtered.length!==1?'s':'');
+    if(!filtered.length){
+      if(_sGrid) _sGrid.style.display='none';
+      if(_sEmpty) _sEmpty.style.display='block';
+      return;
+    }
+    if(_sEmpty) _sEmpty.style.display='none';
+    if(_sGrid){
+      _sGrid.style.display='grid';
+      // Use insertAdjacentHTML after clearing — faster than innerHTML on long strings
+      _sGrid.textContent='';
+      _sGrid.insertAdjacentHTML('afterbegin', filtered.map(cardHTML).join(''));
+    }
+  }
+  function renderShop(){
+    // Debounce: skip duplicate frames, execute on next animation frame
+    if(_renderTimer) cancelAnimationFrame(_renderTimer);
+    _renderTimer = requestAnimationFrame(_doRenderShop);
   }
 
   function renderHomeProds(){
     const h=document.getElementById('home-prods');
     if(!h)return;
-    const latest=products.slice(0,8);
-    h.innerHTML=latest.length?latest.map(cardHTML).join(''):`<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>`;
-    h.style.display='grid';
+    requestAnimationFrame(()=>{
+      const latest=products.slice(0,8);
+      h.textContent='';
+      h.insertAdjacentHTML('afterbegin',latest.length?latest.map(cardHTML).join(''):'<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>');
+      h.style.display='grid';
+    });
   }
 
   // ── Rewards table ──────────────────────────────────────
@@ -3596,11 +3638,18 @@ img{ -webkit-user-drag:none; user-select:none; }
   // FEATURE 5 — Nav helper functions (filter by category)
   // ══════════════════════════════════════════════════════════════
   window.setFilter = function(type, value){
-    // Reset all active chips first
-    document.querySelectorAll('.chip.on').forEach(c => c.classList.remove('on'));
-    // Set the filter variable and re-render
-    if(type === 'style') activeStyle = value;
-    if(type === 'model') activeModel = value;
+    // Reset all active chips/size-boxes/swatches first
+    document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
+    // Reset all filters then apply the one requested
+    filters = {model:'',brand:'',size:'',style:''};
+    if(type === 'brand') filters.brand = value;
+    if(type === 'style') filters.style = value;
+    if(type === 'model') filters.model = value;
+    if(type === 'size')  filters.size  = value;
+    // Highlight the matching chip if visible
+    document.querySelectorAll(`.chip[data-key="${type}"][data-val="${value}"],.size-box[data-key="${type}"][data-val="${value}"]`).forEach(c=>c.classList.add('on'));
+    const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=value?'':'none';
+    const rstm=document.getElementById('rst-btn-m'); if(rstm) rstm.style.display=value?'':'none';
     if(typeof renderShop === 'function') renderShop();
   };
 
@@ -3734,8 +3783,9 @@ img{ -webkit-user-drag:none; user-select:none; }
   let _liveSearchTimer = null;
 
   window.liveSearch = function(val){
-    // Still filter the grid
-    searchShop(val);
+    // Debounced grid filter via rAF
+    if(window._lsRaf) cancelAnimationFrame(window._lsRaf);
+    window._lsRaf = requestAnimationFrame(()=>searchShop(val));
 
     const dropdown = document.getElementById('search-dropdown');
     if(!dropdown) return;
