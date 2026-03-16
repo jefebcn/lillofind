@@ -311,43 +311,6 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 #cookie-bar.show{transform:translateY(0);}
 @media(max-width:768px){#cookie-bar{padding-bottom:calc(16px + 60px + env(safe-area-inset-bottom));}}
 
-/* ── PROMO BANNER ────────────────────────────────── */
-#promo-banner{
-  position:relative;z-index:200;
-  background:linear-gradient(90deg,#0a3d0a,#1a6b1a,#0a3d0a);
-  color:var(--w);padding:10px 48px 10px 20px;
-  display:flex;align-items:center;justify-content:center;gap:12px;
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;
-  text-transform:uppercase;cursor:pointer;text-decoration:none;
-  border-bottom:2px solid #2ecc71;
-  animation:banner-pulse 4s ease-in-out infinite;
-  overflow:hidden;
-  transition:opacity .6s ease, max-height .6s ease, padding .6s ease, border .6s ease;
-  max-height:120px;
-}
-#promo-banner.hiding{
-  opacity:0;max-height:0;padding-top:0;padding-bottom:0;
-  border-bottom-width:0;pointer-events:none;overflow:hidden;
-}
-#promo-banner:hover{opacity:.9;}
-#promo-banner::before{
-  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
-  animation:banner-shine 5s linear infinite;
-}
-#promo-banner .promo-badge{
-  background:#2ecc71;color:#000;padding:2px 8px;font-size:9px;
-  letter-spacing:2px;font-weight:700;white-space:nowrap;flex-shrink:0;
-}
-#promo-banner .promo-close{
-  position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;
-  cursor:pointer;line-height:1;padding:4px;min-width:28px;min-height:28px;
-  display:flex;align-items:center;justify-content:center;
-}
-#promo-banner .promo-close:hover{color:#fff;}
-@keyframes banner-pulse{0%,100%{border-bottom-color:#2ecc71;}50%{border-bottom-color:#57e88e;}}
-@keyframes banner-shine{0%{left:-100%;}100%{left:200%;}}
 
 /* ── CHECKOUT STEPS (Hick's Law — step chunking) ── */
 .ck-steps{display:flex;align-items:center;gap:0;margin-bottom:28px;padding:0 4px;}
@@ -763,32 +726,18 @@ img{ -webkit-user-drag:none; user-select:none; }
 @media(hover:none){
   .pcard:hover{transform:none !important;box-shadow:none !important;}
 }
+
+/* ── SHOP SORT SELECT ─────────────────────────────── */
+#shop-sort{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  padding-right:28px !important;
+  cursor:pointer;
+}
 </style>
 </head>
 <body>
-
-<!-- ══════════ PROMO BANNER — NutriTrack ══════════ -->
-<a id="promo-banner" href="https://nutritrack.it" target="_blank" rel="noopener noreferrer">
-  <span class="promo-badge">🌿 PARTNER</span>
-  <span>Traccia la tua alimentazione con <strong>NutriTrack.it</strong> — il tracker nutrizionale più smart d'Italia</span>
-  <span style="font-size:14px;margin-left:4px;">→</span>
-  <button class="promo-close" onclick="event.preventDefault();event.stopPropagation();var b=document.getElementById('promo-banner');b.classList.add('hiding');setTimeout(function(){b.style.display='none'},650);sessionStorage.setItem('lf_banner_closed','1');" title="Chiudi">✕</button>
-</a>
-
-<!-- Auto-hide promo banner after 5s -->
-<script>
-(function(){
-  var b = document.getElementById('promo-banner');
-  if(!b) return;
-  // Don't show again if user closed it this session
-  if(sessionStorage.getItem('lf_banner_closed')) { b.style.display='none'; return; }
-  setTimeout(function(){
-    b.classList.add('hiding');
-    setTimeout(function(){ b.style.display='none'; }, 650);
-    sessionStorage.setItem('lf_banner_closed','1');
-  }, 5000);
-})();
-</script>
 
 <!-- ══════════ TOAST ══════════ -->
 <div id="toast"></div>
@@ -856,6 +805,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="display:flex;flex-direction:column;gap:2px;">
         <button onclick="showPg('home');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</button>
         <button onclick="showPg('shop');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Shop</button>
+        <button onclick="showPg('wishlist');closeDrawer();" class="drawer-link" style="position:relative;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist</button>
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="showPg('cart');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Carrello</button>
         <button onclick="showPg('shop');closeDrawer();setTimeout(sortByNewest,80)" class="drawer-link" style="color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Drop della Settimana</button>
@@ -1449,6 +1399,20 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
   </section>
 
+  <!-- RECENTLY VIEWED -->
+  <section id="recently-viewed-section" style="padding:40px 24px;border-bottom:2px solid var(--k);display:none;">
+    <div style="max-width:1100px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:24px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Hai visto di recente</p>
+          <h2 class="bb" style="font-size:clamp(22px,3.5vw,36px);">Dove eri rimasto.</h2>
+        </div>
+        <button onclick="localStorage.removeItem('lf_rv');document.getElementById('recently-viewed-section').style.display='none';" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Cancella</button>
+      </div>
+      <div id="rv-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;"></div>
+    </div>
+  </section>
+
   <!-- SOCIAL PROOF — Testimonials -->
   <section style="padding:56px 24px;border-bottom:2px solid var(--k);background:#fafafa;">
     <div style="max-width:1100px;margin:0 auto;">
@@ -1517,8 +1481,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     <main style="flex:1;padding:24px 16px;min-width:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <h2 class="bb" style="font-size:44px;">Shop</h2>
-        <div style="display:flex;align-items:center;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <p id="s-count" style="font-size:11px;color:var(--dim);letter-spacing:1px;"></p>
+          <!-- Sort dropdown -->
+          <div style="position:relative;">
+            <select id="shop-sort" class="lf-in" style="font-size:10px;padding:7px 28px 7px 10px;width:auto;min-width:148px;cursor:pointer;" onchange="applySort(this.value)">
+              <option value="new">Più Recenti</option>
+              <option value="price-asc">Prezzo: Basso → Alto</option>
+              <option value="price-desc">Prezzo: Alto → Basso</option>
+              <option value="alpha">A → Z</option>
+            </select>
+          </div>
           <!-- Mobile filter button -->
           <button onclick="toggleMobFilter()" class="btn-g mob-only" style="padding:8px 14px;font-size:10px;">⚙ Filtri</button>
         </div>
@@ -1919,11 +1892,11 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div style="display:flex;min-height:88vh;">
     <!-- Left promo panel (desktop) -->
     <div class="hide-mob" style="flex:1;background:var(--k);color:var(--w);padding:60px 56px;display:flex;flex-direction:column;justify-content:space-between;">
-      <p class="bb" style="font-size:15px;letter-spacing:5px;color:#222;">LILLOFIND</p>
+      <p class="bb" style="font-size:15px;letter-spacing:5px;color:#555;">LILLOFIND</p>
       <div>
         <div class="led-badge" style="margin-bottom:20px;">⬡ Members Only</div>
         <h2 class="bb" style="font-size:clamp(48px,5.5vw,76px);line-height:.92;margin-bottom:20px;">Members<br/>Get More.</h2>
-        <ul style="font-size:11px;color:#555;line-height:2.2;list-style:none;">
+        <ul style="font-size:11px;color:#aaa;line-height:2.2;list-style:none;">
           <li>✦ LFPOINTS su ogni ordine</li>
           <li>✦ Early access ai nuovi drop</li>
           <li>✦ Resi gratuiti 30 giorni</li>
@@ -1932,7 +1905,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </ul>
       </div>
       <div style="border-top:1px solid #1e1e1e;padding-top:24px;">
-        <p class="slbl" style="color:#2a2a2a;margin-bottom:8px;">Tasso Fedeltà</p>
+        <p class="slbl" style="color:#888;margin-bottom:8px;">Tasso Fedeltà</p>
         <p class="bb" style="font-size:36px;color:var(--led);">1€ = 1 LFPT</p>
       </div>
     </div>
@@ -2033,20 +2006,20 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="background:var(--k);color:var(--w);padding:32px 28px;margin-bottom:24px;border-left:3px solid var(--led);">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
           <div>
-            <p class="slbl" style="color:#333;margin-bottom:8px;">Saldo LFPOINTS</p>
+            <p class="slbl" style="color:#888;margin-bottom:8px;">Saldo LFPOINTS</p>
             <p class="bb" id="pr-pts" style="font-size:clamp(52px,9vw,88px);line-height:1;color:var(--led);">0</p>
-            <p id="pr-val" style="font-size:10px;color:#444;margin-top:4px;letter-spacing:1px;text-transform:uppercase;">≈ €0.00 in acquisti</p>
+            <p id="pr-val" style="font-size:10px;color:#888;margin-top:4px;letter-spacing:1px;text-transform:uppercase;">≈ €0.00 in acquisti</p>
           </div>
           <div style="text-align:right;">
-            <p class="slbl" style="color:#333;margin-bottom:6px;">Livello</p>
+            <p class="slbl" style="color:#888;margin-bottom:6px;">Livello</p>
             <p class="bb" id="pr-tier" style="font-size:28px;letter-spacing:2px;color:var(--led);">—</p>
-            <p id="pr-next-prize" style="font-size:9px;color:#444;margin-top:3px;letter-spacing:1px;"></p>
+            <p id="pr-next-prize" style="font-size:9px;color:#888;margin-top:3px;letter-spacing:1px;"></p>
           </div>
         </div>
         <div id="pr-prog">
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <p id="pr-nlbl" style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;"></p>
-            <p id="pr-nnum" style="font-size:9px;color:#333;"></p>
+            <p id="pr-nlbl" style="font-size:9px;color:#888;letter-spacing:2px;text-transform:uppercase;"></p>
+            <p id="pr-nnum" style="font-size:9px;color:#888;"></p>
           </div>
           <div class="prog-bg"><div id="pr-bar" class="prog-fill" style="width:0%;"></div></div>
         </div>
@@ -2513,9 +2486,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
     <span class="bnav-lbl">Shop</span>
   </button>
-  <button class="bnav-btn" id="bn-lfp" onclick="showPg('lfpoints')">
-    <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
-    <span class="bnav-lbl">Points</span>
+  <button class="bnav-btn" id="bn-wish" onclick="showPg('wishlist')" style="position:relative;">
+    <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+    <span class="bnav-lbl">Wishlist</span>
+    <span id="wish-badge" style="position:absolute;top:4px;right:calc(50% - 22px);background:var(--led);color:var(--k);width:16px;height:16px;border-radius:50%;font-size:8px;font-weight:bold;display:none;align-items:center;justify-content:center;"></span>
   </button>
   <button class="bnav-btn" id="bn-cart" onclick="showPg('cart')" style="position:relative;">
     <span class="bnav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
@@ -2529,6 +2503,29 @@ img{ -webkit-user-drag:none; user-select:none; }
 </nav>
 
 <!-- ════════════════════════════════════════════════════════
+     WISHLIST PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-wishlist" class="pg">
+  <div class="led-strip"></div>
+  <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">I tuoi salvataggi</p>
+        <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Wishlist</h1>
+      </div>
+      <button class="btn-g" onclick="showPg('shop')" style="font-size:10px;padding:8px 16px;">← Continua a Fare Shopping</button>
+    </div>
+    <div id="wish-grid" class="pgrid"></div>
+    <div id="wish-empty" style="display:none;padding:80px 0;text-align:center;">
+      <p style="font-size:48px;margin-bottom:16px;">🤍</p>
+      <p class="bb" style="font-size:28px;margin-bottom:8px;">Wishlist vuota</p>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:24px;">Salva i prodotti che ti piacciono per trovarli subito.</p>
+      <button class="btn-led" onclick="showPg('shop')">Esplora lo Shop →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════════════════════════════ -->
 <script type="module">
@@ -2538,7 +2535,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── State ──────────────────────────────────────────────
   let products=[], filters={model:'',brand:'',size:'',style:'',color:''};
   let user=null, udata=null, authTab='li';
-  let wishlist=[];
+  let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
 
   // ── REWARDS CONFIG ─────────────────────────────────────
   const REWARDS=[
@@ -2589,23 +2586,22 @@ img{ -webkit-user-drag:none; user-select:none; }
   let _activePg = document.getElementById('pg-home');
   window.showPg=function(id){
     if(id==='profile'&&!user){showPg('auth');return;}
-    // Hide only the currently visible page (O(1) vs O(n))
     if(_activePg) _activePg.classList.remove('on');
     const el=document.getElementById('pg-'+id);
     if(!el)return;
     el.classList.add('on');
     _activePg = el;
-    // Bottom nav active — direct getElementById, no loop
-    const bnMap={home:'home',shop:'shop',lfpoints:'lfp',profile:'profile'};
+    // Bottom nav active
+    const bnMap={home:'home',shop:'shop',wishlist:'wish',lfpoints:'lfp',profile:'profile',cart:'cart'};
     Object.keys(bnMap).forEach(k=>{
       const btn=document.getElementById('bn-'+bnMap[k]);
       if(btn) btn.classList.toggle('active',k===id);
     });
     if(id==='shop') loadProds();
+    if(id==='wishlist') renderWishlistPage();
     if(id==='profile'){if(typeof window._fullRenderProfile==='function')window._fullRenderProfile();else renderProfile();}
     if(id==='home') updateHomeDisplay();
     if(id==='lfpoints') renderRewardsTable();
-    // Instant scroll on mobile (smooth blocks the main thread on low-end devices)
     window.scrollTo({top:0,behavior:window.innerWidth<769?'instant':'smooth'});
   };
 
@@ -2645,6 +2641,31 @@ img{ -webkit-user-drag:none; user-select:none; }
     const el=document.getElementById('home-pts'); if(el) el.textContent=String(pts).padStart(3,'0');
     const tEl=document.getElementById('home-tier'); if(tEl) tEl.textContent=udata?getTier(pts):'—';
     const sEl=document.getElementById('home-spent'); if(sEl) sEl.textContent=udata?'€'+(udata.totalSpent||0).toFixed(0):'€0';
+    renderRecentlyViewed();
+  }
+
+  function renderRecentlyViewed(){
+    const rv = JSON.parse(localStorage.getItem('lf_rv')||'[]');
+    const sec = document.getElementById('recently-viewed-section');
+    const grid = document.getElementById('rv-grid');
+    if(!sec||!grid||!rv.length||!products.length){if(sec)sec.style.display='none';return;}
+    const items = rv.map(id=>products.find(p=>p.id===id)).filter(Boolean).slice(0,6);
+    if(!items.length){sec.style.display='none';return;}
+    sec.style.display='block';
+    requestAnimationFrame(()=>{
+      grid.textContent='';
+      grid.insertAdjacentHTML('afterbegin', items.map(p=>`
+        <div onclick="openProduct('${p.id}')" style="cursor:pointer;border:1.5px solid #e0e0e0;background:#fff;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='var(--k)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#e0e0e0';this.style.transform=''">
+          <div style="aspect-ratio:3/4;background:#f5f5f5;overflow:hidden;position:relative;">
+            ${p.imageUrl?`<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:''}
+          </div>
+          <div style="padding:8px 8px 10px;">
+            ${p.brand?`<p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:1px;">${p.brand}</p>`:''}
+            <p style="font-size:10px;font-family:'IBM Plex Mono',monospace;line-height:1.3;margin-bottom:4px;">${(p.name||'').slice(0,24)}${(p.name||'').length>24?'…':''}</p>
+            <p class="bb" style="font-size:14px;">€${(p.price||0).toFixed(0)}</p>
+          </div>
+        </div>`).join(''));
+    });
   }
 
   // ── Auth ───────────────────────────────────────────────
@@ -2705,7 +2726,10 @@ img{ -webkit-user-drag:none; user-select:none; }
       const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
       const s=await fb.getDocs(q);
       products=s.docs.map(d=>({id:d.id,...d.data()}));
+      products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       buildChips(); renderShop(); renderHomeProds();
+      localStorage.setItem('lf_wishlist', JSON.stringify(wishlist));
+    updateWishBadge();
     } catch(e){ document.getElementById('s-load').textContent='Errore caricamento.'; }
   }
 
@@ -2791,7 +2815,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         ${p.imageUrl?`<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
         ${stockBadge}
         ${delBtn}
-        <button class="wish-btn ${inWish?'active':''}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">${inWish?'❤️':'♡'}</button>
+        <button class="wish-btn ${inWish?'active':''}" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">${inWish?'❤️':'♡'}</button>
         <div style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.7);color:var(--led);font-size:8px;letter-spacing:1.5px;padding:2px 7px;text-transform:uppercase;">1:1 Quality</div>
       </div>
       <div style="padding:12px 10px;">
@@ -2814,6 +2838,10 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.openProduct=function(pid){
     const p=products.find(x=>x.id===pid);
     if(!p)return;
+    // Track recently viewed (max 8, no duplicates)
+    let rv = JSON.parse(localStorage.getItem('lf_rv')||'[]');
+    rv = [pid, ...rv.filter(x=>x!==pid)].slice(0,8);
+    localStorage.setItem('lf_rv', JSON.stringify(rv));
     const modal=document.getElementById('prod-modal');
     const body=document.getElementById('prod-modal-body');
     if(!modal||!body)return;
@@ -2871,6 +2899,9 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
             <button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});document.getElementById('prod-modal').classList.remove('open');">Aggiungi al Carrello →</button>
             <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${inWish?'❤️':'♡'}</button>
+            <button style="border:1.5px solid #ddd;background:none;padding:12px 14px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;" onclick="shareProduct('${p.name.replace(/'/g,"\\'")}',${p.price||0},'${p.id}')" title="Condividi">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
           </div>
           <!-- Completa il Drop cross-sell -->
           ${getRelatedProducts(p.id,p.brand,p.style).length?`
@@ -2898,9 +2929,72 @@ img{ -webkit-user-drag:none; user-select:none; }
 
     window.toggleWish=function(pid,btn){
     const idx=wishlist.indexOf(pid);
-    if(idx>-1){wishlist.splice(idx,1);btn.classList.remove('active');btn.textContent='🤍';showToast('Rimosso dalla wishlist');}
-    else{wishlist.push(pid);btn.classList.add('active');btn.textContent='❤️';showToast('❤️ Aggiunto alla wishlist!');}
+    if(idx>-1){
+      wishlist.splice(idx,1);
+      if(btn){btn.classList.remove('active');btn.textContent='🤍';}
+      showToast('Rimosso dalla wishlist');
+    } else {
+      wishlist.push(pid);
+      if(btn){btn.classList.add('active');btn.textContent='❤️';}
+      showToast('❤️ Aggiunto alla wishlist!');
+    }
+    updateWishBadge();
+    // Refresh wishlist page if currently open
+    if(document.getElementById('pg-wishlist')?.classList.contains('on')) renderWishlistPage();
+    // Sync heart on any visible cards
+    document.querySelectorAll(`.wish-btn[data-pid="${pid}"]`).forEach(b=>{
+      b.classList.toggle('active', wishlist.includes(pid));
+      b.textContent = wishlist.includes(pid) ? '❤️' : '♡';
+    });
   };
+
+  function updateWishBadge(){
+    const b = document.getElementById('wish-badge');
+    if(!b) return;
+    const count = wishlist.length;
+    b.textContent = count;
+    b.style.display = count > 0 ? 'flex' : 'none';
+  }
+
+  function renderWishlistPage(){
+    const grid  = document.getElementById('wish-grid');
+    const empty = document.getElementById('wish-empty');
+    if(!grid) return;
+    const items = products.filter(p => wishlist.includes(p.id));
+    if(!items.length){
+      grid.innerHTML = '';
+      if(empty) empty.style.display = 'block';
+      return;
+    }
+    if(empty) empty.style.display = 'none';
+    requestAnimationFrame(()=>{
+      grid.textContent = '';
+      grid.insertAdjacentHTML('afterbegin', items.map(p => {
+        const isSoldOut = p.soldOut===true;
+        const pidHash = p.id?p.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0):0;
+        const stockNum = [2,3,4,1,3,2][pidHash%6];
+        const isLow = !isSoldOut && stockNum<=3;
+        return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" onclick="openProduct('${p.id}')">
+          <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
+            ${p.imageUrl?`<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>'}
+            ${isSoldOut?'<span style="position:absolute;top:8px;left:8px;background:#111;color:#fff;font-size:9px;letter-spacing:2px;padding:3px 8px;font-weight:bold;z-index:3;">SOLD OUT</span>':''}
+            ${isLow&&!isSoldOut?`<span style="position:absolute;top:8px;left:8px;background:#ff4500;color:#fff;font-size:9px;letter-spacing:2px;padding:3px 8px;font-weight:bold;z-index:3;">SOLO ${stockNum} RIMASTI</span>`:''}
+            <button class="wish-btn active" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Rimuovi" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">❤️</button>
+            <div style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.7);color:var(--led);font-size:8px;letter-spacing:1.5px;padding:2px 7px;text-transform:uppercase;">1:1 Quality</div>
+          </div>
+          <div style="padding:12px 10px;">
+            ${p.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
+            <h4 style="font-size:12px;margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${p.name}</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+              <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
+              ${isSoldOut?`<span style="font-size:9px;letter-spacing:1px;color:#999;text-transform:uppercase;padding:6px 10px;border:1px solid #ddd;">Esaurito</span>`:`<button class="btn-k" style="padding:6px 10px;font-size:9px;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">ADD+</button>`}
+            </div>
+            <p style="font-size:9px;color:var(--led);margin-top:4px;letter-spacing:1px;">+${Math.floor(p.price||0)} LFPTS</p>
+          </div>
+        </div>`;
+      }).join(''));
+    });
+  }
 
   // Cache shop DOM refs once (populated on first renderShop call)
   let _sGrid=null,_sEmpty=null,_sLoad=null,_sCount=null,_renderTimer=null;
@@ -2947,8 +3041,9 @@ img{ -webkit-user-drag:none; user-select:none; }
       h.insertAdjacentHTML('afterbegin',latest.length?latest.map(cardHTML).join(''):'<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>');
       h.style.display='grid';
     });
-    // Populate carousel
+    // Populate carousel and recently viewed
     renderCarousel();
+    renderRecentlyViewed();
   }
 
   function renderCarousel(){
@@ -2995,6 +3090,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
   let _carouselTouching = false;
   document.addEventListener('DOMContentLoaded',()=>{
+    updateWishBadge();
     const t = document.getElementById('home-carousel');
     if(t){
       t.addEventListener('touchstart',()=>{ _carouselTouching=true; },{passive:true});
@@ -3943,6 +4039,26 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(typeof renderShop === 'function') renderShop();
   };
 
+  // Sort by select dropdown
+  window.applySort = function(val){
+    if(val==='new')        products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    else if(val==='price-asc')  products.sort((a,b)=>(a.price||0)-(b.price||0));
+    else if(val==='price-desc') products.sort((a,b)=>(b.price||0)-(a.price||0));
+    else if(val==='alpha')      products.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    if(typeof renderShop === 'function') renderShop();
+  };
+
+  // Web Share API — share product on mobile
+  window.shareProduct = function(name, price, pid){
+    const url = window.location.href.split('?')[0] + '?p=' + pid;
+    const text = `${name} — €${price.toFixed(2)} su LILLOFIND 🔥`;
+    if(navigator.share){
+      navigator.share({ title: 'LILLOFIND', text, url }).catch(()=>{});
+    } else {
+      navigator.clipboard?.writeText(url).then(()=>showToast('🔗 Link copiato!')).catch(()=>showToast('🔗 '+url));
+    }
+  };
+
   // ══════════════════════════════════════════════════════════════
   // FEATURE 6 — Free shipping upsell bar
   // ══════════════════════════════════════════════════════════════
@@ -4093,6 +4209,9 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.showPg = function(id){
     hideStickyATC();
     _origShowPg2(id);
+    // Keep wish bottom nav active state in sync
+    const bnWish = document.getElementById('bn-wish');
+    if(bnWish) bnWish.classList.toggle('active', id==='wishlist');
   };
 
   // ══════════════════════════════════════════════════════════════
