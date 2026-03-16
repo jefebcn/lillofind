@@ -2354,7 +2354,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // ── Page nav ───────────────────────────────────────────
   // Cache visible page ref to avoid full querySelectorAll on every nav
-  let _activePg = null;
+  let _activePg = document.getElementById('pg-home');
   window.showPg=function(id){
     if(id==='profile'&&!user){showPg('auth');return;}
     // Hide only the currently visible page (O(1) vs O(n))
