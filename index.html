@@ -2298,11 +2298,11 @@ img{ -webkit-user-drag:none; user-select:none; }
      PRODUCT DETAIL MODAL
 ════════════════════════════════════════════════════════ -->
 <!-- ══ SIZE/COLOR PICKER MODAL ══ -->
-<div class="modal-bg" id="size-picker-modal" onclick="if(event.target===this)this.classList.remove('open')" style="align-items:flex-end;">
+<div class="modal-bg" id="size-picker-modal" onclick="if(event.target===this){this.classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();}" style="align-items:flex-end;">
   <div style="background:#fff;width:100%;max-width:480px;padding:28px 22px;border-top:3px solid var(--k);max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <p style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;">Scegli Opzioni</p>
-      <button onclick="document.getElementById('size-picker-modal').classList.remove('open')" style="background:none;border:none;font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+      <button onclick="document.getElementById('size-picker-modal').classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();" style="background:none;border:none;font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
     </div>
     <div id="size-picker-body"></div>
     <div style="font-size:10px;color:var(--dim);margin-bottom:16px;display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #f0f0f0;padding-top:12px;">
@@ -4023,11 +4023,15 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   window.stickBuy = function(){
     if(_stickyPid) buy(_stickyPid, _stickyPrice);
-    // Close modal
+    // The buy() call opens size-picker, so hide sticky immediately
+    hideStickyATC();
     document.getElementById('prod-modal').classList.remove('open');
   };
 
   function showStickyATC(pid, name, price){
+    // Don't show if size-picker modal is already open
+    const picker = document.getElementById('size-picker-modal');
+    if(picker && picker.classList.contains('open')) return;
     _stickyPid   = pid;
     _stickyPrice = price;
     const bar = document.getElementById('sticky-atc');
@@ -4056,11 +4060,40 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
   };
 
-  // Hide sticky when modal closes
+  // Hide sticky when prod-modal backdrop clicked or X pressed
   document.getElementById('prod-modal').addEventListener('click', function(e){
     if(e.target === this) hideStickyATC();
   });
   document.querySelector('#prod-modal button[onclick*="classList.remove"]')?.addEventListener('click', hideStickyATC);
+
+  // Hide sticky when size-picker opens (buy() call from card or sticky btn)
+  const _origBuy = window.buy;
+  window.buy = function(pid, price){
+    hideStickyATC();
+    _origBuy(pid, price);
+  };
+
+  // Hide sticky when size-picker closes (confirm or backdrop)
+  const pickerModal = document.getElementById('size-picker-modal');
+  if(pickerModal){
+    pickerModal.addEventListener('click', function(e){
+      if(e.target === this) hideStickyATC();
+    });
+  }
+
+  // Patch confirmAddToCart to also hide sticky after adding
+  const _origConfirm = window.confirmAddToCart;
+  window.confirmAddToCart = function(){
+    hideStickyATC();
+    _origConfirm();
+  };
+
+  // Hide sticky on any page change
+  const _origShowPg2 = window.showPg;
+  window.showPg = function(id){
+    hideStickyATC();
+    _origShowPg2(id);
+  };
 
   // ══════════════════════════════════════════════════════════════
   // FEATURE 10 — Live Search with dropdown
