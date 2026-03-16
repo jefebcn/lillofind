@@ -426,13 +426,13 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   .pad-mob{padding:18px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
 
-  /* MOBILE HERO — full height so canvas fills screen */
+  /* MOBILE HERO — content height only, no forced full-screen */
   #pg-hero-section{
     display:flex !important;
     flex-direction:column !important;
     position:relative !important;
     height:auto !important;
-    min-height:100svh !important;
+    min-height:0 !important;
     overflow:hidden !important;
   }
   #hero-wordmark-wrap{
@@ -2826,7 +2826,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
           ${isSoldOut?`<span style="font-size:9px;letter-spacing:1px;color:#999;text-transform:uppercase;padding:6px 10px;border:1px solid #ddd;">Esaurito</span>`:`<button class="btn-k" style="padding:6px 10px;font-size:9px;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">ADD+</button>`}
         </div>
-        <p style="font-size:9px;color:var(--led);margin-top:4px;letter-spacing:1px;">+${Math.floor(p.price||0)} LFPTS</p>
+        <p style="font-size:9px;color:#4a7c00;font-weight:600;margin-top:4px;letter-spacing:1px;">+${Math.floor(p.price||0)} LFPTS</p>
       </div>
     </div>`;
   }
@@ -2989,7 +2989,7 @@ img{ -webkit-user-drag:none; user-select:none; }
               <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
               ${isSoldOut?`<span style="font-size:9px;letter-spacing:1px;color:#999;text-transform:uppercase;padding:6px 10px;border:1px solid #ddd;">Esaurito</span>`:`<button class="btn-k" style="padding:6px 10px;font-size:9px;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">ADD+</button>`}
             </div>
-            <p style="font-size:9px;color:var(--led);margin-top:4px;letter-spacing:1px;">+${Math.floor(p.price||0)} LFPTS</p>
+            <p style="font-size:9px;color:#4a7c00;font-weight:600;margin-top:4px;letter-spacing:1px;">+${Math.floor(p.price||0)} LFPTS</p>
           </div>
         </div>`;
       }).join(''));
