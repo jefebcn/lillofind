@@ -463,13 +463,13 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   .pad-mob{padding:18px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
 
-  /* MOBILE HERO — stacked flex, height:auto, zero void */
+  /* MOBILE HERO — full height so canvas fills screen */
   #pg-hero-section{
     display:flex !important;
     flex-direction:column !important;
     position:relative !important;
     height:auto !important;
-    min-height:auto !important;
+    min-height:100svh !important;
     overflow:hidden !important;
   }
   #hero-wordmark-wrap{
@@ -500,7 +500,9 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   }
   #hero-content-inner{
     padding:12px 16px 18px !important;
-    background:#080808 !important;
+    background:linear-gradient(0deg,rgba(5,5,5,.96) 0%,rgba(5,5,5,.82) 60%,rgba(5,5,5,.55) 100%) !important;
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
   }
   #hero-badge{ margin-bottom:8px !important; padding:4px 10px !important; }
   #hero-badge span:last-child{ font-size:8px !important; }
@@ -621,6 +623,47 @@ img{ -webkit-user-drag:none; user-select:none; }
   .carousel-skel{width:180px;}
 }
 
+
+/* ── PERSPECTIVE GRID — hero background (mobile-first) ───────── */
+#hero-pgrid{
+  display:none; /* off by default, enabled on mobile */
+}
+@media(max-width:768px){
+  #hero-pgrid{display:block !important;}
+  #hero-pgrid-inner{
+    position:absolute;
+    bottom:0;left:-20%;right:-20%;
+    height:55%;
+    background-image:
+      linear-gradient(rgba(200,255,0,.055) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(200,255,0,.055) 1px,transparent 1px);
+    background-size:52px 52px;
+    transform:perspective(360px) rotateX(58deg);
+    transform-origin:bottom center;
+    animation:pgrid-zoom 8s linear infinite;
+    mask-image:linear-gradient(0deg,rgba(0,0,0,.6) 0%,rgba(0,0,0,.15) 55%,transparent 100%);
+    -webkit-mask-image:linear-gradient(0deg,rgba(0,0,0,.6) 0%,rgba(0,0,0,.15) 55%,transparent 100%);
+  }
+  /* Horizon glow line */
+  #hero-pgrid::after{
+    content:'';
+    position:absolute;
+    bottom:45%;left:0;right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent 0%,rgba(200,255,0,.18) 30%,rgba(200,255,0,.28) 50%,rgba(200,255,0,.18) 70%,transparent 100%);
+    box-shadow:0 0 12px rgba(200,255,0,.15),0 0 28px rgba(200,255,0,.08);
+  }
+}
+@keyframes pgrid-zoom{
+  0%  {background-position:0 0;}
+  100%{background-position:0 52px;}
+}
+
+
+/* Boost canvas particles on mobile */
+@media(max-width:768px){
+  #hero-canvas{ opacity:.75 !important; }
+}
 /* ── SIZE BOX FILTERS (mobile) ──────────────────── */
 .size-box-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .size-box{
@@ -926,7 +969,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-home" class="pg on">
 
   <!-- HERO — Mobile-first: globe fills top, content anchored to bottom -->
-  <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#070707;border-bottom:3px solid var(--k);">
+  <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(ellipse 90% 60% at 50% 20%,#131313 0%,#060606 100%);border-bottom:3px solid var(--k);">
 
     <!-- Globe removed — LED wordmark takes over -->
 
@@ -934,8 +977,13 @@ img{ -webkit-user-drag:none; user-select:none; }
     <!-- ── SCANLINE TEXTURE ── -->
     <div style="position:absolute;inset:0;z-index:4;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px);"></div>
 
+    <!-- ── PERSPECTIVE GRID (mobile) ── -->
+    <div id="hero-pgrid" style="position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;">
+      <div id="hero-pgrid-inner"></div>
+    </div>
+
     <!-- ── PARTICLE NETWORK CANVAS ── -->
-    <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.55;"></canvas>
+    <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:.55;"></canvas>
     <script>
     (function(){
       var cvs=document.getElementById('hero-canvas');
@@ -943,7 +991,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       var ctx=cvs.getContext('2d');
       var W,H,pts=[];
       var LIME='rgba(200,255,0,';
-      var N_MOBILE=38, N_DESK=70;
+      var N_MOBILE=55, N_DESK=80;
 
       function resize(){
         W=cvs.width=cvs.offsetWidth;
@@ -958,7 +1006,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           r:Math.random()<.06?2.2:Math.random()<.25?1.4:0.7,
           lime:false, limeT:0,
           // random delay before first lime pulse
-          nextLime: Date.now()+6000+Math.random()*18000
+          nextLime: Date.now()+(W<769?2500:6000)+Math.random()*(W<769?10000:18000)
         };
       }
 
@@ -996,7 +1044,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           }
           if(p.lime && now-p.limeT>1800){
             p.lime=false;
-            p.nextLime=now+8000+Math.random()*14000;
+            p.nextLime=now+(W<769?3000:8000)+Math.random()*(W<769?8000:14000);
           }
         }
 
@@ -1006,7 +1054,8 @@ img{ -webkit-user-drag:none; user-select:none; }
             var dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
             var d=Math.sqrt(dx*dx+dy*dy);
             if(d>DIST)continue;
-            var alpha=(1-d/DIST)*.18;
+            var isMob=W<769;
+            var alpha=(1-d/DIST)*(isMob?.28:.18);
             var eitherLime=pts[i].lime||pts[j].lime;
             if(eitherLime){
               var lt=pts[i].lime?pts[i].limeT:pts[j].limeT;
@@ -1024,6 +1073,13 @@ img{ -webkit-user-drag:none; user-select:none; }
             ctx.stroke();
           }
         }
+
+        // Radial vignette for depth (draw before nodes so it's behind)
+        var grd=ctx.createRadialGradient(W/2,H*.35,0,W/2,H*.35,Math.max(W,H)*.7);
+        grd.addColorStop(0,'rgba(0,0,0,0)');
+        grd.addColorStop(1,'rgba(0,0,0,0.45)');
+        ctx.fillStyle=grd;
+        ctx.fillRect(0,0,W,H);
 
         // Draw nodes
         for(var i=0;i<pts.length;i++){
@@ -1044,7 +1100,8 @@ img{ -webkit-user-drag:none; user-select:none; }
           } else {
             ctx.beginPath();
             ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-            ctx.fillStyle='rgba(255,255,255,'+(p.r>1.8?.25:p.r>1.2?.15:.09)+')';
+            var isMob=W<769;
+            ctx.fillStyle='rgba(255,255,255,'+(p.r>1.8?(isMob?.45:.25):p.r>1.2?(isMob?.28:.15):(isMob?.16:.09))+')';
             ctx.fill();
           }
         }
