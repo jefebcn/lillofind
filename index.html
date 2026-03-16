@@ -584,6 +584,18 @@ button{ touch-action:manipulation; }
 img{ -webkit-user-drag:none; user-select:none; }
 
 
+/* ── BRAND TILES ─────────────────────────────────────── */
+.brand-tile:hover{
+  border-color:var(--k) !important;
+  transform:translateY(-3px);
+  box-shadow:0 6px 20px rgba(0,0,0,.09);
+}
+@media(max-width:768px){
+  #brand-grid-home{ grid-template-columns:repeat(auto-fill,minmax(110px,1fr)) !important; }
+}
+/* ── HOME LATEST DROPS — grid for 8 products ────── */
+@media(min-width:900px){#home-prods{grid-template-columns:repeat(4,1fr);gap:20px;}}
+
 /* ── SIZE BOX FILTERS (mobile) ──────────────────── */
 .size-box-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .size-box{
@@ -727,7 +739,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <input id="nl-popup-mail" style="flex:1;border:1px solid #333;border-right:none;background:transparent;padding:14px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--w);outline:none;min-width:0;" placeholder="La tua email..."/>
         <button onclick="subNLPopup()" style="background:var(--led);color:var(--k);border:none;padding:14px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;flex-shrink:0;font-weight:bold;">Entra →</button>
       </div>
-      <p style="font-size:9px;color:#333;letter-spacing:1px;">Niente spam. Disiscrivi in qualsiasi momento.</p>
+      <p style="font-size:9px;color:#888;letter-spacing:1px;">Niente spam. Disiscrivi in qualsiasi momento.</p>
     </div>
   </div>
 </div>
@@ -782,7 +794,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
     <div style="padding:20px 24px;border-top:1px solid var(--border);">
       <div id="d-pts-wrap" style="display:none;margin-bottom:16px;">
-        <p style="font-size:9px;color:#444;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Il tuo saldo</p>
+        <p style="font-size:9px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Il tuo saldo</p>
         <p style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--led);"><span id="d-pts">0</span> PTS</p>
       </div>
       <p style="font-size:9px;color:#333;letter-spacing:1px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b6c5c3c6c6d9c4c2f6dadfdadad9d0dfd8d298d5d9db">[email&#160;protected]</a></p>
@@ -1015,19 +1027,19 @@ img{ -webkit-user-drag:none; user-select:none; }
       <button class="btn-led" onclick="showPg('lfpoints')">Scopri i Premi →</button>
     </div>
     <div style="background:var(--k);color:var(--w);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;" class="pad-mob">
-      <p class="slbl" style="color:#333;margin-bottom:12px;">Il Tuo Saldo</p>
+      <p class="slbl" style="color:#888;margin-bottom:12px;">Il Tuo Saldo</p>
       <div>
         <div class="bb outline-led" id="home-pts" style="font-size:clamp(72px,11vw,148px);line-height:.9;">000</div>
-        <p style="font-size:9px;letter-spacing:3px;color:#333;margin-top:10px;text-transform:uppercase;">LFPOINTS</p>
+        <p style="font-size:9px;letter-spacing:3px;color:#888;margin-top:10px;text-transform:uppercase;">LFPOINTS</p>
       </div>
       <div style="border-top:1px solid #1e1e1e;padding-top:20px;display:flex;gap:32px;flex-wrap:wrap;">
         <div>
           <p class="bb" id="home-tier" style="font-size:22px;color:var(--led);">—</p>
-          <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;">Livello</p>
+          <p style="font-size:9px;color:#888;letter-spacing:2px;text-transform:uppercase;">Livello</p>
         </div>
         <div>
           <p class="bb" id="home-spent" style="font-size:22px;">€0</p>
-          <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;">Speso</p>
+          <p style="font-size:9px;color:#888;letter-spacing:2px;text-transform:uppercase;">Speso</p>
         </div>
       </div>
     </div>
@@ -1040,9 +1052,9 @@ img{ -webkit-user-drag:none; user-select:none; }
   <section id="home-auth-cta" style="background:var(--k);color:var(--w);padding:48px 36px;border-bottom:2px solid var(--k);display:none;" class="pad-mob">
     <div style="max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;">
       <div>
-        <p class="slbl" style="color:#333;margin-bottom:8px;">Sei nuovo qui?</p>
+        <p class="slbl" style="color:#888;margin-bottom:8px;">Sei nuovo qui?</p>
         <h2 class="bb" style="font-size:clamp(32px,4vw,52px);margin-bottom:8px;">Registrati. È Gratis.</h2>
-        <p style="font-size:11px;color:#555;letter-spacing:1px;">Guadagna LFPOINTS al primo acquisto.</p>
+        <p style="font-size:11px;color:#aaa;letter-spacing:1px;">Guadagna LFPOINTS al primo acquisto.</p>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
         <button onclick="showPg('auth');switchTab('reg')" class="btn-led">Crea Account</button>
@@ -1060,6 +1072,107 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div id="home-prods" class="pgrid"></div>
   </section>
 
+  <!-- BRAND SHOWCASE -->
+  <section id="brand-showcase" style="padding:56px 24px;border-bottom:2px solid var(--k);background:#fafafa;">
+    <div style="max-width:1100px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:40px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#aaa;margin-bottom:8px;">Nel Catalogo</p>
+          <h2 class="bb" style="font-size:clamp(28px,4vw,48px);">I Brand.</h2>
+        </div>
+        <button class="btn-g" style="padding:8px 16px;font-size:10px;" onclick="showPg('shop')">Shop All →</button>
+      </div>
+
+      <!-- Brand grid -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;" id="brand-grid-home">
+
+        <!-- Nike -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Nike'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg" width="52" height="20"><path d="M0 30 Q50-10 100 5 L60 30 Z" fill="#111"/></svg>
+          </div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">NIKE</span>
+        </div>
+
+        <!-- Jordan -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Jordan'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:32px;">🏀</div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">JORDAN</span>
+        </div>
+
+        <!-- Adidas -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Adidas'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 60 50" xmlns="http://www.w3.org/2000/svg" width="40" height="34"><polygon points="30,2 58,48 2,48" fill="none" stroke="#111" stroke-width="5"/><line x1="15" y1="38" x2="45" y2="38" stroke="#111" stroke-width="5"/><line x1="20" y1="27" x2="40" y2="27" stroke="#111" stroke-width="5"/></svg>
+          </div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">ADIDAS</span>
+        </div>
+
+        <!-- Supreme -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Supreme'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:28px;background:#e8111a;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:'Arial Black',sans-serif;font-size:9px;font-weight:900;color:#fff;letter-spacing:.5px;">Supreme</span>
+          </div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">SUPREME</span>
+        </div>
+
+        <!-- Bape -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Bape'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:30px;">🦍</div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">BAPE</span>
+        </div>
+
+        <!-- Off-White -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Off-White'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:'Arial',sans-serif;font-size:9px;font-weight:900;color:#111;letter-spacing:.5px;text-align:center;line-height:1.4;">OFF<br/>WHITE</span>
+          </div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">OFF-WHITE</span>
+        </div>
+
+        <!-- New Balance -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','New Balance'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:'Arial Black',sans-serif;font-size:28px;font-weight:900;color:#c8102e;">N</span>
+          </div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">NEW BALANCE</span>
+        </div>
+
+        <!-- Stüssy -->
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter&&setFilter('brand','Stussy'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+          <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:'Georgia',serif;font-size:22px;font-weight:700;color:#111;font-style:italic;">Stüssy</span>
+          </div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">STÜSSY</span>
+        </div>
+
+      </div>
+
+      <!-- Ticker dei brand sotto -->
+      <div class="ticker-w" style="margin-top:36px;border-top:1px solid #e0e0e0;padding-top:18px;overflow:hidden;">
+        <div class="ticker" style="gap:0;">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NIKE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">JORDAN</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">ADIDAS</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">SUPREME</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">BAPE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">OFF-WHITE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NEW BALANCE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">STÜSSY</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <!-- duplicato per loop infinito -->
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NIKE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">JORDAN</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">ADIDAS</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">SUPREME</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">BAPE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">OFF-WHITE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NEW BALANCE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">STÜSSY</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- TRUST & SHIPPING TRANSPARENCY -->
   <section style="background:var(--k);color:var(--w);padding:40px 24px;border-bottom:2px solid var(--k);">
     <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;">
@@ -1068,28 +1181,28 @@ img{ -webkit-user-drag:none; user-select:none; }
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
         </div>
         <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Spedizione Sicura</p>
-        <p style="font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">DHL Express · 10/15 giorni lavorativi. <strong style="color:var(--w);">Zero rischi doganali</strong> grazie alla spedizione triangolata — nessuna tassa extra per tutta Europa.</p>
+        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">DHL Express · 10/15 giorni lavorativi. <strong style="color:var(--w);">Zero rischi doganali</strong> grazie alla spedizione triangolata — nessuna tassa extra per tutta Europa.</p>
       </div>
       <div style="padding:24px 28px;border-right:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">
         <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Garanzia di Rispedizione</p>
-        <p style="font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">In caso di problema doganale (raro ma possibile), <strong style="color:var(--w);">rispediamo a nostre spese</strong>. Rischio zero per te.</p>
+        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">In caso di problema doganale (raro ma possibile), <strong style="color:var(--w);">rispediamo a nostre spese</strong>. Rischio zero per te.</p>
       </div>
       <div style="padding:24px 28px;border-right:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">
         <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         </div>
         <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Qualità 1:1 Verificata</p>
-        <p style="font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">Materiali identici all'originale. Tag box incluse, cuciture di precisione. Foto QC disponibili prima della spedizione.</p>
+        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">Materiali identici all'originale. Tag box incluse, cuciture di precisione. Foto QC disponibili prima della spedizione.</p>
       </div>
       <div style="padding:24px 28px;border-bottom:1px solid #1a1a1a;">
         <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
         </div>
         <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Reso 30 Giorni</p>
-        <p style="font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">Nessuna domanda. Reso completamente gratuito entro 30 giorni dalla ricezione. La tua soddisfazione è garantita.</p>
+        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">Nessuna domanda. Reso completamente gratuito entro 30 giorni dalla ricezione. La tua soddisfazione è garantita.</p>
       </div>
     </div>
   </section>
@@ -1423,10 +1536,10 @@ img{ -webkit-user-drag:none; user-select:none; }
   <!-- Hero -->
   <section style="background:var(--k);color:var(--w);padding:60px 24px;border-bottom:2px solid var(--k);">
     <div class="led-strip-sm" style="margin-bottom:32px;"></div>
-    <p class="slbl" style="color:#333;margin-bottom:12px;">Programma Fedeltà Esclusivo</p>
+    <p class="slbl" style="color:#888;margin-bottom:12px;">Programma Fedeltà Esclusivo</p>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;max-width:1100px;">
       <h1 class="bb" style="font-size:clamp(64px,11vw,150px);line-height:.88;color:var(--led);">LFPOINTS</h1>
-      <p style="font-size:11px;color:#555;line-height:1.9;max-width:340px;">
+      <p style="font-size:11px;color:#aaa;line-height:1.9;max-width:340px;">
         LILLOFIND premia chi rimane nel tempo. Ogni euro speso diventa un punto fedeltà. I punti non scadono mai e si convertono in sconti reali.
       </p>
     </div>
@@ -2052,7 +2165,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div style="padding:36px 24px;border-bottom:1px solid #141414;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;">
     <div>
       <p class="bb" style="font-size:24px;margin-bottom:4px;">📨 Drop Alert. Sempre Primo.</p>
-      <p style="font-size:10px;color:#444;letter-spacing:1px;">Iscriviti e accedi ai drop 24h prima. Niente spam.</p>
+      <p style="font-size:10px;color:#888;letter-spacing:1px;">Iscriviti e accedi ai drop 24h prima. Niente spam.</p>
     </div>
     <div style="display:flex;gap:0;max-width:380px;width:100%;">
       <input id="nl-mail" style="flex:1;border:1px solid #1e1e1e;border-right:none;background:transparent;padding:13px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--w);outline:none;min-width:0;" placeholder="La tua email..."/>
@@ -2068,24 +2181,24 @@ img{ -webkit-user-drag:none; user-select:none; }
 
     <div>
       <p class="bb" style="font-size:28px;letter-spacing:4px;margin-bottom:12px;">LILLOFIND</p>
-      <p style="font-size:10px;color:#444;line-height:1.9;max-width:220px;margin-bottom:20px;">Streetwear autentico, curato per chi ha uno stile definito. Nessuna tendenza passeggera.</p>
+      <p style="font-size:10px;color:#888;line-height:1.9;max-width:220px;margin-bottom:20px;">Streetwear autentico, curato per chi ha uno stile definito. Nessuna tendenza passeggera.</p>
       <div style="display:flex;gap:12px;margin-bottom:20px;">
-        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">IG</a>
-        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">TK</a>
-        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">YT</a>
-        <a href="#" style="font-size:10px;letter-spacing:2px;color:#444;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#444'">X</a>
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#888;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#888'">IG</a>
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#888;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#888'">TK</a>
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#888;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#888'">YT</a>
+        <a href="#" style="font-size:10px;letter-spacing:2px;color:#888;text-decoration:none;text-transform:uppercase;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='#888'">X</a>
       </div>
       <!-- Emoji badges -->
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">🔒 SSL</div>
-        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">🚀 DHL</div>
-        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">🇪🇺 GDPR</div>
-        <div style="border:1px solid #1a1a1a;padding:5px 8px;font-size:10px;color:#333;">♻️ ECO</div>
+        <div style="border:1px solid #333;padding:5px 8px;font-size:10px;color:#888;">🔒 SSL</div>
+        <div style="border:1px solid #333;padding:5px 8px;font-size:10px;color:#888;">🚀 DHL</div>
+        <div style="border:1px solid #333;padding:5px 8px;font-size:10px;color:#888;">🇪🇺 GDPR</div>
+        <div style="border:1px solid #333;padding:5px 8px;font-size:10px;color:#888;">♻️ ECO</div>
       </div>
     </div>
 
     <div>
-      <p style="font-size:9px;letter-spacing:3px;color:#333;margin-bottom:18px;text-transform:uppercase;">Esplora</p>
+      <p style="font-size:9px;letter-spacing:3px;color:#888;margin-bottom:18px;text-transform:uppercase;">Esplora</p>
       <button class="flink" onclick="showPg('shop')">🛍️ Shop</button>
       <button class="flink" onclick="showPg('lfpoints')">⬡ LFPoints</button>
       <button class="flink" onclick="showPg('home')">🔥 Nuovi Arrivi</button>
@@ -2095,25 +2208,25 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
 
     <div>
-      <p style="font-size:9px;letter-spacing:3px;color:#333;margin-bottom:18px;text-transform:uppercase;">Assistenza</p>
+      <p style="font-size:9px;letter-spacing:3px;color:#888;margin-bottom:18px;text-transform:uppercase;">Assistenza</p>
       <button class="flink" onclick="openInfo('come-ordinare')">📋 Come Ordinare</button>
       <button class="flink" onclick="openInfo('spedizioni')">✈️ Spedizioni DHL</button>
       <button class="flink" onclick="openInfo('resi')">🔄 Resi &amp; Rimborsi</button>
       <button class="flink" onclick="document.getElementById('size-modal').classList.add('open')">📏 Guida Taglie</button>
       <button class="flink" onclick="openInfo('traccia')">📍 Traccia Ordine</button>
       <a href="/cdn-cgi/l/email-protection#22515752524d5056624e4b4e4e4d444b4c460c414d4f" class="flink" style="text-decoration:none;">✉️ Email Supporto</a>
-      <p style="font-size:9px;color:#2a2a2a;margin-top:10px;line-height:1.8;">Lun–Ven 9:00–18:00<br/>Sab 10:00–14:00</p>
+      <p style="font-size:9px;color:#666;margin-top:10px;line-height:1.8;">Lun–Ven 9:00–18:00<br/>Sab 10:00–14:00</p>
     </div>
 
     <div>
-      <p style="font-size:9px;letter-spacing:3px;color:#333;margin-bottom:18px;text-transform:uppercase;">Legale</p>
+      <p style="font-size:9px;letter-spacing:3px;color:#888;margin-bottom:18px;text-transform:uppercase;">Legale</p>
       <button class="flink" onclick="openInfo('privacy')">Privacy Policy</button>
       <button class="flink" onclick="openInfo('cookie')">Cookie Policy</button>
       <button class="flink" onclick="openInfo('termini')">Termini di Servizio</button>
       <button class="flink" onclick="openInfo('recesso')">Diritto di Recesso</button>
       <button class="flink" onclick="openInfo('note-legali')">Note Legali</button>
       <div style="margin-top:18px;border:1px solid #141414;padding:12px;">
-        <p style="font-size:9px;color:#2a2a2a;letter-spacing:.5px;line-height:1.9;text-transform:uppercase;">
+        <p style="font-size:9px;color:#666;letter-spacing:.5px;line-height:1.9;text-transform:uppercase;">
           LILLOFIND S.R.L.<br/>P.IVA: IT 00000000000<br/>REA: MI – 000000<br/>Cap. Soc. €10.000 i.v.
         </p>
       </div>
@@ -2122,15 +2235,15 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   <!-- Bottom bar -->
   <div style="padding:18px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-    <p style="font-size:9px;color:#222;letter-spacing:1px;">© 2026 LILLOFIND S.R.L. — All rights reserved.</p>
+    <p style="font-size:9px;color:#666;letter-spacing:1px;">© 2026 LILLOFIND S.R.L. — All rights reserved.</p>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">💳 VISA</div>
-      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">💳 MC</div>
-      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">🅿️ PAYPAL</div>
-      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;"> APPLE PAY</div>
-      <div style="border:1px solid #1a1a1a;padding:4px 8px;font-size:9px;color:#222;">🛒 KLARNA</div>
+      <div style="border:1px solid #333;padding:4px 8px;font-size:9px;color:#888;">💳 VISA</div>
+      <div style="border:1px solid #333;padding:4px 8px;font-size:9px;color:#888;">💳 MC</div>
+      <div style="border:1px solid #333;padding:4px 8px;font-size:9px;color:#888;">🅿️ PAYPAL</div>
+      <div style="border:1px solid #333;padding:4px 8px;font-size:9px;color:#888;"> APPLE PAY</div>
+      <div style="border:1px solid #333;padding:4px 8px;font-size:9px;color:#888;">🛒 KLARNA</div>
     </div>
-    <p style="font-size:9px;color:#181818;letter-spacing:1px;">DHL Express · Reso 30gg · SSL</p>
+    <p style="font-size:9px;color:#666;letter-spacing:1px;">DHL Express · Reso 30gg · SSL</p>
   </div>
 </footer>
 
@@ -2557,7 +2670,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function renderHomeProds(){
     const h=document.getElementById('home-prods');
     if(!h)return;
-    const latest=products.slice(0,4);
+    const latest=products.slice(0,8);
     h.innerHTML=latest.length?latest.map(cardHTML).join(''):`<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>`;
     h.style.display='grid';
   }
