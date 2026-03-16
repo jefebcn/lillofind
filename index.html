@@ -596,36 +596,6 @@ img{ -webkit-user-drag:none; user-select:none; }
 /* ── HOME LATEST DROPS — grid for 8 products ────── */
 @media(min-width:900px){#home-prods{grid-template-columns:repeat(4,1fr);gap:20px;}}
 
-/* ── AMBIENT HERO BLOBS ──────────────────────────────── */
-.hblob{
-  position:absolute;border-radius:50%;
-  filter:blur(90px);
-  will-change:transform;
-  animation:blob-drift 18s ease-in-out infinite;
-}
-.hblob-1{
-  width:340px;height:340px;
-  background:radial-gradient(circle,rgba(200,255,0,.18) 0%,transparent 70%);
-  top:-80px;right:-60px;
-  animation-duration:20s;
-}
-.hblob-2{
-  width:280px;height:280px;
-  background:radial-gradient(circle,rgba(0,255,178,.12) 0%,transparent 70%);
-  bottom:10%;left:-40px;
-  animation-duration:25s;animation-delay:-8s;
-}
-.hblob-3{
-  width:200px;height:200px;
-  background:radial-gradient(circle,rgba(200,255,0,.08) 0%,transparent 70%);
-  top:40%;left:30%;
-  animation-duration:30s;animation-delay:-14s;
-}
-@keyframes blob-drift{
-  0%,100%{transform:translate(0,0) scale(1);}
-  33%{transform:translate(30px,-20px) scale(1.08);}
-  66%{transform:translate(-20px,30px) scale(.94);}
-}
 
 /* ── CAROUSEL ───────────────────────────────────────── */
 .hide-scrollbar::-webkit-scrollbar{display:none;}
@@ -960,24 +930,147 @@ img{ -webkit-user-drag:none; user-select:none; }
 
     <!-- Globe removed — LED wordmark takes over -->
 
-    <!-- ── AMBIENT COLOR BLOBS (pure CSS, no JS) ── -->
-    <div id="hero-blobs" style="position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;">
-      <div class="hblob hblob-1"></div>
-      <div class="hblob hblob-2"></div>
-      <div class="hblob hblob-3"></div>
-    </div>
+
     <!-- ── SCANLINE TEXTURE ── -->
     <div style="position:absolute;inset:0;z-index:4;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px);"></div>
 
+    <!-- ── PARTICLE NETWORK CANVAS ── -->
+    <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.55;"></canvas>
+    <script>
+    (function(){
+      var cvs=document.getElementById('hero-canvas');
+      if(!cvs)return;
+      var ctx=cvs.getContext('2d');
+      var W,H,pts=[];
+      var LIME='rgba(200,255,0,';
+      var N_MOBILE=38, N_DESK=70;
+
+      function resize(){
+        W=cvs.width=cvs.offsetWidth;
+        H=cvs.height=cvs.offsetHeight;
+      }
+      window.addEventListener('resize',resize,{passive:true});
+
+      function randPt(){
+        return{
+          x:Math.random()*W, y:Math.random()*H,
+          vx:(Math.random()-.5)*.22, vy:(Math.random()-.5)*.18,
+          r:Math.random()<.06?2.2:Math.random()<.25?1.4:0.7,
+          lime:false, limeT:0,
+          // random delay before first lime pulse
+          nextLime: Date.now()+6000+Math.random()*18000
+        };
+      }
+
+      function init(){
+        resize();
+        var N=window.innerWidth<769?N_MOBILE:N_DESK;
+        pts=[];
+        for(var i=0;i<N;i++) pts.push(randPt());
+      }
+
+      var lastFrame=0;
+      function draw(ts){
+        requestAnimationFrame(draw);
+        // Cap at ~40fps to save battery on mobile
+        if(ts-lastFrame<25)return;
+        lastFrame=ts;
+
+        ctx.clearRect(0,0,W,H);
+
+        var now=Date.now();
+        var DIST=window.innerWidth<769?90:130;
+
+        // Update positions & lime state
+        for(var i=0;i<pts.length;i++){
+          var p=pts[i];
+          p.x+=p.vx; p.y+=p.vy;
+          // Wrap around
+          if(p.x<-10)p.x=W+10;
+          else if(p.x>W+10)p.x=-10;
+          if(p.y<-10)p.y=H+10;
+          else if(p.y>H+10)p.y=-10;
+          // Lime pulse lifecycle
+          if(!p.lime && now>p.nextLime){
+            p.lime=true; p.limeT=now;
+          }
+          if(p.lime && now-p.limeT>1800){
+            p.lime=false;
+            p.nextLime=now+8000+Math.random()*14000;
+          }
+        }
+
+        // Draw connections
+        for(var i=0;i<pts.length;i++){
+          for(var j=i+1;j<pts.length;j++){
+            var dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+            var d=Math.sqrt(dx*dx+dy*dy);
+            if(d>DIST)continue;
+            var alpha=(1-d/DIST)*.18;
+            var eitherLime=pts[i].lime||pts[j].lime;
+            if(eitherLime){
+              var lt=pts[i].lime?pts[i].limeT:pts[j].limeT;
+              var prog=Math.min((now-lt)/800,1);
+              var fadeAlpha=alpha*(prog<.5?prog*2:2-prog*2+.3);
+              ctx.strokeStyle=LIME+fadeAlpha+')';
+              ctx.lineWidth=0.8;
+            } else {
+              ctx.strokeStyle='rgba(255,255,255,'+alpha+')';
+              ctx.lineWidth=0.5;
+            }
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x,pts[i].y);
+            ctx.lineTo(pts[j].x,pts[j].y);
+            ctx.stroke();
+          }
+        }
+
+        // Draw nodes
+        for(var i=0;i<pts.length;i++){
+          var p=pts[i];
+          if(p.lime){
+            var prog=Math.min((now-p.limeT)/600,1);
+            var fa=prog<.5?prog*2:(2-prog*2+.2);
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.r*2.2,0,Math.PI*2);
+            ctx.fillStyle=LIME+(fa*.9)+')';
+            ctx.fill();
+            // Glow ring
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.r*5,0,Math.PI*2);
+            ctx.strokeStyle=LIME+(fa*.12)+')';
+            ctx.lineWidth=1;
+            ctx.stroke();
+          } else {
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+            ctx.fillStyle='rgba(255,255,255,'+(p.r>1.8?.25:p.r>1.2?.15:.09)+')';
+            ctx.fill();
+          }
+        }
+      }
+
+      // Wait for hero section to have a size
+      setTimeout(function(){
+        init();
+        requestAnimationFrame(draw);
+      },100);
+
+      // Re-init on resize to adjust particle count
+      var resizeT;
+      window.addEventListener('resize',function(){
+        clearTimeout(resizeT);
+        resizeT=setTimeout(init,300);
+      },{passive:true});
+    })();
+    </script>
+
     <div id="hero-lines" style="position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;">
-      <div style="position:absolute;top:-50%;left:60%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.2) 50%,transparent);transform:rotate(-10deg);"></div>
-      <div style="position:absolute;top:-50%;left:70%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.06) 50%,transparent);transform:rotate(-10deg);"></div>
+      <div style="position:absolute;top:-50%;left:60%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.12) 50%,transparent);transform:rotate(-10deg);"></div>
+      <div style="position:absolute;top:-50%;left:70%;width:1px;height:200%;background:linear-gradient(180deg,transparent,rgba(200,255,0,.04) 50%,transparent);transform:rotate(-10deg);"></div>
     </div>
 
-    <div id="hero-glows" style="position:absolute;inset:0;z-index:3;pointer-events:none;">
-      <div style="position:absolute;top:10%;right:5%;width:8px;height:8px;background:var(--led);border-radius:50%;box-shadow:0 0 32px var(--led),0 0 64px rgba(200,255,0,.3);animation:pulse-led 3s ease-in-out infinite;"></div>
-      <div style="position:absolute;top:35%;right:12%;width:4px;height:4px;background:var(--led2);border-radius:50%;box-shadow:0 0 18px var(--led2);animation:pulse-led 4s ease-in-out infinite;"></div>
-    </div>
+
 
     <!-- LILLOFIND watermark — visible through globe -->
     <!-- ═══ LILLOFIND LED SIGN ═══ -->
@@ -1086,35 +1179,6 @@ img{ -webkit-user-drag:none; user-select:none; }
   </section>
 
 
-
-  <!-- ── LIME ANNOUNCEMENT STRIP ── -->
-  <div id="lime-strip" onclick="showPg('shop')" style="background:var(--led);cursor:pointer;overflow:hidden;position:relative;border-bottom:2px solid #a8d900;">
-    <div style="display:flex;align-items:center;height:52px;">
-      <div class="ticker" style="animation-duration:22s;white-space:nowrap;">
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:4px;color:#000;padding:0 28px;">🔥 SS 2026 — DROP LIVE ORA</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">QUALITÀ 1:1 VERIFICATA</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">SPEDIZIONE DHL EXPRESS</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">RESO GRATIS 30 GIORNI</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">+1 LFPOINT PER OGNI € SPESO</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <!-- duplicate -->
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:4px;color:#000;padding:0 28px;">🔥 SS 2026 — DROP LIVE ORA</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">QUALITÀ 1:1 VERIFICATA</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">SPEDIZIONE DHL EXPRESS</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">RESO GRATIS 30 GIORNI</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#000;padding:0 28px;">+1 LFPOINT PER OGNI € SPESO</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,.5);padding:0 16px;">·</span>
-      </div>
-    </div>
-  </div>
 
   <!-- ── PRODOTTI CAROUSEL ── -->
   <section id="home-carousel-wrap" style="background:#0d0d0d;border-bottom:2px solid #111;padding:28px 0 24px;overflow:hidden;">
