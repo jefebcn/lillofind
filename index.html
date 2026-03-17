@@ -3413,12 +3413,60 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!user){showToast('Accedi per completare l\'ordine');showPg('auth');return;}
     if(!cart.length){showToast('Carrello vuoto!');return;}
     const allDigital=cart.every(i=>i.isDigital);
+
+    // ── Helper: highlight invalid field ─────────────────────
+    function markErr(id,msg){
+      const el=document.getElementById(id);
+      if(!el)return;
+      el.style.borderColor='#e00';
+      el.style.background='#fff5f5';
+      el.addEventListener('input',function fix(){el.style.borderColor='';el.style.background='';el.removeEventListener('input',fix);},{once:true});
+    }
+    function clearErr(id){
+      const el=document.getElementById(id);
+      if(el){el.style.borderColor='';el.style.background='';}
+    }
+
+    // ── 1. Validate shipping address (non-digital only) ─────
     const fname=document.getElementById('ck-fname')?.value.trim()||'';
     const lname=document.getElementById('ck-lname')?.value.trim()||'';
     const street=document.getElementById('ck-street')?.value.trim()||'';
     const city=document.getElementById('ck-city')?.value.trim()||'';
     const zip=document.getElementById('ck-zip')?.value.trim()||'';
-    if(!allDigital&&(!fname||!lname||!street||!city||!zip)){showToast('⚠️ Compila tutti i campi obbligatori.');return;}
+    if(!allDigital){
+      let addrOk=true;
+      if(!fname){markErr('ck-fname');addrOk=false;}else clearErr('ck-fname');
+      if(!lname){markErr('ck-lname');addrOk=false;}else clearErr('ck-lname');
+      if(!street){markErr('ck-street');addrOk=false;}else clearErr('ck-street');
+      if(!city){markErr('ck-city');addrOk=false;}else clearErr('ck-city');
+      if(!zip||zip.length<4){markErr('ck-zip');addrOk=false;}else clearErr('ck-zip');
+      if(!addrOk){
+        showToast('⚠️ Compila l\'indirizzo di spedizione.');
+        document.getElementById('ck-shipping-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+        return;
+      }
+    }
+
+    // ── 2. Validate payment ─────────────────────────────────
+    if(selectedPayment==='card'){
+      const cardNum=(document.getElementById('ck-card-num')?.value||'').replace(/\s/g,'');
+      const cardExp=document.getElementById('ck-card-exp')?.value.trim()||'';
+      const cardCvv=document.getElementById('ck-card-cvv')?.value.trim()||'';
+      const cardName=document.getElementById('ck-card-name')?.value.trim()||'';
+      let cardOk=true;
+      if(cardNum.length<15){markErr('ck-card-num');cardOk=false;}else clearErr('ck-card-num');
+      if(!/^\d{2}\/\d{2}$/.test(cardExp)){markErr('ck-card-exp');cardOk=false;}else clearErr('ck-card-exp');
+      if(cardCvv.length<3){markErr('ck-card-cvv');cardOk=false;}else clearErr('ck-card-cvv');
+      if(!cardName){markErr('ck-card-name');cardOk=false;}else clearErr('ck-card-name');
+      if(!cardOk){
+        showToast('⚠️ Compila correttamente i dati della carta.');
+        document.getElementById('pay-card-fields')?.scrollIntoView({behavior:'smooth',block:'start'});
+        return;
+      }
+    } else if(selectedPayment==='bonifico'){
+      // Bonifico: show reminder that order will be held until payment received
+      showToast('ℹ️ Ordine in attesa — confermato alla ricezione del bonifico.');
+    }
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
     const ship=allDigital?0:(total>=80?0:6.90);
     const pts=Math.floor(total);
