@@ -2168,6 +2168,14 @@ img{ -webkit-user-drag:none; user-select:none; }
           <p style="font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Indirizzi</p>
         </button>
       </div>
+
+      <!-- Order history -->
+      <div style="border-top:2px solid var(--k);padding-top:24px;margin-top:28px;">
+        <p class="slbl" style="margin-bottom:16px;">Storico Ordini</p>
+        <div id="pr-orders-list">
+          <p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Caricamento...</p>
+        </div>
+      </div>
     </div>
 
     <!-- ─── TAB: TRACKING ─────────────────────────────── -->
@@ -3607,6 +3615,46 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(typeof renderTracking==='function') renderTracking();
   }
 
+  async function renderOrderHistory(){
+    const wrap=document.getElementById('pr-orders-list');
+    if(!wrap||!user)return;
+    const fb=window.__fb;
+    if(!fb)return;
+    wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Caricamento...</p>';
+    try{
+      const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(10));
+      const snap=await fb.getDocs(q);
+      if(snap.empty){
+        wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun ordine ancora. Il tuo storico apparirà qui dopo il primo acquisto.</p>';
+        return;
+      }
+      const statusLabel={pending:'In attesa',confirmed:'Confermato',shipped:'Spedito',in_transito:'In transito',in_consegna:'In consegna',consegnato:'Consegnato'};
+      const statusColor={pending:'#f0a500',confirmed:'var(--led)',shipped:'#0098d4',in_transito:'#0098d4',in_consegna:'#7c3aed',consegnato:'#16a34a'};
+      const statusTxt={pending:'#fff',confirmed:'var(--k)',shipped:'#fff',in_transito:'#fff',in_consegna:'#fff',consegnato:'#fff'};
+      wrap.innerHTML=snap.docs.map(d=>{
+        const o=d.data();
+        const date=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+        const st=o.status||'pending';
+        const itemSummary=(o.items||[]).slice(0,2).map(i=>i.name).join(', ')+(o.items?.length>2?` +${o.items.length-2}`:'');
+        return `<div style="padding:12px 0;border-bottom:1px solid #f0f0f0;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+            <div>
+              <p style="font-size:11px;font-weight:600;letter-spacing:.5px;">${o.orderId||d.id}</p>
+              <p style="font-size:10px;color:var(--dim);margin-top:2px;">${date}${itemSummary?' · '+itemSummary:''}</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+              <span style="font-size:13px;font-weight:700;">€${(o.total||0).toFixed(2)}</span>
+              <span style="font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;background:${statusColor[st]||'#999'};color:${statusTxt[st]||'#fff'};">${statusLabel[st]||st}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }catch(e){
+      wrap.innerHTML='<p style="font-size:11px;color:#c00;">Errore nel caricamento ordini.</p>';
+    }
+  }
+  window.renderOrderHistory=renderOrderHistory;
+
   window.claimReward=function(label){
     showToast(`✅ Codice ${label} copiato! Usalo al checkout.`);
   };
@@ -3666,6 +3714,11 @@ img{ -webkit-user-drag:none; user-select:none; }
         udata=s.exists()?s.data():{};
       } else { udata=null; }
       updateNav(u,udata); updateHomeDisplay();
+      // Re-render profile if it's already open (covers race condition on load)
+      if(u && document.getElementById('pg-profile')?.classList.contains('on')){
+        if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
+        if(typeof renderOrderHistory==='function') renderOrderHistory();
+      }
       if(!products.length){
         try{
           const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
@@ -3968,6 +4021,13 @@ img{ -webkit-user-drag:none; user-select:none; }
     document.querySelectorAll('.ptab').forEach(p=>p.classList.remove('on'));
     const el=document.getElementById('ptab-'+tab);
     if(el) el.classList.add('on');
+    // Always re-fetch latest user data when switching to tracking tab
+    if(tab==='tracking'&&user&&window.__fb){
+      window.__fb.getDoc(window.__fb.doc(window.__fb.db,'users',user.uid)).then(s=>{
+        if(s.exists()) udata={...udata,...s.data()};
+        if(typeof renderTracking==='function') renderTracking();
+      }).catch(()=>{if(typeof renderTracking==='function') renderTracking();});
+    }
   };
 
   // ── ADDRESSES ───────────────────────────────────────────
@@ -4159,6 +4219,16 @@ img{ -webkit-user-drag:none; user-select:none; }
     _origShowPg(id);
     if(id==='cart'){setTimeout(()=>{renderCart();if(typeof showQCOption==='function')showQCOption();},80);}
     if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');},50);}
+    if(id==='profile'&&user&&window.__fb){
+      // Re-fetch fresh user data from Firestore every time profile is opened
+      window.__fb.getDoc(window.__fb.doc(window.__fb.db,'users',user.uid)).then(s=>{
+        if(s.exists()) udata={...udata,...s.data()};
+        if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
+        if(typeof renderOrderHistory==='function') renderOrderHistory();
+      }).catch(()=>{
+        if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
+      });
+    }
   };
 
 
