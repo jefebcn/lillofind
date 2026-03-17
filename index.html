@@ -857,6 +857,64 @@ img{ -webkit-user-drag:none; user-select:none; }
   display:flex;justify-content:space-between;align-items:center;
   flex-wrap:wrap;gap:12px;
 }
+/* Annual savings badge */
+.annual-savings-badge{
+  display:inline-flex;flex-direction:column;align-items:center;
+  background:var(--k);color:var(--led);
+  padding:6px 10px;flex-shrink:0;min-width:72px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.annual-savings-badge .asb-num{
+  font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;
+}
+.annual-savings-badge .asb-lbl{
+  font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:#aaa;margin-top:1px;
+}
+
+/* Live status dot */
+.live-dot{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:'IBM Plex Mono',monospace;font-size:8px;
+  letter-spacing:1px;text-transform:uppercase;color:#22c55e;
+}
+.live-dot::before{
+  content:'';width:7px;height:7px;border-radius:50%;
+  background:#22c55e;flex-shrink:0;
+  animation:pulse-dot .9s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{opacity:.7;box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+
+/* Spots left urgency badge */
+.spots-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#fff8f0;border:1px solid #f59e0b;
+  color:#92400e;padding:3px 8px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:8px;letter-spacing:.5px;
+}
+
+/* Feature tooltip */
+.feat-tip{
+  position:relative;cursor:default;
+  border-bottom:1px dashed var(--dg1);
+}
+.feat-tip .tip-box{
+  display:none;position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);
+  background:var(--k);color:var(--w);
+  font-family:'Inter',sans-serif;font-size:10px;line-height:1.5;
+  white-space:normal;width:180px;
+  padding:8px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  z-index:200;pointer-events:none;
+  text-align:left;
+}
+.feat-tip .tip-box::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--k);
+}
+.feat-tip:hover .tip-box{display:block;}
+
 /* Digital badge in cart/checkout */
 .digital-badge{
   display:inline-flex;align-items:center;gap:5px;
@@ -1402,8 +1460,8 @@ img{ -webkit-user-drag:none; user-select:none; }
         <h2 class="bb" style="font-size:clamp(28px,4.5vw,56px);line-height:.93;margin-bottom:12px;">Upgrade il tuo<br/><span style="color:var(--dg1);">Lifestyle Digitale.</span></h2>
         <p style="font-size:11px;color:#aaa;line-height:1.8;max-width:380px;font-family:'Inter',sans-serif;">Abbonamenti premium condivisi a prezzo esclusivo. Netflix, Spotify, ChatGPT Plus e altri — consegnati via email.</p>
         <div style="display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,3vw,32px);color:var(--dg1);">Da soli €3.90/mese</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:#666;text-decoration:line-through;">vs €10.99 ufficiali</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,3vw,32px);color:var(--dg1);">Da soli €3.50/mese</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:#666;text-decoration:line-through;">vs prezzi ufficiali</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;">
@@ -2769,18 +2827,98 @@ img{ -webkit-user-drag:none; user-select:none; }
   let user=null, udata=null, authTab='li';
   let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
 
-  // ── SUBSCRIPTIONS DATA ─────────────────────────────────
-  const SUBSCRIPTIONS=[
-    {id:'sub-netflix',     name:'Netflix Premium',       category:'Video',        icon:'📺', original_price:17.99, lillofind_price:6.90,  features:['4K HDR','4 schermi simultanei','Download offline']},
-    {id:'sub-disney',      name:'Disney+',               category:'Video',        icon:'🏰', original_price:13.99, lillofind_price:4.90,  features:['4K Ultra HD','Contenuti Marvel & Star Wars','Download illimitati']},
-    {id:'sub-youtube',     name:'YouTube Premium',       category:'Video',        icon:'▶️', original_price:13.99, lillofind_price:4.90,  features:['No pubblicità','YouTube Music incluso','Download video']},
-    {id:'sub-primevideo',  name:'Prime Video',           category:'Video',        icon:'🎬', original_price:4.99,  lillofind_price:2.90,  features:['Originals esclusivi','4K HDR','Download offline']},
-    {id:'sub-spotify',     name:'Spotify Premium',       category:'Music',        icon:'🎵', original_price:10.99, lillofind_price:3.90,  features:['Audio Hi-Fi','Zero pubblicità','Download musica']},
-    {id:'sub-applemusic',  name:'Apple Music',           category:'Music',        icon:'🎶', original_price:10.99, lillofind_price:3.90,  features:['100M+ brani','Audio Lossless','Dolby Atmos']},
-    {id:'sub-chatgpt',     name:'ChatGPT Plus',          category:'Productivity', icon:'🤖', original_price:22.00, lillofind_price:8.90,  features:['GPT-4 accesso','Immagini DALL-E','Risposta prioritaria']},
-    {id:'sub-canva',       name:'Canva Pro',             category:'Productivity', icon:'🎨', original_price:14.99, lillofind_price:5.90,  features:['Template premium','Background remover','Brand Kit']},
-    {id:'sub-adobe',       name:'Adobe Creative Cloud',  category:'Productivity', icon:'🖌️', original_price:54.99, lillofind_price:18.90, features:['Photoshop + Illustrator','Premiere Pro','20GB Cloud Storage']},
+  // ── GLOBAL MARKUP CONFIG ───────────────────────────────
+  // Change global_markup to automatically update ALL subscription prices.
+  // lillofind_price = base_price + global_markup
+  const MARKUP_CONFIG = {
+    global_markup: 2.00,  // ← change this to update all prices at once
+  };
+
+  // ── SUBSCRIPTIONS BASE DATA (Gamsgo catalog) ───────────
+  // base_price = what you pay Gamsgo | official_price = public retail price
+  // feature_tips: hover explanation shown to the customer
+  const SUBSCRIPTIONS_BASE = [
+    {
+      id:'sub-netflix', name:'Netflix Premium UHD', category:'Video', icon:'📺',
+      official_price:17.99, base_price:3.90,
+      features:['4K HDR','1 Profilo Dedicato','TV, Tablet & Mobile'],
+      feature_tips:{
+        '4K HDR':              'Massima qualità video: immagini 4× più nitide rispetto all\'HD standard.',
+        '1 Profilo Dedicato':  'Il tuo profilo privato, solo per te. Nessuno accede alla tua cronologia.',
+        'TV, Tablet & Mobile': 'Disponibile su qualsiasi dispositivo: Smart TV, smartphone, tablet e PC.',
+      }
+    },
+    {
+      id:'sub-youtube', name:'YouTube Premium', category:'Video', icon:'▶️',
+      official_price:13.99, base_price:2.50,
+      features:['No Pubblicità','Background Play','YouTube Music Incluso'],
+      feature_tips:{
+        'No Pubblicità':          'Guarda tutti i video senza interruzioni pubblicitarie.',
+        'Background Play':        'Il video o la musica continuano anche con lo schermo spento.',
+        'YouTube Music Incluso':  'Accesso completo a YouTube Music Premium senza costi extra.',
+      }
+    },
+    {
+      id:'sub-spotify', name:'Spotify Premium', category:'Audio', icon:'🎵',
+      official_price:10.99, base_price:1.99,
+      features:['No Pubblicità','Download Offline','Audio Alta Qualità'],
+      feature_tips:{
+        'No Pubblicità':      'Ascolta musica senza interruzioni e senza annunci.',
+        'Download Offline':   'Scarica le tue playlist e ascoltale senza connessione internet.',
+        'Audio Alta Qualità': 'Streaming fino a 320 kbps — differenza udibile rispetto al gratuito.',
+      }
+    },
+    {
+      id:'sub-disney', name:'Disney+', category:'Video', icon:'🏰',
+      official_price:11.99, base_price:1.90,
+      features:['4K UHD','Group Watch','Pixar / Marvel / Star Wars'],
+      feature_tips:{
+        '4K UHD':                 'Ultra HD: risoluzione 4× superiore all\'HD standard.',
+        'Group Watch':            'Guarda insieme ad amici in sincronia, ognuno da casa propria.',
+        'Pixar / Marvel / Star Wars': 'Tutto il catalogo Disney: Pixar, Marvel, Star Wars, National Geographic.',
+      }
+    },
+    {
+      id:'sub-paramount', name:'Paramount+', category:'Video', icon:'⭐',
+      official_price:9.99, base_price:1.50,
+      features:['Serie Esclusive','Contenuti Showtime','1 Profilo'],
+      feature_tips:{
+        'Serie Esclusive':   'Serie TV e film disponibili solo su Paramount+, non altrove.',
+        'Contenuti Showtime':'Accesso all\'intero catalogo Showtime incluso nel prezzo.',
+        '1 Profilo':         'Un profilo personale dedicato esclusivamente a te.',
+      }
+    },
+    {
+      id:'sub-canva', name:'Canva Pro', category:'Productivity', icon:'🎨',
+      official_price:14.99, base_price:2.00,
+      features:['Brand Kit Completo','Magic Resize','Template Premium'],
+      feature_tips:{
+        'Brand Kit Completo': 'Salva loghi, palette colori e font del tuo brand per usarli subito.',
+        'Magic Resize':       'Adatta automaticamente il tuo design a qualsiasi formato con un click.',
+        'Template Premium':   'Migliaia di template professionali esclusivi, sbloccati con Pro.',
+      }
+    },
+    {
+      id:'sub-crunchyroll', name:'Crunchyroll Mega Fan', category:'Video', icon:'🍥',
+      official_price:9.99, base_price:1.50,
+      features:['No Pubblicità','Simulcast dal Giappone','Download Offline'],
+      feature_tips:{
+        'No Pubblicità':        'Guarda anime senza interruzioni pubblicitarie.',
+        'Simulcast dal Giappone':'Episodi disponibili in streaming entro 1 ora dall\'uscita in Giappone.',
+        'Download Offline':     'Scarica episodi e guardali senza connessione internet.',
+      }
+    },
   ];
+
+  // Auto-calculate lillofind_price = base_price + global_markup
+  const SUBSCRIPTIONS = SUBSCRIPTIONS_BASE.map(s => ({
+    ...s,
+    lillofind_price: Math.round((s.base_price + MARKUP_CONFIG.global_markup) * 100) / 100,
+  }));
+
+  // ── Simulated "spots left" per product (deterministic, refreshes each session) ──
+  const _spotsLeft = {};
+  SUBSCRIPTIONS.forEach((s,i) => { _spotsLeft[s.id] = [3,4,3,5,3,4,3][i] ?? 3; });
 
   // ── Subscriptions page logic ────────────────────────────
   let _subsFilter='All';
@@ -2791,28 +2929,51 @@ img{ -webkit-user-drag:none; user-select:none; }
     const list=cat&&cat!=='All'?SUBSCRIPTIONS.filter(s=>s.category===cat):SUBSCRIPTIONS;
     if(!list.length){grid.innerHTML='<div style="padding:40px;text-align:center;font-size:11px;color:var(--dim);">Nessun servizio in questa categoria.</div>';return;}
     grid.innerHTML=list.map(s=>{
-      const saving=(s.original_price-s.lillofind_price).toFixed(2);
-      return `<div class="sub-card" id="${s.id}">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-          <div class="sub-icon">${s.icon}</div>
-          <span class="sub-badge">✦ Lillofind Exclusive</span>
+      const annualSaving=((s.official_price-s.lillofind_price)*12).toFixed(2);
+      const spots=_spotsLeft[s.id]??3;
+      const tips=s.feature_tips||{};
+      return `<div class="sub-card" data-id="${s.id}">
+        <!-- Row 1: icon + live dot + exclusive badge -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="sub-icon">${s.icon}</div>
+            <span class="live-dot">Available Now</span>
+          </div>
+          <span class="sub-badge">✦ Exclusive</span>
         </div>
+
+        <!-- Row 2: category + name -->
         <div>
           <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);margin-bottom:4px;">${s.category}</p>
           <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em;">${s.name}</p>
         </div>
-        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+
+        <!-- Row 3: price + annual savings badge -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
           <div>
-            <p class="sub-price-original">Prezzo standard €${s.original_price.toFixed(2)}/mese</p>
+            <p class="sub-price-original">Ufficiale €${s.official_price.toFixed(2)}/mese</p>
             <p class="sub-price-lillo">€<span>${s.lillofind_price.toFixed(2)}</span><span style="font-size:13px;font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--mid);">/mese</span></p>
           </div>
-          <div style="background:rgba(181,168,157,.15);border:1px solid var(--dg1);padding:4px 8px;flex-shrink:0;">
-            <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--dg2);">SALVI €${saving}/mese</p>
+          <div class="annual-savings-badge">
+            <span class="asb-num">€${annualSaving}</span>
+            <span class="asb-lbl">risparmio/anno</span>
           </div>
         </div>
+
+        <!-- Row 4: features with tooltips -->
         <ul class="sub-features">
-          ${s.features.map(f=>`<li>${f}</li>`).join('')}
+          ${s.features.map(f=>{
+            const tip=tips[f];
+            return tip
+              ? `<li><span class="feat-tip">${f}<span class="tip-box">${tip}</span></span></li>`
+              : `<li>${f}</li>`;
+          }).join('')}
         </ul>
+
+        <!-- Row 5: spots left urgency -->
+        <div class="spots-badge">⚡ Solo ${spots} posti rimasti a questo prezzo</div>
+
+        <!-- Row 6: CTA -->
         <button class="sub-get-btn" onclick="addSubToCart('${s.id}')">Accedi Ora →</button>
       </div>`;
     }).join('');
@@ -2840,7 +3001,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const el=document.getElementById('calc-'+s.id);
       return el&&el.checked;
     });
-    const fullYear=selected.reduce((t,s)=>t+s.original_price*12,0);
+    const fullYear=selected.reduce((t,s)=>t+s.official_price*12,0);
     const lilloYear=selected.reduce((t,s)=>t+s.lillofind_price*12,0);
     const saved=fullYear-lilloYear;
     const amtEl=document.getElementById('savings-amount');
