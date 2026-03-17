@@ -2079,93 +2079,113 @@ img{ -webkit-user-drag:none; user-select:none; }
 
     <!-- ─── TAB: OVERVIEW ─────────────────────────────── -->
     <div id="ptab-overview" class="ptab on">
-      <!-- Points hero card -->
-      <div style="background:var(--k);color:var(--w);padding:32px 28px;margin-bottom:24px;border-left:3px solid var(--led);">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
-          <div>
-            <p class="slbl" style="color:#888;margin-bottom:8px;">Saldo LFPOINTS</p>
-            <p class="bb" id="pr-pts" style="font-size:clamp(52px,9vw,88px);line-height:1;color:var(--led);">0</p>
-            <p id="pr-val" style="font-size:10px;color:#888;margin-top:4px;letter-spacing:1px;text-transform:uppercase;">≈ €0.00 in acquisti</p>
+      <!-- ── HERO CARD ─────────────────────────────── -->
+      <div style="background:var(--k);color:var(--w);padding:28px 24px 20px;margin-bottom:20px;border-left:4px solid var(--led);position:relative;overflow:hidden;">
+        <!-- decorative background lines -->
+        <div style="position:absolute;top:0;right:0;width:180px;height:100%;opacity:.04;background:repeating-linear-gradient(90deg,var(--led) 0,var(--led) 1px,transparent 1px,transparent 22px);pointer-events:none;"></div>
+        <!-- Top row: avatar + tier badge -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div id="pr-avatar" style="width:46px;height:46px;border-radius:50%;background:var(--led);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span id="pr-initials" style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:var(--k);">?</span>
+            </div>
+            <div>
+              <p id="pr-name" style="font-size:15px;font-weight:700;letter-spacing:.5px;">—</p>
+              <p id="pr-email" style="font-size:10px;color:#aaa;margin-top:2px;word-break:break-all;">—</p>
+            </div>
           </div>
           <div style="text-align:right;">
-            <p class="slbl" style="color:#888;margin-bottom:6px;">Livello</p>
-            <p class="bb" id="pr-tier" style="font-size:28px;letter-spacing:2px;color:var(--led);">—</p>
-            <p id="pr-next-prize" style="font-size:9px;color:#888;margin-top:3px;letter-spacing:1px;"></p>
+            <p style="font-size:8px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">Livello</p>
+            <p class="bb" id="pr-tier" style="font-size:16px;letter-spacing:1px;color:var(--led);line-height:1.2;">—</p>
           </div>
         </div>
+        <!-- Points row -->
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+          <div>
+            <p style="font-size:8px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Saldo LFPOINTS</p>
+            <p class="bb" id="pr-pts" style="font-size:clamp(46px,8vw,72px);line-height:1;color:var(--led);">0</p>
+          </div>
+          <div style="text-align:right;padding-bottom:6px;">
+            <p id="pr-val" style="font-size:9px;color:#888;letter-spacing:1px;text-transform:uppercase;">≈ €0.00 in acquisti</p>
+            <p id="pr-next-prize" style="font-size:9px;color:#666;margin-top:4px;letter-spacing:.5px;"></p>
+          </div>
+        </div>
+        <!-- Progress bar -->
         <div id="pr-prog">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <p id="pr-nlbl" style="font-size:9px;color:#888;letter-spacing:2px;text-transform:uppercase;"></p>
-            <p id="pr-nnum" style="font-size:9px;color:#888;"></p>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <p id="pr-nlbl" style="font-size:8px;color:#666;letter-spacing:2px;text-transform:uppercase;"></p>
+            <p id="pr-nnum" style="font-size:8px;color:#666;"></p>
           </div>
           <div class="prog-bg"><div id="pr-bar" class="prog-fill" style="width:0%;"></div></div>
         </div>
       </div>
 
-      <!-- Next reward highlight -->
-      <div id="pr-next-rew-wrap" style="border:1.5px solid var(--led);padding:18px 22px;margin-bottom:24px;background:rgba(200,255,0,.04);box-shadow:0 0 14px rgba(200,255,0,.08);">
-        <p class="slbl" style="margin-bottom:6px;">Prossimo Premio</p>
-        <p id="pr-next-rew-txt" class="bb" style="font-size:26px;"></p>
-        <p id="pr-next-rew-sub" style="font-size:10px;color:var(--mid);margin-top:3px;letter-spacing:1px;"></p>
-      </div>
-
-      <!-- Tier grid -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:28px;">
-        <div class="tier-c" data-min="0">
-          <div style="width:24px;height:24px;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;margin-bottom:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></div>
-          <p class="bb" style="font-size:17px;">Bronze</p>
-          <p style="font-size:9px;margin-top:3px;">0+ pts</p>
-          <p style="font-size:8px;margin-top:5px;line-height:1.5;color:inherit;">Sconto −€5</p>
-        </div>
-        <div class="tier-c" data-min="50">
-          <div style="width:24px;height:24px;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;margin-bottom:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <p class="bb" style="font-size:17px;">Silver</p>
-          <p style="font-size:9px;margin-top:3px;">50+ pts</p>
-          <p style="font-size:8px;margin-top:5px;line-height:1.5;color:inherit;">QC gratis + −€15</p>
-        </div>
-        <div class="tier-c" data-min="200">
-          <div style="width:24px;height:24px;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;margin-bottom:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <p class="bb tier-glow" style="font-size:17px;">Gold</p>
-          <p style="font-size:9px;margin-top:3px;">200+ pts</p>
-          <p style="font-size:8px;margin-top:5px;line-height:1.5;color:inherit;">Early access + −€35</p>
-        </div>
-        <div class="tier-c" data-min="500">
-          <div style="width:24px;height:24px;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;margin-bottom:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg></div>
-          <p class="bb tier-glow" style="font-size:17px;">Platinum</p>
-          <p style="font-size:9px;margin-top:3px;">500+ pts</p>
-          <p style="font-size:8px;margin-top:5px;line-height:1.5;color:inherit;">VIP + −30% ordine</p>
+      <!-- ── NEXT REWARD ── (hidden when empty) -->
+      <div id="pr-next-rew-wrap" style="display:none;border:1.5px solid var(--led);padding:14px 18px;margin-bottom:20px;background:rgba(200,255,0,.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">Prossimo Premio</p>
+            <p id="pr-next-rew-txt" class="bb" style="font-size:18px;"></p>
+          </div>
+          <p id="pr-next-rew-sub" style="font-size:10px;color:var(--mid);letter-spacing:.5px;text-align:right;"></p>
         </div>
       </div>
 
-      <!-- Account info -->
-      <div style="border-top:2px solid var(--k);padding-top:24px;margin-bottom:24px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <p class="slbl">Dati Account</p>
-          <button onclick="switchProfTab('settings')" style="font-size:10px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Modifica →</button>
+      <!-- ── TIER GRID ── -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:24px;">
+        <div class="tier-c" data-min="0" style="padding:12px 8px;">
+          <p style="font-size:18px;margin-bottom:4px;">🥉</p>
+          <p class="bb" style="font-size:13px;">Bronze</p>
+          <p style="font-size:8px;margin-top:2px;opacity:.7;">0+ pts</p>
+          <p style="font-size:8px;margin-top:4px;line-height:1.4;color:inherit;">Sconto −€5</p>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-          <div style="padding:12px 0;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Nome</p><p id="pr-name" style="font-size:13px;">—</p></div>
-          <div style="padding:12px 0 12px 18px;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Email</p><p id="pr-email" style="font-size:13px;word-break:break-all;">—</p></div>
-          <div style="padding:12px 0;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Telefono</p><p id="pr-phone" style="font-size:13px;">—</p></div>
-          <div style="padding:12px 0 12px 18px;border-bottom:1px solid #e0e0e0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Membro dal</p><p id="pr-joined" style="font-size:13px;">—</p></div>
-          <div style="padding:12px 0;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Totale Speso</p><p id="pr-spent" style="font-size:13px;">€0.00</p></div>
-          <div style="padding:12px 0 12px 18px;"><p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">LFPOINTS</p><p id="pr-pts2" style="font-size:13px;color:var(--k);">0</p></div>
+        <div class="tier-c" data-min="50" style="padding:12px 8px;">
+          <p style="font-size:18px;margin-bottom:4px;">🥈</p>
+          <p class="bb" style="font-size:13px;">Silver</p>
+          <p style="font-size:8px;margin-top:2px;opacity:.7;">50+ pts</p>
+          <p style="font-size:8px;margin-top:4px;line-height:1.4;color:inherit;">QC gratis +−€15</p>
+        </div>
+        <div class="tier-c" data-min="200" style="padding:12px 8px;">
+          <p style="font-size:18px;margin-bottom:4px;">🥇</p>
+          <p class="bb tier-glow" style="font-size:13px;">Gold</p>
+          <p style="font-size:8px;margin-top:2px;opacity:.7;">200+ pts</p>
+          <p style="font-size:8px;margin-top:4px;line-height:1.4;color:inherit;">Early access +−€35</p>
+        </div>
+        <div class="tier-c" data-min="500" style="padding:12px 8px;">
+          <p style="font-size:18px;margin-bottom:4px;">💎</p>
+          <p class="bb tier-glow" style="font-size:13px;">Platinum</p>
+          <p style="font-size:8px;margin-top:2px;opacity:.7;">500+ pts</p>
+          <p style="font-size:8px;margin-top:4px;line-height:1.4;color:inherit;">VIP −30% ordine</p>
         </div>
       </div>
 
-      <!-- Quick actions -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-        <button onclick="switchProfTab('tracking')" style="border:1.5px solid #e0e0e0;padding:18px 12px;text-align:center;background:none;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--k)'" onmouseout="this.style.borderColor='#e0e0e0'">
-          <p style="font-size:20px;margin-bottom:6px;">📦</p>
-          <p style="font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Traccia</p>
+      <!-- ── DATI ACCOUNT ── -->
+      <div style="border:1.5px solid #e8e8e8;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e8e8e8;background:#fafafa;">
+          <p class="slbl" style="font-size:10px;">Dati Account</p>
+          <button onclick="switchProfTab('settings')" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Modifica →</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;">
+          <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0;"><p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">Telefono</p><p id="pr-phone" style="font-size:12px;">—</p></div>
+          <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;"><p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">Membro dal</p><p id="pr-joined" style="font-size:12px;">—</p></div>
+          <div style="padding:12px 16px;border-right:1px solid #f0f0f0;"><p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">Totale Speso</p><p id="pr-spent" style="font-size:12px;font-weight:600;">€0.00</p></div>
+          <div style="padding:12px 16px;"><p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">LFPOINTS</p><p id="pr-pts2" style="font-size:12px;font-weight:700;color:var(--k);">0</p></div>
+        </div>
+      </div>
+
+      <!-- ── QUICK ACTIONS ── -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0;">
+        <button onclick="switchProfTab('tracking')" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
+          <p style="font-size:22px;margin-bottom:5px;">📦</p>
+          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Traccia</p>
         </button>
-        <button onclick="switchProfTab('prizes')" style="border:1.5px solid #e0e0e0;padding:18px 12px;text-align:center;background:none;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--led)'" onmouseout="this.style.borderColor='#e0e0e0'">
-          <p style="font-size:20px;margin-bottom:6px;">🎁</p>
-          <p style="font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Premi</p>
+        <button onclick="switchProfTab('prizes')" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--led)';this.style.background='rgba(200,255,0,.04)'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
+          <p style="font-size:22px;margin-bottom:5px;">🎁</p>
+          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Premi</p>
         </button>
-        <button onclick="switchProfTab('address')" style="border:1.5px solid #e0e0e0;padding:18px 12px;text-align:center;background:none;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--k)'" onmouseout="this.style.borderColor='#e0e0e0'">
-          <p style="font-size:20px;margin-bottom:6px;">📍</p>
-          <p style="font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Indirizzi</p>
+        <button onclick="switchProfTab('address')" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
+          <p style="font-size:22px;margin-bottom:5px;">📍</p>
+          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Indirizzi</p>
         </button>
       </div>
 
@@ -3564,11 +3584,18 @@ img{ -webkit-user-drag:none; user-select:none; }
     const pts=udata.lfpoints||0, spent=udata.totalSpent||0;
     const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     set('pr-pts',pts); set('pr-pts2',pts+' pts');
-    set('pr-val','≈ €'+spent.toFixed(2)+' IN ACQUISTI');
-    set('pr-name',udata.displayName||'—');
-    set('pr-email',user.email);
+    set('pr-val','≈ €'+spent.toFixed(2)+' in acquisti');
+    const name=udata.displayName||'';
+    set('pr-name',name||'—');
+    set('pr-email',user.email||udata.email||'—');
     set('pr-spent','€'+spent.toFixed(2));
     set('pr-tier',getTier(pts));
+    // Avatar initials
+    const initEl=document.getElementById('pr-initials');
+    if(initEl){
+      const initials=name.trim()?name.trim().split(/\s+/).map(w=>w[0].toUpperCase()).slice(0,2).join(''):(user.email||'?')[0].toUpperCase();
+      initEl.textContent=initials;
+    }
     // Tiers
     document.querySelectorAll('.tier-c').forEach(c=>c.classList.toggle('unlocked',pts>=parseInt(c.dataset.min)));
     // Progress
@@ -3588,7 +3615,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const nrt=document.getElementById('pr-next-rew-txt');
     const nrs=document.getElementById('pr-next-rew-sub');
     if(nr&&nrw){
-      nrw.style.display='block';
+      nrw.style.display='';
       if(nrt) nrt.textContent=nr.label+' — '+nr.desc;
       if(nrs) nrs.textContent=`Ti mancano ${nr.pts-pts} punti (≈ €${nr.pts-pts} di acquisti)`;
       set('pr-next-prize',`Prossimo: ${nr.label} a ${nr.pts} pts`);
@@ -4187,10 +4214,9 @@ img{ -webkit-user-drag:none; user-select:none; }
   if(localStorage.getItem('lf_theme')==='dark') window.setTheme('dark');
 
   // ── PATCH renderProfile to also load new tabs ────────────
-  const _baseRenderProfile=window.renderProfile;
-  // Override the full renderProfile used by showPg
+  // NOTE: renderProfile is a module-scoped function, NOT on window — reference it directly
   window._fullRenderProfile=function(){
-    if(_baseRenderProfile) _baseRenderProfile();
+    renderProfile(); // call local module function directly
     // Load settings fields
     if(udata){
       const parts=(udata.displayName||'').split(' ');
@@ -4201,7 +4227,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const gn=document.getElementById('set-gender'); if(gn) gn.value=udata.gender||'';
       const lg=document.getElementById('set-lang'); if(lg) lg.value=udata.language||'Italiano';
       const prPhone=document.getElementById('pr-phone'); if(prPhone) prPhone.textContent=udata.phone||'—';
-      const prJoined=document.getElementById('pr-joined'); 
+      const prJoined=document.getElementById('pr-joined');
       if(prJoined&&udata.createdAt?.seconds){
         const d=new Date(udata.createdAt.seconds*1000);
         prJoined.textContent=d.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
