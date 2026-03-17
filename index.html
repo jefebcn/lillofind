@@ -357,7 +357,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 
 /* ── BACK TO TOP ─────────────────────────────── */
 #back-top{
-  display:none;position:fixed;bottom:80px;right:16px;z-index:80;
+  display:none;position:fixed;bottom:96px;right:16px;z-index:80;
   background:var(--k);color:var(--led);width:44px;height:44px;
   font-size:18px;border:none;cursor:pointer;border-left:2px solid var(--led);
   font-family:'IBM Plex Mono',monospace;transition:opacity .2s;
@@ -702,7 +702,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 /* ── SOCIAL PROOF TOAST ──────────────────────────── */
 #sp-toast{
-  position:fixed;bottom:80px;left:16px;z-index:8000;
+  position:fixed;bottom:96px;left:16px;z-index:8000;
   background:var(--k);color:var(--w);
   padding:12px 16px;max-width:280px;min-width:220px;
   border-left:3px solid var(--led);
@@ -829,9 +829,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button onclick="showPg('wishlist');closeDrawer();" class="drawer-link" style="position:relative;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist</button>
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="showPg('cart');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Carrello</button>
-        <button onclick="showPg('shop');closeDrawer();setTimeout(sortByNewest,80)" class="drawer-link" style="color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Drop della Settimana</button>
         <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('model','Sneaker'),80)" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg> Sneakers</button>
-        <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('style','Streetwear'),80)" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Apparel</button>
         <button onclick="location.href='subscriptions.html';closeDrawer();" class="drawer-link" style="color:var(--dg2);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
         <div style="height:1px;background:var(--border);margin:12px 0;"></div>
         <a href="app.html" class="drawer-link" style="text-decoration:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> Tornei Beach Volley</a>
@@ -901,9 +899,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div id="top-nav" style="border-bottom:2px solid var(--k);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:56px;">
     <nav style="display:flex;gap:24px;align-items:center;">
       <button class="nbtn" onclick="showPg('shop')">Shop</button>
-      <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('style','Streetwear'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Apparel</button>
       <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneaker'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg>Sneakers</button>
-      <button class="nbtn" onclick="showPg('shop');setTimeout(sortByNewest,80)" style="display:flex;align-items:center;gap:5px;color:var(--k);font-weight:600;"><span style="width:6px;height:6px;border-radius:50%;background:var(--led);display:inline-block;flex-shrink:0;box-shadow:0 0 6px var(--led);"></span>Drop</button>
       <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
       <button class="nbtn" onclick="location.href='subscriptions.html'" style="display:inline-flex;align-items:center;gap:5px;color:var(--k);font-weight:600;border:1px solid var(--dg1);padding:4px 10px;background:rgba(181,168,157,.08);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Digital</button>
       <a href="app.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>Beach Volley</a>
@@ -1162,7 +1158,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     </script>
 
     <!-- Spacer pushes content down on desktop -->
-    <div id="hero-spacer" style="flex:1;min-height:45vh;"></div>
+    <div id="hero-spacer" style="flex:1;min-height:clamp(0px,20vw,45vh);"></div>
 
     <!-- Content — always below globe, no overlap -->
     <div id="hero-content" style="position:relative;z-index:5;">
@@ -1428,7 +1424,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Garanzia di Rispedizione</p>
-        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">In caso di problema doganale (raro ma possibile), <strong style="color:var(--w);">rispediamo a nostre spese</strong>. Rischio zero per te.</p>
+        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">In caso di problema doganale <strong style="color:var(--w);">rispediamo a nostre spese</strong>. Rischio zero per te.</p>
       </div>
       <div style="padding:24px 28px;border-right:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">
         <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
