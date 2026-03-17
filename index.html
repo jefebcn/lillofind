@@ -729,12 +729,148 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 /* ── SHOP SORT SELECT ─────────────────────────────── */
 #shop-sort{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2020/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
   background-repeat:no-repeat;
   background-position:right 10px center;
   padding-right:28px !important;
   cursor:pointer;
 }
+
+/* ── DIGITAL GEAR / SUBSCRIPTIONS ─────────────────── */
+:root{
+  --dg1:#B5A89D;   /* warm taupe */
+  --dg2:#8E7963;   /* warm brown */
+}
+#pg-subs{background:var(--w);}
+.subs-hero{
+  background:var(--k);color:var(--w);
+  padding:64px 24px 48px;
+  border-bottom:2px solid var(--k);
+  position:relative;overflow:hidden;
+}
+.subs-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 60% 40%,rgba(181,168,157,.12) 0%,transparent 65%);
+  pointer-events:none;
+}
+.sub-filter-bar{
+  display:flex;gap:8px;flex-wrap:wrap;
+  padding:24px;border-bottom:1.5px solid #e0e0e0;
+  background:#fafafa;
+  position:sticky;top:var(--hd);z-index:50;
+}
+@media(max-width:768px){.sub-filter-bar{top:var(--h);}}
+.sub-filt{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:1.5px;text-transform:uppercase;
+  border:1.5px solid #ccc;background:none;
+  padding:8px 18px;cursor:pointer;
+  transition:all .18s;color:var(--mid);
+}
+.sub-filt:hover{border-color:var(--dg2);color:var(--dg2);}
+.sub-filt.active{
+  background:var(--k);color:var(--w);border-color:var(--k);
+}
+.sub-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:1px;background:#e0e0e0;
+  border:1.5px solid #e0e0e0;
+  margin:24px;
+}
+.sub-card{
+  background:#fff;padding:28px 24px;
+  display:flex;flex-direction:column;gap:16px;
+  transition:box-shadow .2s,transform .2s;
+  cursor:pointer;position:relative;
+  overflow:hidden;
+}
+.sub-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--dg1),var(--dg2));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .25s ease;
+}
+.sub-card:hover::after{transform:scaleX(1);}
+.sub-card:hover{
+  box-shadow:0 8px 32px rgba(142,121,99,.15);
+  transform:translateY(-2px);
+}
+.sub-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;flex-shrink:0;
+  background:linear-gradient(135deg,#f5f0eb,#ede6de);
+  border:1.5px solid #e8e0d6;
+}
+.sub-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--k);color:var(--led);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;flex-shrink:0;
+}
+.sub-price-original{
+  font-size:11px;color:var(--dim);
+  text-decoration:line-through;
+}
+.sub-price-lillo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:36px;line-height:1;
+  color:var(--k);
+}
+.sub-price-lillo span{font-size:18px;}
+.sub-features{
+  list-style:none;display:flex;flex-direction:column;gap:6px;
+}
+.sub-features li{
+  font-size:10px;color:var(--mid);
+  display:flex;align-items:center;gap:7px;
+  letter-spacing:.5px;
+}
+.sub-features li::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+  background:var(--dg2);flex-shrink:0;
+}
+.sub-get-btn{
+  width:100%;padding:13px;
+  background:var(--k);color:var(--w);border:none;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;margin-top:auto;
+  transition:background .18s,box-shadow .18s;
+}
+.sub-get-btn:hover{
+  background:var(--dg2);
+  box-shadow:0 4px 16px rgba(142,121,99,.3);
+}
+/* Savings calculator */
+.savings-calc{
+  margin:0 24px 40px;
+  border:2px solid var(--k);padding:32px;
+  background:#fafafa;
+}
+.savings-calc h3{font-family:'Bebas Neue',sans-serif;font-size:clamp(26px,4vw,42px);}
+.savings-result{
+  background:var(--k);color:var(--w);
+  padding:20px 24px;margin-top:20px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;
+}
+/* Digital badge in cart/checkout */
+.digital-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(181,168,157,.15);border:1px solid var(--dg1);
+  color:var(--dg2);font-family:'IBM Plex Mono',monospace;
+  font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;
+}
+.digital-delivery-box{
+  border:1.5px solid var(--dg1);background:rgba(181,168,157,.08);
+  padding:14px 18px;margin-bottom:16px;
+  font-size:11px;line-height:1.7;color:var(--mid);
+}
+.digital-delivery-box strong{color:var(--k);}
 </style>
 </head>
 <body>
@@ -811,6 +947,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button onclick="showPg('shop');closeDrawer();setTimeout(sortByNewest,80)" class="drawer-link" style="color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Drop della Settimana</button>
         <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('model','Sneaker'),80)" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg> Sneakers</button>
         <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('style','Streetwear'),80)" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Apparel</button>
+        <button onclick="showPg('subs');closeDrawer();" class="drawer-link" style="color:var(--dg2);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
         <div style="height:1px;background:var(--border);margin:12px 0;"></div>
         <a href="app.html" class="drawer-link" style="text-decoration:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> Tornei Beach Volley</a>
         <a href="vault.html" class="drawer-link" style="text-decoration:none;color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> LF Vault — Investimenti</a>
@@ -883,6 +1020,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneaker'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg>Sneakers</button>
       <button class="nbtn" onclick="showPg('shop');setTimeout(sortByNewest,80)" style="display:flex;align-items:center;gap:5px;color:var(--k);font-weight:600;"><span style="width:6px;height:6px;border-radius:50%;background:var(--led);display:inline-block;flex-shrink:0;box-shadow:0 0 6px var(--led);"></span>Drop</button>
       <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
+      <button class="nbtn" onclick="showPg('subs')" style="display:inline-flex;align-items:center;gap:5px;color:var(--k);font-weight:600;border:1px solid var(--dg1);padding:4px 10px;background:rgba(181,168,157,.08);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Digital</button>
       <a href="app.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>Beach Volley</a>
       <a href="vault.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:var(--k);font-weight:600;border:1px solid var(--led);padding:4px 10px;box-shadow:0 0 8px rgba(200,255,0,.2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>LF Vault</a>
     </nav>
@@ -1255,6 +1393,31 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
   </section>
 
+  <!-- DIGITAL GEAR CTA BANNER -->
+  <section style="background:var(--k);color:var(--w);padding:0;border-bottom:2px solid var(--k);overflow:hidden;position:relative;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(181,168,157,.1) 0%,transparent 60%);pointer-events:none;"></div>
+    <div style="max-width:1100px;margin:0 auto;padding:40px 36px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;position:relative;">
+      <div style="flex:1;min-width:240px;">
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg1);margin-bottom:8px;">Lillo-Life · Digital</p>
+        <h2 class="bb" style="font-size:clamp(28px,4.5vw,56px);line-height:.93;margin-bottom:12px;">Upgrade il tuo<br/><span style="color:var(--dg1);">Lifestyle Digitale.</span></h2>
+        <p style="font-size:11px;color:#aaa;line-height:1.8;max-width:380px;font-family:'Inter',sans-serif;">Abbonamenti premium condivisi a prezzo esclusivo. Netflix, Spotify, ChatGPT Plus e altri — consegnati via email.</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap;">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,3vw,32px);color:var(--dg1);">Da soli €3.90/mese</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:#666;text-decoration:line-through;">vs €10.99 ufficiali</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">📺 Netflix</span>
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">🎵 Spotify</span>
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">🤖 ChatGPT+</span>
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">🎨 Canva Pro</span>
+        </div>
+        <button onclick="showPg('subs')" style="background:linear-gradient(135deg,var(--dg1),var(--dg2));color:var(--w);border:none;padding:14px 32px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 20px rgba(142,121,99,.3);" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Esplora Digital Gear →</button>
+      </div>
+    </div>
+  </section>
+
   <!-- LATEST DROPS -->
   <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
@@ -1623,8 +1786,22 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="display:grid;grid-template-columns:1fr 360px;gap:32px;" class="grid-1-mob">
       <!-- Left: form -->
       <div>
+        <!-- Digital delivery notice (shown for digital-only carts) -->
+        <div id="ck-digital-notice" style="display:none;border:2px solid var(--dg1);padding:24px;margin-bottom:20px;background:rgba(181,168,157,.06);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <span style="background:var(--dg2);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📧</span>
+            <p class="bb" style="font-size:22px;">Consegna Digitale</p>
+          </div>
+          <div style="background:rgba(181,168,157,.12);border-left:3px solid var(--dg2);padding:14px 18px;">
+            <p style="font-size:12px;line-height:1.8;color:var(--mid);">
+              Il tuo ordine contiene solo <strong style="color:var(--k);">servizi digitali</strong>. Le credenziali di accesso saranno inviate via <strong style="color:var(--k);">email entro 12–24 ore</strong> dalla conferma dell'ordine. Nessuna spedizione fisica richiesta.
+            </p>
+            <p style="font-size:10px;color:var(--dg2);margin-top:10px;letter-spacing:1px;text-transform:uppercase;">✦ Spedizione: Gratuita · Consegna via Email</p>
+          </div>
+        </div>
+
         <!-- Shipping -->
-        <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+        <div id="ck-shipping-section" style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
             <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">1</span>
             <p class="bb" style="font-size:22px;">📦 Indirizzo di Spedizione</p>
@@ -1743,6 +1920,60 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
   </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     DIGITAL GEAR — LILLO-LIFE SUBSCRIPTIONS
+════════════════════════════════════════════════════════ -->
+<div id="pg-subs" class="pg">
+
+  <!-- Hero -->
+  <section class="subs-hero">
+    <div class="led-strip-sm" style="margin-bottom:32px;"></div>
+    <div style="max-width:1100px;margin:0 auto;">
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:12px;">Lillo-Life Subscriptions</p>
+      <h1 class="bb" style="font-size:clamp(52px,10vw,140px);line-height:.88;color:var(--w);margin-bottom:16px;">DIGITAL<br/><span style="color:var(--dg1);">GEAR</span></h1>
+      <div style="height:3px;width:80px;background:linear-gradient(90deg,var(--dg1),var(--dg2));margin:16px 0 24px;"></div>
+      <p style="font-size:12px;color:#aaa;line-height:1.9;max-width:480px;font-family:'Inter',sans-serif;">Premium streaming e produttività a prezzo esclusivo. Accesso condiviso ai migliori servizi digitali — consegnato via email entro 24h.</p>
+    </div>
+  </section>
+
+  <!-- Filter bar -->
+  <div class="sub-filter-bar">
+    <button class="sub-filt active" data-cat="All" onclick="filterSubs('All',this)">Tutti</button>
+    <button class="sub-filt" data-cat="Video" onclick="filterSubs('Video',this)">📺 Video</button>
+    <button class="sub-filt" data-cat="Music" onclick="filterSubs('Music',this)">🎵 Music</button>
+    <button class="sub-filt" data-cat="Productivity" onclick="filterSubs('Productivity',this)">⚡ Produttività</button>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="sub-grid" id="subs-grid">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- Savings Calculator -->
+  <div class="savings-calc">
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:8px;">Risparmio Annuale</p>
+    <h3>Calcolatore di Risparmio</h3>
+    <p style="font-size:11px;color:var(--mid);line-height:1.8;margin:10px 0 20px;font-family:'Inter',sans-serif;">Seleziona i servizi e scopri quanto risparmi in un anno scegliendo Lillofind rispetto ai prezzi ufficiali.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;" id="calc-checkboxes">
+      <!-- Rendered by JS -->
+    </div>
+    <div class="savings-result" id="savings-result">
+      <div>
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:4px;">Risparmio annuale stimato</p>
+        <p id="savings-amount" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,6vw,64px);line-height:1;color:var(--led);">€0.00</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="font-size:10px;color:#aaa;margin-bottom:4px;">Prezzo pieno / anno</p>
+        <p id="savings-full" style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-decoration:line-through;color:#666;">€0.00</p>
+        <p style="font-size:10px;color:#aaa;margin-top:4px;">Con Lillofind / anno</p>
+        <p id="savings-lillo" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--w);">€0.00</p>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 
@@ -2415,6 +2646,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div>
       <p style="font-size:9px;letter-spacing:3px;color:#888;margin-bottom:18px;text-transform:uppercase;">Esplora</p>
       <button class="flink" onclick="showPg('shop')">🛍️ Shop</button>
+      <button class="flink" onclick="showPg('subs')" style="color:var(--dg1);">📺 Digital Gear</button>
       <button class="flink" onclick="showPg('lfpoints')">⬡ LFPoints</button>
       <button class="flink" onclick="showPg('home')">🔥 Nuovi Arrivi</button>
       <button class="flink" onclick="openInfo('brand')">👟 Brand</button>
@@ -2537,6 +2769,119 @@ img{ -webkit-user-drag:none; user-select:none; }
   let user=null, udata=null, authTab='li';
   let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
 
+  // ── SUBSCRIPTIONS DATA ─────────────────────────────────
+  const SUBSCRIPTIONS=[
+    {id:'sub-netflix',     name:'Netflix Premium',       category:'Video',        icon:'📺', original_price:17.99, lillofind_price:6.90,  features:['4K HDR','4 schermi simultanei','Download offline']},
+    {id:'sub-disney',      name:'Disney+',               category:'Video',        icon:'🏰', original_price:13.99, lillofind_price:4.90,  features:['4K Ultra HD','Contenuti Marvel & Star Wars','Download illimitati']},
+    {id:'sub-youtube',     name:'YouTube Premium',       category:'Video',        icon:'▶️', original_price:13.99, lillofind_price:4.90,  features:['No pubblicità','YouTube Music incluso','Download video']},
+    {id:'sub-primevideo',  name:'Prime Video',           category:'Video',        icon:'🎬', original_price:4.99,  lillofind_price:2.90,  features:['Originals esclusivi','4K HDR','Download offline']},
+    {id:'sub-spotify',     name:'Spotify Premium',       category:'Music',        icon:'🎵', original_price:10.99, lillofind_price:3.90,  features:['Audio Hi-Fi','Zero pubblicità','Download musica']},
+    {id:'sub-applemusic',  name:'Apple Music',           category:'Music',        icon:'🎶', original_price:10.99, lillofind_price:3.90,  features:['100M+ brani','Audio Lossless','Dolby Atmos']},
+    {id:'sub-chatgpt',     name:'ChatGPT Plus',          category:'Productivity', icon:'🤖', original_price:22.00, lillofind_price:8.90,  features:['GPT-4 accesso','Immagini DALL-E','Risposta prioritaria']},
+    {id:'sub-canva',       name:'Canva Pro',             category:'Productivity', icon:'🎨', original_price:14.99, lillofind_price:5.90,  features:['Template premium','Background remover','Brand Kit']},
+    {id:'sub-adobe',       name:'Adobe Creative Cloud',  category:'Productivity', icon:'🖌️', original_price:54.99, lillofind_price:18.90, features:['Photoshop + Illustrator','Premiere Pro','20GB Cloud Storage']},
+  ];
+
+  // ── Subscriptions page logic ────────────────────────────
+  let _subsFilter='All';
+
+  function renderSubs(cat){
+    const grid=document.getElementById('subs-grid');
+    if(!grid)return;
+    const list=cat&&cat!=='All'?SUBSCRIPTIONS.filter(s=>s.category===cat):SUBSCRIPTIONS;
+    if(!list.length){grid.innerHTML='<div style="padding:40px;text-align:center;font-size:11px;color:var(--dim);">Nessun servizio in questa categoria.</div>';return;}
+    grid.innerHTML=list.map(s=>{
+      const saving=(s.original_price-s.lillofind_price).toFixed(2);
+      return `<div class="sub-card" id="${s.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+          <div class="sub-icon">${s.icon}</div>
+          <span class="sub-badge">✦ Lillofind Exclusive</span>
+        </div>
+        <div>
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);margin-bottom:4px;">${s.category}</p>
+          <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em;">${s.name}</p>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+          <div>
+            <p class="sub-price-original">Prezzo standard €${s.original_price.toFixed(2)}/mese</p>
+            <p class="sub-price-lillo">€<span>${s.lillofind_price.toFixed(2)}</span><span style="font-size:13px;font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--mid);">/mese</span></p>
+          </div>
+          <div style="background:rgba(181,168,157,.15);border:1px solid var(--dg1);padding:4px 8px;flex-shrink:0;">
+            <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--dg2);">SALVI €${saving}/mese</p>
+          </div>
+        </div>
+        <ul class="sub-features">
+          ${s.features.map(f=>`<li>${f}</li>`).join('')}
+        </ul>
+        <button class="sub-get-btn" onclick="addSubToCart('${s.id}')">Accedi Ora →</button>
+      </div>`;
+    }).join('');
+
+    // Build savings calculator checkboxes
+    const cc=document.getElementById('calc-checkboxes');
+    if(cc){
+      cc.innerHTML=SUBSCRIPTIONS.map(s=>`
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;border:1.5px solid #e0e0e0;padding:8px 14px;font-size:10px;letter-spacing:.5px;background:#fff;transition:border-color .18s;" onmouseover="this.style.borderColor='var(--dg2)'" onmouseout="this.style.borderColor=calcCheckState('${s.id}')?'var(--dg2)':'#e0e0e0'">
+          <input type="checkbox" style="accent-color:var(--dg2);width:15px;height:15px;" id="calc-${s.id}" onchange="updateSavingsCalc()"/>
+          <span>${s.icon} ${s.name}</span>
+          <span style="margin-left:auto;color:var(--dg2);font-weight:600;">€${s.lillofind_price.toFixed(2)}</span>
+        </label>`).join('');
+      updateSavingsCalc();
+    }
+  }
+
+  window.calcCheckState=function(id){
+    const el=document.getElementById('calc-'+id);
+    return el&&el.checked;
+  };
+
+  window.updateSavingsCalc=function(){
+    const selected=SUBSCRIPTIONS.filter(s=>{
+      const el=document.getElementById('calc-'+s.id);
+      return el&&el.checked;
+    });
+    const fullYear=selected.reduce((t,s)=>t+s.original_price*12,0);
+    const lilloYear=selected.reduce((t,s)=>t+s.lillofind_price*12,0);
+    const saved=fullYear-lilloYear;
+    const amtEl=document.getElementById('savings-amount');
+    const fullEl=document.getElementById('savings-full');
+    const lilloEl=document.getElementById('savings-lillo');
+    if(amtEl) amtEl.textContent='€'+saved.toFixed(2);
+    if(fullEl) fullEl.textContent='€'+fullYear.toFixed(2);
+    if(lilloEl) lilloEl.textContent='€'+lilloYear.toFixed(2);
+  };
+
+  window.filterSubs=function(cat,btn){
+    _subsFilter=cat;
+    document.querySelectorAll('.sub-filt').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    renderSubs(cat);
+  };
+
+  window.addSubToCart=function(subId){
+    if(!user){showToast('Accedi per acquistare 👆');showPg('auth');return;}
+    const sub=SUBSCRIPTIONS.find(s=>s.id===subId);
+    if(!sub)return;
+    const existing=cart.findIndex(i=>i.id===subId);
+    if(existing>=0){cart[existing].qty+=1;}
+    else{
+      cart.push({
+        id:sub.id,
+        name:sub.name,
+        price:sub.lillofind_price,
+        brand:'Lillo-Life',
+        size:'',
+        color:'',
+        img:'',
+        qty:1,
+        isDigital:true,
+        category:'Subscriptions'
+      });
+    }
+    saveCart();updateCartBadge();
+    showToast('✅ '+sub.name+' aggiunto al carrello!');
+  };
+
   // ── REWARDS CONFIG ─────────────────────────────────────
   const REWARDS=[
     {pts:50,  label:'−€5',      desc:'Sconto fisso €5',           type:'fisso',       val:5},
@@ -2602,6 +2947,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(id==='profile'){if(typeof window._fullRenderProfile==='function')window._fullRenderProfile();else renderProfile();}
     if(id==='home') updateHomeDisplay();
     if(id==='lfpoints') renderRewardsTable();
+    if(id==='subs') renderSubs(_subsFilter);
     window.scrollTo({top:0,behavior:window.innerWidth<769?'instant':'smooth'});
   };
 
@@ -3146,14 +3492,29 @@ img{ -webkit-user-drag:none; user-select:none; }
       return;
     }
     document.getElementById('cart-summary').style.display='block';
+    // Check if cart has digital items
+    const hasDigital=cart.some(i=>i.isDigital);
+    const allDigital=cart.every(i=>i.isDigital);
+    // Show/hide digital delivery notice in cart summary
+    let digitalNotice='';
+    if(hasDigital){
+      digitalNotice=`<div class="digital-delivery-box" style="margin-bottom:12px;">
+        📧 <strong>Consegna Digitale</strong> — Le credenziali di accesso saranno inviate via email entro <strong>12–24 ore</strong> dalla conferma dell'ordine. Nessuna spedizione fisica richiesta.
+      </div>`;
+    }
     setTimeout(updateShipBar, 80);
-    wrap.innerHTML=cart.map((item,idx)=>`
+    wrap.innerHTML=digitalNotice+cart.map((item,idx)=>`
       <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #e0e0e0;align-items:center;">
-        <div style="width:72px;height:72px;background:#f0f0f0;flex-shrink:0;overflow:hidden;">
-          ${item.img?`<img src="${item.img}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#ccc;">IMG</div>'}
+        <div style="width:72px;height:72px;background:${item.isDigital?'linear-gradient(135deg,#f5f0eb,#ede6de)':'#f0f0f0'};flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+          ${item.img?`<img src="${item.img}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:''}
+          ${item.isDigital&&!item.img?`<span style="font-size:28px;">${SUBSCRIPTIONS.find(s=>s.id===item.id)?.icon||'📱'}</span>`:''}
+          ${!item.isDigital&&!item.img?'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#ccc;">IMG</div>':''}
         </div>
         <div style="flex:1;min-width:0;">
-          ${item.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">${item.brand}</p>`:''}
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;">
+            ${item.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">${item.brand}</p>`:''}
+            ${item.isDigital?`<span class="digital-badge">✦ Digitale</span>`:''}
+          </div>
           <p style="font-size:12px;font-weight:500;margin:2px 0;">${item.name}</p>
           ${item.size?`<p style="font-size:10px;color:var(--dim);">SZ ${item.size}</p>`:''}
           <p style="font-size:9px;color:var(--led);letter-spacing:1px;margin-top:2px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
@@ -3168,9 +3529,9 @@ img{ -webkit-user-drag:none; user-select:none; }
           <button onclick="removeCart(${idx})" style="font-size:9px;color:#c00;background:none;border:none;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:4px;">Rimuovi</button>
         </div>
       </div>`).join('');
-    const ship=total>=80?0:6.90;
+    const ship=allDigital?0:(total>=80?0:6.90);
     document.getElementById('cart-subtotal').textContent='€'+total.toFixed(2);
-    document.getElementById('cart-ship').textContent=ship===0?'Gratis':'€'+ship.toFixed(2);
+    document.getElementById('cart-ship').textContent=(ship===0&&allDigital)?'Digitale — Gratis':(ship===0?'Gratis':'€'+ship.toFixed(2));
     document.getElementById('cart-total').textContent='€'+(total+ship).toFixed(2);
     document.getElementById('cart-pts-preview').textContent='+'+pts+' LFPOINTS al completamento';
   }
@@ -3286,14 +3647,20 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
   function renderCheckoutSummary(){
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-    const ship=total>=80?0:6.90;
+    const allDigital=cart.length>0&&cart.every(i=>i.isDigital);
+    const ship=allDigital?0:(total>=80?0:6.90);
     const pts=Math.floor(total);
+    // Toggle digital vs shipping sections
+    const digitalNotice=document.getElementById('ck-digital-notice');
+    const shippingSection=document.getElementById('ck-shipping-section');
+    if(digitalNotice) digitalNotice.style.display=allDigital?'block':'none';
+    if(shippingSection) shippingSection.style.display=allDigital?'none':'block';
     const items=document.getElementById('ck-order-items');
     if(items) items.innerHTML=cart.map(i=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid #f0f0f0;">
-      <span>${i.name}${i.size?' — '+i.size:''}${i.color?' / '+i.color:''}${i.qty>1?' x'+i.qty:''}</span><span class="bb">€${(i.price*i.qty).toFixed(2)}</span></div>`).join('');
+      <span>${i.isDigital?'📧 ':''} ${i.name}${i.size?' — '+i.size:''}${i.color?' / '+i.color:''}${i.qty>1?' x'+i.qty:''}</span><span class="bb">€${(i.price*i.qty).toFixed(2)}</span></div>`).join('');
     const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     set('ck-sub','€'+total.toFixed(2));
-    set('ck-ship',ship===0?'Gratis':'€'+ship.toFixed(2));
+    set('ck-ship',allDigital?'Digitale — Gratis':(ship===0?'Gratis':'€'+ship.toFixed(2)));
     set('ck-disc','—');
     set('ck-total','€'+(total+ship).toFixed(2));
     set('ck-pts-preview','+'+pts+' LFPOINTS al completamento');
@@ -3305,14 +3672,15 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.placeOrder=async function(){
     if(!user){showToast('Accedi per completare l\'ordine');showPg('auth');return;}
     if(!cart.length){showToast('Carrello vuoto!');return;}
-    const fname=document.getElementById('ck-fname')?.value.trim();
-    const lname=document.getElementById('ck-lname')?.value.trim();
-    const street=document.getElementById('ck-street')?.value.trim();
-    const city=document.getElementById('ck-city')?.value.trim();
-    const zip=document.getElementById('ck-zip')?.value.trim();
-    if(!fname||!lname||!street||!city||!zip){showToast('⚠️ Compila tutti i campi obbligatori.');return;}
+    const allDigital=cart.every(i=>i.isDigital);
+    const fname=document.getElementById('ck-fname')?.value.trim()||'';
+    const lname=document.getElementById('ck-lname')?.value.trim()||'';
+    const street=document.getElementById('ck-street')?.value.trim()||'';
+    const city=document.getElementById('ck-city')?.value.trim()||'';
+    const zip=document.getElementById('ck-zip')?.value.trim()||'';
+    if(!allDigital&&(!fname||!lname||!street||!city||!zip)){showToast('⚠️ Compila tutti i campi obbligatori.');return;}
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-    const ship=total>=80?0:6.90;
+    const ship=allDigital?0:(total>=80?0:6.90);
     const pts=Math.floor(total);
     const _orderItems=[...cart]; // snapshot before clearing
     localStorage.setItem('lf_cart_snapshot',JSON.stringify(_orderItems));
@@ -3347,12 +3715,14 @@ img{ -webkit-user-drag:none; user-select:none; }
           phone,
           address:{street,city,zip,country},
           notes,
-          items:_orderItems.map(i=>({name:i.name,price:i.price,qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||''})),
+          items:_orderItems.map(i=>({name:i.name,price:i.price,qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||'',isDigital:i.isDigital||false})),
           subtotal:total,
           shipping:ship,
           total:total+ship,
           payment:selectedPayment||'card',
           lfpoints:pts,
+          isDigitalOrder:allDigital,
+          deliveryType:allDigital?'digital':'physical',
           status:'pending',
           createdAt:fb.serverTimestamp()
         });
