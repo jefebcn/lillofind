@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="description" content="LILLOFIND Digital Gear — Abbonamenti premium condivisi a prezzo esclusivo. Netflix, Spotify, Disney+, Canva Pro e altri."/>
+<title>Digital Gear — LILLOFIND</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
+const app = initializeApp(cfg);
+const auth = getAuth(app);
+window.__subsAuth = auth;
+window.__subsUser = null;
+onAuthStateChanged(auth, u => {
+  window.__subsUser = u;
+  const loginBtn = document.getElementById('sub-login-btn');
+  const cartLabel = document.getElementById('sub-cart-lbl');
+  if (loginBtn) loginBtn.style.display = u ? 'none' : '';
+  updateCartBadge();
+});
+</script>
+
+<style>
+/* ── TOKENS ────────────────────────────────────────── */
+:root{
+  --k:#0a0a0a;
+  --w:#f5f5f5;
+  --led:#C8FF00;
+  --led2:#00FFB2;
+  --mid:#555;
+  --dim:#aaa;
+  --border:#222;
+  --dg1:#B5A89D;
+  --dg2:#8E7963;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Inter','IBM Plex Mono',monospace;background:var(--w);color:var(--k);overflow-x:hidden;}
+h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
+.bb{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
+
+/* ── LED STRIP ─────────────────────────────────────── */
+.led-strip{height:3px;width:100%;background:linear-gradient(90deg,transparent 0%,var(--led) 20%,var(--led2) 50%,var(--led) 80%,transparent 100%);box-shadow:0 0 12px var(--led),0 0 24px rgba(200,255,0,.3);}
+.led-strip-sm{height:2px;background:linear-gradient(90deg,transparent,var(--led),transparent);box-shadow:0 0 8px var(--led);}
+
+/* ── TOAST ─────────────────────────────────────────── */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--k);color:var(--w);padding:12px 22px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:9999;white-space:nowrap;border-top:2px solid var(--led);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── HEADER ─────────────────────────────────────────── */
+#sub-header{
+  position:sticky;top:0;z-index:300;
+  background:var(--k);color:var(--w);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:60px;
+  border-bottom:1px solid #1a1a1a;
+}
+.sub-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:24px;letter-spacing:4px;color:var(--w);
+  text-decoration:none;
+}
+.sub-logo span{color:var(--dg1);}
+.sub-header-nav{display:flex;align-items:center;gap:16px;}
+.sub-nav-link{
+  background:none;border:none;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:#aaa;text-decoration:none;
+  transition:color .15s;
+}
+.sub-nav-link:hover{color:var(--w);}
+.sub-cart-btn{
+  display:flex;align-items:center;gap:7px;
+  background:none;border:1.5px solid #333;
+  color:var(--w);padding:7px 14px;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:1px;text-transform:uppercase;
+  transition:border-color .15s;position:relative;
+}
+.sub-cart-btn:hover{border-color:var(--dg1);}
+#sub-cart-count{
+  background:var(--led);color:var(--k);
+  border-radius:50%;width:16px;height:16px;
+  font-size:8px;font-weight:bold;
+  display:none;align-items:center;justify-content:center;
+}
+.sub-login-btn{
+  background:var(--led);color:var(--k);border:none;
+  padding:7px 14px;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;transition:opacity .15s;
+}
+.sub-login-btn:hover{opacity:.85;}
+
+/* ── HERO ───────────────────────────────────────────── */
+.subs-hero{
+  background:var(--k);color:var(--w);
+  padding:64px 24px 48px;border-bottom:2px solid var(--k);
+  position:relative;overflow:hidden;
+}
+.subs-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 60% 40%,rgba(181,168,157,.12) 0%,transparent 65%);
+  pointer-events:none;
+}
+
+/* ── FILTER BAR ─────────────────────────────────────── */
+.sub-filter-bar{
+  display:flex;gap:8px;flex-wrap:wrap;
+  padding:18px 24px;border-bottom:1.5px solid #e0e0e0;
+  background:#fafafa;position:sticky;top:60px;z-index:50;
+}
+.sub-filt{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:1.5px;text-transform:uppercase;
+  border:1.5px solid #ccc;background:none;
+  padding:8px 18px;cursor:pointer;
+  transition:all .18s;color:var(--mid);
+}
+.sub-filt:hover{border-color:var(--dg2);color:var(--dg2);}
+.sub-filt.active{background:var(--k);color:var(--w);border-color:var(--k);}
+
+/* ── CARDS GRID ─────────────────────────────────────── */
+.sub-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:1px;background:#e0e0e0;
+  border:1.5px solid #e0e0e0;
+  margin:24px;
+}
+.sub-card{
+  background:#fff;padding:28px 24px;
+  display:flex;flex-direction:column;gap:16px;
+  transition:box-shadow .2s,transform .2s;
+  position:relative;overflow:hidden;
+}
+.sub-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--dg1),var(--dg2));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .25s ease;
+}
+.sub-card:hover::after{transform:scaleX(1);}
+.sub-card:hover{box-shadow:0 8px 32px rgba(142,121,99,.15);transform:translateY(-2px);}
+.sub-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;flex-shrink:0;
+  background:linear-gradient(135deg,#f5f0eb,#ede6de);
+  border:1.5px solid #e8e0d6;
+}
+.sub-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--k);color:var(--led);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;flex-shrink:0;
+}
+.sub-price-original{font-size:11px;color:var(--dim);text-decoration:line-through;}
+.sub-price-lillo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:36px;line-height:1;color:var(--k);
+}
+.sub-price-lillo span{font-size:18px;}
+.sub-features{list-style:none;display:flex;flex-direction:column;gap:6px;}
+.sub-features li{
+  font-size:10px;color:var(--mid);
+  display:flex;align-items:center;gap:7px;letter-spacing:.5px;
+}
+.sub-features li::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+  background:var(--dg2);flex-shrink:0;
+}
+.sub-get-btn{
+  width:100%;padding:13px;
+  background:var(--k);color:var(--w);border:none;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;margin-top:auto;
+  transition:background .18s,box-shadow .18s;
+}
+.sub-get-btn:hover{background:var(--dg2);box-shadow:0 4px 16px rgba(142,121,99,.3);}
+
+/* ── ANNUAL SAVINGS BADGE ───────────────────────────── */
+.annual-savings-badge{
+  display:inline-flex;flex-direction:column;align-items:center;
+  background:var(--k);color:var(--led);
+  padding:6px 10px;flex-shrink:0;min-width:72px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.annual-savings-badge .asb-num{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;}
+.annual-savings-badge .asb-lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:#aaa;margin-top:1px;}
+
+/* ── LIVE DOT ───────────────────────────────────────── */
+.live-dot{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:'IBM Plex Mono',monospace;font-size:8px;
+  letter-spacing:1px;text-transform:uppercase;color:#22c55e;
+}
+.live-dot::before{
+  content:'';width:7px;height:7px;border-radius:50%;
+  background:#22c55e;flex-shrink:0;
+  animation:pulse-dot .9s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{opacity:.7;box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+
+/* ── SPOTS BADGE ────────────────────────────────────── */
+.spots-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#fff8f0;border:1px solid #f59e0b;
+  color:#92400e;padding:3px 8px;
+  font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.5px;
+}
+
+/* ── FEATURE TOOLTIP ────────────────────────────────── */
+.feat-tip{position:relative;cursor:default;border-bottom:1px dashed var(--dg1);}
+.feat-tip .tip-box{
+  display:none;position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);
+  background:var(--k);color:var(--w);
+  font-family:'Inter',sans-serif;font-size:10px;line-height:1.5;
+  white-space:normal;width:180px;
+  padding:8px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  z-index:200;pointer-events:none;text-align:left;
+}
+.feat-tip .tip-box::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--k);
+}
+.feat-tip:hover .tip-box{display:block;}
+
+/* ── SAVINGS CALCULATOR ─────────────────────────────── */
+.savings-calc{
+  margin:0 24px 40px;border:2px solid var(--k);padding:32px;background:#fafafa;
+}
+.savings-calc h3{font-family:'Bebas Neue',sans-serif;font-size:clamp(26px,4vw,42px);}
+.savings-result{
+  background:var(--k);color:var(--w);
+  padding:20px 24px;margin-top:20px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;
+}
+
+/* ── CART ADDED TOAST PANEL ─────────────────────────── */
+#cart-confirm{
+  position:fixed;bottom:0;left:0;right:0;z-index:8000;
+  background:var(--k);color:var(--w);
+  padding:20px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  border-top:3px solid var(--dg1);
+}
+#cart-confirm.show{transform:translateY(0);}
+#cart-confirm .cc-name{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;}
+#cart-confirm .cc-sub{font-size:10px;color:#888;margin-top:2px;}
+#cart-confirm .cc-btns{display:flex;gap:8px;}
+.cc-btn{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:10px 18px;cursor:pointer;border:none;
+}
+.cc-btn-main{background:var(--dg1);color:var(--k);}
+.cc-btn-cont{background:transparent;border:1px solid #444;color:#aaa;}
+
+/* ── AUTH OVERLAY ───────────────────────────────────── */
+#auth-overlay{
+  position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,.8);
+  display:none;align-items:center;justify-content:center;
+  padding:16px;
+}
+#auth-overlay.open{display:flex;}
+.auth-box{
+  background:var(--w);width:100%;max-width:400px;
+  padding:40px 32px;
+  border-top:3px solid var(--dg1);
+}
+
+/* ── UTILITY ────────────────────────────────────────── */
+@media(max-width:600px){
+  .sub-grid{margin:12px;}
+  .savings-calc{margin:0 12px 32px;padding:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CART CONFIRM PANEL -->
+<div id="cart-confirm">
+  <div>
+    <div class="cc-name" id="cc-name">Prodotto</div>
+    <div class="cc-sub">📧 Consegna via email entro 12–24 ore</div>
+  </div>
+  <div class="cc-btns">
+    <button class="cc-btn cc-btn-cont" onclick="closeCartConfirm()">Continua →</button>
+    <button class="cc-btn cc-btn-main" onclick="goToCart()">Vai al Carrello</button>
+  </div>
+</div>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:10px;">Accesso Richiesto</p>
+    <h2 style="font-size:28px;margin-bottom:12px;">Accedi per acquistare</h2>
+    <div style="height:2px;width:40px;background:var(--dg1);margin-bottom:20px;"></div>
+    <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:24px;">Per aggiungere al carrello devi essere loggato. Verrai reindirizzato alla pagina di accesso.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="index.html?auth=1" style="background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:13px 20px;text-decoration:none;display:inline-block;">Accedi / Registrati →</a>
+      <button onclick="document.getElementById('auth-overlay').classList.remove('open')" style="background:none;border:1px solid #ccc;color:var(--mid);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:13px 20px;cursor:pointer;">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="sub-header">
+  <a href="index.html" class="sub-logo">LILLO<span>FIND</span></a>
+  <nav class="sub-header-nav">
+    <a href="index.html" class="sub-nav-link">← Shop</a>
+    <a href="index.html?pg=lfpoints" class="sub-nav-link">LFPoints</a>
+    <button id="sub-login-btn" class="sub-login-btn" onclick="location.href='index.html?auth=1'">Accedi</button>
+    <button class="sub-cart-btn" onclick="goToCart()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span id="sub-cart-lbl">Carrello</span>
+      <span id="sub-cart-count"></span>
+    </button>
+  </nav>
+</header>
+<div class="led-strip"></div>
+
+<!-- HERO -->
+<section class="subs-hero">
+  <div class="led-strip-sm" style="margin-bottom:32px;"></div>
+  <div style="max-width:1100px;margin:0 auto;position:relative;">
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:12px;">Lillo-Life Subscriptions</p>
+    <h1 class="bb" style="font-size:clamp(52px,10vw,140px);line-height:.88;color:var(--w);margin-bottom:16px;">DIGITAL<br/><span style="color:var(--dg1);">GEAR</span></h1>
+    <div style="height:3px;width:80px;background:linear-gradient(90deg,var(--dg1),var(--dg2));margin:16px 0 24px;"></div>
+    <p style="font-size:12px;color:#aaa;line-height:1.9;max-width:480px;font-family:'Inter',sans-serif;">Premium streaming e produttività a prezzo esclusivo. Accesso condiviso ai migliori servizi digitali — consegnato via email entro 24h.</p>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="sub-filter-bar">
+  <button class="sub-filt active" data-cat="All" onclick="filterSubs('All',this)">Tutti</button>
+  <button class="sub-filt" data-cat="Video" onclick="filterSubs('Video',this)">📺 Video</button>
+  <button class="sub-filt" data-cat="Audio" onclick="filterSubs('Audio',this)">🎵 Audio</button>
+  <button class="sub-filt" data-cat="Productivity" onclick="filterSubs('Productivity',this)">⚡ Produttività</button>
+</div>
+
+<!-- CARDS GRID -->
+<div class="sub-grid" id="subs-grid"></div>
+
+<!-- SAVINGS CALCULATOR -->
+<div class="savings-calc">
+  <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:8px;">Risparmio Annuale</p>
+  <h3>Calcolatore di Risparmio</h3>
+  <p style="font-size:11px;color:var(--mid);line-height:1.8;margin:10px 0 20px;font-family:'Inter',sans-serif;">Seleziona i servizi e scopri quanto risparmi in un anno scegliendo Lillofind rispetto ai prezzi ufficiali.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;" id="calc-checkboxes"></div>
+  <div class="savings-result" id="savings-result">
+    <div>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:4px;">Risparmio annuale stimato</p>
+      <p id="savings-amount" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,6vw,64px);line-height:1;color:var(--led);">€0.00</p>
+    </div>
+    <div style="text-align:right;">
+      <p style="font-size:10px;color:#aaa;margin-bottom:4px;">Prezzo pieno / anno</p>
+      <p id="savings-full" style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-decoration:line-through;color:#666;">€0.00</p>
+      <p style="font-size:10px;color:#aaa;margin-top:4px;">Con Lillofind / anno</p>
+      <p id="savings-lillo" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--w);">€0.00</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER STRIP -->
+<footer style="background:var(--k);color:var(--w);padding:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid #1a1a1a;">
+  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--w);text-decoration:none;">LILLOFIND</a>
+  <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#555;letter-spacing:1px;">📧 Consegna digitale entro 12–24h · SSL 256-bit · Pagamento sicuro</p>
+  <a href="index.html" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dg1);letter-spacing:1px;text-decoration:none;">← Torna allo Shop</a>
+</footer>
+
+<script>
+// ── GLOBAL MARKUP CONFIG ───────────────────────────────
+// Change global_markup to update ALL prices automatically.
+// lillofind_price = base_price + global_markup
+const MARKUP_CONFIG = {
+  global_markup: 2.00,  // ← change this to update all prices at once
+};
+
+// ── SUBSCRIPTIONS BASE DATA (Gamsgo catalog) ───────────
+const SUBSCRIPTIONS_BASE = [
+  {
+    id:'sub-netflix', name:'Netflix Premium UHD', category:'Video', icon:'📺',
+    official_price:17.99, base_price:3.90,
+    features:['4K HDR','1 Profilo Dedicato','TV, Tablet & Mobile'],
+    feature_tips:{
+      '4K HDR':              'Massima qualità video: immagini 4× più nitide rispetto all\'HD standard.',
+      '1 Profilo Dedicato':  'Il tuo profilo privato, solo per te. Nessuno accede alla tua cronologia.',
+      'TV, Tablet & Mobile': 'Disponibile su qualsiasi dispositivo: Smart TV, smartphone, tablet e PC.',
+    }
+  },
+  {
+    id:'sub-youtube', name:'YouTube Premium', category:'Video', icon:'▶️',
+    official_price:13.99, base_price:2.50,
+    features:['No Pubblicità','Background Play','YouTube Music Incluso'],
+    feature_tips:{
+      'No Pubblicità':         'Guarda tutti i video senza interruzioni pubblicitarie.',
+      'Background Play':       'Il video o la musica continuano anche con lo schermo spento.',
+      'YouTube Music Incluso': 'Accesso completo a YouTube Music Premium senza costi extra.',
+    }
+  },
+  {
+    id:'sub-spotify', name:'Spotify Premium', category:'Audio', icon:'🎵',
+    official_price:10.99, base_price:1.99,
+    features:['No Pubblicità','Download Offline','Audio Alta Qualità'],
+    feature_tips:{
+      'No Pubblicità':      'Ascolta musica senza interruzioni e senza annunci.',
+      'Download Offline':   'Scarica le tue playlist e ascoltale senza connessione internet.',
+      'Audio Alta Qualità': 'Streaming fino a 320 kbps — differenza udibile rispetto al gratuito.',
+    }
+  },
+  {
+    id:'sub-disney', name:'Disney+', category:'Video', icon:'🏰',
+    official_price:11.99, base_price:1.90,
+    features:['4K UHD','Group Watch','Pixar / Marvel / Star Wars'],
+    feature_tips:{
+      '4K UHD':                     'Ultra HD: risoluzione 4× superiore all\'HD standard.',
+      'Group Watch':                 'Guarda insieme ad amici in sincronia, ognuno da casa propria.',
+      'Pixar / Marvel / Star Wars':  'Tutto il catalogo Disney: Pixar, Marvel, Star Wars, National Geographic.',
+    }
+  },
+  {
+    id:'sub-paramount', name:'Paramount+', category:'Video', icon:'⭐',
+    official_price:9.99, base_price:1.50,
+    features:['Serie Esclusive','Contenuti Showtime','1 Profilo'],
+    feature_tips:{
+      'Serie Esclusive':    'Serie TV e film disponibili solo su Paramount+, non altrove.',
+      'Contenuti Showtime': 'Accesso all\'intero catalogo Showtime incluso nel prezzo.',
+      '1 Profilo':          'Un profilo personale dedicato esclusivamente a te.',
+    }
+  },
+  {
+    id:'sub-canva', name:'Canva Pro', category:'Productivity', icon:'🎨',
+    official_price:14.99, base_price:2.00,
+    features:['Brand Kit Completo','Magic Resize','Template Premium'],
+    feature_tips:{
+      'Brand Kit Completo': 'Salva loghi, palette colori e font del tuo brand per usarli subito.',
+      'Magic Resize':       'Adatta automaticamente il tuo design a qualsiasi formato con un click.',
+      'Template Premium':   'Migliaia di template professionali esclusivi, sbloccati con Pro.',
+    }
+  },
+  {
+    id:'sub-crunchyroll', name:'Crunchyroll Mega Fan', category:'Video', icon:'🍥',
+    official_price:9.99, base_price:1.50,
+    features:['No Pubblicità','Simulcast dal Giappone','Download Offline'],
+    feature_tips:{
+      'No Pubblicità':          'Guarda anime senza interruzioni pubblicitarie.',
+      'Simulcast dal Giappone': 'Episodi disponibili in streaming entro 1 ora dall\'uscita in Giappone.',
+      'Download Offline':       'Scarica episodi e guardali senza connessione internet.',
+    }
+  },
+];
+
+// Auto-calculate lillofind_price = base_price + global_markup
+const SUBSCRIPTIONS = SUBSCRIPTIONS_BASE.map(s => ({
+  ...s,
+  lillofind_price: Math.round((s.base_price + MARKUP_CONFIG.global_markup) * 100) / 100,
+}));
+
+// Deterministic "spots left" per product
+const _spotsLeft = {};
+SUBSCRIPTIONS.forEach((s,i) => { _spotsLeft[s.id] = [3,4,3,5,3,4,3][i] ?? 3; });
+
+// ── Cart (shared with index.html via localStorage) ─────
+function loadCart(){ return JSON.parse(localStorage.getItem('lf_cart')||'[]'); }
+function saveCart(c){ localStorage.setItem('lf_cart', JSON.stringify(c)); }
+
+function updateCartBadge(){
+  const cart = loadCart();
+  const count = cart.reduce((s,i)=>s+i.qty,0);
+  const badge = document.getElementById('sub-cart-count');
+  const lbl   = document.getElementById('sub-cart-lbl');
+  if(badge){ badge.textContent=count; badge.style.display=count>0?'flex':'none'; }
+  if(lbl)   lbl.textContent = count>0 ? `Carrello (${count})` : 'Carrello';
+}
+updateCartBadge();
+
+// ── Toast ──────────────────────────────────────────────
+function showToast(m){
+  const t=document.getElementById('toast');
+  t.textContent=m; t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── Cart confirm panel ─────────────────────────────────
+function showCartConfirm(name){
+  document.getElementById('cc-name').textContent='✅ '+name+' aggiunto!';
+  document.getElementById('cart-confirm').classList.add('show');
+  clearTimeout(window._ccT);
+  window._ccT=setTimeout(closeCartConfirm, 5000);
+}
+function closeCartConfirm(){
+  document.getElementById('cart-confirm').classList.remove('show');
+}
+function goToCart(){
+  closeCartConfirm();
+  location.href='index.html?cart=1';
+}
+
+// ── Add to cart ────────────────────────────────────────
+function addSubToCart(subId){
+  if(!window.__subsUser){
+    document.getElementById('auth-overlay').classList.add('open');
+    return;
+  }
+  const sub = SUBSCRIPTIONS.find(s=>s.id===subId);
+  if(!sub) return;
+  const cart = loadCart();
+  const idx = cart.findIndex(i=>i.id===subId);
+  if(idx>=0){ cart[idx].qty+=1; }
+  else{
+    cart.push({
+      id:sub.id, name:sub.name,
+      price:sub.lillofind_price,
+      brand:'Lillo-Life',
+      size:'', color:'', img:'',
+      qty:1, isDigital:true, category:'Subscriptions'
+    });
+  }
+  saveCart(cart);
+  updateCartBadge();
+  showCartConfirm(sub.name);
+}
+
+// ── Render ─────────────────────────────────────────────
+let _activeFilter = 'All';
+
+function renderSubs(cat){
+  const grid = document.getElementById('subs-grid');
+  if(!grid) return;
+  const list = cat&&cat!=='All' ? SUBSCRIPTIONS.filter(s=>s.category===cat) : SUBSCRIPTIONS;
+  if(!list.length){
+    grid.innerHTML='<div style="padding:40px;text-align:center;font-size:11px;color:#aaa;">Nessun servizio in questa categoria.</div>';
+    return;
+  }
+  grid.innerHTML = list.map(s=>{
+    const annualSaving = ((s.official_price - s.lillofind_price)*12).toFixed(2);
+    const spots = _spotsLeft[s.id] ?? 3;
+    const tips  = s.feature_tips || {};
+    return `<div class="sub-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="sub-icon">${s.icon}</div>
+          <span class="live-dot">Available Now</span>
+        </div>
+        <span class="sub-badge">✦ Exclusive</span>
+      </div>
+      <div>
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);margin-bottom:4px;">${s.category}</p>
+        <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em;">${s.name}</p>
+      </div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <p class="sub-price-original">Ufficiale €${s.official_price.toFixed(2)}/mese</p>
+          <p class="sub-price-lillo">€<span>${s.lillofind_price.toFixed(2)}</span><span style="font-size:13px;font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--mid);">/mese</span></p>
+        </div>
+        <div class="annual-savings-badge">
+          <span class="asb-num">€${annualSaving}</span>
+          <span class="asb-lbl">risparmio/anno</span>
+        </div>
+      </div>
+      <ul class="sub-features">
+        ${s.features.map(f=>{
+          const tip=tips[f];
+          return tip
+            ? `<li><span class="feat-tip">${f}<span class="tip-box">${tip}</span></span></li>`
+            : `<li>${f}</li>`;
+        }).join('')}
+      </ul>
+      <div class="spots-badge">⚡ Solo ${spots} posti rimasti a questo prezzo</div>
+      <button class="sub-get-btn" onclick="addSubToCart('${s.id}')">Accedi Ora →</button>
+    </div>`;
+  }).join('');
+
+  // Savings calculator
+  const cc = document.getElementById('calc-checkboxes');
+  if(cc){
+    cc.innerHTML = SUBSCRIPTIONS.map(s=>`
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;border:1.5px solid #e0e0e0;padding:8px 14px;font-size:10px;letter-spacing:.5px;background:#fff;transition:border-color .18s;"
+        onmouseover="this.style.borderColor='var(--dg2)'"
+        onmouseout="this.style.borderColor=document.getElementById('calc-${s.id}')?.checked?'var(--dg2)':'#e0e0e0'">
+        <input type="checkbox" style="accent-color:var(--dg2);width:15px;height:15px;" id="calc-${s.id}" onchange="updateSavingsCalc()"/>
+        <span>${s.icon} ${s.name}</span>
+        <span style="margin-left:auto;color:var(--dg2);font-weight:600;">€${s.lillofind_price.toFixed(2)}</span>
+      </label>`).join('');
+    updateSavingsCalc();
+  }
+}
+
+function updateSavingsCalc(){
+  const selected = SUBSCRIPTIONS.filter(s=>document.getElementById('calc-'+s.id)?.checked);
+  const fullYear  = selected.reduce((t,s)=>t+s.official_price*12, 0);
+  const lilloYear = selected.reduce((t,s)=>t+s.lillofind_price*12, 0);
+  const saved     = fullYear - lilloYear;
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('savings-amount','€'+saved.toFixed(2));
+  set('savings-full',  '€'+fullYear.toFixed(2));
+  set('savings-lillo', '€'+lilloYear.toFixed(2));
+}
+
+function filterSubs(cat, btn){
+  _activeFilter = cat;
+  document.querySelectorAll('.sub-filt').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderSubs(cat);
+}
+
+// ── Handle ?cart=1 redirect from index.html ────────────
+(function handleIndexRedirect(){
+  const params = new URLSearchParams(location.search);
+  if(params.has('cart')) goToCart();
+})();
+
+// ── Init ───────────────────────────────────────────────
+renderSubs('All');
+</script>
+</body>
+</html>
