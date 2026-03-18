@@ -178,6 +178,7 @@ img { -webkit-user-drag:none; user-select:none; }
       <div id="admin-status" style="display:none;align-items:center;gap:6px;background:rgba(200,255,0,.12);border:1px solid var(--led);padding:3px 10px;"><span style="font-size:9px;color:var(--led);letter-spacing:2px;text-transform:uppercase;">⚙️ ADMIN</span></div>
       <button id="admin-login-btn" onclick="openModal('admin-login-modal')" class="nbtn" style="color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;" onmouseover="this.style.color='var(--led)';" onmouseout="this.style.color='#666';">🔑 Admin</button>
       <button id="admin-logout-btn" onclick="adminLogout()" class="nbtn" style="display:none;color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;">✕ Esci</button>
+      <button id="admin-reset-btn" onclick="if(confirm('Reset dati tornei ai valori di default?')){localStorage.removeItem(BV_KEY);location.reload();}" class="nbtn" style="display:none;color:#e55;border:1px solid #633;padding:5px 10px;font-size:9px;" title="Reset dati">↺</button>
     </nav>
   </div>
   <div class="led-strip"></div>
@@ -287,25 +288,35 @@ img { -webkit-user-drag:none; user-select:none; }
   <script>
   // ── HERO PHOTO SLIDESHOW + PARALLAX + PARTICLES ──────────────
   (function(){
-    // High-quality Unsplash beach volleyball photos
+    // High-quality Unsplash beach volleyball photos — verified IDs
     const PHOTOS=[
-      {url:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=1600&q=85&fit=crop&crop=center',credit:'FIVB'},
-      {url:'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1600&q=85&fit=crop&crop=center',credit:'Beach Volley'},
-      {url:'https://images.unsplash.com/photo-1547941126-3d5322b218b0?w=1600&q=85&fit=crop&crop=center',credit:'Beach Volley'},
-      {url:'https://images.unsplash.com/photo-1520466809213-7b9a56adcd45?w=1600&q=85&fit=crop&crop=center',credit:'Beach Sport'},
-      {url:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1600&q=85&fit=crop&crop=top',credit:'Beach'},
+      {url:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=1600&q=85&fit=crop&crop=center'},
+      {url:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=85&fit=crop&crop=center'},
+      {url:'https://images.unsplash.com/photo-1504016798967-5dfa27a0e83d?w=1600&q=85&fit=crop&crop=center'},
+      {url:'https://images.unsplash.com/photo-1547941126-3d5322b218b0?w=1600&q=85&fit=crop&crop=top'},
+      {url:'https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?w=1600&q=85&fit=crop&crop=center'},
     ];
 
     const slidesEl=document.getElementById('hero-slides');
     const dotsEl=document.getElementById('hero-dots');
     let current=0, slides=[], dots=[], timer=null;
 
-    // Preload + create slides
+    // Preload + create slides with onerror fallback
+    const FALLBACK_GRADIENTS=[
+      'linear-gradient(135deg,#1a0a00 0%,#2a1500 40%,#0a1000 100%)',
+      'linear-gradient(160deg,#0a0a1a 0%,#001a2a 50%,#0a0a0a 100%)',
+      'linear-gradient(135deg,#0a0a0a 0%,#1a1a00 40%,#0a0a0a 100%)',
+    ];
     PHOTOS.forEach((p,i)=>{
       const div=document.createElement('div');
       div.style.cssText=`position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;
         transition:opacity 1.2s ease,transform 8s ease;opacity:${i===0?1:0};transform:scale(${i===0?1.06:1});
-        background-image:url(${p.url});`;
+        background-image:url(${p.url});background-color:#0a0a0a;`;
+      // onerror: swap to gradient fallback
+      const img=new Image();
+      img.onload=()=>{ div.style.backgroundImage=`url(${p.url})`; };
+      img.onerror=()=>{ div.style.backgroundImage=FALLBACK_GRADIENTS[i%FALLBACK_GRADIENTS.length]; };
+      img.src=p.url;
       slidesEl.appendChild(div);
       slides.push(div);
 
@@ -410,6 +421,33 @@ img { -webkit-user-drag:none; user-select:none; }
     drawParticles();
   })();
   </script>
+
+  <!-- ══ CHICECE — TORNEO DI PUNTA ══ -->
+  <section style="padding:28px 16px 0;border-bottom:0;">
+    <div onclick="showPg('chicece')" style="position:relative;overflow:hidden;cursor:pointer;border:2px solid var(--led);background:var(--k);padding:24px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 0 32px rgba(200,255,0,.12);transition:box-shadow .3s;" onmouseover="this.style.boxShadow='0 0 48px rgba(200,255,0,.25)'" onmouseout="this.style.boxShadow='0 0 32px rgba(200,255,0,.12)'">
+      <!-- decorative stripes -->
+      <div style="position:absolute;top:0;right:0;width:220px;height:100%;opacity:.04;background:repeating-linear-gradient(90deg,var(--led) 0,var(--led) 1px,transparent 1px,transparent 18px);pointer-events:none;"></div>
+      <!-- LED glow blur -->
+      <div style="position:absolute;top:50%;right:80px;transform:translateY(-50%);width:160px;height:160px;background:radial-gradient(circle,rgba(200,255,0,.12) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="position:relative;z-index:1;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--led);background:rgba(200,255,0,.12);border:1px solid rgba(200,255,0,.35);padding:3px 10px;">TORNEO DI PUNTA</span>
+          <span class="live-dot" style="width:7px;height:7px;"></span>
+        </div>
+        <p class="bb" style="font-size:clamp(36px,9vw,64px);color:var(--w);line-height:.9;letter-spacing:1px;">🏐 CHICECE</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.45);margin-top:10px;line-height:1.7;font-family:'IBM Plex Mono',monospace;">Sistema Plus/Minus · Partner rotanti<br/>Snake Draft · Finali esclusive</p>
+      </div>
+      <div style="flex-shrink:0;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="text-align:center;">
+          <p class="bb" style="font-size:40px;color:var(--led);line-height:1;" id="chic-home-players">—</p>
+          <p style="font-size:8px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;">Giocatori</p>
+        </div>
+        <div style="background:var(--led);color:var(--k);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;padding:10px 18px;text-transform:uppercase;white-space:nowrap;font-weight:700;">
+          GIOCA ORA →
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Tornei cards -->
   <section style="padding:28px 16px;border-bottom:2px solid var(--k);">
@@ -997,12 +1035,14 @@ window.adminLogout=function(){
 function showAdminUI(){
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
   document.getElementById('admin-logout-btn').style.display='flex';
+  document.getElementById('admin-reset-btn').style.display='flex';
   document.getElementById('admin-login-btn').style.display='none';
   document.getElementById('admin-status').style.display='flex';
 }
 function hideAdminUI(){
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
   document.getElementById('admin-logout-btn').style.display='none';
+  document.getElementById('admin-reset-btn').style.display='none';
   document.getElementById('admin-login-btn').style.display='flex';
   document.getElementById('admin-status').style.display='none';
 }
@@ -1023,6 +1063,24 @@ let iscritti=[
   {id:'sq6',team:'Block Party 🧱',p1:'Roberto Costa',p2:'Federico Mori',torneo:'t2',status:'confermato',contact:'',pts:0,vinti:3,persi:1,setVinti:6,setPersi:4},
   {id:'sq7',team:'Net Crushers 🏐',p1:'Alessio Bruno',p2:'Simone Riva',torneo:'t3',status:'confermato',contact:'',pts:0,vinti:2,persi:0,setVinti:4,setPersi:1},
 ];
+
+// ── PERSISTENZA ADMIN ─────────────────────────────────────────
+const BV_KEY='lf_bv_state_v1';
+
+function saveBvState(){
+  try{ localStorage.setItem(BV_KEY,JSON.stringify({tornei,iscritti})); }catch(e){}
+}
+
+function loadBvState(){
+  try{
+    const s=localStorage.getItem(BV_KEY);
+    if(!s) return;
+    const d=JSON.parse(s);
+    if(Array.isArray(d.tornei)) tornei=d.tornei;
+    if(Array.isArray(d.iscritti)) iscritti=d.iscritti;
+  }catch(e){}
+}
+loadBvState();
 
 let partite=[
   {id:'p1',teamA:'Team LILLO ⚡',teamB:'SandStorm 🌪️',scoreA:2,scoreB:1,torneo:'t1',status:'live',set:[{a:21,b:19},{a:18,b:21},{a:15,b:10}]},
@@ -1128,6 +1186,10 @@ function renderHome(){
     </div>`;
   }).join('');
 
+  // Chicece player count on home banner
+  const chicEl=document.getElementById('chic-home-players');
+  if(chicEl) chicEl.textContent=chic?.players?.length||0;
+
   // Populate tornei select
   const sel=document.getElementById('iscr-torneo');
   if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
@@ -1135,17 +1197,16 @@ function renderHome(){
 
 
 window.deleteTorneo=function(tid,nome){
-  if(!isAdmin){showToast('\u26a0\ufe0f Solo admin.');return;}
+  if(!isAdmin){showToast('⚠️ Solo admin.');return;}
   if(!confirm('Eliminare il torneo "'+nome+'"?\nVerranno eliminati anche tutti i dati associati.\nAzione irreversibile.'))return;
-  // Remove from array
   const idx=tornei.findIndex(t=>t.id===tid);
   if(idx>-1) tornei.splice(idx,1);
-  // Remove associated iscritti
   const before=iscritti.length;
   iscritti=iscritti.filter(i=>i.torneo!==tid);
+  saveBvState();
   renderHome();
   renderIscritti();
-  showToast('\ud83d\uddd1 Torneo eliminato ('+(before-iscritti.length)+' iscrizioni rimosse).');
+  showToast('🗑 Torneo eliminato ('+(before-iscritti.length)+' iscrizioni rimosse).');
 };
 
 // ── RENDER ISCRITTI ──────────────────────────────────────
@@ -1448,6 +1509,7 @@ window.iscriviSquadra=function(){
   document.getElementById('iscr-p1').value='';
   document.getElementById('iscr-p2').value='';
   document.getElementById('iscr-contact').value='';
+  saveBvState();
   showToast('🏐 Iscrizione completata! +100 LFPOINTS in palio.');
   renderHome();
 };
@@ -1462,6 +1524,7 @@ window.creaTorneo=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fa
   const luogo=document.getElementById('nt-luogo').value.trim();
   if(!nome){showToast('⚠️ Inserisci il nome del torneo.');return;}
   tornei.push({id:'t'+Date.now(),nome,data:date||new Date().toISOString().split('T')[0],max,formato,montepremi,luogo:luogo||'—',status:'iscrizioni'});
+  saveBvState();
   closeModal('nuovo-torneo-modal');
   document.getElementById('nt-nome').value='';
   showToast('✅ Torneo creato!');
