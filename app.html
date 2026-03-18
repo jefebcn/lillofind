@@ -186,12 +186,9 @@ img { -webkit-user-drag:none; user-select:none; }
 <!-- ══════════ MOBILE BOTTOM NAV ══════════ -->
 <nav id="app-bottom-nav">
   <button class="abn-btn active" id="abn-home" onclick="showPg('home')"><span class="abn-icon">🏠</span>Home</button>
-  <button class="abn-btn" id="abn-iscritti" onclick="showPg('iscritti')"><span class="abn-icon">👥</span>Iscritti</button>
+  <button class="abn-btn" id="abn-chicece" onclick="showPg('chicece')" style="flex-shrink:0;"><span class="abn-icon">🏐</span>Chicece</button>
   <button class="abn-btn" id="abn-premi" onclick="showPg('premi')"><span class="abn-icon">🏆</span>Premi</button>
-  <button class="abn-btn" id="abn-classifica" onclick="showPg('classifica')"><span class="abn-icon">📊</span>Classifica</button>
-  <button class="abn-btn" id="abn-live" onclick="showPg('live')"><span class="abn-icon live-dot" style="width:14px;height:14px;border-radius:50%;margin-bottom:2px;"></span>Live</button>
-  <button class="abn-btn" id="abn-regolamento" onclick="showPg('regolamento')"><span class="abn-icon">📋</span>Regola</button>
-  <button class="abn-btn" id="abn-chicece" onclick="showPg('chicece')" style="color:var(--led);flex-shrink:0;min-width:52px;"><span class="abn-icon">🏐</span>Chicece</button>
+  <button class="abn-btn" id="abn-profilo" onclick="showPg('profilo')"><span class="abn-icon">👤</span>Profilo</button>
 </nav>
 
 
@@ -201,49 +198,61 @@ img { -webkit-user-drag:none; user-select:none; }
 <div id="pg-home" class="pg on">
 
   <!-- HERO — Full mobile-first, bold, warm sunset, no canvas -->
-  <section style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#0a0a0a;">
+  <section id="hero" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#050505;">
 
-    <!-- Rich layered sunset bg -->
-    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 90% 55% at 72% 28%,rgba(255,145,0,.24) 0%,rgba(170,55,0,.15) 45%,transparent 75%),linear-gradient(160deg,#0d0800 0%,#1c0a00 30%,#2a1000 55%,#120800 100%);"></div>
+    <!-- ── PHOTO SLIDESHOW LAYER ── -->
+    <div id="hero-slides" style="position:absolute;inset:0;z-index:0;">
+      <!-- slides injected by JS -->
+    </div>
 
-    <!-- Horizon light band -->
-    <div style="position:absolute;bottom:35%;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 8%,rgba(255,165,40,.22) 30%,rgba(255,205,80,.35) 50%,rgba(255,165,40,.22) 70%,transparent 92%);filter:blur(1px);"></div>
+    <!-- ── PARALLAX WRAPPER (moves on gyro/mouse) ── -->
+    <div id="hero-parallax" style="position:absolute;inset:-6%;z-index:1;will-change:transform;transition:transform .12s linear;">
+      <!-- dark overlay gradient — keeps text readable -->
+      <div style="position:absolute;inset:0;background:
+        linear-gradient(180deg,
+          rgba(5,5,5,.72) 0%,
+          rgba(5,5,5,.38) 35%,
+          rgba(5,5,5,.52) 65%,
+          rgba(5,5,5,.90) 100%),
+        linear-gradient(90deg,
+          rgba(5,5,5,.55) 0%,
+          transparent 60%);
+      "></div>
+      <!-- golden dust particles canvas -->
+      <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none;"></canvas>
+    </div>
 
-    <!-- Sand strip -->
-    <div style="position:absolute;bottom:0;left:0;right:0;height:28%;background:linear-gradient(180deg,transparent 0%,rgba(30,12,0,.6) 100%);"></div>
+    <!-- ── SLIDE COUNTER DOTS ── -->
+    <div id="hero-dots" style="position:absolute;top:16px;right:16px;z-index:10;display:flex;gap:6px;align-items:center;"></div>
 
-    <!-- Big "2026" watermark -->
-    <div class="bb" style="position:absolute;bottom:-6%;right:-3%;font-size:clamp(150px,42vw,380px);color:transparent;-webkit-text-stroke:1px rgba(255,190,60,.06);pointer-events:none;user-select:none;line-height:1;letter-spacing:-6px;">2026</div>
+    <!-- ── BIG WATERMARK 2026 ── -->
+    <div class="bb" style="position:absolute;bottom:-4%;right:-2%;font-size:clamp(160px,44vw,400px);color:transparent;-webkit-text-stroke:1px rgba(255,190,60,.07);pointer-events:none;user-select:none;line-height:1;letter-spacing:-6px;z-index:2;">2026</div>
 
-    <div style="flex:1;"></div>
+    <div style="flex:1;z-index:3;"></div>
 
-    <!-- Main content -->
+    <!-- ── MAIN CONTENT ── -->
     <div style="position:relative;z-index:5;padding:24px 20px 0;">
 
-      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,190,60,.38);padding:5px 14px;margin-bottom:18px;background:rgba(255,175,0,.06);">
-        <span style="width:7px;height:7px;border-radius:50%;background:#ffc347;display:inline-block;"></span>
+      <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,190,60,.38);padding:5px 14px;margin-bottom:18px;background:rgba(255,175,0,.06);backdrop-filter:blur(4px);">
+        <span style="width:7px;height:7px;border-radius:50%;background:#ffc347;display:inline-block;animation:pulse-led 2s ease-in-out infinite;box-shadow:0 0 6px #ffc347;"></span>
         <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#ffc347;">Stagione 2026 &middot; Beach Mode &#x1F3D6;</span>
       </div>
 
-      <h1 class="bb" style="font-size:clamp(70px,18vw,170px);line-height:.84;color:#f5f5f5;margin-bottom:0;letter-spacing:-1px;">BEACH<br/>VOLLEY<br/><span style="color:#ffc347;">2026.</span></h1>
+      <h1 class="bb" style="font-size:clamp(70px,18vw,170px);line-height:.84;color:#f5f5f5;margin-bottom:0;letter-spacing:-1px;text-shadow:0 4px 32px rgba(0,0,0,.8);">BEACH<br/>VOLLEY<br/><span style="color:#ffc347;text-shadow:0 0 40px rgba(255,195,70,.35);">2026.</span></h1>
 
-      <div style="width:48px;height:2px;background:#ffc347;margin:18px 0;box-shadow:0 0 12px rgba(255,190,60,.5);"></div>
+      <div style="width:48px;height:2px;background:#ffc347;margin:18px 0;box-shadow:0 0 16px rgba(255,190,60,.7);"></div>
 
-      <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:2;font-family:'IBM Plex Mono',monospace;margin-bottom:22px;">Sole &bull; Sabbia &bull; Birra &bull; Pallavolo<br/>Tornei, premi e classifiche live.</p>
+      <p style="font-size:12px;color:rgba(255,255,255,.5);line-height:2;font-family:'IBM Plex Mono',monospace;margin-bottom:22px;text-shadow:0 2px 8px rgba(0,0,0,.6);">Sole &bull; Sabbia &bull; Birra &bull; Pallavolo<br/>Tornei, premi e classifiche live.</p>
 
-      <!-- Split CTA — no gap, shared border -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid rgba(255,190,60,.35);overflow:hidden;margin-bottom:0;">
-
-        <!-- Iscriviti: yellow fill -->
+      <!-- Split CTA -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid rgba(255,190,60,.35);overflow:hidden;margin-bottom:0;backdrop-filter:blur(8px);">
         <button onclick="openModal('iscriviti-modal')" style="background:#ffc347;color:#0a0a0a;border:none;border-right:1.5px solid rgba(255,190,60,.35);padding:20px 12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;">
           <span style="font-size:20px;line-height:1;">&#x1F3D0;</span>
           <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Iscriviti ora</span>
           <span style="font-size:8px;font-weight:400;opacity:.6;letter-spacing:1px;">Posti limitati</span>
         </button>
-
-        <!-- Live: dark with glow + text info -->
-        <button onclick="showPg('live')" style="background:rgba(200,255,0,.05);color:#fff;border:none;padding:20px 12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;position:relative;overflow:hidden;">
-          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(200,255,0,.08),transparent 70%);pointer-events:none;"></div>
+        <button onclick="showPg('live')" style="background:rgba(10,10,10,.55);color:#fff;border:none;padding:20px 12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(200,255,0,.1),transparent 70%);pointer-events:none;"></div>
           <div style="display:flex;align-items:center;gap:7px;z-index:1;">
             <span class="live-dot" style="width:8px;height:8px;flex-shrink:0;"></span>
             <span style="font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Live</span>
@@ -255,7 +264,7 @@ img { -webkit-user-drag:none; user-select:none; }
     </div>
 
     <!-- Stats strip -->
-    <div style="position:relative;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.07);margin-top:22px;background:rgba(0,0,0,.4);">
+    <div style="position:relative;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.08);margin-top:22px;background:rgba(0,0,0,.55);backdrop-filter:blur(12px);">
       <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
         <p class="bb" style="font-size:22px;color:#ffc347;" id="stat-teams">24</p>
         <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Squadre</p>
@@ -274,6 +283,133 @@ img { -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
   </section>
+
+  <script>
+  // ── HERO PHOTO SLIDESHOW + PARALLAX + PARTICLES ──────────────
+  (function(){
+    // High-quality Unsplash beach volleyball photos
+    const PHOTOS=[
+      {url:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=1600&q=85&fit=crop&crop=center',credit:'FIVB'},
+      {url:'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1600&q=85&fit=crop&crop=center',credit:'Beach Volley'},
+      {url:'https://images.unsplash.com/photo-1547941126-3d5322b218b0?w=1600&q=85&fit=crop&crop=center',credit:'Beach Volley'},
+      {url:'https://images.unsplash.com/photo-1520466809213-7b9a56adcd45?w=1600&q=85&fit=crop&crop=center',credit:'Beach Sport'},
+      {url:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1600&q=85&fit=crop&crop=top',credit:'Beach'},
+    ];
+
+    const slidesEl=document.getElementById('hero-slides');
+    const dotsEl=document.getElementById('hero-dots');
+    let current=0, slides=[], dots=[], timer=null;
+
+    // Preload + create slides
+    PHOTOS.forEach((p,i)=>{
+      const div=document.createElement('div');
+      div.style.cssText=`position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;
+        transition:opacity 1.2s ease,transform 8s ease;opacity:${i===0?1:0};transform:scale(${i===0?1.06:1});
+        background-image:url(${p.url});`;
+      slidesEl.appendChild(div);
+      slides.push(div);
+
+      // Dot
+      const dot=document.createElement('div');
+      dot.style.cssText=`width:${i===0?20:6}px;height:6px;border-radius:3px;background:${i===0?'#ffc347':'rgba(255,255,255,.35)'};
+        transition:all .4s ease;cursor:pointer;`;
+      dot.addEventListener('click',()=>goTo(i));
+      dotsEl.appendChild(dot);
+      dots.push(dot);
+    });
+
+    function goTo(idx){
+      // out
+      slides[current].style.opacity='0';
+      slides[current].style.transform='scale(1)';
+      dots[current].style.width='6px';
+      dots[current].style.background='rgba(255,255,255,.35)';
+      current=idx;
+      // in
+      slides[current].style.opacity='1';
+      slides[current].style.transform='scale(1.06)';
+      dots[current].style.width='20px';
+      dots[current].style.background='#ffc347';
+      clearInterval(timer);
+      timer=setInterval(next,5500);
+    }
+
+    function next(){ goTo((current+1)%PHOTOS.length); }
+    timer=setInterval(next,5500);
+
+    // ── PARALLAX ──
+    const para=document.getElementById('hero-parallax');
+    let targetX=0,targetY=0,curX=0,curY=0;
+    const MAX=8;
+
+    // Desktop: mouse
+    document.getElementById('hero').addEventListener('mousemove',e=>{
+      const r=e.currentTarget.getBoundingClientRect();
+      targetX=((e.clientX-r.left)/r.width-.5)*MAX*2;
+      targetY=((e.clientY-r.top)/r.height-.5)*MAX*2;
+    });
+    document.getElementById('hero').addEventListener('mouseleave',()=>{targetX=0;targetY=0;});
+
+    // Mobile: gyroscope
+    if(window.DeviceOrientationEvent){
+      window.addEventListener('deviceorientation',e=>{
+        if(e.gamma!=null){
+          targetX=Math.max(-MAX,Math.min(MAX,(e.gamma/30)*MAX));
+          targetY=Math.max(-MAX,Math.min(MAX,(e.beta-45)/30*MAX));
+        }
+      });
+    }
+
+    function animPara(){
+      curX+=(targetX-curX)*.07;
+      curY+=(targetY-curY)*.07;
+      para.style.transform=`translate(${curX}px,${curY}px)`;
+      requestAnimationFrame(animPara);
+    }
+    animPara();
+
+    // ── FLOATING PARTICLES (canvas) ──
+    const canvas=document.getElementById('hero-canvas');
+    const ctx=canvas.getContext('2d');
+    let W,H,particles=[];
+
+    function resize(){
+      W=canvas.width=canvas.offsetWidth;
+      H=canvas.height=canvas.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize',resize);
+
+    function mkP(){
+      return {
+        x:Math.random()*W,
+        y:Math.random()*H,
+        r:Math.random()*2+.5,
+        vx:(Math.random()-.5)*.3,
+        vy:-(Math.random()*.4+.1),
+        alpha:Math.random()*.6+.2,
+        color:Math.random()>.5?'255,195,70':'200,255,0'
+      };
+    }
+    for(let i=0;i<55;i++) particles.push(mkP());
+
+    function drawParticles(){
+      ctx.clearRect(0,0,W,H);
+      particles.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy;
+        p.alpha+=Math.sin(Date.now()*.001+p.x)*.005;
+        p.alpha=Math.max(.1,Math.min(.8,p.alpha));
+        if(p.y<-5||p.x<-5||p.x>W+5){ Object.assign(p,mkP()); p.y=H+5; }
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(${p.color},${p.alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+  })();
+  </script>
 
   <!-- Tornei cards -->
   <section style="padding:28px 16px;border-bottom:2px solid var(--k);">
@@ -921,10 +1057,13 @@ function showPg(id){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   const pg=document.getElementById('pg-'+id);
   if(pg){pg.classList.add('on');pg.classList.add('fadein');setTimeout(()=>pg.classList.remove('fadein'),500);}
-  // Update navs
+  // Update desktop navs
   ['home','iscritti','premi','classifica','live','regolamento','chicece'].forEach(n=>{
     const nb=document.getElementById('nb-'+n);
     if(nb) nb.style.color=n===id?'var(--led)':'var(--w)';
+  });
+  // Update mobile bottom nav (4 items)
+  ['home','chicece','premi','profilo'].forEach(n=>{
     const ab=document.getElementById('abn-'+n);
     if(ab) ab.classList.toggle('active',n===id);
   });
@@ -934,6 +1073,7 @@ function showPg(id){
   if(id==='live') renderLive();
   if(id==='home') renderHome();
   if(id==='chicece') renderChicece();
+  if(id==='profilo') renderProfilo();
 }
 
 // ── RENDER TORNEI ──────────────────────────────────────────
@@ -2096,7 +2236,268 @@ if(localStorage.getItem('lf_bv_admin')==='1'){
 }
 renderHome();
 renderPremiSpeciali();
+
+// ── FIREBASE AUTH (shared with LilloFind) ──────────────────
+(function(){
+  const fbScripts=[
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
+  ];
+  let loaded=0;
+  fbScripts.forEach(src=>{
+    const s=document.createElement('script');
+    s.src=src;
+    s.onload=()=>{
+      loaded++;
+      if(loaded===fbScripts.length) initFirebase();
+    };
+    document.head.appendChild(s);
+  });
+})();
+
+function initFirebase(){
+  const cfg={apiKey:'AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg',authDomain:'lillofind-c455c.firebaseapp.com',projectId:'lillofind-c455c',storageBucket:'lillofind-c455c.firebasestorage.app',messagingSenderId:'49368493660',appId:'1:49368493660:web:22e02baaa3a2f1cf2a0099'};
+  if(!firebase.apps.length) firebase.initializeApp(cfg);
+  window.__fbAuth=firebase.auth();
+  window.__fbDb=firebase.firestore();
+  firebase.auth().onAuthStateChanged(u=>{
+    window.__lfUser=u||null;
+    // update profilo icon in nav
+    const abn=document.getElementById('abn-profilo');
+    if(abn) abn.querySelector('.abn-icon').textContent=u?'🟢':'👤';
+    // re-render if profilo open
+    if(document.getElementById('pg-profilo')?.classList.contains('on')) renderProfilo();
+  });
+}
+
+// ── PROFILO AUTH ACTIONS ────────────────────────────────────
+window.profiloLogin=async function(){
+  const email=document.getElementById('prof-email').value.trim();
+  const pass=document.getElementById('prof-pass').value;
+  const errEl=document.getElementById('prof-auth-err');
+  errEl.textContent='';
+  try{
+    await window.__fbAuth.signInWithEmailAndPassword(email,pass);
+    closeModal('prof-auth-modal');
+  }catch(e){
+    const msgs={
+      'auth/user-not-found':'Email non trovata.',
+      'auth/wrong-password':'Password errata.',
+      'auth/invalid-email':'Email non valida.',
+      'auth/too-many-requests':'Troppi tentativi. Riprova più tardi.'
+    };
+    errEl.textContent=msgs[e.code]||'Errore: '+e.message;
+  }
+};
+
+window.profiloLogout=async function(){
+  await window.__fbAuth.signOut();
+  showToast('DISCONNESSO');
+};
+
+// ── RENDER PROFILO ──────────────────────────────────────────
+window.renderProfilo=async function(){
+  const u=window.__lfUser;
+  const wrap=document.getElementById('prof-wrap');
+  if(!wrap) return;
+
+  if(!u){
+    wrap.innerHTML=`
+      <div style="padding:48px 24px;text-align:center;">
+        <div style="font-size:56px;margin-bottom:16px;">🏐</div>
+        <p class="bb" style="font-size:36px;margin-bottom:8px;">Il Tuo Profilo</p>
+        <p style="font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:32px;line-height:1.8;">Accedi con il tuo account LilloFind<br/>per vedere le tue statistiche sportive.</p>
+        <button class="btn-led" style="width:100%;max-width:320px;" onclick="openModal('prof-auth-modal')">🔑 Accedi con LilloFind</button>
+        <p style="font-size:9px;color:var(--dim);margin-top:20px;letter-spacing:1px;">Non hai un account? <a href="index.html" style="color:var(--led);text-decoration:none;">Registrati su LilloFind →</a></p>
+      </div>`;
+    return;
+  }
+
+  // Carica dati Firestore
+  let userData={};
+  try{
+    const doc=await window.__fbDb.collection('users').doc(u.uid).get();
+    if(doc.exists) userData=doc.data();
+  }catch(e){}
+
+  const displayName=userData.name||u.displayName||u.email?.split('@')[0]||'Atleta';
+  const pts=userData.lfpoints||0;
+  const initials=displayName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';
+  const tier=pts>=500?'💎 Platinum':pts>=200?'🥇 Gold':pts>=50?'🥈 Silver':'🥉 Bronze';
+
+  // Calcola stats beach volley dall'array iscritti
+  const allPlayers=[];
+  iscritti.forEach(sq=>{
+    [sq.p1,sq.p2].forEach(nome=>{
+      if(nome && !allPlayers.includes(nome)) allPlayers.push(nome);
+    });
+  });
+
+  // Trova squadre dell'utente (per ora usa selezione salvata)
+  const savedPlayer=localStorage.getItem('lf_bv_player_'+(u.uid||'x'))||'';
+
+  const statsHTML=()=>{
+    if(!savedPlayer) return '';
+    const squadre=iscritti.filter(sq=>sq.p1===savedPlayer||sq.p2===savedPlayer);
+    if(!squadre.length) return `<p style="font-size:11px;color:var(--dim);padding:20px 0;">Nessuna partita trovata per questo giocatore.</p>`;
+    let partiteTot=0,vintiTot=0,persiTot=0,setV=0,setP=0;
+    squadre.forEach(sq=>{
+      partiteTot+=sq.vinti+sq.persi;
+      vintiTot+=sq.vinti;
+      persiTot+=sq.persi;
+      setV+=sq.setVinti||0;
+      setP+=sq.setPersi||0;
+    });
+    const pm=setV-setP;
+    const pmColor=pm>=0?'var(--led)':'#ff5555';
+    return `
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#e8e8e8;border:1.5px solid var(--k);margin-bottom:24px;">
+        <div style="background:var(--w);padding:16px 14px;text-align:center;">
+          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Partite</p>
+          <p class="bb" style="font-size:36px;">${partiteTot}</p>
+        </div>
+        <div style="background:var(--w);padding:16px 14px;text-align:center;">
+          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Vittorie</p>
+          <p class="bb" style="font-size:36px;color:var(--led);">${vintiTot}</p>
+        </div>
+        <div style="background:var(--w);padding:16px 14px;text-align:center;">
+          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Sconfitte</p>
+          <p class="bb" style="font-size:36px;">${persiTot}</p>
+        </div>
+        <div style="background:var(--w);padding:16px 14px;text-align:center;">
+          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Set +/−</p>
+          <p class="bb" style="font-size:36px;color:${pmColor};">${pm>0?'+':''}${pm}</p>
+        </div>
+      </div>
+      <div style="margin-bottom:24px;">
+        <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Tornei Attivi</p>
+        ${squadre.map(sq=>`
+          <div style="border:1.5px solid #e0e0e0;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <p style="font-size:13px;font-weight:600;">${sq.team}</p>
+              <p style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-top:2px;">${tornei.find(t=>t.id===sq.torneo)?.nome||sq.torneo}</p>
+            </div>
+            <span class="badge ${sq.status==='confermato'?'badge-green':'badge-led'}">${sq.status}</span>
+          </div>`).join('')}
+      </div>`;
+  };
+
+  // Calcola rank in classifica individuale
+  const getRank=()=>{
+    if(!savedPlayer) return null;
+    const playerMap={};
+    iscritti.forEach(sq=>{
+      [sq.p1,sq.p2].forEach(nome=>{
+        if(!nome) return;
+        if(!playerMap[nome]) playerMap[nome]={pm:0};
+        playerMap[nome].pm+=(sq.setVinti||0)-(sq.setPersi||0);
+      });
+    });
+    const sorted=Object.entries(playerMap).sort((a,b)=>b[1].pm-a[1].pm);
+    const idx=sorted.findIndex(([n])=>n===savedPlayer);
+    return idx>=0?idx+1:null;
+  };
+  const rank=getRank();
+
+  wrap.innerHTML=`
+    <!-- Hero card -->
+    <div style="background:var(--k);color:var(--w);padding:28px 24px 20px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;right:0;width:200px;height:100%;opacity:.04;background:repeating-linear-gradient(90deg,var(--led) 0,var(--led) 1px,transparent 1px,transparent 22px);pointer-events:none;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--led);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:var(--k);">${initials}</span>
+          </div>
+          <div>
+            <p style="font-size:16px;font-weight:700;letter-spacing:.5px;">${displayName}</p>
+            <p style="font-size:9px;color:#888;margin-top:2px;">${u.email}</p>
+          </div>
+        </div>
+        <button onclick="profiloLogout()" style="background:none;border:1px solid #444;color:#888;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:6px 10px;cursor:pointer;">✕ ESCI</button>
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+        <div>
+          <p style="font-size:8px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">LFPOINTS</p>
+          <p class="bb" style="font-size:clamp(46px,8vw,64px);line-height:1;color:var(--led);">${pts}</p>
+        </div>
+        <div style="text-align:right;padding-bottom:6px;">
+          <p style="font-size:8px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Livello</p>
+          <p class="bb" style="font-size:20px;color:var(--led);">${tier}</p>
+          ${rank?`<p style="font-size:9px;color:#888;margin-top:4px;">🏐 Rank beach volley: #${rank}</p>`:''}
+        </div>
+      </div>
+      <div class="led-strip-sm"></div>
+    </div>
+
+    <!-- Selettore giocatore -->
+    <div style="padding:24px 20px 0;">
+      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Sei nella lista iscritti?</p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:24px;">
+        <select class="lf-in" id="prof-player-select" style="flex:1;" onchange="window.savePlayerSelection(this.value)">
+          <option value="">— Seleziona il tuo nome —</option>
+          ${allPlayers.map(n=>`<option value="${n}" ${n===savedPlayer?'selected':''}>${n}</option>`).join('')}
+        </select>
+      </div>
+
+      <!-- Stats -->
+      <div id="prof-stats-wrap">
+        ${savedPlayer
+          ? `<p style="font-size:8px;color:var(--led);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">📊 Le tue statistiche</p>${statsHTML()}`
+          : `<div style="border:1.5px dashed #e0e0e0;padding:32px;text-align:center;"><p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Seleziona il tuo nome per vedere le statistiche.</p></div>`
+        }
+      </div>
+
+      <!-- Link a LilloFind -->
+      <div style="margin-top:24px;padding:16px;border:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+        <div>
+          <p style="font-size:10px;font-weight:600;margin-bottom:2px;">Profilo completo LilloFind</p>
+          <p style="font-size:9px;color:var(--dim);">Ordini, LFPOINTS, indirizzi e premi</p>
+        </div>
+        <a href="index.html" onclick="setTimeout(()=>{ if(window.showPg) window.showPg('profile'); },300);" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--k);text-decoration:none;border:1.5px solid var(--k);padding:10px 14px;white-space:nowrap;">VAI →</a>
+      </div>
+    </div>`;
+};
+
+window.savePlayerSelection=function(val){
+  const u=window.__lfUser;
+  localStorage.setItem('lf_bv_player_'+(u?.uid||'x'),val);
+  renderProfilo();
+};
 </script>
+
+<!-- ═══════════════════════════════════════
+     PROFILO — Sport Focus
+═══════════════════════════════════════ -->
+<div id="pg-profilo" class="pg">
+  <div class="led-strip"></div>
+  <div id="prof-wrap" style="max-width:600px;margin:0 auto;min-height:60vh;"></div>
+</div>
+
+<!-- Auth Modal -->
+<div id="prof-auth-modal" class="modal-bg">
+  <div class="modal-box" style="padding:0;max-width:380px;">
+    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <p style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">🏐 Accedi</p>
+      <button onclick="closeModal('prof-auth-modal')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div class="led-strip-sm"></div>
+    <div style="padding:28px 24px;display:flex;flex-direction:column;gap:14px;">
+      <p style="font-size:11px;color:var(--mid);line-height:1.7;">Usa le stesse credenziali del tuo account LilloFind.</p>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Email</label>
+        <input class="lf-in" id="prof-email" type="email" placeholder="tuamail@example.com" onkeydown="if(event.key==='Enter')document.getElementById('prof-pass').focus()"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Password</label>
+        <input class="lf-in" id="prof-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')profiloLogin()"/>
+      </div>
+      <p id="prof-auth-err" style="font-size:10px;color:#e53935;min-height:16px;letter-spacing:.5px;"></p>
+      <button class="btn-led" onclick="profiloLogin()" style="width:100%;">Accedi →</button>
+      <p style="font-size:9px;color:var(--dim);text-align:center;letter-spacing:1px;">Non hai un account? <a href="index.html" style="color:var(--led);text-decoration:none;">Registrati su LilloFind →</a></p>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════
      CHICECE — Modalità Torneo
