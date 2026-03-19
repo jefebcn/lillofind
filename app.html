@@ -556,8 +556,8 @@ img { -webkit-user-drag:none; user-select:none; }
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:40px;" id="premi-speciali-grid"></div>
 
     <!-- Admin: gestione premi -->
-    <div style="border:2px solid var(--k);padding:28px;">
-      <p class="bb" style="font-size:24px;margin-bottom:20px;">⚙️ Gestisci Premi</p>
+    <div class="admin-only" style="border:2px solid var(--k);padding:28px;display:none;">
+      <p class="bb" style="font-size:24px;margin-bottom:20px;">⚙️ Aggiungi Premio Speciale</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
         <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Premio</label><input class="lf-in" id="pr-nome" placeholder="es. MVP del Torneo"/></div>
         <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Valore</label><input class="lf-in" id="pr-valore" placeholder="es. €50 voucher"/></div>
@@ -571,6 +571,36 @@ img { -webkit-user-drag:none; user-select:none; }
         <button class="btn-led" onclick="aggiungiPremio()">+ Aggiungi Premio</button>
         <button class="btn-g" onclick="document.getElementById('pr-nome').value='';document.getElementById('pr-valore').value='';document.getElementById('pr-desc').value='';document.getElementById('pr-emoji').value='';">Reset</button>
       </div>
+    </div>
+
+    <!-- Admin: Assegna LFPOINTS a vincitori -->
+    <div class="admin-only" style="border:2px solid rgba(200,255,0,.5);padding:28px;margin-top:24px;display:none;background:rgba(200,255,0,.03);">
+      <p class="bb" style="font-size:24px;margin-bottom:4px;">⬡ Assegna LFPOINTS</p>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:20px;line-height:1.7;letter-spacing:.5px;">Assegna punti bonus al Giocatore 1 di una squadra iscritta (deve avere un account LilloFind collegato).</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Squadra</label>
+          <select class="lf-in" id="lfp-squadra-sel" style="font-size:11px;" onchange="onSelectSquadraForPoints()"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Punti LFPOINTS da assegnare</label>
+          <input class="lf-in" id="lfp-points" type="number" placeholder="100" min="1"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Motivazione</label>
+          <input class="lf-in" id="lfp-reason" placeholder="es. 1° posto Torneo Estivo 2026"/>
+        </div>
+      </div>
+      <div id="lfp-info" style="font-size:10px;color:var(--led);margin-top:10px;display:none;padding:8px 12px;border:1px solid rgba(200,255,0,.3);background:rgba(200,255,0,.05);"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn-led" onclick="assegnaLFPoints()">⬡ Assegna Punti →</button>
+      </div>
+    </div>
+
+    <!-- Admin: Gestisci Stato Tornei -->
+    <div class="admin-only" style="border:2px solid var(--k);padding:28px;margin-top:24px;display:none;">
+      <p class="bb" style="font-size:24px;margin-bottom:16px;">🏆 Stato Tornei</p>
+      <div id="admin-tornei-status-list" style="display:flex;flex-direction:column;gap:10px;"></div>
     </div>
   </div>
 </div>
@@ -706,9 +736,16 @@ img { -webkit-user-drag:none; user-select:none; }
     </div>
     <div class="led-strip-sm"></div>
     <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+      <!-- Logged-in user notice -->
+      <div id="iscr-user-notice" style="display:none;font-size:10px;color:var(--led);letter-spacing:1px;background:rgba(200,255,0,.07);border:1px solid rgba(200,255,0,.3);padding:10px 14px;"></div>
+      <div id="iscr-login-notice" style="display:none;font-size:10px;color:#f0a500;letter-spacing:.5px;background:rgba(240,165,0,.07);border:1px solid rgba(240,165,0,.3);padding:10px 14px;line-height:1.7;">⚠️ Non sei collegato. L'iscrizione non sarà legata al tuo account.<br/><a onclick="closeModal('iscriviti-modal');openModal('prof-auth-modal');" style="color:var(--led);cursor:pointer;text-decoration:underline;">Accedi prima →</a></div>
       <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Squadra *</label><input class="lf-in" id="iscr-team" placeholder="es. Team LILLO ⚡"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
-        <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Giocatore 1 *</label><input class="lf-in" id="iscr-p1" placeholder="Mario Rossi"/></div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Giocatore 1 * <span id="iscr-p1-lbl" style="color:var(--led);display:none;">(tu)</span></label>
+          <input class="lf-in" id="iscr-p1" placeholder="Mario Rossi"/>
+          <p id="iscr-p1-hint" style="font-size:9px;color:var(--dim);display:none;letter-spacing:.5px;">Auto-compilato con il tuo account</p>
+        </div>
         <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Giocatore 2 *</label><input class="lf-in" id="iscr-p2" placeholder="Luigi Bianchi"/></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Seleziona Torneo *</label>
@@ -1037,6 +1074,9 @@ function showAdminUI(){
   document.getElementById('admin-reset-btn').style.display='flex';
   document.getElementById('admin-login-btn').style.display='none';
   document.getElementById('admin-status').style.display='flex';
+  renderPremiSpeciali();
+  renderAdminTorneiStatus();
+  populateLFPointsSquadreSelect();
 }
 function hideAdminUI(){
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
@@ -1106,7 +1146,11 @@ function showToast(msg,dur=3000){
   setTimeout(()=>t.classList.remove('show'),dur);
 }
 
-function openModal(id){document.getElementById(id).classList.add('open');}
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='iscriviti-modal') setTimeout(autoFillRegistration,50);
+  if(id==='premi'||id==='pg-premi') renderAdminTorneiStatus();
+}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
@@ -1131,6 +1175,7 @@ function showPg(id){
   if(id==='home') renderHome();
   if(id==='chicece') renderChicece();
   if(id==='profilo') renderProfilo();
+  if(id==='premi'){renderPremiSpeciali();if(isAdmin){renderAdminTorneiStatus();populateLFPointsSquadreSelect();}}
 }
 
 // ── RENDER TORNEI ──────────────────────────────────────────
@@ -1286,12 +1331,21 @@ window.viewSquadra=function(id){
 
 window.confirmSquadra=function(id){
   const sq=iscritti.find(s=>s.id===id);
-  if(sq){sq.status='confermato';renderIscritti();showToast('✅ Squadra confermata!');}
+  if(sq){
+    sq.status='confermato';
+    renderIscritti();showToast('✅ Squadra confermata!');
+    saveBvState();
+    const db=window.__fbDb;
+    if(db) db.collection('bv_iscritti').doc(id).update({status:'confermato'}).catch(()=>{});
+  }
 };
 window.removeSquadra=function(id){
   if(confirm('Rimuovere questa squadra?')){
     iscritti=iscritti.filter(s=>s.id!==id);
     renderIscritti();renderClassifica();showToast('Squadra rimossa.');
+    saveBvState();
+    const db=window.__fbDb;
+    if(db) db.collection('bv_iscritti').doc(id).delete().catch(()=>{});
   }
 };
 
@@ -1486,7 +1540,7 @@ window.addNewMatch=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può f
 };
 
 // ── ISCRIZIONE ────────────────────────────────────────────
-window.iscriviSquadra=function(){
+window.iscriviSquadra=async function(){
   const team=document.getElementById('iscr-team').value.trim();
   const p1=document.getElementById('iscr-p1').value.trim();
   const p2=document.getElementById('iscr-p2').value.trim();
@@ -1496,25 +1550,43 @@ window.iscriviSquadra=function(){
   const t=tornei.find(t=>t.id===torneo);
   const currentCount=iscritti.filter(i=>i.torneo===torneo).length;
   if(t&&currentCount>=t.max){showToast('⚠️ Torneo al completo!');return;}
-  iscritti.push({
-    id:'sq'+Date.now(),team,p1,p2,torneo,contact,
-    status:'in attesa',pts:0,vinti:0,persi:0,setVinti:0,setPersi:0
-  });
-  // Update stat
+  const u=window.__lfUser;
+  // Prevent duplicate registration for same user in same tournament
+  if(u){
+    const alreadyIn=iscritti.find(i=>i.torneo===torneo&&(i.uid1===u.uid||i.uid2===u.uid));
+    if(alreadyIn){showToast('⚠️ Sei già iscritto a questo torneo!');return;}
+  }
+  const newId='sq'+Date.now();
+  const obj={
+    id:newId,team,p1,p2,torneo,
+    contact:contact||(u?u.email:''),
+    status:'in attesa',pts:0,vinti:0,persi:0,setVinti:0,setPersi:0,
+    createdAt:Date.now()
+  };
+  if(u){obj.uid1=u.uid;obj.email1=u.email;}
+  iscritti.push(obj);
   const stat=document.getElementById('stat-teams');
   if(stat) stat.textContent=iscritti.length;
   closeModal('iscriviti-modal');
   document.getElementById('iscr-team').value='';
-  document.getElementById('iscr-p1').value='';
   document.getElementById('iscr-p2').value='';
   document.getElementById('iscr-contact').value='';
   saveBvState();
-  showToast('🏐 Iscrizione completata! +100 LFPOINTS in palio.');
+  // Save to Firestore
+  const db=window.__fbDb;
+  if(db){
+    try{
+      const fsObj={...obj,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+      delete fsObj.id;
+      await db.collection('bv_iscritti').doc(newId).set(fsObj);
+    }catch(e){}
+  }
+  showToast('🏐 Iscrizione completata! +100 LFPOINTS in palio alla vittoria.');
   renderHome();
 };
 
 // ── TORNEO NUOVO ──────────────────────────────────────────
-window.creaTorneo=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
+window.creaTorneo=async function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
   const nome=document.getElementById('nt-nome').value.trim();
   const date=document.getElementById('nt-date').value;
   const max=parseInt(document.getElementById('nt-max').value)||16;
@@ -1522,13 +1594,22 @@ window.creaTorneo=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fa
   const montepremi=parseInt(document.getElementById('nt-prize').value)||0;
   const luogo=document.getElementById('nt-luogo').value.trim();
   if(!nome){showToast('⚠️ Inserisci il nome del torneo.');return;}
-  tornei.push({id:'t'+Date.now(),nome,data:date||new Date().toISOString().split('T')[0],max,formato,montepremi,luogo:luogo||'—',status:'iscrizioni'});
+  const newId='t'+Date.now();
+  const newT={id:newId,nome,data:date||new Date().toISOString().split('T')[0],max,formato,montepremi,luogo:luogo||'—',status:'iscrizioni'};
+  tornei.push(newT);
   saveBvState();
   closeModal('nuovo-torneo-modal');
   document.getElementById('nt-nome').value='';
+  // Save to Firestore
+  const db=window.__fbDb;
+  if(db){
+    try{
+      await db.collection('bv_tornei').doc(newId).set({...newT,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    }catch(e){}
+  }
   showToast('✅ Torneo creato!');
   renderHome();
-  // Update iscr select
+  renderAdminTorneiStatus();
   const sel=document.getElementById('iscr-torneo');
   if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
 };
@@ -1537,29 +1618,59 @@ window.creaTorneo=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fa
 function renderPremiSpeciali(){
   const grid=document.getElementById('premi-speciali-grid');
   if(!grid)return;
-  grid.innerHTML=premiSpeciali.map(p=>`<div class="card" style="padding:20px;text-align:center;">
-    <p style="font-size:36px;margin-bottom:8px;">${p.emoji}</p>
+  if(!premiSpeciali.length){
+    grid.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;padding:20px 0;">Nessun premio speciale aggiunto.</p>';
+    return;
+  }
+  grid.innerHTML=premiSpeciali.map(p=>`<div class="card" style="padding:20px;text-align:center;position:relative;">
+    ${isAdmin&&p._docId?`<button onclick="eliminaPremio('${p._docId}')" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:14px;color:#c00;" title="Elimina premio">✕</button>`:''}
+    <p style="font-size:36px;margin-bottom:8px;">${p.emoji||'🎁'}</p>
     <p class="bb" style="font-size:20px;margin-bottom:4px;">${p.nome}</p>
-    <p style="font-size:12px;color:var(--led);margin-bottom:8px;">${p.valore}</p>
-    <p style="font-size:10px;color:var(--mid);line-height:1.7;">${p.desc}</p>
-    <span class="badge badge-led" style="margin-top:10px;">${p.cat}</span>
+    <p style="font-size:12px;color:var(--led);margin-bottom:8px;">${p.valore||''}</p>
+    <p style="font-size:10px;color:var(--mid);line-height:1.7;">${p.desc||''}</p>
+    <span class="badge badge-led" style="margin-top:10px;">${p.cat||''}</span>
   </div>`).join('');
 }
 
-window.aggiungiPremio=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
+window.aggiungiPremio=async function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
   const nome=document.getElementById('pr-nome').value.trim();
   const valore=document.getElementById('pr-valore').value.trim();
   const emoji=document.getElementById('pr-emoji').value.trim()||'🎁';
   const cat=document.getElementById('pr-cat').value;
   const desc=document.getElementById('pr-desc').value.trim();
   if(!nome){showToast('⚠️ Inserisci il nome del premio.');return;}
-  premiSpeciali.push({emoji,nome,valore,desc,cat});
-  renderPremiSpeciali();
-  document.getElementById('pr-nome').value='';
-  document.getElementById('pr-valore').value='';
-  document.getElementById('pr-emoji').value='';
-  document.getElementById('pr-desc').value='';
-  showToast('🏆 Premio aggiunto!');
+  const db=window.__fbDb;
+  if(db){
+    try{
+      await db.collection('bv_premi').add({emoji,nome,valore,desc,cat,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      document.getElementById('pr-nome').value='';
+      document.getElementById('pr-valore').value='';
+      document.getElementById('pr-emoji').value='';
+      document.getElementById('pr-desc').value='';
+      showToast('🏆 Premio aggiunto e salvato!');
+    }catch(e){showToast('Errore salvataggio premio.');}
+  } else {
+    premiSpeciali.push({emoji,nome,valore,desc,cat});
+    renderPremiSpeciali();
+    document.getElementById('pr-nome').value='';
+    document.getElementById('pr-valore').value='';
+    document.getElementById('pr-emoji').value='';
+    document.getElementById('pr-desc').value='';
+    showToast('🏆 Premio aggiunto!');
+  }
+};
+
+window.eliminaPremio=async function(docId){
+  if(!isAdmin){showToast("⚠️ Solo l'admin può eliminare premi.");return;}
+  if(!confirm('Eliminare questo premio speciale?')) return;
+  const db=window.__fbDb;
+  if(db){
+    try{await db.collection('bv_premi').doc(docId).delete();showToast('Premio eliminato.');}
+    catch(e){showToast('Errore eliminazione.');}
+  } else {
+    premiSpeciali=premiSpeciali.filter(p=>p._docId!==docId);
+    renderPremiSpeciali();
+  }
 };
 
 // ── CANVAS NET ANIMATION ─────────────────────────────────
@@ -2323,14 +2434,76 @@ function initFirebase(){
   if(!firebase.apps.length) firebase.initializeApp(cfg);
   window.__fbAuth=firebase.auth();
   window.__fbDb=firebase.firestore();
+  const db=window.__fbDb;
+
+  // ── Real-time: Tornei ──
+  db.collection('bv_tornei').orderBy('createdAt','asc').onSnapshot(snap=>{
+    if(!snap.empty){
+      tornei=snap.docs.map(d=>({...d.data(),_docId:d.id}));
+      renderHome();
+      renderClassifica();
+      renderAdminTorneiStatus();
+      const sel=document.getElementById('iscr-torneo');
+      if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    }
+  },()=>{});
+
+  // ── Real-time: Iscritti ──
+  db.collection('bv_iscritti').orderBy('createdAt','desc').onSnapshot(snap=>{
+    if(!snap.empty){
+      iscritti=snap.docs.map(d=>({...d.data(),id:d.id}));
+    }
+    renderHome();renderIscritti();renderClassificaTable();
+    populateLFPointsSquadreSelect();
+    if(document.getElementById('pg-profilo')?.classList.contains('on')) renderProfilo();
+  },()=>{});
+
+  // ── Real-time: Premi speciali ──
+  db.collection('bv_premi').orderBy('createdAt','asc').onSnapshot(snap=>{
+    if(!snap.empty){
+      premiSpeciali=snap.docs.map(d=>({...d.data(),_docId:d.id}));
+    }
+    renderPremiSpeciali();
+  },()=>{});
+
+  // ── Auth state ──
   firebase.auth().onAuthStateChanged(u=>{
     window.__lfUser=u||null;
-    // update profilo icon in nav
     const abn=document.getElementById('abn-profilo');
     if(abn) abn.querySelector('.abn-icon').textContent=u?'🟢':'👤';
-    // re-render if profilo open
+    autoFillRegistration();
     if(document.getElementById('pg-profilo')?.classList.contains('on')) renderProfilo();
   });
+}
+
+// ── Auto-fill registration form with logged-in user ──
+function autoFillRegistration(){
+  const u=window.__lfUser;
+  const p1=document.getElementById('iscr-p1');
+  const userNotice=document.getElementById('iscr-user-notice');
+  const loginNotice=document.getElementById('iscr-login-notice');
+  const p1Lbl=document.getElementById('iscr-p1-lbl');
+  const p1Hint=document.getElementById('iscr-p1-hint');
+  if(!p1) return;
+  if(u){
+    const name=u.displayName||u.email?.split('@')[0]||'';
+    if(!p1.value) p1.value=name;
+    p1.readOnly=true;
+    p1.style.background='rgba(200,255,0,.05)';
+    p1.style.borderColor='var(--led)';
+    if(userNotice){userNotice.textContent='✓ Connesso come '+u.email+' — l\'iscrizione sarà legata al tuo account';userNotice.style.display='block';}
+    if(loginNotice) loginNotice.style.display='none';
+    if(p1Lbl) p1Lbl.style.display='inline';
+    if(p1Hint) p1Hint.style.display='block';
+  } else {
+    p1.readOnly=false;
+    p1.style.background='';
+    p1.style.borderColor='';
+    if(userNotice) userNotice.style.display='none';
+    if(loginNotice) loginNotice.style.display='block';
+    if(p1Lbl) p1Lbl.style.display='none';
+    if(p1Hint) p1Hint.style.display='none';
+  }
 }
 
 // ── PROFILO AUTH ACTIONS ────────────────────────────────────
@@ -2356,6 +2529,91 @@ window.profiloLogin=async function(){
 window.profiloLogout=async function(){
   await window.__fbAuth.signOut();
   showToast('DISCONNESSO');
+};
+
+// ── ADMIN: LFPOINTS AWARD ─────────────────────────────────
+function populateLFPointsSquadreSelect(){
+  const sel=document.getElementById('lfp-squadra-sel');
+  if(!sel) return;
+  sel.innerHTML='<option value="">— Seleziona squadra —</option>'+
+    iscritti.filter(s=>s.uid1).map(s=>`<option value="${s.id}">${s.team} (${s.p1}) — ${s.email1||s.uid1}</option>`).join('');
+}
+
+window.onSelectSquadraForPoints=function(){
+  const selId=document.getElementById('lfp-squadra-sel')?.value;
+  const infoEl=document.getElementById('lfp-info');
+  if(!infoEl) return;
+  if(!selId){infoEl.style.display='none';return;}
+  const sq=iscritti.find(s=>s.id===selId);
+  if(sq&&sq.uid1){
+    infoEl.textContent='Account: '+sq.email1+' · UID: '+sq.uid1;
+    infoEl.style.display='block';
+  } else {
+    infoEl.textContent='⚠️ Nessun account LilloFind collegato a questa squadra.';
+    infoEl.style.display='block';
+  }
+};
+
+window.assegnaLFPoints=async function(){
+  if(!isAdmin){showToast("⚠️ Solo l'admin può assegnare punti.");return;}
+  const selId=document.getElementById('lfp-squadra-sel')?.value;
+  const pts=parseInt(document.getElementById('lfp-points')?.value)||0;
+  const reason=document.getElementById('lfp-reason')?.value.trim()||'Beach Volley Bonus';
+  if(!selId||pts<=0){showToast('⚠️ Seleziona una squadra e inserisci i punti.');return;}
+  const sq=iscritti.find(s=>s.id===selId);
+  if(!sq||!sq.uid1){showToast('⚠️ Questa squadra non ha un account LilloFind collegato.');return;}
+  const db=window.__fbDb;
+  if(!db){showToast('Firebase non disponibile.');return;}
+  try{
+    const ref=db.collection('users').doc(sq.uid1);
+    const snap=await ref.get();
+    if(!snap.exists){showToast('⚠️ Utente non trovato su LilloFind.');return;}
+    const cur=snap.data().lfpoints||0;
+    await ref.update({lfpoints:cur+pts});
+    showToast(`⬡ +${pts} LFPOINTS assegnati a ${sq.p1}!`);
+    document.getElementById('lfp-points').value='';
+    document.getElementById('lfp-reason').value='';
+    document.getElementById('lfp-squadra-sel').value='';
+    document.getElementById('lfp-info').style.display='none';
+  }catch(e){showToast('Errore: '+e.message);}
+};
+
+// ── ADMIN: GESTISCI STATO TORNEI ──────────────────────────
+function renderAdminTorneiStatus(){
+  const wrap=document.getElementById('admin-tornei-status-list');
+  if(!wrap||!isAdmin) return;
+  if(!tornei.length){wrap.innerHTML='<p style="font-size:11px;color:var(--dim);">Nessun torneo.</p>';return;}
+  wrap.innerHTML=tornei.map(t=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+      <div style="flex:1;min-width:160px;">
+        <p style="font-size:12px;font-weight:600;">${t.nome}</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:1px;">${t.data||'—'} · ${t.luogo||'—'}</p>
+      </div>
+      <select class="lf-in" style="width:180px;font-size:10px;" onchange="aggiornaStatoTorneo('${t.id||t._docId}',this.value)">
+        ${['iscrizioni','attivo','pianificato','concluso'].map(s=>`<option value="${s}" ${t.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn-g" style="font-size:9px;padding:8px 12px;color:#c00;border-color:#c00;" onclick="deleteTorneo('${t.id||t._docId}')">✕</button>
+    </div>`).join('');
+}
+
+window.aggiornaStatoTorneo=async function(id,newStatus){
+  if(!isAdmin) return;
+  const t=tornei.find(x=>x.id===id||x._docId===id);
+  if(t) t.status=newStatus;
+  saveBvState();renderHome();
+  const db=window.__fbDb;
+  if(db) db.collection('bv_tornei').doc(id).update({status:newStatus}).catch(()=>{});
+  showToast('Stato torneo aggiornato: '+newStatus);
+};
+
+window.deleteTorneo=function(id){
+  if(!isAdmin) return;
+  if(!confirm('Eliminare questo torneo? Le iscrizioni collegate resteranno.')) return;
+  tornei=tornei.filter(t=>t.id!==id&&t._docId!==id);
+  saveBvState();renderHome();renderAdminTorneiStatus();
+  const db=window.__fbDb;
+  if(db) db.collection('bv_tornei').doc(id).delete().catch(()=>{});
+  showToast('Torneo eliminato.');
 };
 
 // ── RENDER PROFILO ──────────────────────────────────────────
@@ -2396,58 +2654,29 @@ window.renderProfilo=async function(){
     });
   });
 
-  // Trova squadre dell'utente (per ora usa selezione salvata)
+  // ── Trova le squadre dell'utente per UID (priorità) o nome (fallback) ──
+  const uidSquadre=iscritti.filter(sq=>sq.uid1===u.uid||sq.uid2===u.uid);
+  // Fallback name-based (for squads registered before UID linking)
   const savedPlayer=localStorage.getItem('lf_bv_player_'+(u.uid||'x'))||'';
+  const nameSquadre=savedPlayer?iscritti.filter(sq=>!sq.uid1&&!sq.uid2&&(sq.p1===savedPlayer||sq.p2===savedPlayer)):[];
+  const mySquadre=[...new Map([...uidSquadre,...nameSquadre].map(s=>[s.id,s])).values()];
 
-  const statsHTML=()=>{
-    if(!savedPlayer) return '';
-    const squadre=iscritti.filter(sq=>sq.p1===savedPlayer||sq.p2===savedPlayer);
-    if(!squadre.length) return `<p style="font-size:11px;color:var(--dim);padding:20px 0;">Nessuna partita trovata per questo giocatore.</p>`;
-    let partiteTot=0,vintiTot=0,persiTot=0,setV=0,setP=0;
-    squadre.forEach(sq=>{
-      partiteTot+=sq.vinti+sq.persi;
-      vintiTot+=sq.vinti;
-      persiTot+=sq.persi;
-      setV+=sq.setVinti||0;
-      setP+=sq.setPersi||0;
-    });
-    const pm=setV-setP;
-    const pmColor=pm>=0?'var(--led)':'#ff5555';
-    return `
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#e8e8e8;border:1.5px solid var(--k);margin-bottom:24px;">
-        <div style="background:var(--w);padding:16px 14px;text-align:center;">
-          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Partite</p>
-          <p class="bb" style="font-size:36px;">${partiteTot}</p>
-        </div>
-        <div style="background:var(--w);padding:16px 14px;text-align:center;">
-          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Vittorie</p>
-          <p class="bb" style="font-size:36px;color:var(--led);">${vintiTot}</p>
-        </div>
-        <div style="background:var(--w);padding:16px 14px;text-align:center;">
-          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Sconfitte</p>
-          <p class="bb" style="font-size:36px;">${persiTot}</p>
-        </div>
-        <div style="background:var(--w);padding:16px 14px;text-align:center;">
-          <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Set +/−</p>
-          <p class="bb" style="font-size:36px;color:${pmColor};">${pm>0?'+':''}${pm}</p>
-        </div>
-      </div>
-      <div style="margin-bottom:24px;">
-        <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Tornei Attivi</p>
-        ${squadre.map(sq=>`
-          <div style="border:1.5px solid #e0e0e0;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <p style="font-size:13px;font-weight:600;">${sq.team}</p>
-              <p style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-top:2px;">${tornei.find(t=>t.id===sq.torneo)?.nome||sq.torneo}</p>
-            </div>
-            <span class="badge ${sq.status==='confermato'?'badge-green':'badge-led'}">${sq.status}</span>
-          </div>`).join('')}
-      </div>`;
-  };
+  // ── Stats from my squads ──
+  let partiteTot=0,vintiTot=0,persiTot=0,setV=0,setP=0;
+  mySquadre.forEach(sq=>{
+    partiteTot+=sq.vinti+sq.persi;
+    vintiTot+=sq.vinti;
+    persiTot+=sq.persi;
+    setV+=sq.setVinti||0;
+    setP+=sq.setPersi||0;
+  });
+  const pm=setV-setP;
+  const pmColor=pm>=0?'var(--led)':'#ff5555';
 
-  // Calcola rank in classifica individuale
+  // ── Rank individuale (per nome giocatore) ──
+  const myName=uidSquadre.length?uidSquadre[0].p1:savedPlayer;
   const getRank=()=>{
-    if(!savedPlayer) return null;
+    if(!myName) return null;
     const playerMap={};
     iscritti.forEach(sq=>{
       [sq.p1,sq.p2].forEach(nome=>{
@@ -2457,10 +2686,14 @@ window.renderProfilo=async function(){
       });
     });
     const sorted=Object.entries(playerMap).sort((a,b)=>b[1].pm-a[1].pm);
-    const idx=sorted.findIndex(([n])=>n===savedPlayer);
+    const idx=sorted.findIndex(([n])=>n===myName);
     return idx>=0?idx+1:null;
   };
   const rank=getRank();
+
+  // ── All players for fallback name selector ──
+  const allPlayers=[];
+  iscritti.forEach(sq=>{[sq.p1,sq.p2].forEach(n=>{if(n&&!allPlayers.includes(n))allPlayers.push(n);});});
 
   wrap.innerHTML=`
     <!-- Hero card -->
@@ -2492,29 +2725,62 @@ window.renderProfilo=async function(){
       <div class="led-strip-sm"></div>
     </div>
 
-    <!-- Selettore giocatore -->
     <div style="padding:24px 20px 0;">
-      <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Sei nella lista iscritti?</p>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:24px;">
-        <select class="lf-in" id="prof-player-select" style="flex:1;" onchange="window.savePlayerSelection(this.value)">
-          <option value="">— Seleziona il tuo nome —</option>
-          ${allPlayers.map(n=>`<option value="${n}" ${n===savedPlayer?'selected':''}>${n}</option>`).join('')}
-        </select>
-      </div>
 
-      <!-- Stats -->
-      <div id="prof-stats-wrap">
-        ${savedPlayer
-          ? `<p style="font-size:8px;color:var(--led);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">📊 Le tue statistiche</p>${statsHTML()}`
-          : `<div style="border:1.5px dashed #e0e0e0;padding:32px;text-align:center;"><p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Seleziona il tuo nome per vedere le statistiche.</p></div>`
-        }
-      </div>
+      <!-- I Miei Tornei (UID-based) -->
+      ${mySquadre.length?`
+        <p style="font-size:8px;color:var(--led);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">🏐 I Miei Tornei</p>
+        ${mySquadre.map(sq=>{
+          const tn=tornei.find(t=>t.id===sq.torneo);
+          const statusColor=sq.status==='confermato'?'badge-green':'badge-led';
+          return `<div style="border:1.5px solid ${sq.status==='confermato'?'#a5d6a7':'rgba(200,255,0,.3)'};padding:14px 16px;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+              <div>
+                <p style="font-size:13px;font-weight:600;">${sq.team}</p>
+                <p style="font-size:9px;color:var(--dim);margin-top:2px;letter-spacing:.5px;">${tn?.nome||sq.torneo} · ${tn?.luogo||''}</p>
+                <p style="font-size:9px;color:var(--dim);margin-top:1px;">Compagno: ${sq.uid1===u.uid?sq.p2:sq.p1}</p>
+              </div>
+              <span class="badge ${statusColor}">${sq.status}</span>
+            </div>
+            ${sq.status==='in attesa'?'<p style="font-size:9px;color:#f0a500;margin-top:8px;letter-spacing:.5px;">⏳ In attesa di conferma dall\'organizzatore</p>':''}
+          </div>`;
+        }).join('')}
+
+        <!-- Stats aggregate -->
+        ${partiteTot>0?`
+        <p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin:20px 0 12px;">📊 Le tue statistiche</p>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e8e8e8;border:1.5px solid var(--k);margin-bottom:24px;">
+          <div style="background:var(--w);padding:14px 8px;text-align:center;"><p style="font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Partite</p><p class="bb" style="font-size:28px;">${partiteTot}</p></div>
+          <div style="background:var(--w);padding:14px 8px;text-align:center;"><p style="font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Vittorie</p><p class="bb" style="font-size:28px;color:var(--led);">${vintiTot}</p></div>
+          <div style="background:var(--w);padding:14px 8px;text-align:center;"><p style="font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Sconfitte</p><p class="bb" style="font-size:28px;">${persiTot}</p></div>
+          <div style="background:var(--w);padding:14px 8px;text-align:center;"><p style="font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Set +/−</p><p class="bb" style="font-size:28px;color:${pmColor};">${pm>0?'+':''}${pm}</p></div>
+        </div>`:''}
+      `:`
+        <!-- No UID-linked squads: show notice + name selector fallback -->
+        <div style="border:1.5px dashed rgba(200,255,0,.4);padding:20px;text-align:center;margin-bottom:20px;background:rgba(200,255,0,.03);">
+          <p style="font-size:11px;color:var(--dim);letter-spacing:1px;line-height:1.8;">Non risulti iscritto a nessun torneo con questo account.<br/>Iscriviti con il tuo account per collegare automaticamente le statistiche.</p>
+          <button class="btn-led" onclick="openModal('iscriviti-modal')" style="margin-top:14px;font-size:10px;padding:10px 20px;">🏐 Iscriviti a un Torneo →</button>
+        </div>
+        <!-- Fallback: collega manualmente per iscrizioni precedenti -->
+        <div style="border:1px solid #e0e0e0;padding:16px;margin-bottom:20px;">
+          <p style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">Iscritto prima del login? Collegati manualmente:</p>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select class="lf-in" id="prof-player-select" style="flex:1;font-size:11px;" onchange="window.savePlayerSelection(this.value)">
+              <option value="">— Seleziona il tuo nome —</option>
+              ${allPlayers.map(n=>`<option value="${n}" ${n===savedPlayer?'selected':''}>${n}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      `}
+
+      <!-- Iscriviti CTA if has squads -->
+      ${mySquadre.length?`<button class="btn-g" onclick="openModal('iscriviti-modal')" style="width:100%;margin-bottom:20px;font-size:10px;">+ Iscriviti a un altro torneo</button>`:''}
 
       <!-- Link a LilloFind -->
-      <div style="margin-top:24px;padding:16px;border:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+      <div style="padding:16px;border:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
         <div>
           <p style="font-size:10px;font-weight:600;margin-bottom:2px;">Profilo completo LilloFind</p>
-          <p style="font-size:9px;color:var(--dim);">Ordini, LFPOINTS, indirizzi e premi</p>
+          <p style="font-size:9px;color:var(--dim);">Ordini, LFPOINTS, premi e molto altro</p>
         </div>
         <a href="index.html" onclick="setTimeout(()=>{ if(window.showPg) window.showPg('profile'); },300);" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--k);text-decoration:none;border:1.5px solid var(--k);padding:10px 14px;white-space:nowrap;">VAI →</a>
       </div>
