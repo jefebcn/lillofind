@@ -21,13 +21,13 @@
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,serverTimestamp,query,orderBy,where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,updatePassword,EmailAuthProvider,reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
 const _googleProvider=new GoogleAuthProvider();
 _googleProvider.setCustomParameters({prompt:'select_account'});
-window.__fb={db:getFirestore(app),auth:getAuth(app),collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,serverTimestamp,query,orderBy,where,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,updatePassword,EmailAuthProvider,reauthenticateWithCredential,_googleProvider};
+window.__fb={db:getFirestore(app),auth:getAuth(app),collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,updatePassword,EmailAuthProvider,reauthenticateWithCredential,_googleProvider};
 </script>
 
 <style>
@@ -1594,6 +1594,9 @@ img{ -webkit-user-drag:none; user-select:none; }
             </div>
             <div style="display:flex;justify-content:space-between;font-size:11px;">
               <span style="color:var(--mid);">Spedizione DHL</span><span id="cart-ship">—</span>
+            </div>
+            <div id="cart-disc-row" style="display:none;justify-content:space-between;font-size:11px;">
+              <span style="color:var(--led);">Bonus Riscattato</span><span id="cart-disc" style="color:var(--led);font-weight:600;"></span>
             </div>
             <div style="font-size:9px;color:var(--dim);letter-spacing:1px;">Gratuita sopra €80</div>
           </div>
@@ -3290,9 +3293,24 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
       </div>`).join('');
     const ship=allDigital?0:(total>=80?0:6.90);
+    const ar=(typeof udata!=='undefined'&&udata)?udata.activeReward:null;
+    let discount=0;
+    if(ar){
+      if(ar.type==='fisso') discount=Math.min(ar.val,total);
+      else if(ar.type==='percentuale') discount=total*(ar.val/100);
+    }
+    const finalTotal=Math.max(0,total+ship-discount);
     document.getElementById('cart-subtotal').textContent='€'+total.toFixed(2);
     document.getElementById('cart-ship').textContent=(ship===0&&allDigital)?'Digitale — Gratis':(ship===0?'Gratis':'€'+ship.toFixed(2));
-    document.getElementById('cart-total').textContent='€'+(total+ship).toFixed(2);
+    const discRow=document.getElementById('cart-disc-row');
+    const discEl=document.getElementById('cart-disc');
+    if(ar&&discount>0){
+      if(discRow) discRow.style.display='flex';
+      if(discEl) discEl.textContent='−€'+discount.toFixed(2)+' ('+ar.label+')';
+    } else {
+      if(discRow) discRow.style.display='none';
+    }
+    document.getElementById('cart-total').textContent='€'+finalTotal.toFixed(2);
     document.getElementById('cart-pts-preview').textContent='+'+pts+' LFPOINTS al completamento';
   }
   
@@ -3427,11 +3445,25 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <span style="font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;">€${(i.price*i.qty).toFixed(2)}</span>
       </div>`).join('');
+    const ar2=(typeof udata!=='undefined'&&udata)?udata.activeReward:null;
+    let discount2=0;
+    if(ar2){
+      if(ar2.type==='fisso') discount2=Math.min(ar2.val,total);
+      else if(ar2.type==='percentuale') discount2=total*(ar2.val/100);
+    }
+    const finalTotal2=Math.max(0,total+ship-discount2);
     const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     set('ck-sub','€'+total.toFixed(2));
     set('ck-ship',allDigital?'Digitale — Gratis':(ship===0?'Gratis':'€'+ship.toFixed(2)));
-    set('ck-disc','—');
-    set('ck-total','€'+(total+ship).toFixed(2));
+    const ckDiscRow=document.getElementById('ck-disc-row');
+    if(ar2&&discount2>0){
+      set('ck-disc','−€'+discount2.toFixed(2)+' ('+ar2.label+')');
+      if(ckDiscRow) ckDiscRow.style.display='flex';
+    } else {
+      set('ck-disc','—');
+      if(ckDiscRow) ckDiscRow.style.display='none';
+    }
+    set('ck-total','€'+finalTotal2.toFixed(2));
     set('ck-pts-preview','+'+pts+' LFPOINTS al completamento');
     // Update bonifico causale with a random order ID
     const causale='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
@@ -3499,6 +3531,13 @@ img{ -webkit-user-drag:none; user-select:none; }
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
     const ship=allDigital?0:(total>=80?0:6.90);
     const pts=Math.floor(total);
+    const arOrder=(udata&&udata.activeReward)||null;
+    let discountOrder=0;
+    if(arOrder){
+      if(arOrder.type==='fisso') discountOrder=Math.min(arOrder.val,total);
+      else if(arOrder.type==='percentuale') discountOrder=total*(arOrder.val/100);
+    }
+    const finalTotalOrder=Math.max(0,total+ship-discountOrder);
     const _orderItems=[...cart]; // snapshot before clearing
     localStorage.setItem('lf_cart_snapshot',JSON.stringify(_orderItems));
     if(selectedPayment==='paypal'){
@@ -3512,8 +3551,10 @@ img{ -webkit-user-drag:none; user-select:none; }
       const snap=await fb.getDoc(ref);
       const d=snap.exists()?snap.data():{};
       const np=(d.lfpoints||0)+pts, ns=(d.totalSpent||0)+total;
-      await fb.updateDoc(ref,{lfpoints:np,totalSpent:ns});
-      udata={...udata,lfpoints:np,totalSpent:ns};
+      const updateFields={lfpoints:np,totalSpent:ns};
+      if(arOrder) updateFields.activeReward=fb.deleteField();
+      await fb.updateDoc(ref,updateFields);
+      udata={...udata,lfpoints:np,totalSpent:ns,activeReward:null};
       updateNav(user,udata); updateHomeDisplay();
       const prev=np-pts;
       const newReward=REWARDS.find(r=>prev<r.pts&&np>=r.pts);
@@ -3535,7 +3576,8 @@ img{ -webkit-user-drag:none; user-select:none; }
           items:_orderItems.map(i=>({name:i.name,price:i.price,qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||'',isDigital:i.isDigital||false})),
           subtotal:total,
           shipping:ship,
-          total:total+ship,
+          discount:discountOrder,
+          total:finalTotalOrder,
           payment:selectedPayment||'card',
           lfpoints:pts,
           isDigitalOrder:allDigital,
@@ -3564,7 +3606,8 @@ img{ -webkit-user-drag:none; user-select:none; }
         '🧾 Articoli:\n' + _itemLines + '\n\n' +
         '💶 Subtotale: €' + total.toFixed(2) + '\n' +
         '🚚 Spedizione: ' + (ship===0?'Gratis':'€'+ship.toFixed(2)) + '\n' +
-        '💰 TOTALE: €' + (total+ship).toFixed(2) + '\n' +
+        (discountOrder>0?'🎁 Bonus: −€'+discountOrder.toFixed(2)+'\n':'') +
+        '💰 TOTALE: €' + finalTotalOrder.toFixed(2) + '\n' +
         '⬡ LFPOINTS: +' + pts;
       setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
       setTimeout(()=>showPg('profile'),1200);
@@ -3624,12 +3667,22 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Rewards grid
     const rg=document.getElementById('pr-rewards-grid');
     if(rg){
+      const ar=udata.activeReward||null;
       rg.innerHTML=REWARDS.map(r=>{
         const ok=pts>=r.pts;
-        return `<div style="border:1.5px solid ${ok?'var(--led)':'#e0e0e0'};padding:14px 12px;text-align:center;${ok?'background:rgba(200,255,0,.05);box-shadow:0 0 8px rgba(200,255,0,.15)':'opacity:.4'}">
-          <p class="bb" style="font-size:22px;${ok?'color:var(--led)':''}">${r.label}</p>
+        const isActive=ar&&ar.label===r.label;
+        let borderColor=isActive?'var(--led)':(ok?'var(--led)':'#e0e0e0');
+        let bgStyle=isActive?'background:rgba(200,255,0,.12);box-shadow:0 0 12px rgba(200,255,0,.3)':(ok?'background:rgba(200,255,0,.05);box-shadow:0 0 8px rgba(200,255,0,.15)':'opacity:.4');
+        let actionHtml='';
+        if(isActive){
+          actionHtml=`<div style="margin-top:8px;padding:5px 10px;font-size:9px;width:100%;background:rgba(200,255,0,.2);color:var(--led);letter-spacing:1px;text-transform:uppercase;border:1px solid var(--led);box-sizing:border-box;">✓ Nel carrello</div>`;
+        } else if(ok&&!ar){
+          actionHtml=`<button onclick="claimReward('${r.label}')" class="btn-led" style="margin-top:8px;padding:5px 10px;font-size:9px;width:100%;">Riscatta</button>`;
+        }
+        return `<div style="border:1.5px solid ${borderColor};padding:14px 12px;text-align:center;${bgStyle}">
+          <p class="bb" style="font-size:22px;${(ok||isActive)?'color:var(--led)':''}">${r.label}</p>
           <p style="font-size:8px;color:var(--dim);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">${r.pts} pts</p>
-          ${ok?`<button onclick="claimReward('${r.label}')" class="btn-led" style="margin-top:8px;padding:5px 10px;font-size:9px;width:100%;">Riscatta</button>`:''}
+          ${actionHtml}
         </div>`;
       }).join('');
     }
@@ -3682,8 +3735,26 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
   window.renderOrderHistory=renderOrderHistory;
 
-  window.claimReward=function(label){
-    showToast(`✅ Codice ${label} copiato! Usalo al checkout.`);
+  window.claimReward=async function(label){
+    if(!user||!udata){showToast('Accedi per riscattare.');return;}
+    const fb=window.__fb;
+    if(!fb)return;
+    const r=REWARDS.find(x=>x.label===label);
+    if(!r)return;
+    const pts=udata.lfpoints||0;
+    if(pts<r.pts){showToast('Punti insufficienti.');return;}
+    if(udata.activeReward){showToast('Hai già un bonus attivo nel carrello!');return;}
+    const newPts=pts-r.pts;
+    try{
+      const ref=fb.doc(fb.db,'users',user.uid);
+      const ar={label:r.label,type:r.type,val:r.val,pts:r.pts,redeemedAt:Date.now()};
+      await fb.updateDoc(ref,{lfpoints:newPts,activeReward:ar});
+      udata={...udata,lfpoints:newPts,activeReward:ar};
+      updateNav(user,udata);updateHomeDisplay();
+      renderProfile();
+      renderCart();
+      showToast(`🎁 Bonus ${r.label} riscattato! Applicato al prossimo ordine.`);
+    }catch(e){showToast('Errore nel riscatto. Riprova.');}
   };
 
   window.savePrefs=async function(){
