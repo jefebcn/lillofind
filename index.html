@@ -515,7 +515,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   }
   #hero-glows{ display:block !important; }
   #hero-lines{ display:block !important; }
-  #hero-photo-bg{ background-position:center 30% !important; }
+  #hero-photo-bg .hero-slide{ background-position:center 30% !important; }
 }
 
 /* App: no tap highlight, prevent iOS zoom on inputs, smooth scroll */
@@ -917,8 +917,15 @@ img{ -webkit-user-drag:none; user-select:none; }
   <!-- HERO — Mobile-first: globe fills top, content anchored to bottom -->
   <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;border-bottom:3px solid var(--k);">
 
-    <!-- ── PHOTO BACKGROUND ── -->
-    <div id="hero-photo-bg" style="position:absolute;inset:0;z-index:0;background:url('hero1.png') center 20%/cover no-repeat;"></div>
+    <!-- ── PHOTO BACKGROUND — crossfade tra hero1 e hero2 ogni 6s ── -->
+    <div id="hero-photo-bg" style="position:absolute;inset:0;z-index:0;overflow:hidden;">
+      <div class="hero-slide" style="background:url('hero1.png') center 20%/cover no-repeat;animation:hero-xfade 12s ease-in-out infinite;"></div>
+      <div class="hero-slide" style="background:url('hero2.png') center 20%/cover no-repeat;animation:hero-xfade 12s ease-in-out infinite;animation-delay:-6s;"></div>
+    </div>
+    <style>
+      .hero-slide{position:absolute;inset:0;}
+      @keyframes hero-xfade{0%,45%{opacity:1;}50%,95%{opacity:0;}100%{opacity:1;}}
+    </style>
 
     <!-- ── DARK OVERLAY: leggero in alto, più denso in basso dove c'è il testo ── -->
     <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,.45) 45%,rgba(0,0,0,.82) 100%);"></div>
