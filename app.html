@@ -551,40 +551,50 @@ img { -webkit-user-drag:none; user-select:none; }
     <h1 class="bb" style="font-size:clamp(36px,5vw,64px);margin-bottom:8px;">Premi</h1>
     <div class="led-strip" style="margin-bottom:32px;"></div>
 
-    <!-- Prize blocks -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--k);margin-bottom:32px;" class="grid-1-mob">
-      <div style="padding:36px 28px;border-right:1px solid var(--k);text-align:center;background:linear-gradient(135deg,#fffde7,#fff);">
-        <p style="font-size:48px;margin-bottom:8px;">🥇</p>
-        <p class="bb prize-1" style="font-size:36px;">1° Posto</p>
-        <p class="bb" style="font-size:48px;margin:12px 0;">€400</p>
-        <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">Voucher LilloFind · Trofeo · Coppa · 500 LFPOINTS bonus</p>
-        <div style="border:1.5px solid #ffd700;padding:10px;background:rgba(255,215,0,.08);">
-          <p style="font-size:10px;color:#9a7800;letter-spacing:1px;">🏆 Jersey Personalizzata + Foto Team</p>
-        </div>
-      </div>
-      <div style="padding:36px 28px;border-right:1px solid var(--k);text-align:center;background:linear-gradient(135deg,#fafafa,#fff);">
-        <p style="font-size:48px;margin-bottom:8px;">🥈</p>
-        <p class="bb prize-2" style="font-size:36px;">2° Posto</p>
-        <p class="bb" style="font-size:48px;margin:12px 0;">€250</p>
-        <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">Voucher LilloFind · Medaglie · 300 LFPOINTS bonus</p>
-        <div style="border:1.5px solid #c0c0c0;padding:10px;background:rgba(192,192,192,.08);">
-          <p style="font-size:10px;color:#666;letter-spacing:1px;">🎽 Kit Streetwear Limited Edition</p>
-        </div>
-      </div>
-      <div style="padding:36px 28px;text-align:center;background:linear-gradient(135deg,#fff8f0,#fff);">
-        <p style="font-size:48px;margin-bottom:8px;">🥉</p>
-        <p class="bb prize-3" style="font-size:36px;">3° Posto</p>
-        <p class="bb" style="font-size:48px;margin:12px 0;">€200</p>
-        <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">Voucher LilloFind · Medaglie · 150 LFPOINTS bonus</p>
-        <div style="border:1.5px solid #cd7f32;padding:10px;background:rgba(205,127,50,.08);">
-          <p style="font-size:10px;color:#7a4000;letter-spacing:1px;">👟 Sneaker Pack Esclusivo</p>
-        </div>
-      </div>
-    </div>
+    <!-- Prize blocks (dynamic) -->
+    <div id="premi-podio-wrap" style="margin-bottom:32px;"></div>
 
     <!-- Premi speciali -->
     <h2 class="bb" style="font-size:36px;margin-bottom:20px;">Premi Speciali</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:40px;" id="premi-speciali-grid"></div>
+
+    <!-- Admin: gestione podio -->
+    <div class="admin-only" style="border:2px solid var(--led);padding:28px;margin-bottom:24px;display:none;background:rgba(200,255,0,.03);">
+      <p class="bb" style="font-size:24px;margin-bottom:4px;">🥇 Modifica Premi Podio</p>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:20px;letter-spacing:.5px;">Modifica i premi per i tre posti del podio. Le modifiche sono visibili immediatamente a tutti.</p>
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <!-- 1° posto -->
+        <div style="border:1.5px solid #ffd700;padding:16px;background:rgba(255,215,0,.04);">
+          <p class="bb prize-1" style="font-size:18px;margin-bottom:12px;">🥇 1° Posto</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="grid-1-mob">
+            <div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Valore (es. €400)</label><input class="lf-in" id="pod1-valore" placeholder="€400" style="font-size:13px;"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Extra / Tagline</label><input class="lf-in" id="pod1-extra" placeholder="Jersey Personalizzata + Foto Team" style="font-size:13px;"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><input class="lf-in" id="pod1-desc" placeholder="Voucher LilloFind · Trofeo · Coppa · 500 LFPOINTS bonus" style="font-size:13px;"/></div>
+          </div>
+        </div>
+        <!-- 2° posto -->
+        <div style="border:1.5px solid #c0c0c0;padding:16px;background:rgba(192,192,192,.04);">
+          <p class="bb prize-2" style="font-size:18px;margin-bottom:12px;">🥈 2° Posto</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="grid-1-mob">
+            <div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Valore</label><input class="lf-in" id="pod2-valore" placeholder="€250" style="font-size:13px;"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Extra / Tagline</label><input class="lf-in" id="pod2-extra" placeholder="Kit Streetwear Limited Edition" style="font-size:13px;"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><input class="lf-in" id="pod2-desc" placeholder="Voucher LilloFind · Medaglie · 300 LFPOINTS bonus" style="font-size:13px;"/></div>
+          </div>
+        </div>
+        <!-- 3° posto -->
+        <div style="border:1.5px solid #cd7f32;padding:16px;background:rgba(205,127,50,.04);">
+          <p class="bb prize-3" style="font-size:18px;margin-bottom:12px;">🥉 3° Posto</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="grid-1-mob">
+            <div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Valore</label><input class="lf-in" id="pod3-valore" placeholder="€200" style="font-size:13px;"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Extra / Tagline</label><input class="lf-in" id="pod3-extra" placeholder="Sneaker Pack Esclusivo" style="font-size:13px;"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><input class="lf-in" id="pod3-desc" placeholder="Voucher LilloFind · Medaglie · 150 LFPOINTS bonus" style="font-size:13px;"/></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-led" onclick="salvaPodio()">💾 Salva Modifiche Podio →</button>
+      </div>
+    </div>
 
     <!-- Admin: gestione premi -->
     <div class="admin-only" style="border:2px solid var(--k);padding:28px;display:none;">
@@ -1155,6 +1165,12 @@ loadBvState();
 
 let partite=[];
 
+let podioPrize={
+  primo:{valore:'€400',desc:'Voucher LilloFind · Trofeo · Coppa · 500 LFPOINTS bonus',extra:'🏆 Jersey Personalizzata + Foto Team'},
+  secondo:{valore:'€250',desc:'Voucher LilloFind · Medaglie · 300 LFPOINTS bonus',extra:'🎽 Kit Streetwear Limited Edition'},
+  terzo:{valore:'€200',desc:'Voucher LilloFind · Medaglie · 150 LFPOINTS bonus',extra:'👟 Sneaker Pack Esclusivo'}
+};
+
 let premiSpeciali=[
   {emoji:'🎯',nome:'Ace Master',valore:'€30 voucher',desc:'Il giocatore con più ace del torneo',cat:'Individuale'},
   {emoji:'🛡️',nome:'Miglior Difensore',valore:'€30 voucher',desc:'Miglior % di ricezione del torneo',cat:'Individuale'},
@@ -1202,7 +1218,7 @@ function showPg(id){
   if(id==='home') renderHome();
   if(id==='chicece') renderChicece();
   if(id==='profilo') renderProfilo();
-  if(id==='premi'){renderPremiSpeciali();if(isAdmin){renderAdminTorneiStatus();populateLFPointsSquadreSelect();}}
+  if(id==='premi'){renderPodio();renderPremiSpeciali();if(isAdmin){renderAdminTorneiStatus();populateLFPointsSquadreSelect();}}
 }
 
 // ── RENDER TORNEI ──────────────────────────────────────────
@@ -1690,6 +1706,61 @@ window.creaTorneo=async function(){if(!isAdmin){showToast("⚠️ Solo l'admin p
   renderAdminTorneiStatus();
   const sel=document.getElementById('iscr-torneo');
   if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+};
+
+// ── PREMI PODIO ────────────────────────────────────────────
+function renderPodio(){
+  const wrap=document.getElementById('premi-podio-wrap');
+  if(!wrap) return;
+  const p=podioPrize;
+  wrap.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--k);" class="grid-1-mob">
+    <div style="padding:36px 28px;border-right:1px solid var(--k);text-align:center;background:linear-gradient(135deg,#fffde7,#fff);">
+      <p style="font-size:48px;margin-bottom:8px;">🥇</p>
+      <p class="bb prize-1" style="font-size:36px;">1° Posto</p>
+      <p class="bb" style="font-size:48px;margin:12px 0;">${p.primo.valore||'—'}</p>
+      <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">${p.primo.desc||''}</p>
+      ${p.primo.extra?`<div style="border:1.5px solid #ffd700;padding:10px;background:rgba(255,215,0,.08);"><p style="font-size:10px;color:#9a7800;letter-spacing:1px;">${p.primo.extra}</p></div>`:''}
+    </div>
+    <div style="padding:36px 28px;border-right:1px solid var(--k);text-align:center;background:linear-gradient(135deg,#fafafa,#fff);">
+      <p style="font-size:48px;margin-bottom:8px;">🥈</p>
+      <p class="bb prize-2" style="font-size:36px;">2° Posto</p>
+      <p class="bb" style="font-size:48px;margin:12px 0;">${p.secondo.valore||'—'}</p>
+      <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">${p.secondo.desc||''}</p>
+      ${p.secondo.extra?`<div style="border:1.5px solid #c0c0c0;padding:10px;background:rgba(192,192,192,.08);"><p style="font-size:10px;color:#666;letter-spacing:1px;">${p.secondo.extra}</p></div>`:''}
+    </div>
+    <div style="padding:36px 28px;text-align:center;background:linear-gradient(135deg,#fff8f0,#fff);">
+      <p style="font-size:48px;margin-bottom:8px;">🥉</p>
+      <p class="bb prize-3" style="font-size:36px;">3° Posto</p>
+      <p class="bb" style="font-size:48px;margin:12px 0;">${p.terzo.valore||'—'}</p>
+      <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:16px;">${p.terzo.desc||''}</p>
+      ${p.terzo.extra?`<div style="border:1.5px solid #cd7f32;padding:10px;background:rgba(205,127,50,.08);"><p style="font-size:10px;color:#7a4000;letter-spacing:1px;">${p.terzo.extra}</p></div>`:''}
+    </div>
+  </div>`;
+  // Populate admin form fields (if visible)
+  const f=(id,val)=>{const el=document.getElementById(id);if(el&&!el.matches(':focus'))el.value=val||'';};
+  f('pod1-valore',p.primo.valore);f('pod1-desc',p.primo.desc);f('pod1-extra',p.primo.extra);
+  f('pod2-valore',p.secondo.valore);f('pod2-desc',p.secondo.desc);f('pod2-extra',p.secondo.extra);
+  f('pod3-valore',p.terzo.valore);f('pod3-desc',p.terzo.desc);f('pod3-extra',p.terzo.extra);
+}
+
+window.salvaPodio=async function(){
+  if(!isAdmin){showToast("⚠️ Solo l'admin può modificare i premi.");return;}
+  const g=(id)=>document.getElementById(id)?.value.trim()||'';
+  podioPrize={
+    primo:{valore:g('pod1-valore'),desc:g('pod1-desc'),extra:g('pod1-extra')},
+    secondo:{valore:g('pod2-valore'),desc:g('pod2-desc'),extra:g('pod2-extra')},
+    terzo:{valore:g('pod3-valore'),desc:g('pod3-desc'),extra:g('pod3-extra')}
+  };
+  renderPodio();
+  const db=window.__fbDb;
+  if(db){
+    try{
+      await db.collection('bv_config').doc('podio').set({...podioPrize,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      showToast('💾 Premi podio salvati!');
+    }catch(e){showToast('Errore salvataggio: '+e.message);}
+  } else {
+    showToast('💾 Premi aggiornati (solo locale).');
+  }
 };
 
 // ── PREMI ─────────────────────────────────────────────────
@@ -2486,6 +2557,7 @@ if(localStorage.getItem('lf_bv_admin')==='1'){
   },100);
 }
 renderHome();
+renderPodio();
 renderPremiSpeciali();
 
 // ── FIREBASE AUTH (shared with LilloFind) ──────────────────
@@ -2535,6 +2607,17 @@ function initFirebase(){
     populateLFPointsSquadreSelect();
     if(document.getElementById('pg-profilo')?.classList.contains('on')) renderProfilo();
   },()=>{});
+
+  // ── Real-time: Podio prizes ──
+  db.collection('bv_config').doc('podio').onSnapshot(snap=>{
+    if(snap.exists){
+      const d=snap.data();
+      if(d.primo) podioPrize.primo={...podioPrize.primo,...d.primo};
+      if(d.secondo) podioPrize.secondo={...podioPrize.secondo,...d.secondo};
+      if(d.terzo) podioPrize.terzo={...podioPrize.terzo,...d.terzo};
+    }
+    renderPodio();
+  },()=>{renderPodio();});
 
   // ── Real-time: Premi speciali ──
   db.collection('bv_premi').orderBy('createdAt','asc').onSnapshot(snap=>{
