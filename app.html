@@ -107,8 +107,23 @@ select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
 /* Bracket */
 .bracket-round{display:flex;flex-direction:column;gap:24px;align-items:center;min-width:160px;}
-.bracket-match{border:1.5px solid #e0e0e0;background:#fff;padding:8px 12px;width:150px;}
-.bracket-match.winner{border-color:var(--led);background:rgba(200,255,0,.05);}
+.bracket-match{border:1.5px solid #e0e0e0;background:#fff;padding:8px 12px;width:160px;transition:border-color .2s,box-shadow .2s;}
+.bracket-match.winner{border-color:var(--led);background:rgba(200,255,0,.05);box-shadow:0 0 8px rgba(200,255,0,.15);}
+.bracket-match.live{border-color:var(--led);animation:pulse-border 2s ease-in-out infinite;}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 6px rgba(200,255,0,.3);}50%{box-shadow:0 0 16px rgba(200,255,0,.55);}}
+.bracket-connector{width:2px;background:linear-gradient(180deg,transparent,var(--led),transparent);flex-shrink:0;margin-top:50px;align-self:stretch;}
+
+/* Notifications */
+.notif-bell{position:relative;display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid #333;color:#888;cursor:pointer;padding:5px 10px;font-size:16px;min-height:32px;transition:color .2s,border-color .2s;}
+.notif-bell:hover,.notif-bell.has-unread{color:var(--led);border-color:var(--led);}
+.notif-badge{position:absolute;top:-5px;right:-5px;background:var(--led);color:var(--k);font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;min-width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;padding:0 3px;}
+.notif-badge.vis{display:flex;}
+#notif-panel{display:none;position:fixed;top:56px;right:16px;width:320px;max-height:480px;background:#fff;border:2px solid var(--k);z-index:200;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12);}
+#notif-panel.open{display:block;}
+.notif-item{padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s;}
+.notif-item:hover{background:#fafafa;}
+.notif-item.unread{background:rgba(200,255,0,.06);border-left:3px solid var(--led);}
+@media(max-width:768px){#notif-panel{right:0;left:0;width:100%;top:auto;bottom:calc(60px + env(safe-area-inset-bottom));max-height:70vh;border-bottom:none;}}
 
 /* Responsive utils */
 @media(max-width:768px){
@@ -146,6 +161,20 @@ img { -webkit-user-drag:none; user-select:none; }
 
 <div id="toast"></div>
 
+<!-- ══════════ NOTIFICATION PANEL ══════════ -->
+<div id="notif-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:2px solid var(--k);position:sticky;top:0;background:#fff;z-index:1;">
+    <p class="bb" style="font-size:18px;">🔔 Notifiche</p>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="markNotificheRead()" style="font-size:9px;color:var(--dim);letter-spacing:1px;background:none;border:none;cursor:pointer;text-transform:uppercase;">Segna lette</button>
+      <button onclick="toggleNotifPanel()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--k);">✕</button>
+    </div>
+  </div>
+  <div id="notif-list" style="min-height:80px;">
+    <div style="padding:32px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:1px;">Nessuna notifica.</div>
+  </div>
+</div>
+
 <!-- ══════════ HEADER ══════════ -->
 <header style="background:var(--k);color:var(--w);position:sticky;top:0;z-index:90;">
   <!-- ticker -->
@@ -179,6 +208,7 @@ img { -webkit-user-drag:none; user-select:none; }
       <button id="admin-login-btn" onclick="openModal('admin-login-modal')" class="nbtn" style="color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;" onmouseover="this.style.color='var(--led)';" onmouseout="this.style.color='#666';">🔑 Admin</button>
       <button id="admin-logout-btn" onclick="adminLogout()" class="nbtn" style="display:none;color:#666;border:1px solid #444;padding:5px 10px;font-size:9px;">✕ Esci</button>
       <button id="admin-reset-btn" onclick="if(confirm('Reset dati tornei ai valori di default?')){localStorage.removeItem(BV_KEY);location.reload();}" class="nbtn" style="display:none;color:#e55;border:1px solid #633;padding:5px 10px;font-size:9px;" title="Reset dati">↺</button>
+      <button class="notif-bell" id="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifiche" style="display:none;">🔔<span class="notif-badge" id="notif-badge-desktop"></span></button>
     </nav>
   </div>
   <div class="led-strip"></div>
@@ -189,6 +219,7 @@ img { -webkit-user-drag:none; user-select:none; }
   <button class="abn-btn active" id="abn-home" onclick="showPg('home')"><span class="abn-icon">🏠</span>Home</button>
   <button class="abn-btn" id="abn-chicece" onclick="showPg('chicece')" style="flex-shrink:0;"><span class="abn-icon">🏐</span>Chicece</button>
   <button class="abn-btn" id="abn-premi" onclick="showPg('premi')"><span class="abn-icon">🏆</span>Premi</button>
+  <button class="abn-btn" id="abn-notif" onclick="toggleNotifPanel()" style="display:none;position:relative;"><span class="abn-icon">🔔<span id="notif-badge-mob" style="display:none;position:absolute;top:6px;right:12px;background:var(--led);color:#000;font-size:7px;font-weight:700;min-width:14px;height:14px;border-radius:50%;display:none;align-items:center;justify-content:center;padding:0 2px;"></span></span>Notifiche</button>
   <button class="abn-btn" id="abn-profilo" onclick="showPg('profilo')"><span class="abn-icon">👤</span>Profilo</button>
 </nav>
 
@@ -703,8 +734,9 @@ img { -webkit-user-drag:none; user-select:none; }
           <button class="btn-led" onclick="updateScore()">Aggiorna</button>
         </div>
         <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-          <button class="btn-k" onclick="endMatch()">Chiudi Partita</button>
-          <button class="btn-g" onclick="addNewMatch()">+ Nuova Partita</button>
+          <button class="btn-k" onclick="endMatch()">✓ Chiudi Partita</button>
+          <button class="btn-g" onclick="openCreaPartitaModal()">+ Crea Partita</button>
+          <button class="btn-g" onclick="openGeneraBracketModal()" style="color:var(--led);border-color:rgba(200,255,0,.5);">⚡ Genera Bracket</button>
         </div>
       </div>
     </div>
@@ -1121,12 +1153,7 @@ function loadBvState(){
 }
 loadBvState();
 
-let partite=[
-  {id:'p1',teamA:'Team LILLO ⚡',teamB:'SandStorm 🌪️',scoreA:2,scoreB:1,torneo:'t1',status:'live',set:[{a:21,b:19},{a:18,b:21},{a:15,b:10}]},
-  {id:'p2',teamA:'Beach Kings 👑',teamB:'Spike Force 💥',scoreA:0,scoreB:0,torneo:'t1',status:'live',set:[]},
-  {id:'p3',teamA:'Sunset Duo 🌅',teamB:'Block Party 🧱',scoreA:2,scoreB:0,torneo:'t2',status:'finita',set:[{a:21,b:15},{a:21,b:18}]},
-  {id:'p4',teamA:'Net Crushers 🏐',teamB:'TBD',scoreA:0,scoreB:0,torneo:'t3',status:'programmata',set:[]},
-];
+let partite=[];
 
 let premiSpeciali=[
   {emoji:'🎯',nome:'Ace Master',valore:'€30 voucher',desc:'Il giocatore con più ace del torneo',cat:'Individuale'},
@@ -1402,7 +1429,7 @@ function renderLive(){
   renderSchedule();
   // Update match selector
   const sel=document.getElementById('score-match-sel');
-  if(sel) sel.innerHTML=partite.filter(p=>p.status==='live'||p.status==='programmata').map(p=>`<option value="${p.id}">${p.teamA} vs ${p.teamB}</option>`).join('');
+  if(sel) sel.innerHTML='<option value="">— Seleziona partita —</option>'+partite.filter(p=>p.status==='live'||p.status==='programmata').map(p=>`<option value="${p.id}">${p.teamA} vs ${p.teamB}${p.ora?' ('+p.ora+')':''}</option>`).join('');
 }
 
 function renderLiveMatches(){
@@ -1413,85 +1440,120 @@ function renderLiveMatches(){
   if(!liveMatches.length){container.innerHTML='';if(noLive)noLive.style.display='block';return;}
   if(noLive) noLive.style.display='none';
   container.innerHTML=liveMatches.map(p=>{
-    const t=tornei.find(t=>t.id===p.torneo);
-    const setsHtml=p.set.map((s,i)=>`<div style="text-align:center;font-size:11px;color:var(--dim);">Set ${i+1}<br/><strong>${s.a}-${s.b}</strong></div>`).join('');
+    const t=tornei.find(x=>x.id===(p.torneoId||p.torneo));
+    const setsHtml=(p.set||[]).map((s,i)=>`<div style="text-align:center;font-size:11px;color:var(--dim);">Set ${i+1}<br/><strong>${s.a}-${s.b}</strong></div>`).join('');
+    const adminInline=isAdmin?`<div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #f0f0f0;">
+      <input type="number" min="0" value="${p.scoreA}" id="il-a-${p.id}" style="width:56px;padding:6px 8px;border:1.5px solid var(--k);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;text-align:center;" placeholder="0"/>
+      <span style="font-size:11px;color:var(--dim);">—</span>
+      <input type="number" min="0" value="${p.scoreB}" id="il-b-${p.id}" style="width:56px;padding:6px 8px;border:1.5px solid var(--k);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;text-align:center;" placeholder="0"/>
+      <button onclick="quickUpdateScore('${p.id}')" class="btn-led" style="padding:7px 14px;font-size:10px;">Aggiorna</button>
+      <button onclick="quickEndMatch('${p.id}')" class="btn-k" style="padding:7px 14px;font-size:10px;">✓ Chiudi</button>
+    </div>`:'';
     return `<div class="match-card live">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <span style="font-size:9px;color:var(--led);letter-spacing:2px;text-transform:uppercase;">${t?.nome||''}</span>
+        <div><span style="font-size:9px;color:var(--led);letter-spacing:2px;text-transform:uppercase;">${t?.nome||''}</span>${p.campo?`<span style="font-size:9px;color:var(--dim);margin-left:8px;letter-spacing:1px;">CAMPO ${p.campo}</span>`:''}</div>
         <span style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--led);letter-spacing:1px;text-transform:uppercase;"><span class="live-dot"></span>LIVE</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin-bottom:4px;">
         <div style="text-align:center;">
           <p class="bb" style="font-size:20px;margin-bottom:4px;">${p.teamA}</p>
           <p class="bb" style="font-size:64px;line-height:1;color:${p.scoreA>p.scoreB?'var(--led)':'var(--k)'};">${p.scoreA}</p>
         </div>
-        <div style="text-align:center;">
-          <p class="bb" style="font-size:18px;color:var(--dim);">VS</p>
-        </div>
+        <div style="text-align:center;"><p class="bb" style="font-size:18px;color:var(--dim);">VS</p></div>
         <div style="text-align:center;">
           <p class="bb" style="font-size:20px;margin-bottom:4px;">${p.teamB}</p>
           <p class="bb" style="font-size:64px;line-height:1;color:${p.scoreB>p.scoreA?'var(--led)':'var(--k)'};">${p.scoreB}</p>
         </div>
       </div>
-      ${p.set.length?`<div style="display:flex;gap:16px;justify-content:center;padding:12px;border-top:1px solid #f0f0f0;">${setsHtml}</div>`:''}
+      ${(p.set||[]).length?`<div style="display:flex;gap:16px;justify-content:center;padding:12px;border-top:1px solid #f0f0f0;">${setsHtml}</div>`:''}
+      ${adminInline}
     </div>`;
   }).join('');
 }
 
+window.quickUpdateScore=function(id){
+  const a=parseInt(document.getElementById('il-a-'+id)?.value)||0;
+  const b=parseInt(document.getElementById('il-b-'+id)?.value)||0;
+  const match=partite.find(p=>p.id===id);
+  if(match){match.scoreA=a;match.scoreB=b;match.status='live';}
+  renderLiveMatches();showToast('📊 Punteggio aggiornato!');
+  const db=window.__fbDb;
+  if(db) db.collection('bv_partite').doc(id).update({scoreA:a,scoreB:b,status:'live'}).catch(()=>{});
+};
+
+window.quickEndMatch=async function(id){
+  const a=parseInt(document.getElementById('il-a-'+id)?.value)||0;
+  const b=parseInt(document.getElementById('il-b-'+id)?.value)||0;
+  document.getElementById('score-match-sel').value=id;
+  document.getElementById('score-a').value=a;
+  document.getElementById('score-b').value=b;
+  await window.endMatch();
+};
+
 function renderBracket(){
   const container=document.getElementById('bracket-container');
   if(!container)return;
-  // Simple visual bracket
-  const rounds=[
-    {label:'Quarti di Finale',matches:[
-      {a:'Team LILLO ⚡',b:'SandStorm 🌪️',done:true,winnerA:true},
-      {a:'Beach Kings 👑',b:'Spike Force 💥',done:false},
-      {a:'Sunset Duo 🌅',b:'Block Party 🧱',done:true,winnerA:true},
-      {a:'Net Crushers 🏐',b:'TBD',done:false},
-    ]},
-    {label:'Semifinali',matches:[
-      {a:'Team LILLO ⚡',b:'?',done:false},
-      {a:'Sunset Duo 🌅',b:'?',done:false},
-    ]},
-    {label:'Finale',matches:[
-      {a:'?',b:'?',done:false},
-    ]},
-  ];
+  const roundOrder=['gironi','quarti','semi','finale','terzo'];
+  const roundLabel={gironi:'Gironi',quarti:'Quarti di Finale',semi:'Semifinali',finale:'Finale',terzo:'3°/4° Posto'};
+  const torneoPartite=partite.filter(p=>(p.torneoId||p.torneo)===activeTorneo);
+  if(!torneoPartite.length){
+    container.innerHTML='<div style="padding:48px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:1px;max-width:400px;">Nessuna partita programmata.<br/><br/>L\'admin può generare il bracket automaticamente dalle squadre confermate.</div>';
+    return;
+  }
+  const byRound={};
+  torneoPartite.forEach(p=>{const r=p.round||'gironi';if(!byRound[r])byRound[r]=[];byRound[r].push(p);});
+  const rounds=roundOrder.filter(r=>byRound[r]).concat(Object.keys(byRound).filter(r=>!roundOrder.includes(r)));
   container.innerHTML=rounds.map(r=>`
     <div class="bracket-round">
-      <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;white-space:nowrap;">${r.label}</p>
-      ${r.matches.map(m=>`<div class="bracket-match ${m.done&&m.winnerA?'winner':''}">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f0f0;">
-          <span style="font-size:10px;${m.done&&m.winnerA?'font-weight:600;color:var(--led)':''}">${m.a}</span>
-          ${m.done?`<span class="bb" style="font-size:12px;${m.winnerA?'color:var(--led)':''}">W</span>`:''}
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
-          <span style="font-size:10px;${m.done&&!m.winnerA?'font-weight:600;color:var(--led)':''}">${m.b}</span>
-          ${m.done?`<span class="bb" style="font-size:12px;${!m.winnerA?'color:var(--led)':''}">W</span>`:''}
-        </div>
-      </div>`).join('<div style="height:20px;width:2px;background:#e0e0e0;margin:0 auto;"></div>')}
+      <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;white-space:nowrap;">${roundLabel[r]||r}</p>
+      ${byRound[r].map(m=>{
+        const wA=m.status==='finita'&&m.scoreA>m.scoreB;
+        const wB=m.status==='finita'&&m.scoreB>m.scoreA;
+        const isLive=m.status==='live';
+        const showScore=m.status!=='programmata';
+        return `<div class="bracket-match ${wA||wB?'winner':''} ${isLive?'live':''}">
+          ${isLive?`<div style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--led);letter-spacing:2px;margin-bottom:5px;"><span class="live-dot" style="width:6px;height:6px;"></span>LIVE</div>`:''}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f0f0f0;">
+            <span style="font-size:10px;${wA?'font-weight:700;color:var(--led)':''}">${m.teamA}</span>
+            <span class="bb" style="font-size:14px;min-width:18px;text-align:right;${wA?'color:var(--led)':''}">${showScore?m.scoreA:''}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;">
+            <span style="font-size:10px;${wB?'font-weight:700;color:var(--led)':''}">${m.teamB}</span>
+            <span class="bb" style="font-size:14px;min-width:18px;text-align:right;${wB?'color:var(--led)':''}">${showScore?m.scoreB:''}</span>
+          </div>
+          ${m.ora||m.campo?`<div style="font-size:8px;color:var(--dim);margin-top:5px;">${m.ora||''} ${m.campo?'· C.'+m.campo:''}</div>`:''}
+        </div>`;
+      }).join('<div style="height:16px;width:2px;background:#e0e0e0;margin:0 auto;"></div>')}
     </div>`).join('<div style="width:2px;background:linear-gradient(180deg,transparent,var(--led),transparent);margin-top:50px;"></div>');
 }
 
 function renderSchedule(){
   const container=document.getElementById('schedule-container');
   if(!container)return;
-  const schedule=[
-    {ora:'10:00',campo:'A',teamA:'Team LILLO ⚡',teamB:'SandStorm 🌪️',status:'live'},
-    {ora:'10:00',campo:'B',teamA:'Beach Kings 👑',teamB:'Spike Force 💥',status:'live'},
-    {ora:'11:30',campo:'A',teamA:'Sunset Duo 🌅',teamB:'Net Crushers 🏐',status:'programmata'},
-    {ora:'11:30',campo:'B',teamA:'Block Party 🧱',teamB:'TBD',status:'programmata'},
-    {ora:'14:00',campo:'A',teamA:'Semifinale 1',teamB:'Semifinale 2',status:'attesa'},
-    {ora:'15:30',campo:'A',teamA:'Finale 🏆',teamB:'Finale 🏆',status:'attesa'},
-  ];
-  container.innerHTML=`<div style="display:flex;flex-direction:column;gap:0;border:2px solid var(--k);overflow:hidden;">
-    ${schedule.map(s=>`<div style="display:grid;grid-template-columns:80px 60px 1fr 1fr auto;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:12px;background:${s.status==='live'?'rgba(200,255,0,.05)':'transparent'}" class="grid-1-mob">
-      <span class="bb" style="font-size:18px;">${s.ora}</span>
-      <span style="font-size:10px;color:var(--dim);letter-spacing:1px;">Campo ${s.campo}</span>
-      <span style="font-size:12px;">${s.teamA}</span>
-      <span style="font-size:12px;">${s.teamB}</span>
-      <span class="badge ${s.status==='live'?'badge-led':s.status==='programmata'?'badge-green':'badge-red'}" style="font-size:8px;">${s.status}</span>
-    </div>`).join('')}
+  const sorted=[...partite].sort((a,b)=>{
+    if(a.ora&&b.ora) return a.ora.localeCompare(b.ora);
+    return (a.createdAt?.seconds||0)-(b.createdAt?.seconds||0);
+  });
+  if(!sorted.length){
+    container.innerHTML='<div style="padding:60px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:1px;">Nessuna partita in programma.</div>';
+    return;
+  }
+  const sc={'live':'badge-led','programmata':'badge-green','finita':'badge-red'};
+  const rl={gironi:'Gironi',quarti:'QF',semi:'SF',finale:'Finale',terzo:'3/4'};
+  container.innerHTML=`<div style="display:flex;flex-direction:column;border:2px solid var(--k);overflow:hidden;">
+    ${sorted.map(s=>{
+      const t=tornei.find(x=>x.id===(s.torneoId||s.torneo));
+      return `<div style="display:grid;grid-template-columns:70px 55px 1fr 1fr auto;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:10px;background:${s.status==='live'?'rgba(200,255,0,.05)':'transparent'}" class="grid-1-mob">
+        <span class="bb" style="font-size:18px;">${s.ora||'—'}</span>
+        <span style="font-size:9px;color:var(--dim);">C.${s.campo||'?'}</span>
+        <div><span style="font-size:12px;">${s.teamA}</span>${s.status!=='programmata'?`<span style="font-size:11px;font-weight:700;color:var(--led);margin-left:6px;">${s.scoreA}</span>`:''}</div>
+        <div><span style="font-size:12px;">${s.teamB}</span>${s.status!=='programmata'?`<span style="font-size:11px;font-weight:700;color:var(--led);margin-left:6px;">${s.scoreB}</span>`:''}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <span class="badge ${sc[s.status]||'badge-red'}" style="font-size:8px;">${s.status}</span>
+          ${t?`<span style="font-size:8px;color:var(--dim);">${rl[s.round]||s.round||''}</span>`:''}
+        </div>
+      </div>`;
+    }).join('')}
   </div>`;
 }
 
@@ -1514,8 +1576,10 @@ window.updateScore=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può f
   const match=partite.find(p=>p.id===sel.value);
   if(match){match.scoreA=a;match.scoreB=b;match.status='live';}
   renderLiveMatches();showToast('📊 Punteggio aggiornato!');
+  const db=window.__fbDb;
+  if(db) db.collection('bv_partite').doc(sel.value).update({scoreA:a,scoreB:b,status:'live'}).catch(()=>{});
 };
-window.endMatch=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
+window.endMatch=async function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
   const sel=document.getElementById('score-match-sel');
   if(!sel?.value)return;
   const match=partite.find(p=>p.id===sel.value);
@@ -1523,13 +1587,27 @@ window.endMatch=function(){if(!isAdmin){showToast("⚠️ Solo l'admin può fare
     const a=parseInt(document.getElementById('score-a').value)||match.scoreA;
     const b=parseInt(document.getElementById('score-b').value)||match.scoreB;
     match.scoreA=a;match.scoreB=b;match.status='finita';
-    // Update standings
     const winTeam=a>b?match.teamA:match.teamB;
     const loseTeam=a>b?match.teamB:match.teamA;
     const winner=iscritti.find(s=>s.team===winTeam);
     const loser=iscritti.find(s=>s.team===loseTeam);
     if(winner){winner.vinti++;winner.setVinti+=Math.max(a,b);winner.setPersi+=Math.min(a,b);}
     if(loser){loser.persi++;loser.setVinti+=Math.min(a,b);loser.setPersi+=Math.max(a,b);}
+    const db=window.__fbDb;
+    if(db){
+      db.collection('bv_partite').doc(sel.value).update({scoreA:a,scoreB:b,status:'finita'}).catch(()=>{});
+      if(winner?.id) db.collection('bv_iscritti').doc(winner.id).update({vinti:firebase.firestore.FieldValue.increment(1),setVinti:firebase.firestore.FieldValue.increment(Math.max(a,b)),setPersi:firebase.firestore.FieldValue.increment(Math.min(a,b))}).catch(()=>{});
+      if(loser?.id) db.collection('bv_iscritti').doc(loser.id).update({persi:firebase.firestore.FieldValue.increment(1),setVinti:firebase.firestore.FieldValue.increment(Math.min(a,b)),setPersi:firebase.firestore.FieldValue.increment(Math.max(a,b))}).catch(()=>{});
+    }
+    // Advancement notifications
+    const roundNext={gironi:'quarti',quarti:'semi',semi:'finale'};
+    const rnLabel={quarti:'Quarti di Finale',semi:'Semifinali',finale:'Finale'};
+    const nextRound=roundNext[match.round];
+    const nextLabel=nextRound?rnLabel[nextRound]:'turno successivo';
+    const winnerSq=iscritti.find(s=>s.team===winTeam);
+    const loserSq=iscritti.find(s=>s.team===loseTeam);
+    if(winnerSq?.uid1) sendNotifica(winnerSq.uid1,'🏆 Qualificati!',`${winTeam} ha vinto ${a}-${b} contro ${loseTeam}${nextRound?' ed è qualificata per i '+nextLabel:''}!`,'avanzamento',sel.value);
+    if(loserSq?.uid1) sendNotifica(loserSq.uid1,'🏐 Partita conclusa',`${loseTeam} ha perso ${Math.min(a,b)}-${Math.max(a,b)} contro ${winTeam}. Grazie per aver partecipato!`,'eliminazione',sel.value);
   }
   renderLiveMatches();renderClassificaTable();showToast('✅ Partita conclusa! Classifica aggiornata.');
 };
@@ -2466,6 +2544,12 @@ function initFirebase(){
     renderPremiSpeciali();
   },()=>{});
 
+  // ── Real-time: Partite ──
+  db.collection('bv_partite').orderBy('createdAt','asc').onSnapshot(snap=>{
+    partite=snap.docs.map(d=>({...d.data(),id:d.id,set:d.data().set||[]}));
+    if(document.getElementById('pg-live')?.classList.contains('on')) renderLive();
+  },()=>{});
+
   // ── Auth state ──
   firebase.auth().onAuthStateChanged(u=>{
     window.__lfUser=u||null;
@@ -2473,6 +2557,23 @@ function initFirebase(){
     if(abn) abn.querySelector('.abn-icon').textContent=u?'🟢':'👤';
     autoFillRegistration();
     if(document.getElementById('pg-profilo')?.classList.contains('on')) renderProfilo();
+    // Unsubscribe from previous user's notifications
+    if(window.__notifUnsub){window.__notifUnsub();window.__notifUnsub=null;}
+    if(u){
+      // Request browser notification permission
+      if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+      // Show notification UI
+      document.getElementById('notif-bell-btn')?.style.removeProperty('display');
+      document.getElementById('abn-notif')?.style.removeProperty('display');
+      // Subscribe to this user's notifications
+      window.__notifUnsub=db.collection('bv_notifiche').doc(u.uid).collection('items')
+        .orderBy('createdAt','desc').limit(50)
+        .onSnapshot(snap=>{renderNotifiche(snap.docs.map(d=>({...d.data(),_docId:d.id})));},()=>{});
+    } else {
+      document.getElementById('notif-bell-btn')?.style.setProperty('display','none');
+      document.getElementById('abn-notif')?.style.setProperty('display','none');
+      renderNotifiche([]);
+    }
   });
 }
 
@@ -2784,6 +2885,208 @@ window.savePlayerSelection=function(val){
   localStorage.setItem('lf_bv_player_'+(u?.uid||'x'),val);
   renderProfilo();
 };
+
+// ═══════════════════════════════════════════════════════
+// NOTIFICHE
+// ═══════════════════════════════════════════════════════
+window.__notifList=[];
+
+async function sendNotifica(uid,titolo,testo,tipo,matchId){
+  const db=window.__fbDb;
+  if(!db||!uid) return;
+  try{
+    await db.collection('bv_notifiche').doc(uid).collection('items').add({
+      titolo,testo,tipo:tipo||'info',matchId:matchId||null,
+      letta:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Show browser notification if this is the currently logged-in user
+    if(window.__lfUser?.uid===uid&&'Notification' in window&&Notification.permission==='granted'){
+      new Notification(titolo,{body:testo,icon:'/favicon.ico'});
+    }
+  }catch(e){}
+}
+
+window.toggleNotifPanel=function(){
+  const panel=document.getElementById('notif-panel');
+  if(panel) panel.classList.toggle('open');
+};
+
+function renderNotifiche(list){
+  window.__notifList=list||[];
+  const container=document.getElementById('notif-list');
+  const badgeD=document.getElementById('notif-badge-desktop');
+  const badgeM=document.getElementById('notif-badge-mob');
+  const bellBtn=document.getElementById('notif-bell-btn');
+  const unread=list.filter(n=>!n.letta).length;
+  if(badgeD){badgeD.textContent=unread||'';badgeD.classList.toggle('vis',unread>0);}
+  if(badgeM){badgeM.textContent=unread||'';badgeM.style.display=unread>0?'flex':'none';}
+  if(bellBtn) bellBtn.classList.toggle('has-unread',unread>0);
+  if(!container) return;
+  if(!list.length){
+    container.innerHTML='<div style="padding:36px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:1px;">Nessuna notifica.</div>';
+    return;
+  }
+  const icon={avanzamento:'🏆',eliminazione:'🏐',match:'⚡',info:'ℹ️',bonus:'⬡'};
+  container.innerHTML=list.map(n=>{
+    const ts=n.createdAt?.toDate?.()||null;
+    const timeStr=ts?ts.toLocaleDateString('it',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    return `<div class="notif-item${n.letta?'':' unread'}" onclick="markNotificaRead('${n._docId}')">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:20px;flex-shrink:0;">${icon[n.tipo]||'🔔'}</span>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:11px;font-weight:600;margin-bottom:3px;">${n.titolo||''}</p>
+          <p style="font-size:10px;color:var(--mid);line-height:1.6;">${n.testo||''}</p>
+          ${timeStr?`<p style="font-size:9px;color:var(--dim);margin-top:4px;">${timeStr}</p>`:''}
+        </div>
+        ${!n.letta?'<span style="width:8px;height:8px;border-radius:50%;background:var(--led);flex-shrink:0;margin-top:4px;"></span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.markNotificaRead=async function(docId){
+  const u=window.__lfUser;const db=window.__fbDb;
+  if(!u||!db||!docId) return;
+  try{await db.collection('bv_notifiche').doc(u.uid).collection('items').doc(docId).update({letta:true});}catch(e){}
+};
+
+window.markNotificheRead=async function(){
+  const u=window.__lfUser;const db=window.__fbDb;
+  if(!u||!db) return;
+  const batch=db.batch();
+  window.__notifList.filter(n=>!n.letta).forEach(n=>{
+    batch.update(db.collection('bv_notifiche').doc(u.uid).collection('items').doc(n._docId),{letta:true});
+  });
+  try{await batch.commit();}catch(e){}
+};
+
+// ═══════════════════════════════════════════════════════
+// CREA PARTITA
+// ═══════════════════════════════════════════════════════
+window.openCreaPartitaModal=function(){
+  const sel=document.getElementById('cp-torneo');
+  if(sel) sel.innerHTML=tornei.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  populateCpSquadre();
+  openModal('crea-partita-modal');
+};
+
+window.populateCpSquadre=function(){
+  const torneoId=document.getElementById('cp-torneo')?.value;
+  const squadre=iscritti.filter(s=>s.torneo===torneoId&&s.status==='confermato');
+  const all=iscritti.filter(s=>s.torneo===torneoId);
+  const list=(squadre.length?squadre:all);
+  const opts=list.map(s=>`<option value="${s.id}">${s.team}</option>`).join('');
+  const empty='<option value="">— Seleziona —</option>';
+  const a=document.getElementById('cp-teamA');
+  const b=document.getElementById('cp-teamB');
+  if(a) a.innerHTML=empty+opts;
+  if(b) b.innerHTML=empty+opts;
+};
+
+window.creaPartita=async function(){
+  if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
+  const torneoId=document.getElementById('cp-torneo')?.value;
+  const teamAId=document.getElementById('cp-teamA')?.value;
+  const teamBId=document.getElementById('cp-teamB')?.value;
+  const ora=document.getElementById('cp-ora')?.value.trim();
+  const campo=document.getElementById('cp-campo')?.value.trim();
+  const round=document.getElementById('cp-round')?.value||'gironi';
+  const status=document.getElementById('cp-status')?.value||'programmata';
+  if(!torneoId||!teamAId||!teamBId){showToast('⚠️ Seleziona torneo e squadre.');return;}
+  if(teamAId===teamBId){showToast('⚠️ Le squadre devono essere diverse!');return;}
+  const sqA=iscritti.find(s=>s.id===teamAId);
+  const sqB=iscritti.find(s=>s.id===teamBId);
+  if(!sqA||!sqB) return;
+  const db=window.__fbDb;
+  if(!db){showToast('Firebase non disponibile.');return;}
+  const newId='pm'+Date.now();
+  const roundLabel={gironi:'Gironi',quarti:'Quarti di Finale',semi:'Semifinali',finale:'Finale',terzo:'3°/4° Posto'};
+  const obj={
+    torneoId,torneo:torneoId,
+    teamA:sqA.team,teamB:sqB.team,
+    uid1A:sqA.uid1||null,uid1B:sqB.uid1||null,
+    ora:ora||'',campo:campo||'',round,status,
+    scoreA:0,scoreB:0,set:[],
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    await db.collection('bv_partite').doc(newId).set(obj);
+    const details=`${ora?' alle '+ora:''}${campo?' sul Campo '+campo:''} — ${roundLabel[round]||round}`;
+    if(sqA.uid1) await sendNotifica(sqA.uid1,'⚡ Partita Assegnata',`Giocherete contro ${sqB.team}${details}`,'match',newId);
+    if(sqB.uid1) await sendNotifica(sqB.uid1,'⚡ Partita Assegnata',`Giocherete contro ${sqA.team}${details}`,'match',newId);
+    closeModal('crea-partita-modal');
+    showToast('⚡ Partita creata! Notifiche inviate.');
+  }catch(e){showToast('Errore: '+e.message);}
+};
+
+// ═══════════════════════════════════════════════════════
+// GENERA BRACKET
+// ═══════════════════════════════════════════════════════
+window.openGeneraBracketModal=function(){
+  const sel=document.getElementById('gb-torneo');
+  if(sel) sel.innerHTML=tornei.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  updateGbPreview();
+  openModal('genera-bracket-modal');
+};
+
+window.updateGbPreview=function(){
+  const torneoId=document.getElementById('gb-torneo')?.value;
+  const ora=document.getElementById('gb-ora')?.value||'10:00';
+  const gap=parseInt(document.getElementById('gb-gap')?.value)||90;
+  const preview=document.getElementById('gb-preview');
+  if(!preview) return;
+  const confirmed=iscritti.filter(s=>s.torneo===torneoId&&s.status==='confermato');
+  if(confirmed.length<2){preview.innerHTML='⚠️ Servono almeno 2 squadre confermate per generare il bracket.';return;}
+  const [h,m]=(ora||'10:00').split(':').map(Number);
+  const lines=[];
+  for(let i=0;i<confirmed.length-1;i+=2){
+    const min=(h*60+m)+Math.floor(i/2)*gap;
+    const of=`${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+    lines.push(`${of} · Campo ${String.fromCharCode(65+Math.floor(i/2)%4)}: ${confirmed[i].team} vs ${confirmed[i+1].team}`);
+  }
+  if(confirmed.length%2) lines.push(`⚠️ ${confirmed[confirmed.length-1].team} riceve bye automatico`);
+  preview.innerHTML=`<strong style="font-size:10px;letter-spacing:1px;">${confirmed.length} squadre · ${lines.length} partite:</strong><br/><br/>${lines.join('<br/>')}`;
+};
+
+window.generaBracket=async function(){
+  if(!isAdmin){showToast("⚠️ Solo l'admin può fare questa azione.");return;}
+  const torneoId=document.getElementById('gb-torneo')?.value;
+  const ora=document.getElementById('gb-ora')?.value||'10:00';
+  const gap=parseInt(document.getElementById('gb-gap')?.value)||90;
+  const confirmed=iscritti.filter(s=>s.torneo===torneoId&&s.status==='confermato');
+  if(confirmed.length<2){showToast('⚠️ Servono almeno 2 squadre confermate.');return;}
+  const db=window.__fbDb;
+  if(!db){showToast('Firebase non disponibile.');return;}
+  const [h,m]=(ora||'10:00').split(':').map(Number);
+  const round=confirmed.length<=4?'semi':confirmed.length<=8?'quarti':'gironi';
+  const rl={gironi:'Gironi',quarti:'Quarti di Finale',semi:'Semifinali'};
+  const shuffled=[...confirmed].sort(()=>Math.random()-.5);
+  const batch=db.batch();
+  let created=0;
+  for(let i=0;i<shuffled.length-1;i+=2){
+    const min=(h*60+m)+Math.floor(i/2)*gap;
+    const of=`${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+    const campo=String.fromCharCode(65+Math.floor(i/2)%4);
+    const sqA=shuffled[i],sqB=shuffled[i+1];
+    const newId='bg'+Date.now()+i;
+    batch.set(db.collection('bv_partite').doc(newId),{
+      torneoId,torneo:torneoId,
+      teamA:sqA.team,teamB:sqB.team,
+      uid1A:sqA.uid1||null,uid1B:sqB.uid1||null,
+      ora:of,campo,round,status:'programmata',scoreA:0,scoreB:0,set:[],
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    created++;
+    if(sqA.uid1) sendNotifica(sqA.uid1,'⚡ Partita Assegnata',`Avversario: ${sqB.team} · ${of} · Campo ${campo} (${rl[round]||round})`,'match',newId);
+    if(sqB.uid1) sendNotifica(sqB.uid1,'⚡ Partita Assegnata',`Avversario: ${sqA.team} · ${of} · Campo ${campo} (${rl[round]||round})`,'match',newId);
+  }
+  try{
+    await batch.commit();
+    closeModal('genera-bracket-modal');
+    showToast(`🏆 Bracket generato! ${created} partite create, notifiche inviate.`);
+    switchLiveTab('bracket');
+  }catch(e){showToast('Errore: '+e.message);}
+};
 </script>
 
 <!-- ═══════════════════════════════════════
@@ -2824,6 +3127,90 @@ window.savePlayerSelection=function(val){
 ═══════════════════════════════════════ -->
 <div id="pg-chicece" class="pg">
   <div id="chic-wrap"></div>
+</div>
+
+<!-- Crea Partita Modal -->
+<div id="crea-partita-modal" class="modal-bg">
+  <div class="modal-box" style="padding:0;max-width:500px;">
+    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <p class="bb" style="font-size:24px;">⚡ Crea Partita</p>
+      <button onclick="closeModal('crea-partita-modal')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div class="led-strip-sm"></div>
+    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+      <p style="font-size:10px;color:var(--dim);line-height:1.7;letter-spacing:.5px;">Le squadre riceveranno una notifica automatica con i dettagli della partita.</p>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Torneo</label>
+        <select class="lf-in" id="cp-torneo" style="font-size:11px;" onchange="populateCpSquadre()"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Squadra A *</label>
+          <select class="lf-in" id="cp-teamA" style="font-size:11px;"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Squadra B *</label>
+          <select class="lf-in" id="cp-teamB" style="font-size:11px;"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Orario</label>
+          <input class="lf-in" id="cp-ora" placeholder="es. 14:30" style="font-size:12px;"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Campo</label>
+          <input class="lf-in" id="cp-campo" placeholder="es. A" style="font-size:12px;"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Round / Fase</label>
+          <select class="lf-in" id="cp-round" style="font-size:11px;">
+            <option value="gironi">Fase a Gironi</option>
+            <option value="quarti">Quarti di Finale</option>
+            <option value="semi">Semifinale</option>
+            <option value="finale">Finale</option>
+            <option value="terzo">3°/4° Posto</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stato iniziale</label>
+          <select class="lf-in" id="cp-status" style="font-size:11px;">
+            <option value="programmata">Programmata</option>
+            <option value="live">Live (inizia subito)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-led" onclick="creaPartita()" style="margin-top:4px;">⚡ Crea e Notifica →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Genera Bracket Modal -->
+<div id="genera-bracket-modal" class="modal-bg">
+  <div class="modal-box" style="padding:0;max-width:460px;">
+    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <p class="bb" style="font-size:24px;">⚡ Genera Bracket</p>
+      <button onclick="closeModal('genera-bracket-modal')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    </div>
+    <div class="led-strip-sm"></div>
+    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+      <p style="font-size:11px;color:var(--mid);line-height:1.7;">Genera automaticamente tutte le partite del primo turno a eliminazione diretta dalle squadre iscritte e confermate. Ogni squadra riceverà una notifica con l'avversario assegnato.</p>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Torneo</label>
+        <select class="lf-in" id="gb-torneo" style="font-size:11px;" onchange="updateGbPreview()"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Orario inizio</label>
+          <input class="lf-in" id="gb-ora" placeholder="es. 10:00" value="10:00" style="font-size:12px;" oninput="updateGbPreview()"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Minuti tra partite</label>
+          <input class="lf-in" id="gb-gap" type="number" placeholder="90" value="90" style="font-size:12px;" oninput="updateGbPreview()"/>
+        </div>
+      </div>
+      <div id="gb-preview" style="font-size:10px;color:var(--dim);border:1px solid #e0e0e0;padding:12px;line-height:1.9;"></div>
+      <button class="btn-led" onclick="generaBracket()" style="margin-top:4px;">🏆 Genera e Notifica Tutti →</button>
+    </div>
+  </div>
 </div>
 
 <!-- Admin Login Modal -->
