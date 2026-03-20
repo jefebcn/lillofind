@@ -298,19 +298,19 @@ img { -webkit-user-drag:none; user-select:none; }
     <!-- Stats strip -->
     <div style="position:relative;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.08);margin-top:22px;background:rgba(0,0,0,.55);backdrop-filter:blur(12px);">
       <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
-        <p class="bb" style="font-size:22px;color:#ffc347;" id="stat-teams">24</p>
+        <p class="bb" style="font-size:22px;color:#ffc347;" id="stat-teams">0</p>
         <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Squadre</p>
       </div>
       <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
-        <p class="bb" style="font-size:22px;color:#f5f5f5;">3</p>
+        <p class="bb" style="font-size:22px;color:#f5f5f5;" id="stat-tornei">0</p>
         <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Tornei</p>
       </div>
       <div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.06);">
-        <p class="bb" style="font-size:22px;color:var(--led);" id="stat-live">2</p>
+        <p class="bb" style="font-size:22px;color:var(--led);" id="stat-live">0</p>
         <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Live ora</p>
       </div>
       <div style="padding:14px 10px;text-align:center;">
-        <p class="bb" style="font-size:22px;color:#f5f5f5;">&euro;850</p>
+        <p class="bb" style="font-size:22px;color:#f5f5f5;" id="stat-prize">&euro;0</p>
         <p style="font-size:7px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;">Premi</p>
       </div>
     </div>
@@ -1225,6 +1225,20 @@ function showPg(id){
 const STATUS_COLOR={attivo:'badge-green',iscrizioni:'badge-blue',pianificato:'badge-led',concluso:'badge-red'};
 const STATUS_LABEL={attivo:'Attivo',iscrizioni:'Aperto Iscrizioni',pianificato:'In Arrivo',concluso:'Concluso'};
 
+function updateStats(){
+  const nTeams=iscritti.length;
+  const nTornei=tornei.filter(t=>t.status!=='concluso').length;
+  const nLive=partite.filter(p=>p.status==='live').length;
+  const totalPrize=tornei.reduce((s,t)=>s+(parseInt(t.montepremi)||0),0);
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('stat-teams',nTeams);
+  s('stat-tornei',nTornei);
+  s('stat-live',nLive);
+  s('stat-prize','€'+totalPrize.toLocaleString('it'));
+  const ctaEl=document.getElementById('live-cta-count');
+  if(ctaEl) ctaEl.textContent=nLive>0?nLive+' partite in corso':'Nessuna partita ora';
+}
+
 function renderHome(){
   const grid=document.getElementById('tornei-grid');
   if(grid) grid.innerHTML=tornei.map(t=>{
@@ -1280,6 +1294,8 @@ function renderHome(){
   // Populate tornei select
   const sel=document.getElementById('iscr-torneo');
   if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+
+  updateStats();
 }
 
 
@@ -2557,6 +2573,7 @@ if(localStorage.getItem('lf_bv_admin')==='1'){
   },100);
 }
 renderHome();
+updateStats();
 renderPodio();
 renderPremiSpeciali();
 
@@ -2630,6 +2647,7 @@ function initFirebase(){
   // ── Real-time: Partite ──
   db.collection('bv_partite').orderBy('createdAt','asc').onSnapshot(snap=>{
     partite=snap.docs.map(d=>({...d.data(),id:d.id,set:d.data().set||[]}));
+    updateStats();
     if(document.getElementById('pg-live')?.classList.contains('on')) renderLive();
   },()=>{});
 
