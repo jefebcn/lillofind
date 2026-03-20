@@ -435,22 +435,6 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     min-height:0 !important;
     overflow:hidden !important;
   }
-  #hero-wordmark-wrap{
-    position:relative !important;
-    top:auto !important; left:auto !important;
-    right:auto !important; bottom:auto !important;
-    height:140px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    flex-shrink:0 !important;
-    padding-top:14px !important;
-  }
-  #hero-wordmark-wrap > div{ transform:rotate(-3deg) !important; }
-  #led-word{
-    font-size:clamp(46px,13vw,72px) !important;
-    letter-spacing:clamp(2px,1.4vw,8px) !important;
-  }
   #hero-spacer,#hero-lines,#hero-glows,.mob-fade-in{ display:none !important; }
   #hero-content{
     position:relative !important;
@@ -512,14 +496,6 @@ textarea.lf-in{resize:vertical;min-height:90px;}
     grid-template-rows:1fr auto !important;
     min-height:100svh !important;
   }
-  #hero-wordmark-wrap{
-    position:absolute !important;
-    top:0 !important; bottom:0 !important;
-    left:50% !important; right:0 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-  }
   #hero-spacer{ grid-column:1; grid-row:1; }
   #hero-content{
     grid-column:1 !important; grid-row:1 !important;
@@ -539,6 +515,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   }
   #hero-glows{ display:block !important; }
   #hero-lines{ display:block !important; }
+  #hero-photo-bg{ background-position:center 30% !important; }
 }
 
 /* App: no tap highlight, prevent iOS zoom on inputs, smooth scroll */
@@ -941,7 +918,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;border-bottom:3px solid var(--k);">
 
     <!-- ── PHOTO BACKGROUND ── -->
-    <div style="position:absolute;inset:0;z-index:0;background:url('hero1.png') center top/cover no-repeat;"></div>
+    <div id="hero-photo-bg" style="position:absolute;inset:0;z-index:0;background:url('hero1.png') center 20%/cover no-repeat;"></div>
 
     <!-- ── DARK OVERLAY: leggero in alto, più denso in basso dove c'è il testo ── -->
     <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,.45) 45%,rgba(0,0,0,.82) 100%);"></div>
@@ -1101,64 +1078,6 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 
 
-    <!-- LILLOFIND watermark — visible through globe -->
-    <!-- ═══ LILLOFIND LED SIGN ═══ -->
-    <div id="hero-wordmark-wrap" style="position:absolute;top:0;left:0;right:0;bottom:40%;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;z-index:2;overflow:hidden;">
-      <div style="position:relative;transform:rotate(-4deg);display:flex;align-items:center;">
-        <div id="led-word" style="display:flex;font-family:'Bebas Neue',sans-serif;font-size:clamp(60px,12vw,155px);letter-spacing:clamp(4px,1.5vw,18px);line-height:1;"></div>
-        <div style="position:absolute;bottom:-6px;left:0;width:42%;height:2px;background:linear-gradient(90deg,rgba(200,255,0,.8),transparent);box-shadow:0 0 14px rgba(200,255,0,.6);"></div>
-      </div>
-    </div>
-    <style>
-      .led-l{color:transparent;-webkit-text-stroke:1.5px rgba(200,255,0,.14);transition:color .05s ease,-webkit-text-stroke-color .05s ease,text-shadow .05s ease;}
-      .led-l.on{color:rgba(200,255,0,.9);-webkit-text-stroke:1.5px rgb(200,255,0);text-shadow:0 0 6px rgb(200,255,0),0 0 20px rgba(200,255,0,.6),0 0 60px rgba(200,255,0,.2);}
-      .led-l.flick{color:rgba(200,255,0,.25);-webkit-text-stroke:1.5px rgba(200,255,0,.3);text-shadow:0 0 4px rgba(200,255,0,.2);}
-    </style>
-    <script>
-    (function(){
-      var W=document.getElementById('led-word');
-      if(!W)return;
-      W.innerHTML='LILLOFIND'.split('').map(function(c){return'<span class="led-l">'+c+'</span>';}).join('');
-      var sp=Array.from(W.querySelectorAll('.led-l'));
-      var n=sp.length;
-
-      /* ── boot sweep ── */
-      function sweep(i,cb){
-        if(i>=n){if(cb)cb();return;}
-        sp[i].classList.add('on');
-        setTimeout(function(){sweep(i+1,cb);},60+Math.random()*30);
-      }
-
-      /* ── random per-letter flicker ── */
-      function startFlicker(){
-        setInterval(function(){
-          var idx=Math.floor(Math.random()*n);
-          sp[idx].classList.replace?sp[idx].classList.replace('on','flick'):sp[idx].classList.remove('on');
-          sp[idx].classList.add('flick');
-          var t=50+Math.random()*200;
-          setTimeout(function(){sp[idx].classList.remove('flick');sp[idx].classList.add('on');},t);
-        },500+Math.random()*400);
-
-        /* ── full-word instant blink every ~5s ── */
-        setInterval(function(){
-          if(Math.random()<0.35){
-            sp.forEach(function(s){s.classList.remove('on');s.classList.add('flick');});
-            setTimeout(function(){sp.forEach(function(s){s.classList.remove('flick');s.classList.add('on');});},70+Math.random()*80);
-          }
-        },5000);
-
-        /* ── sweep left→right every ~8s ── */
-        setInterval(function(){
-          if(Math.random()<0.5){
-            sp.forEach(function(s){s.classList.remove('on');s.classList.add('flick');});
-            setTimeout(function(){sweep(0,null);},120);
-          }
-        },8000);
-      }
-
-      setTimeout(function(){sweep(0,startFlicker);},500);
-    })();
-    </script>
 
     <!-- Spacer pushes content down on desktop -->
     <div id="hero-spacer" style="flex:1;min-height:clamp(0px,20vw,45vh);"></div>
