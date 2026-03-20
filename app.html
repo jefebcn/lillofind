@@ -2646,14 +2646,6 @@ window.renderProfilo=async function(){
   const initials=displayName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';
   const tier=pts>=500?'💎 Platinum':pts>=200?'🥇 Gold':pts>=50?'🥈 Silver':'🥉 Bronze';
 
-  // Calcola stats beach volley dall'array iscritti
-  const allPlayers=[];
-  iscritti.forEach(sq=>{
-    [sq.p1,sq.p2].forEach(nome=>{
-      if(nome && !allPlayers.includes(nome)) allPlayers.push(nome);
-    });
-  });
-
   // ── Trova le squadre dell'utente per UID (priorità) o nome (fallback) ──
   const uidSquadre=iscritti.filter(sq=>sq.uid1===u.uid||sq.uid2===u.uid);
   // Fallback name-based (for squads registered before UID linking)
