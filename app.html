@@ -1128,22 +1128,9 @@ function hideAdminUI(){
   document.getElementById('admin-status').style.display='none';
 }
 
-// ── DATA ──────────────────────────────────────────────────
-let tornei=[
-  {id:'t1',nome:'Torneo Estivo 2026',data:'2026-06-15',max:16,formato:'Gironi + Eliminazione',montepremi:500,luogo:'Rimini Spiaggia 42',status:'attivo'},
-  {id:'t2',nome:'Coppa LilloFind',data:'2026-07-20',max:8,formato:'Eliminazione Diretta',montepremi:250,luogo:'Milano Idroscalo',status:'iscrizioni'},
-  {id:'t3',nome:'Trofeo Beach 2026',data:'2026-08-10',max:12,formato:'Round Robin',montepremi:100,luogo:'Riccione Beach',status:'pianificato'},
-];
-
-let iscritti=[
-  {id:'sq1',team:'Team LILLO ⚡',p1:'Marco Rossi',p2:'Luca Ferrari',torneo:'t1',status:'confermato',contact:'marco@lillo.it',pts:0,vinti:3,persi:1,setVinti:7,setPersi:3},
-  {id:'sq2',team:'SandStorm 🌪️',p1:'Andrea Bianchi',p2:'Stefano Conti',torneo:'t1',status:'confermato',contact:'',pts:0,vinti:2,persi:2,setVinti:5,setPersi:5},
-  {id:'sq3',team:'Beach Kings 👑',p1:'Giorgio Villa',p2:'Matteo Russo',torneo:'t1',status:'confermato',contact:'',pts:0,vinti:2,persi:1,setVinti:5,setPersi:3},
-  {id:'sq4',team:'Spike Force 💥',p1:'Davide Marini',p2:'Paolo Greco',torneo:'t1',status:'in attesa',contact:'',pts:0,vinti:1,persi:3,setVinti:3,setPersi:7},
-  {id:'sq5',team:'Sunset Duo 🌅',p1:'Chiara Moretti',p2:'Sara Gallo',torneo:'t2',status:'confermato',contact:'',pts:0,vinti:4,persi:0,setVinti:8,setPersi:2},
-  {id:'sq6',team:'Block Party 🧱',p1:'Roberto Costa',p2:'Federico Mori',torneo:'t2',status:'confermato',contact:'',pts:0,vinti:3,persi:1,setVinti:6,setPersi:4},
-  {id:'sq7',team:'Net Crushers 🏐',p1:'Alessio Bruno',p2:'Simone Riva',torneo:'t3',status:'confermato',contact:'',pts:0,vinti:2,persi:0,setVinti:4,setPersi:1},
-];
+// ── DATA — Firestore è l'unica fonte di verità ────────────
+let tornei=[];
+let iscritti=[];
 
 // ── PERSISTENZA ADMIN ─────────────────────────────────────────
 const BV_KEY='lf_bv_state_v1';
@@ -1161,7 +1148,9 @@ function loadBvState(){
     if(Array.isArray(d.iscritti)) iscritti=d.iscritti;
   }catch(e){}
 }
-loadBvState();
+// loadBvState() rimosso: Firestore è l'unica fonte di verità
+// Pulisci cache localStorage obsoleta per tutti gli utenti
+try{localStorage.removeItem(BV_KEY);}catch(e){}
 
 let partite=[];
 
@@ -2605,21 +2594,15 @@ function initFirebase(){
 
   // ── Real-time: Tornei ──
   db.collection('bv_tornei').orderBy('createdAt','asc').onSnapshot(snap=>{
-    if(!snap.empty){
-      tornei=snap.docs.map(d=>({...d.data(),_docId:d.id}));
-      renderHome();
-      renderClassifica();
-      renderAdminTorneiStatus();
-      const sel=document.getElementById('iscr-torneo');
-      if(sel) sel.innerHTML=tornei.filter(t=>t.status!=='concluso').map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
-    }
+    tornei=snap.docs.map(d=>({...d.data(),_docId:d.id}));
+    renderHome();
+    renderClassifica();
+    renderAdminTorneiStatus();
   },()=>{});
 
   // ── Real-time: Iscritti ──
   db.collection('bv_iscritti').orderBy('createdAt','desc').onSnapshot(snap=>{
-    if(!snap.empty){
-      iscritti=snap.docs.map(d=>({...d.data(),id:d.id}));
-    }
+    iscritti=snap.docs.map(d=>({...d.data(),id:d.id}));
     renderHome();renderIscritti();renderClassificaTable();
     populateLFPointsSquadreSelect();
     if(document.getElementById('pg-profilo')?.classList.contains('on')) renderProfilo();
@@ -2627,8 +2610,7 @@ function initFirebase(){
 
   // ── Real-time: Podio prizes ──
   db.collection('bv_config').doc('podio').onSnapshot(snap=>{
-    if(snap.exists){
-      const d=snap.data();
+    if(snap.exists){const d=snap.data();
       if(d.primo) podioPrize.primo={...podioPrize.primo,...d.primo};
       if(d.secondo) podioPrize.secondo={...podioPrize.secondo,...d.secondo};
       if(d.terzo) podioPrize.terzo={...podioPrize.terzo,...d.terzo};
@@ -2638,9 +2620,7 @@ function initFirebase(){
 
   // ── Real-time: Premi speciali ──
   db.collection('bv_premi').orderBy('createdAt','asc').onSnapshot(snap=>{
-    if(!snap.empty){
-      premiSpeciali=snap.docs.map(d=>({...d.data(),_docId:d.id}));
-    }
+    premiSpeciali=snap.docs.map(d=>({...d.data(),_docId:d.id}));
     renderPremiSpeciali();
   },()=>{});
 
