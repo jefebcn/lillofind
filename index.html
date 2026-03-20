@@ -938,13 +938,16 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-home" class="pg on">
 
   <!-- HERO — Mobile-first: globe fills top, content anchored to bottom -->
-  <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:radial-gradient(ellipse 90% 60% at 50% 20%,#131313 0%,#060606 100%);border-bottom:3px solid var(--k);">
+  <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;border-bottom:3px solid var(--k);">
 
-    <!-- Globe removed — LED wordmark takes over -->
+    <!-- ── PHOTO BACKGROUND ── -->
+    <div style="position:absolute;inset:0;z-index:0;background:url('hero1.png') center top/cover no-repeat;"></div>
 
+    <!-- ── DARK OVERLAY: leggero in alto, più denso in basso dove c'è il testo ── -->
+    <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,.45) 45%,rgba(0,0,0,.82) 100%);"></div>
 
     <!-- ── SCANLINE TEXTURE ── -->
-    <div style="position:absolute;inset:0;z-index:4;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px);"></div>
+    <div style="position:absolute;inset:0;z-index:4;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);"></div>
 
     <!-- ── PERSPECTIVE GRID (mobile) ── -->
     <div id="hero-pgrid" style="position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;">
@@ -952,7 +955,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
 
     <!-- ── PARTICLE NETWORK CANVAS ── -->
-    <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:.55;"></canvas>
+    <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:.35;"></canvas>
     <script>
     (function(){
       var cvs=document.getElementById('hero-canvas');
