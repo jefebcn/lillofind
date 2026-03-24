@@ -38,6 +38,9 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
 .pcard{border:1.5px solid #e0e0e0;transition:border-color .2s,transform .25s,box-shadow .2s;background:var(--card);}
 .pcard:hover{border-color:var(--k);transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,.1);}
 
+/* ── PROFILO — sezioni scrollabili ──────────── */
+.prof-sec{margin-top:40px;padding-top:36px;border-top:2px solid var(--k);}
+
 /* ── TOAST ───────────────────────────────────── */
 #toast{
   position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;
@@ -673,20 +676,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
     <div style="flex:1;overflow-y:auto;padding:24px;">
       <div style="display:flex;flex-direction:column;gap:2px;">
-        <button onclick="showPg('home');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</button>
-        <button onclick="showPg('shop');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Shop</button>
-        <button onclick="showPg('wishlist');closeDrawer();" class="drawer-link" style="position:relative;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wishlist</button>
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
-        <button onclick="showPg('cart');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Carrello</button>
         <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('model','Sneaker'),80)" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg> Sneakers</button>
-        <button onclick="location.href='subscriptions.html';closeDrawer();" class="drawer-link" style="color:var(--dg2);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
+        <button onclick="location.href='subscriptions.html';" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
         <div style="height:1px;background:var(--border);margin:12px 0;"></div>
         <a href="app.html" class="drawer-link" style="text-decoration:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> Tornei Beach Volley</a>
         <a href="vault.html" class="drawer-link" style="text-decoration:none;color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> LF Vault — Investimenti</a>
-        <div style="height:1px;background:var(--border);margin:12px 0;"></div>
-        <button id="d-profile" onclick="showPg('profile');closeDrawer();" class="drawer-link" style="display:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Il Mio Profilo</button>
-        <button id="d-login" onclick="showPg('auth');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Accedi / Registrati</button>
-        <button id="d-logout" onclick="handleLogout();closeDrawer();" class="drawer-link" style="display:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Esci</button>
       </div>
     </div>
     <div style="padding:20px 24px;border-top:1px solid var(--border);">
@@ -1866,23 +1861,11 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-profile" class="pg">
   <div class="led-strip"></div>
 
-  <!-- Profile nav tabs -->
-  <div style="background:var(--k);color:var(--w);position:sticky;top:0;z-index:50;border-bottom:1px solid var(--border);">
-    <div style="max-width:900px;margin:0 auto;padding:0 20px;display:flex;overflow-x:auto;gap:0;">
-      <button class="prof-tab on" data-tab="overview" onclick="switchProfTab('overview')">📊 Overview</button>
-      <button class="prof-tab" data-tab="tracking" onclick="switchProfTab('tracking')">📦 Traccia Pacco</button>
-      <button class="prof-tab" data-tab="prizes" onclick="switchProfTab('prizes')">🎁 Premi</button>
-      <button class="prof-tab" data-tab="address" onclick="switchProfTab('address')">📍 Indirizzi</button>
-      <button class="prof-tab" data-tab="security" onclick="switchProfTab('security')">🔒 Sicurezza</button>
-      <button class="prof-tab" data-tab="notifications" onclick="switchProfTab('notifications')">🔔 Notifiche</button>
-      <button class="prof-tab" data-tab="settings" onclick="switchProfTab('settings')">⚙️ Impostazioni</button>
-    </div>
-  </div>
 
   <div style="max-width:900px;margin:0 auto;padding:32px 20px;">
 
-    <!-- ─── TAB: OVERVIEW ─────────────────────────────── -->
-    <div id="ptab-overview" class="ptab on">
+    <!-- ─── OVERVIEW ────────────────────────────────────── -->
+    <div id="prof-sec-overview">
       <!-- ── HERO CARD ─────────────────────────────── -->
       <div style="background:var(--k);color:var(--w);padding:28px 24px 20px;margin-bottom:20px;border-left:4px solid var(--led);position:relative;overflow:hidden;">
         <!-- decorative background lines -->
@@ -1967,7 +1950,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="border:1.5px solid #e8e8e8;margin-bottom:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e8e8e8;background:#fafafa;">
           <p class="slbl" style="font-size:10px;">Dati Account</p>
-          <button onclick="switchProfTab('settings')" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Modifica →</button>
+          <button onclick="document.getElementById('prof-sec-settings').scrollIntoView({behavior:'smooth'})" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Modifica →</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;">
           <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0;"><p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">Telefono</p><p id="pr-phone" style="font-size:12px;">—</p></div>
@@ -1979,15 +1962,15 @@ img{ -webkit-user-drag:none; user-select:none; }
 
       <!-- ── QUICK ACTIONS ── -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0;">
-        <button onclick="switchProfTab('tracking')" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
+        <button onclick="document.getElementById('prof-sec-tracking').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">📦</p>
           <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Traccia</p>
         </button>
-        <button onclick="switchProfTab('prizes')" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--led)';this.style.background='rgba(200,255,0,.04)'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
+        <button onclick="document.getElementById('prof-sec-prizes').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--led)';this.style.background='rgba(200,255,0,.04)'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">🎁</p>
           <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Premi</p>
         </button>
-        <button onclick="switchProfTab('address')" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
+        <button onclick="document.getElementById('prof-sec-address').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">📍</p>
           <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Indirizzi</p>
         </button>
@@ -2002,8 +1985,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
 
-    <!-- ─── TAB: TRACKING ─────────────────────────────── -->
-    <div id="ptab-tracking" class="ptab">
+    <!-- ─── TRACCIA PACCO ───────────────────────────────── -->
+    <div id="prof-sec-tracking" class="prof-sec">
       <h2 class="bb" style="font-size:40px;margin-bottom:24px;">📦 Traccia Pacco</h2>
       <div id="pr-tracking-wrap" style="border:2px solid var(--k);overflow:hidden;">
         <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
@@ -2017,15 +2000,15 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
 
-    <!-- ─── TAB: PRIZES ───────────────────────────────── -->
-    <div id="ptab-prizes" class="ptab">
+    <!-- ─── PREMI ───────────────────────────────────────── -->
+    <div id="prof-sec-prizes" class="prof-sec">
       <h2 class="bb" style="font-size:40px;margin-bottom:8px;">🎁 I Tuoi Premi</h2>
       <p style="font-size:11px;color:var(--mid);margin-bottom:24px;letter-spacing:1px;">Riscatta i tuoi LFPOINTS in sconti reali. Un codice per ordine, valido 90 giorni.</p>
       <div id="pr-rewards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;"></div>
     </div>
 
-    <!-- ─── TAB: ADDRESSES ────────────────────────────── -->
-    <div id="ptab-address" class="ptab">
+    <!-- ─── INDIRIZZI ───────────────────────────────────── -->
+    <div id="prof-sec-address" class="prof-sec">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
         <h2 class="bb" style="font-size:40px;">📍 Indirizzi</h2>
         <button onclick="toggleAddressForm()" class="btn-k" style="padding:10px 18px;font-size:10px;" id="add-addr-btn">+ Aggiungi Indirizzo</button>
@@ -2054,8 +2037,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
 
-    <!-- ─── TAB: SECURITY ─────────────────────────────── -->
-    <div id="ptab-security" class="ptab">
+    <!-- ─── SICUREZZA ───────────────────────────────────── -->
+    <div id="prof-sec-security" class="prof-sec">
       <h2 class="bb" style="font-size:40px;margin-bottom:24px;">🔒 Sicurezza</h2>
 
       <!-- Change password -->
@@ -2092,8 +2075,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
 
-    <!-- ─── TAB: NOTIFICATIONS ────────────────────────── -->
-    <div id="ptab-notifications" class="ptab">
+    <!-- ─── NOTIFICHE ───────────────────────────────────── -->
+    <div id="prof-sec-notifications" class="prof-sec">
       <h2 class="bb" style="font-size:40px;margin-bottom:24px;">🔔 Notifiche</h2>
       <div style="display:flex;flex-direction:column;gap:0;border:2px solid var(--k);">
         <div style="padding:18px 20px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;">
@@ -2120,8 +2103,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       <p style="font-size:10px;color:var(--dim);margin-top:12px;letter-spacing:1px;">Le preferenze vengono salvate automaticamente. Puoi disiscriverti in qualsiasi momento.</p>
     </div>
 
-    <!-- ─── TAB: SETTINGS ─────────────────────────────── -->
-    <div id="ptab-settings" class="ptab">
+    <!-- ─── IMPOSTAZIONI ────────────────────────────────── -->
+    <div id="prof-sec-settings" class="prof-sec">
       <h2 class="bb" style="font-size:40px;margin-bottom:24px;">⚙️ Impostazioni</h2>
 
       <!-- Personal info -->
@@ -3914,13 +3897,14 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
   };
 
-  // ── PROFILE TABS ─────────────────────────────────────────
+  // ── PROFILE SCROLL (ex-tabs → ora pagina unica) ──────────
   window.switchProfTab=function(tab){
-    document.querySelectorAll('.prof-tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
-    document.querySelectorAll('.ptab').forEach(p=>p.classList.remove('on'));
-    const el=document.getElementById('ptab-'+tab);
-    if(el) el.classList.add('on');
-    // Always re-fetch latest user data when switching to tracking tab
+    // Assicura che la pagina profilo sia visibile
+    showPg('profile');
+    // Scroll alla sezione corrispondente
+    const el=document.getElementById('prof-sec-'+tab);
+    if(el) setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),80);
+    // Re-fetch dati tracking se necessario
     if(tab==='tracking'&&user&&window.__fb){
       window.__fb.getDoc(window.__fb.doc(window.__fb.db,'users',user.uid)).then(s=>{
         if(s.exists()) udata={...udata,...s.data()};
