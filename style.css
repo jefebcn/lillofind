@@ -1,0 +1,143 @@
+/* ══════════════════════════════════════════════
+   LILLOFIND — Shared Design System
+   Importato da: index.html, admin.html,
+                 subscriptions.html, app.html
+   ══════════════════════════════════════════════ */
+
+/* ── TOKENS ─────────────────────────────────── */
+:root{
+  --k:#0a0a0a;
+  --w:#f5f5f5;
+  --led:#C8FF00;
+  --led2:#00FFB2;
+  --mid:#555;
+  --dim:#aaa;
+  --border:#222;
+  --card:#fff;
+}
+
+/* ── RESET ───────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
+body{background:var(--w);color:var(--k);overflow-x:hidden;}
+
+/* ── LED STRIPS ──────────────────────────────── */
+.led-strip{
+  height:3px;width:100%;
+  background:linear-gradient(90deg,transparent 0%,var(--led) 20%,var(--led2) 50%,var(--led) 80%,transparent 100%);
+  box-shadow:0 0 12px var(--led),0 0 24px rgba(200,255,0,.3);
+}
+.led-strip-sm{
+  height:2px;
+  background:linear-gradient(90deg,transparent,var(--led),transparent);
+  box-shadow:0 0 8px var(--led);
+}
+
+/* ── TICKER ──────────────────────────────────── */
+.ticker-w{overflow:hidden;white-space:nowrap;}
+.ticker{display:inline-flex;animation:tick 32s linear infinite;}
+.ticker span{padding:0 36px;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── SECTION LABEL ───────────────────────────── */
+.slbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);}
+
+/* ── INPUTS ──────────────────────────────────── */
+.lf-in{
+  background:transparent;border:1.5px solid var(--k);
+  padding:13px 16px;width:100%;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;
+  color:var(--k);outline:none;border-radius:0;
+  transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+.lf-in:focus{border-color:var(--led);box-shadow:0 0 0 3px rgba(200,255,0,.15);}
+.lf-in::placeholder{color:var(--dim);}
+select.lf-in{
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+}
+textarea.lf-in{resize:vertical;min-height:90px;}
+
+/* ── BUTTONS ─────────────────────────────────── */
+.btn-k{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--k);color:var(--w);border:none;
+  padding:14px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:opacity .2s,transform .1s;user-select:none;
+  -webkit-appearance:none;border-radius:0;
+}
+.btn-k:active{transform:scale(.97);}
+.btn-k:hover{opacity:.75;}
+.btn-k:disabled{opacity:.35;cursor:not-allowed;}
+
+.btn-led{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--led);color:var(--k);border:none;
+  padding:14px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:opacity .2s,box-shadow .2s;
+  box-shadow:0 0 16px rgba(200,255,0,.4);
+  -webkit-appearance:none;border-radius:0;
+}
+.btn-led:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.6);}
+.btn-led:active{transform:scale(.97);}
+
+.btn-g{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;color:var(--k);border:1.5px solid var(--k);
+  padding:12px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:all .2s;-webkit-appearance:none;border-radius:0;
+}
+.btn-g:hover{background:var(--k);color:var(--w);}
+.btn-g:active{transform:scale(.97);}
+
+.btn-w{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--w);color:var(--k);border:none;
+  padding:14px 28px;min-height:48px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:opacity .2s;-webkit-appearance:none;border-radius:0;
+}
+.btn-w:hover{opacity:.85;}
+
+/* ── CHIPS ───────────────────────────────────── */
+.chip{
+  display:inline-flex;align-items:center;
+  border:1.5px solid var(--k);padding:5px 12px;
+  margin:3px 2px;font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;cursor:pointer;
+  transition:all .15s;user-select:none;min-height:32px;
+}
+.chip:hover,.chip.on{background:var(--k);color:var(--w);}
+.chip.on{border-color:var(--led);box-shadow:0 0 8px rgba(200,255,0,.3);}
+
+/* ── NAV BUTTONS ─────────────────────────────── */
+.nbtn{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;background:none;border:none;cursor:pointer;
+  color:var(--k);transition:opacity .2s;padding:8px 4px;min-height:44px;
+  display:inline-flex;align-items:center;
+}
+.nbtn:hover{opacity:.45;}
+
+/* ── PAGES / ANIMATION ───────────────────────── */
+.pg{display:none;}
+.pg.on{display:block;}
+.fadein{animation:fadeup .35s ease forwards;}
+@keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── LED BADGE ───────────────────────────────── */
+.led-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  border:1.5px solid var(--led);padding:4px 10px;
+  font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:var(--led);background:rgba(200,255,0,.06);
+}

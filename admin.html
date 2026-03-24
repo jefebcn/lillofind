@@ -7,56 +7,15 @@
 <title>LILLOFIND — Admin Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
 
 <!-- Firebase -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,serverTimestamp,query,orderBy,where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,updatePassword,EmailAuthProvider,reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
-const app=initializeApp(cfg);
-const _googleProvider=new GoogleAuthProvider();
-_googleProvider.setCustomParameters({prompt:'select_account'});
-window.__fb={db:getFirestore(app),auth:getAuth(app),collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,serverTimestamp,query,orderBy,where,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,updatePassword,EmailAuthProvider,reauthenticateWithCredential,_googleProvider};
-</script>
+<script type="module" src="firebase.js"></script>
 
 <style>
-/* ── TOKENS ─────────────────────────────────── */
-:root{
-  --k:#0a0a0a;
-  --w:#f5f5f5;
-  --led:#C8FF00;
-  --led2:#00FFB2;
-  --mid:#555;
-  --dim:#aaa;
-  --border:#222;
-  --card:#fff;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
-body{font-family:'IBM Plex Mono',monospace;background:var(--w);color:var(--k);overflow-x:hidden;}
+/* ── ADMIN-SPECIFIC ──────────────────────────── */
+body{font-family:'IBM Plex Mono',monospace;}
 .bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
-.led-strip{height:3px;width:100%;background:linear-gradient(90deg,transparent 0%,var(--led) 20%,var(--led2) 50%,var(--led) 80%,transparent 100%);box-shadow:0 0 12px var(--led),0 0 24px rgba(200,255,0,.3);}
-.slbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);}
-.lf-in{background:transparent;border:1.5px solid var(--k);padding:13px 16px;width:100%;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--k);outline:none;border-radius:0;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
-.lf-in:focus{border-color:var(--led);box-shadow:0 0 0 3px rgba(200,255,0,.15);}
-.lf-in::placeholder{color:var(--dim);}
-select.lf-in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
-textarea.lf-in{resize:vertical;min-height:90px;}
-.btn-k{display:inline-flex;align-items:center;justify-content:center;background:var(--k);color:var(--w);border:none;padding:14px 28px;min-height:48px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;user-select:none;-webkit-appearance:none;border-radius:0;}
-.btn-k:active{transform:scale(.97);}
-.btn-k:hover{opacity:.75;}
-.btn-k:disabled{opacity:.35;cursor:not-allowed;}
-.btn-led{display:inline-flex;align-items:center;justify-content:center;background:var(--led);color:var(--k);border:none;padding:14px 28px;min-height:48px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s,box-shadow .2s;box-shadow:0 0 16px rgba(200,255,0,.4);-webkit-appearance:none;border-radius:0;}
-.btn-led:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.6);}
-.btn-led:active{transform:scale(.97);}
-.btn-g{display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--k);border:1.5px solid var(--k);padding:12px 28px;min-height:48px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;-webkit-appearance:none;border-radius:0;}
-.btn-g:hover{background:var(--k);color:var(--w);}
-.btn-g:active{transform:scale(.97);}
-.chip{display:inline-flex;align-items:center;border:1.5px solid var(--k);padding:5px 12px;margin:3px 2px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .15s;user-select:none;min-height:32px;}
-.chip:hover,.chip.on{background:var(--k);color:var(--w);}
-.chip.on{border-color:var(--led);box-shadow:0 0 8px rgba(200,255,0,.3);}
 .admin-order-card{border:1.5px solid #e0e0e0;background:#fff;padding:16px 18px;transition:border-color .2s;}
 .admin-order-card:hover{border-color:var(--k);}
 .admin-order-card.pending{border-left:4px solid var(--led);background:rgba(200,255,0,.02);}
