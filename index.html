@@ -7,6 +7,7 @@
 <meta name="description" content="LILLOFIND — Streetwear autentico. Shop, LFPoints loyalty program, spedizione DHL."/>
 <title>LILLOFIND — DROP YOUR STYLE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
@@ -16,7 +17,9 @@
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="preload" as="image" href="hero1.png"/>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
+<noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/></noscript>
 <link rel="stylesheet" href="style.css"/>
 
 <!-- Firebase -->
@@ -787,7 +790,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     <!-- ── PHOTO BACKGROUND — crossfade tra hero1 e hero2 ogni 6s ── -->
     <div id="hero-photo-bg" style="position:absolute;inset:0;z-index:0;overflow:hidden;">
       <div class="hero-slide" style="background:url('hero1.png') center 20%/cover no-repeat;animation:hero-xfade 12s ease-in-out infinite;"></div>
-      <div class="hero-slide" style="background:url('hero2.png') center 20%/cover no-repeat;animation:hero-xfade 12s ease-in-out infinite;animation-delay:-6s;"></div>
+      <div class="hero-slide" id="hero-slide-2" style="animation:hero-xfade 12s ease-in-out infinite;animation-delay:-6s;"></div>
+      <script>setTimeout(function(){var s=document.getElementById('hero-slide-2');if(s)s.style.backgroundImage="url('hero2.png')";s.style.backgroundPosition='center 20%';s.style.backgroundSize='cover';},5000);</script>
     </div>
     <style>
       .hero-slide{position:absolute;inset:0;}
@@ -814,11 +818,17 @@ img{ -webkit-user-drag:none; user-select:none; }
       var ctx=cvs.getContext('2d');
       var W,H,pts=[];
       var LIME='rgba(200,255,0,';
-      var N_MOBILE=55, N_DESK=80;
+      var N_MOBILE=28, N_DESK=45;
 
+      var gradCache=null;
       function resize(){
         W=cvs.width=cvs.offsetWidth;
         H=cvs.height=cvs.offsetHeight;
+        // Cache gradient — ricreato solo al resize, non ogni frame
+        var g=ctx.createRadialGradient(W/2,H*.35,0,W/2,H*.35,Math.max(W,H)*.7);
+        g.addColorStop(0,'rgba(0,0,0,0)');
+        g.addColorStop(1,'rgba(0,0,0,0.45)');
+        gradCache=g;
       }
       window.addEventListener('resize',resize,{passive:true});
 
@@ -841,8 +851,11 @@ img{ -webkit-user-drag:none; user-select:none; }
       }
 
       var lastFrame=0;
+      var rafId=null;
       function draw(ts){
-        requestAnimationFrame(draw);
+        rafId=requestAnimationFrame(draw);
+        // Pausa se tab in background
+        if(document.hidden)return;
         // Cap at ~40fps to save battery on mobile
         if(ts-lastFrame<25)return;
         lastFrame=ts;
@@ -897,12 +910,8 @@ img{ -webkit-user-drag:none; user-select:none; }
           }
         }
 
-        // Radial vignette for depth (draw before nodes so it's behind)
-        var grd=ctx.createRadialGradient(W/2,H*.35,0,W/2,H*.35,Math.max(W,H)*.7);
-        grd.addColorStop(0,'rgba(0,0,0,0)');
-        grd.addColorStop(1,'rgba(0,0,0,0.45)');
-        ctx.fillStyle=grd;
-        ctx.fillRect(0,0,W,H);
+        // Radial vignette — usa gradiente cached
+        if(gradCache){ctx.fillStyle=gradCache;ctx.fillRect(0,0,W,H);}
 
         // Draw nodes
         for(var i=0;i<pts.length;i++){
@@ -933,7 +942,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       // Wait for hero section to have a size
       setTimeout(function(){
         init();
-        requestAnimationFrame(draw);
+        rafId=requestAnimationFrame(draw);
       },100);
 
       // Re-init on resize to adjust particle count
@@ -2495,7 +2504,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(id==='profile'){if(typeof window._fullRenderProfile==='function')window._fullRenderProfile();else renderProfile();}
     if(id==='home') updateHomeDisplay();
     if(id==='lfpoints') renderRewardsTable();
-    window.scrollTo({top:0,behavior:window.innerWidth<769?'instant':'smooth'});
+    window.scrollTo({top:0,behavior:'instant'});
   };
 
   // ── Nav update ─────────────────────────────────────────
@@ -3585,6 +3594,21 @@ img{ -webkit-user-drag:none; user-select:none; }
     </tr>`).join('');
   }
   buildSizeGuide();
+
+  // ── Firebase: fetch prodotti subito (parallelo con auth) ─
+  waitFB(()=>{
+    const fb=window.__fb;
+    // Avvia il fetch prodotti immediatamente senza aspettare auth
+    if(!products.length){
+      fb.getDocs(fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc')))
+        .then(s=>{
+          if(products.length)return; // già caricati dall'auth
+          products=s.docs.map(d=>({id:d.id,...d.data()}));
+          products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+          renderHomeProds(); buildChips();
+        }).catch(()=>{});
+    }
+  });
 
   // ── Firebase auth ──────────────────────────────────────
   waitFB(()=>{
