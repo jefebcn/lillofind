@@ -56,9 +56,29 @@ button{touch-action:manipulation;}
 
 <!-- ══ AUTH GUARD — hidden until Firebase confirms admin ══ -->
 <div id="auth-guard">
-  <div class="guard-spinner"></div>
-  <p>LILLOFIND</p>
-  <small>Verifica autorizzazione...</small>
+  <!-- Stato 1: loading spinner -->
+  <div id="guard-spinner-wrap" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+    <div class="guard-spinner"></div>
+    <p>LILLOFIND</p>
+    <small>Verifica autorizzazione...</small>
+  </div>
+  <!-- Stato 2: form login (non loggato) -->
+  <div id="guard-login-form" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:320px;">
+    <p style="margin-bottom:4px;">LILLOFIND <span style="font-size:12px;color:#444;letter-spacing:3px;">ADMIN</span></p>
+    <small style="margin-bottom:8px;">Accedi per gestire il pannello</small>
+    <input id="guard-email" type="email" placeholder="Email admin" autocomplete="email" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;"/>
+    <input id="guard-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;"/>
+    <p id="guard-err" style="display:none;color:#ff4444;font-size:10px;letter-spacing:1px;text-align:center;"></p>
+    <button onclick="adminLogin()" style="width:100%;padding:13px;background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Accedi →</button>
+    <a href="index.html" style="font-size:9px;color:#555;letter-spacing:1px;text-decoration:none;margin-top:4px;">← Torna al sito</a>
+  </div>
+  <!-- Stato 3: accesso negato (loggato ma non admin) -->
+  <div id="guard-denied" style="display:none;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+    <p style="color:#ff4444;">ACCESSO NEGATO</p>
+    <small id="guard-denied-email" style="color:#888;"></small>
+    <small style="color:#555;letter-spacing:1px;">Il tuo account non ha i permessi admin.</small>
+    <a href="index.html" style="margin-top:8px;font-size:10px;color:var(--led);letter-spacing:2px;text-decoration:none;text-transform:uppercase;">← Torna al sito</a>
+  </div>
 </div>
 
 <!-- ══ TOAST ══ -->
@@ -381,27 +401,54 @@ window.doAdminLogout = function(){
 // ══════════════════════════════════════════════════════════════════════════
 // AUTH GUARD — blocca accesso se non admin
 // ══════════════════════════════════════════════════════════════════════════
+// ── Admin login da form guard ──────────────────────────────
+window.adminLogin = async function(){
+  const errEl = document.getElementById('guard-err');
+  errEl.style.display = 'none';
+  const email = document.getElementById('guard-email').value.trim();
+  const pass  = document.getElementById('guard-pass').value;
+  if(!email||!pass){ errEl.textContent='Compila email e password.'; errEl.style.display='block'; return; }
+  try {
+    const fb = window.__fb;
+    await fb.signInWithEmailAndPassword(fb.auth, email, pass);
+    // onAuthStateChanged si riattiva automaticamente
+  } catch(e) {
+    errEl.textContent = e.code==='auth/wrong-password'||e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'
+      ? 'Email o password errati.' : 'Errore: '+e.message;
+    errEl.style.display = 'block';
+  }
+};
+
 waitFB(()=>{
   const fb = window.__fb;
   fb.onAuthStateChanged(fb.auth, async (user) => {
-    const guard  = document.getElementById('auth-guard');
-    const wrap   = document.getElementById('admin-wrap');
-    const emailEl= document.getElementById('admin-user-email');
+    const guard    = document.getElementById('auth-guard');
+    const spinWrap = document.getElementById('guard-spinner-wrap');
+    const loginForm= document.getElementById('guard-login-form');
+    const denied   = document.getElementById('guard-denied');
+    const wrap     = document.getElementById('admin-wrap');
+    const emailEl  = document.getElementById('admin-user-email');
 
     if (!user) {
-      // Non loggato → redirect immediato
-      window.location.href = 'index.html';
+      // Non loggato → mostra form di login
+      spinWrap.style.display  = 'none';
+      loginForm.style.display = 'flex';
       return;
     }
 
-    // Utente loggato → controlla isAdmin in Firestore
+    // Utente loggato → nascondi form, mostra spinner mentre verifica isAdmin
+    loginForm.style.display = 'none';
+    spinWrap.style.display  = 'flex';
+
     try {
       const snap = await fb.getDoc(fb.doc(fb.db, 'users', user.uid));
       const data = snap.exists() ? snap.data() : {};
 
       if (data.isAdmin !== true) {
-        // Non admin → redirect
-        window.location.href = 'index.html';
+        // Loggato ma non admin → mostra pannello negato
+        spinWrap.style.display = 'none';
+        document.getElementById('guard-denied-email').textContent = user.email||'';
+        denied.style.display   = 'flex';
         return;
       }
 
@@ -419,7 +466,9 @@ waitFB(()=>{
 
     } catch(e) {
       console.error('Auth guard error:', e);
-      window.location.href = 'index.html';
+      spinWrap.style.display = 'none';
+      document.getElementById('guard-denied-email').textContent = user.email||'';
+      denied.style.display   = 'flex';
     }
   });
 });
