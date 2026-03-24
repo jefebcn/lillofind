@@ -3324,90 +3324,58 @@ img{ -webkit-user-drag:none; user-select:none; }
       // Bonifico: show reminder that order will be held until payment received
       showToast('ℹ️ Ordine in attesa — confermato alla ricezione del bonifico.');
     }
-    const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-    const ship=allDigital?0:(total>=80?0:6.90);
-    const pts=Math.floor(total);
-    const arOrder=(udata&&udata.activeReward)||null;
-    let discountOrder=0;
-    if(arOrder){
-      if(arOrder.type==='fisso') discountOrder=Math.min(arOrder.val,total);
-      else if(arOrder.type==='percentuale') discountOrder=total*(arOrder.val/100);
-    }
-    const finalTotalOrder=Math.max(0,total+ship-discountOrder);
     const _orderItems=[...cart]; // snapshot before clearing
-    localStorage.setItem('lf_cart_snapshot',JSON.stringify(_orderItems));
+    const phone=document.getElementById('ck-phone')?.value.trim()||'—';
+    const country=document.getElementById('ck-country')?.value||'Italia';
+    const notes=document.getElementById('ck-notes')?.value.trim()||'';
     if(selectedPayment==='paypal'){
       showToast('🔄 Reindirizzamento a PayPal...');
       setTimeout(()=>showToast('✅ Demo: PayPal completato!'),2000);
     }
-    // Credit LFPOINTS
+    // ── Chiama Cloud Function: prezzi validati server-side ───
     const fb=window.__fb;
     try{
-      const ref=fb.doc(fb.db,'users',user.uid);
-      const snap=await fb.getDoc(ref);
-      const d=snap.exists()?snap.data():{};
-      const np=(d.lfpoints||0)+pts, ns=(d.totalSpent||0)+total;
-      const updateFields={lfpoints:np,totalSpent:ns};
-      if(arOrder) updateFields.activeReward=fb.deleteField();
-      await fb.updateDoc(ref,updateFields);
-      udata={...udata,lfpoints:np,totalSpent:ns,activeReward:null};
+      const validateOrder=fb.httpsCallable(fb.functions,'validateOrder');
+      const result=await validateOrder({
+        items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||''})),
+        paymentMethod:selectedPayment||'card',
+        shippingAddress:{street,city,zip,country},
+        name:fname+' '+lname,
+        phone,
+        notes
+      });
+      const {orderId,subtotal,shipping,discount,total,lfpoints:pts}=result.data;
+      // ── Aggiorna UI con dati verificati dal server ───────
+      const prevPts=(udata?.lfpoints||0);
+      const newPts=prevPts+pts;
+      udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null};
       updateNav(user,udata); updateHomeDisplay();
-      const prev=np-pts;
-      const newReward=REWARDS.find(r=>prev<r.pts&&np>=r.pts);
-      // ── Build order data ────────────────────────────────
-      const phone=document.getElementById('ck-phone')?.value.trim()||'—';
-      const country=document.getElementById('ck-country')?.value||'Italia';
-      const notes=document.getElementById('ck-notes')?.value.trim()||'';
-      const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
-      // ── Save order to Firestore for admin panel ──────────
-      try{
-        await fb.addDoc(fb.collection(fb.db,'orders'),{
-          orderId,
-          uid:user.uid,
-          email:user.email,
-          name:fname+' '+lname,
-          phone,
-          address:{street,city,zip,country},
-          notes,
-          items:_orderItems.map(i=>({name:i.name,price:i.price,qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||'',isDigital:i.isDigital||false})),
-          subtotal:total,
-          shipping:ship,
-          discount:discountOrder,
-          total:finalTotalOrder,
-          payment:selectedPayment||'card',
-          lfpoints:pts,
-          isDigitalOrder:allDigital,
-          deliveryType:allDigital?'digital':'physical',
-          status:'pending',
-          createdAt:fb.serverTimestamp()
-        });
-      }catch(_){}
+      const newReward=REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts);
       cart=[];saveCart();updateCartBadge();
       showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
       if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
       // ── WhatsApp notification to owner ──────────────────
-      const itemLines=JSON.parse(localStorage.getItem('lf_cart_snapshot')||'[]').length
-        ? JSON.parse(localStorage.getItem('lf_cart_snapshot')||'[]')
-        : [];
-      // Build order summary from snapshot stored before clearing cart
       const _itemLines=_orderItems.map(function(i){
-        return '  ' + i.name + (i.size?' — Taglia: '+i.size:'') + (i.color?' — Colore: '+i.color:'') + ' x' + i.qty + ' → €' + (i.price*i.qty).toFixed(2);
+        return '  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2);
       }).join('\n');
-      const waMsg = '🛍 *NUOVO ORDINE — LILLOFIND*\n\n' +
-        '📋 ID: ' + orderId + '\n' +
-        '👤 Cliente: ' + fname + ' ' + lname + '\n' +
-        '📧 Email: ' + user.email + '\n' +
-        '📞 Tel: ' + phone + '\n\n' +
-        '📦 Indirizzo:\n' + street + ', ' + city + ' ' + zip + ' (' + country + ')\n\n' +
-        '🧾 Articoli:\n' + _itemLines + '\n\n' +
-        '💶 Subtotale: €' + total.toFixed(2) + '\n' +
-        '🚚 Spedizione: ' + (ship===0?'Gratis':'€'+ship.toFixed(2)) + '\n' +
-        (discountOrder>0?'🎁 Bonus: −€'+discountOrder.toFixed(2)+'\n':'') +
-        '💰 TOTALE: €' + finalTotalOrder.toFixed(2) + '\n' +
-        '⬡ LFPOINTS: +' + pts;
+      const waMsg='🛍 *NUOVO ORDINE — LILLOFIND*\n\n'+
+        '📋 ID: '+orderId+'\n'+
+        '👤 Cliente: '+fname+' '+lname+'\n'+
+        '📧 Email: '+user.email+'\n'+
+        '📞 Tel: '+phone+'\n\n'+
+        '📦 Indirizzo:\n'+street+', '+city+' '+zip+' ('+country+')\n\n'+
+        '🧾 Articoli:\n'+_itemLines+'\n\n'+
+        '💶 Subtotale: €'+subtotal.toFixed(2)+'\n'+
+        '🚚 Spedizione: '+(shipping===0?'Gratis':'€'+shipping.toFixed(2))+'\n'+
+        (discount>0?'🎁 Bonus: −€'+discount.toFixed(2)+'\n':'')+
+        '💰 TOTALE: €'+total.toFixed(2)+'\n'+
+        '⬡ LFPOINTS: +'+pts;
       setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
       setTimeout(()=>showPg('profile'),1200);
-    } catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
+    } catch(e){
+      console.error('validateOrder error:',e.code,e.message);
+      showToast('⚠️ Si è verificato un errore. Riprova.');
+    }
   };
   updateCartBadge();
 

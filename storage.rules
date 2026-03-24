@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Immagini prodotti: lettura pubblica, scrittura solo via Admin SDK (Cloud Functions)
+    match /products/{filename} {
+      allow read: if true;
+      allow write: if false;
+    }
+    // Tutto il resto: accesso negato
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
