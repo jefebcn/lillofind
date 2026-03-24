@@ -2,10 +2,14 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>LF VAULT — Gestionale Investimenti</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script type="module" src="firebase.js"></script>
 <style>
 :root{
   --k:#080808;--k2:#0f0f0f;--k3:#161616;--k4:#1e1e1e;
@@ -315,16 +319,17 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 <div id="login-screen">
   <div class="login-logo">VAULT</div>
   <div class="login-sub">LF Capital Management</div>
-  <div class="login-box">
-    <div class="login-label">Inserisci Codice di Accesso</div>
-    <div class="login-dots">
-      <div class="dot" id="d0"></div>
-      <div class="dot" id="d1"></div>
-      <div class="dot" id="d2"></div>
-      <div class="dot" id="d3"></div>
-    </div>
-    <input type="password" class="login-input" id="login-in" maxlength="4" inputmode="numeric" placeholder="••••" autocomplete="off" oninput="onPinInput(this.value)" onkeydown="if(event.key==='Enter')tryLogin()"/>
-    <button class="login-btn" onclick="tryLogin()">ACCEDI →</button>
+  <!-- Stato: spinner -->
+  <div id="vault-spinner" class="login-box" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+    <div style="width:32px;height:32px;border:3px solid #222;border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite;"></div>
+    <div class="login-label">Verifica autorizzazione...</div>
+  </div>
+  <!-- Stato: form login -->
+  <div id="vault-login-form" class="login-box" style="display:none;flex-direction:column;gap:12px;">
+    <div class="login-label">Accesso riservato</div>
+    <input type="email" class="login-input" id="vault-email" placeholder="Email" autocomplete="email" style="font-size:14px;text-align:left;padding:0 14px;letter-spacing:.5px;"/>
+    <input type="password" class="login-input" id="vault-pass" placeholder="Password" autocomplete="current-password" style="font-size:14px;text-align:left;padding:0 14px;letter-spacing:.5px;" onkeydown="if(event.key==='Enter')vaultLogin()"/>
+    <button class="login-btn" onclick="vaultLogin()">ACCEDI →</button>
     <div class="login-err" id="login-err"></div>
   </div>
   <div class="login-back">← <a onclick="window.location.href='index.html'">Torna a LILLOFIND</a></div>
@@ -670,7 +675,46 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 // ══════════════════════════════════════════════════
 // DATA & STATE
 // ══════════════════════════════════════════════════
-const ACCESS_CODE = '2809';
+// ── Firebase auth helper ──────────────────────────
+function waitFB(cb,tries=0){if(window.__fb)cb();else if(tries<40)setTimeout(()=>waitFB(cb,tries+1),100);else console.error('Firebase non disponibile.');}
+
+window.vaultLogin = async function(){
+  const errEl = document.getElementById('login-err');
+  errEl.textContent='';
+  const email = document.getElementById('vault-email').value.trim();
+  const pass  = document.getElementById('vault-pass').value;
+  if(!email||!pass){errEl.textContent='Inserisci email e password.';return;}
+  try{
+    const fb=window.__fb;
+    await fb.signInWithEmailAndPassword(fb.auth,email,pass);
+    // onAuthStateChanged gestirà il resto
+  }catch(e){
+    console.error('Vault login error:',e.code);
+    errEl.textContent='Email o password errati.';
+  }
+};
+
+// ── Auth state: mostra login o app ─────────────
+waitFB(()=>{
+  const fb=window.__fb;
+  const spinner  = document.getElementById('vault-spinner');
+  const loginForm= document.getElementById('vault-login-form');
+  fb.onAuthStateChanged(fb.auth, user=>{
+    if(!user){
+      spinner.style.display='none';
+      loginForm.style.display='flex';
+    } else {
+      document.getElementById('login-screen').style.opacity='0';
+      document.getElementById('login-screen').style.transition='opacity .4s';
+      setTimeout(()=>{
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('app').className='show';
+        initApp();
+      },400);
+    }
+  });
+});
+
 const STORAGE_KEY = 'lfvault_data';
 
 const RATES = {
@@ -705,37 +749,10 @@ function saveState() {
 }
 
 // ══════════════════════════════════════════════════
-// LOGIN
+// LOGOUT
 // ══════════════════════════════════════════════════
-function onPinInput(val) {
-  document.getElementById('login-err').textContent = '';
-  for(let i=0;i<4;i++) {
-    const d = document.getElementById('d'+i);
-    d.classList.toggle('filled', i < val.length);
-  }
-  if(val.length === 4) tryLogin();
-}
-function tryLogin() {
-  const pin = document.getElementById('login-in').value;
-  if(pin === ACCESS_CODE) {
-    sessionStorage.setItem('vault_auth','1');
-    document.getElementById('login-screen').style.opacity='0';
-    document.getElementById('login-screen').style.transition='opacity .4s';
-    setTimeout(()=>{
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('app').className='show';
-      initApp();
-    }, 400);
-  } else {
-    document.getElementById('login-err').textContent = '⚠ Codice errato — riprova';
-    document.getElementById('login-in').value = '';
-    for(let i=0;i<4;i++) document.getElementById('d'+i).classList.remove('filled');
-    document.getElementById('login-in').focus();
-  }
-}
 function doLogout() {
-  sessionStorage.removeItem('vault_auth');
-  location.reload();
+  waitFB(()=>window.__fb.signOut(window.__fb.auth).then(()=>location.reload()).catch(()=>location.reload()));
 }
 
 // ══════════════════════════════════════════════════
@@ -749,21 +766,7 @@ function initApp() {
   renderRequests();
   updateRangeStyle(document.getElementById('inv-range'));
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
-  // Auto-check session
-  if(!sessionStorage.getItem('vault_auth')) {
-    document.getElementById('login-screen').style.display='flex';
-    document.getElementById('app').className='';
-  }
 }
-
-// Check auth on load
-window.addEventListener('load', ()=>{
-  if(sessionStorage.getItem('vault_auth')==='1') {
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').className='show';
-    initApp();
-  }
-});
 
 // ══════════════════════════════════════════════════
 // NAVIGATION

@@ -2,6 +2,9 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="robots" content="noindex, nofollow"/>
 <title>LILLOFIND — Admin Panel</title>
@@ -414,7 +417,7 @@ window.adminLogin = async function(){
     // onAuthStateChanged si riattiva automaticamente
   } catch(e) {
     errEl.textContent = e.code==='auth/wrong-password'||e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'
-      ? 'Email o password errati.' : 'Errore: '+e.message;
+      ? 'Email o password errati.' : 'Si è verificato un errore. Riprova.';
     errEl.style.display = 'block';
   }
 };
@@ -536,7 +539,7 @@ waitFB(()=>{
       document.getElementById('ad-style').value='';
       const ip=document.getElementById('img-prev'); if(ip) ip.style.display='none';
       products=[];
-    } catch(e){showToast('⚠️ Errore: '+e.message);}
+    } catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
     btn.textContent='Salva Prodotto →'; btn.disabled=false;
   };
 
@@ -550,7 +553,7 @@ waitFB(()=>{
       await fb.deleteDoc(fb.doc(fb.db,'products',pid));
       showToast('🗑 Prodotto eliminato.');
       loadAdminCatalog();
-    }catch(e){showToast('⚠️ '+e.message);}
+    }catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
   };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -589,7 +592,7 @@ waitFB(()=>{
       // Clear fields
       ['tr-email','tr-code','tr-product','tr-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
       document.getElementById('tr-status').value='confermato';
-    } catch(e){showToast('⚠️ Errore: '+e.message);}
+    } catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
     btn.textContent='Assegna Tracking →'; btn.disabled=false;
   };
 
@@ -747,7 +750,7 @@ waitFB(()=>{
       const snap = await fb.getDocs(q);
       adminOrders = snap.docs.map(d=>({_docId:d.id,...d.data()}));
       renderAdminOrders();
-    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
+    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Si è verificato un errore. Riprova.</p>'; }
   };
 
   window.renderAdminOrders = function(){
@@ -820,7 +823,7 @@ waitFB(()=>{
       if(idx>=0) adminOrders[idx].status='confirmed';
       renderAdminOrders();
       showToast('✅ Ordine confermato!');
-    } catch(e){ showToast('⚠️ Errore: '+e.message); }
+    } catch(e){ showToast('⚠️ Si è verificato un errore. Riprova.'); }
     if(btn){ btn.textContent='✅ Conferma Ordine'; btn.disabled=false; }
   };
 
@@ -847,7 +850,7 @@ waitFB(()=>{
       const snap = await fb.getDocs(q);
       adminCatalogProducts = snap.docs.map(d=>({id:d.id,...d.data()}));
       renderAdminCatalog();
-    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
+    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Si è verificato un errore. Riprova.</p>'; }
   };
 
   let bulkMode = false;
@@ -1044,7 +1047,7 @@ waitFB(()=>{
       closeEditModal();
       renderAdminCatalog();
       showToast('✅ Prodotto aggiornato!');
-    } catch(e){ showToast('⚠️ Errore: '+e.message); }
+    } catch(e){ showToast('⚠️ Si è verificato un errore. Riprova.'); }
     btn.textContent = '💾 SALVA MODIFICHE →'; btn.disabled = false;
   };
 
