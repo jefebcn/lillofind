@@ -2,6 +2,9 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="theme-color" content="#0a0a0a"/>
 <meta name="description" content="LILLOFIND — Streetwear autentico. Shop, LFPoints loyalty program, spedizione DHL."/>
@@ -2606,7 +2609,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     } catch(e){
       const m=e.code==='auth/invalid-credential'?'Credenziali errate.':
                e.code==='auth/email-already-in-use'?'Email già usata.':
-               e.code==='auth/weak-password'?'Password min. 6 caratteri.':e.message;
+               e.code==='auth/weak-password'?'Password min. 6 caratteri.':' Si è verificato un errore. Riprova.';
       showToast('⚠️ '+m);
     }
     btn.textContent=authTab==='li'?'Accedi →':'Crea Account →'; btn.disabled=false;
@@ -3404,7 +3407,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         '⬡ LFPOINTS: +' + pts;
       setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
       setTimeout(()=>showPg('profile'),1200);
-    } catch(e){showToast('⚠️ Errore: '+e.message);}
+    } catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
   };
   updateCartBadge();
 
@@ -3559,7 +3562,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{preferredSize:size,preferredBrands:brands});
       udata={...udata,preferredSize:size,preferredBrands:brands};
       showToast('✅ Preferenze salvate!');
-    } catch(e){showToast('⚠️ Errore: '+e.message);}
+    } catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
   };
 
 
@@ -3917,7 +3920,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       showToast('🎉 Benvenuto '+( u.displayName||u.email)+'!');
       showPg('home');
     } catch(e){
-      if(e.code!=='auth/popup-closed-by-user') showToast('⚠️ '+e.message);
+      if(e.code!=='auth/popup-closed-by-user') showToast('⚠️ Si è verificato un errore. Riprova.');
     }
   };
 
@@ -4015,7 +4018,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       showToast('✅ Password aggiornata!');
       ['sec-old-pass','sec-new-pass','sec-conf-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     } catch(e){
-      const m=e.code==='auth/wrong-password'?'Password attuale errata.':e.message;
+      const m=e.code==='auth/wrong-password'?'Password attuale errata.':' Si è verificato un errore. Riprova.';
       showToast('⚠️ '+m);
     }
   };
@@ -4069,7 +4072,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       udata={...udata,...data};
       updateNav(user,udata);
       showToast('✅ Profilo aggiornato!');
-    } catch(e){showToast('⚠️ Errore: '+e.message);}
+    } catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
   };
 
   // ── THEME ────────────────────────────────────────────────

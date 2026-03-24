@@ -2,17 +2,20 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>LilloFind — Importa Prodotti</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getFirestore,collection,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
-window.__imp={db:getFirestore(app),auth:getAuth(app),collection,addDoc,serverTimestamp,signInWithEmailAndPassword,onAuthStateChanged};
+window.__imp={db:getFirestore(app),auth:getAuth(app),collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
 </script>
 
 <style>
@@ -171,6 +174,14 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
       <p id="lg-err" style="font-size:11px;color:#FF4757;display:none;margin-top:2px;"></p>
     </div>
   </div>
+</div>
+
+<!-- ACCESSO NEGATO (loggato ma non admin) -->
+<div id="denied-screen" style="display:none;position:fixed;inset:0;background:var(--k);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;">
+  <p style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:#FF4757;">ACCESSO NEGATO</p>
+  <p id="denied-email" style="font-size:11px;color:var(--dim);"></p>
+  <p style="font-size:10px;color:#333;letter-spacing:1px;">Il tuo account non ha i permessi per accedere a questa sezione.</p>
+  <a href="index.html" style="margin-top:12px;font-size:10px;color:var(--led);letter-spacing:2px;text-decoration:none;text-transform:uppercase;">← Torna al sito</a>
 </div>
 
 <!-- HEADER -->
@@ -341,6 +352,8 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 <script type="module">
 function waitFB(cb){ window.__imp ? cb() : setTimeout(()=>waitFB(cb),80); }
 
+// SICUREZZA: questa key è visibile nel sorgente — limitare i domini autorizzati
+// su imgbb.com (account settings) e valutare un proxy backend in produzione
 const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
 const SIZES_ALL = ['XS','S','M','L','XL','XXL','Unica'];
 let currentBrand='', rowId=0, savedCount=0, user=null;
@@ -388,10 +401,35 @@ window.doLogin=async function(){
 };
 
 waitFB(()=>{
-  window.__imp.onAuthStateChanged(window.__imp.auth, u=>{
+  const imp=window.__imp;
+  imp.onAuthStateChanged(imp.auth, async u=>{
     user=u;
-    if(u){ document.getElementById('login-screen').style.display='none'; document.getElementById('hdr-user').textContent=u.email; initApp(); }
-    else  { document.getElementById('login-screen').style.display='flex'; }
+    if(!u){
+      document.getElementById('denied-screen').style.display='none';
+      document.getElementById('login-screen').style.display='flex';
+      return;
+    }
+    // Verifica isAdmin in Firestore
+    try{
+      const snap=await imp.getDoc(imp.doc(imp.db,'users',u.uid));
+      const data=snap.exists()?snap.data():{};
+      if(data.isAdmin!==true){
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('denied-email').textContent=u.email||'';
+        document.getElementById('denied-screen').style.display='flex';
+        return;
+      }
+    }catch(e){
+      console.error('importer isAdmin check:',e.code);
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('denied-screen').style.display='flex';
+      return;
+    }
+    // Admin confermato
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('denied-screen').style.display='none';
+    document.getElementById('hdr-user').textContent=u.email;
+    initApp();
   });
 });
 
