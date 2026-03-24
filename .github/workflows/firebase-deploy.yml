@@ -30,6 +30,6 @@ jobs:
         working-directory: functions
 
       - name: Deploy Functions & Storage Rules
-        run: npx firebase-tools deploy --only functions,storage --token "$FIREBASE_TOKEN" --project lillofind-c455c --non-interactive
+        run: npx firebase-tools deploy --only functions,storage --token "$FIREBASE_TOKEN" --project lillofind-c455c --non-interactive --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
