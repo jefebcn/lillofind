@@ -307,13 +307,14 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
   .pad-mob{padding:18px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
 
-  /* MOBILE HERO — content height only, no forced full-screen */
+  /* MOBILE HERO — full viewport, content anchored to bottom */
   #pg-hero-section{
     display:flex !important;
     flex-direction:column !important;
+    justify-content:flex-end !important;
     position:relative !important;
-    height:auto !important;
-    min-height:0 !important;
+    height:calc(100svh - 60px) !important;
+    min-height:520px !important;
     overflow:hidden !important;
   }
   #hero-spacer,#hero-lines,#hero-glows,.mob-fade-in{ display:none !important; }
@@ -328,7 +329,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
   }
   #hero-content-inner{
     padding:12px 16px 18px !important;
-    background:linear-gradient(0deg,rgba(5,5,5,.90) 0%,rgba(5,5,5,.70) 60%,rgba(5,5,5,.30) 100%) !important;
+    background:linear-gradient(0deg,rgba(5,5,5,.96) 0%,rgba(5,5,5,.82) 55%,rgba(5,5,5,.10) 100%) !important;
     backdrop-filter:blur(2px);
     -webkit-backdrop-filter:blur(2px);
   }
@@ -802,7 +803,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     </style>
 
     <!-- ── DARK OVERLAY: leggero in alto, più denso in basso dove c'è il testo ── -->
-    <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.10) 0%,rgba(0,0,0,.28) 50%,rgba(0,0,0,.62) 100%);"></div>
+    <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.15) 40%,rgba(0,0,0,.55) 75%,rgba(0,0,0,.80) 100%);"></div>
 
     <!-- ── SCANLINE TEXTURE ── -->
     <div style="position:absolute;inset:0;z-index:4;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);"></div>
