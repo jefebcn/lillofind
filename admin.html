@@ -375,6 +375,14 @@ button{touch-action:manipulation;}
 
 <script type="module">
 
+// ══ CONFIGURA QUI LE EMAIL ADMIN ══════════════════════════════════════════
+// Aggiungi l'email del tuo account admin — accesso garantito anche senza
+// il campo isAdmin:true su Firestore.
+const ADMIN_EMAILS = [
+  'admin@lillofind.com',
+];
+// ══════════════════════════════════════════════════════════════════════════
+
 // ── waitFB helper ──────────────────────────────────────────────────────────
 function waitFB(cb, tries=0){
   if(window.__fb) cb();
@@ -447,7 +455,8 @@ waitFB(()=>{
       const snap = await fb.getDoc(fb.doc(fb.db, 'users', user.uid));
       const data = snap.exists() ? snap.data() : {};
 
-      if (data.isAdmin !== true) {
+      const isAdmin = data.isAdmin === true || ADMIN_EMAILS.includes(user.email);
+      if (!isAdmin) {
         // Loggato ma non admin → mostra pannello negato
         spinWrap.style.display = 'none';
         document.getElementById('guard-denied-email').textContent = user.email||'';
@@ -469,6 +478,18 @@ waitFB(()=>{
 
     } catch(e) {
       console.error('Auth guard error:', e);
+      // Firestore non raggiungibile — fallback su lista email
+      if (ADMIN_EMAILS.includes(user.email)) {
+        if (emailEl) emailEl.textContent = user.email || '';
+        if (guard)   guard.style.display = 'none';
+        if (wrap)    wrap.style.display  = 'block';
+        setTimeout(() => {
+          initBulkImport();
+          if(typeof loadAdminCatalog === 'function') loadAdminCatalog();
+          if(typeof loadAdminOrders  === 'function') loadAdminOrders();
+        }, 150);
+        return;
+      }
       spinWrap.style.display = 'none';
       document.getElementById('guard-denied-email').textContent = user.email||'';
       denied.style.display   = 'flex';
