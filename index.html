@@ -3588,8 +3588,13 @@ img{ -webkit-user-drag:none; user-select:none; }
     fb.onAuthStateChanged(fb.auth,async u=>{
       user=u;
       if(u){
-        const s=await fb.getDoc(fb.doc(fb.db,'users',u.uid));
-        udata=s.exists()?s.data():{};
+        try{
+          const s=await fb.getDoc(fb.doc(fb.db,'users',u.uid));
+          udata=s.exists()?s.data():{};
+        } catch(err){
+          console.warn('onAuthStateChanged getDoc error:',err);
+          udata={};
+        }
       } else { udata=null; }
       updateNav(u,udata); updateHomeDisplay();
       // Re-render profile if it's already open (covers race condition on load)
@@ -3871,53 +3876,59 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── GOOGLE AUTH ──────────────────────────────────────────
   async function _saveGoogleUser(u){
     const fb=window.__fb;
-    const ref=fb.doc(fb.db,'users',u.uid);
-    const snap=await fb.getDoc(ref);
-    if(!snap.exists()){
-      await fb.setDoc(ref,{
-        email:u.email,
-        displayName:u.displayName||'',
-        lfpoints:50,totalSpent:0,
-        preferredSize:'',preferredBrands:[],
-        createdAt:fb.serverTimestamp()
-      });
+    try{
+      const ref=fb.doc(fb.db,'users',u.uid);
+      const snap=await fb.getDoc(ref);
+      if(!snap.exists()){
+        await fb.setDoc(ref,{
+          email:u.email,
+          displayName:u.displayName||'',
+          lfpoints:50,totalSpent:0,
+          preferredSize:'',preferredBrands:[],
+          createdAt:fb.serverTimestamp()
+        });
+      }
+    } catch(err){
+      console.warn('saveGoogleUser Firestore error:',err);
+      // Auth è OK anche se Firestore fallisce — onAuthStateChanged aggiornerà la UI
     }
-    showToast('🎉 Benvenuto '+(u.displayName||u.email)+'!');
-    showPg('home');
   }
 
   window.doGoogleAuth=async function(){
     const fb=window.__fb;
-    const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if(!fb){ showToast('⚠️ Firebase non ancora pronto, riprova.'); return; }
     try{
-      if(isMobile){
-        await fb.signInWithRedirect(fb.auth,fb._googleProvider);
-        // la pagina si ricarica — il risultato viene gestito sotto
-      } else {
-        const result=await fb.signInWithPopup(fb.auth,fb._googleProvider);
-        await _saveGoogleUser(result.user);
-      }
+      const result=await fb.signInWithPopup(fb.auth,fb._googleProvider);
+      await _saveGoogleUser(result.user);
+      showToast('🎉 Benvenuto '+(result.user.displayName||result.user.email)+'!');
+      showPg('home');
     } catch(e){
-      if(e.code!=='auth/popup-closed-by-user'){
+      if(e.code==='auth/popup-blocked'){
+        // Fallback redirect se popup bloccato
+        try{ await fb.signInWithRedirect(fb.auth,fb._googleProvider); } catch(_){}
+      } else if(e.code!=='auth/popup-closed-by-user'){
         console.error('Google auth error:',e.code,e.message);
-        showToast('⚠️ Errore Google: '+( e.message||e.code));
+        showToast('⚠️ Errore Google ('+(e.code||'unknown')+'). Riprova.');
       }
     }
   };
 
-  // Gestisce il ritorno dopo signInWithRedirect (mobile)
-  (async function handleRedirectResult(){
+  // Gestisce il ritorno dopo signInWithRedirect (fallback popup-blocked)
+  waitFB(async function(){
     const fb=window.__fb;
     try{
       const result=await fb.getRedirectResult(fb.auth);
-      if(result&&result.user) await _saveGoogleUser(result.user);
+      if(result&&result.user){
+        await _saveGoogleUser(result.user);
+        showToast('🎉 Benvenuto '+(result.user.displayName||result.user.email)+'!');
+        showPg('home');
+      }
     } catch(e){
-      if(e.code&&e.code!=='auth/null-user'){
+      if(e.code&&e.code!=='auth/null-user'&&e.code!=='auth/no-auth-event'){
         console.error('Redirect result error:',e.code,e.message);
-        showToast('⚠️ Errore accesso Google. Riprova.');
       }
     }
-  })();
+  });
 
   // ── PROFILE SCROLL (ex-tabs → ora pagina unica) ──────────
   window.switchProfTab=function(tab){
