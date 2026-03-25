@@ -3869,29 +3869,55 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ── GOOGLE AUTH ──────────────────────────────────────────
+  async function _saveGoogleUser(u){
+    const fb=window.__fb;
+    const ref=fb.doc(fb.db,'users',u.uid);
+    const snap=await fb.getDoc(ref);
+    if(!snap.exists()){
+      await fb.setDoc(ref,{
+        email:u.email,
+        displayName:u.displayName||'',
+        lfpoints:50,totalSpent:0,
+        preferredSize:'',preferredBrands:[],
+        createdAt:fb.serverTimestamp()
+      });
+    }
+    showToast('🎉 Benvenuto '+(u.displayName||u.email)+'!');
+    showPg('home');
+  }
+
   window.doGoogleAuth=async function(){
     const fb=window.__fb;
+    const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     try{
-      const result=await fb.signInWithPopup(fb.auth,fb._googleProvider);
-      const u=result.user;
-      // Check if user doc exists
-      const ref=fb.doc(fb.db,'users',u.uid);
-      const snap=await fb.getDoc(ref);
-      if(!snap.exists()){
-        await fb.setDoc(ref,{
-          email:u.email,
-          displayName:u.displayName||'',
-          lfpoints:0,totalSpent:0,
-          preferredSize:'',preferredBrands:[],
-          createdAt:fb.serverTimestamp()
-        });
+      if(isMobile){
+        await fb.signInWithRedirect(fb.auth,fb._googleProvider);
+        // la pagina si ricarica — il risultato viene gestito sotto
+      } else {
+        const result=await fb.signInWithPopup(fb.auth,fb._googleProvider);
+        await _saveGoogleUser(result.user);
       }
-      showToast('🎉 Benvenuto '+( u.displayName||u.email)+'!');
-      showPg('home');
     } catch(e){
-      if(e.code!=='auth/popup-closed-by-user') showToast('⚠️ Si è verificato un errore. Riprova.');
+      if(e.code!=='auth/popup-closed-by-user'){
+        console.error('Google auth error:',e.code,e.message);
+        showToast('⚠️ Errore Google: '+( e.message||e.code));
+      }
     }
   };
+
+  // Gestisce il ritorno dopo signInWithRedirect (mobile)
+  (async function handleRedirectResult(){
+    const fb=window.__fb;
+    try{
+      const result=await fb.getRedirectResult(fb.auth);
+      if(result&&result.user) await _saveGoogleUser(result.user);
+    } catch(e){
+      if(e.code&&e.code!=='auth/null-user'){
+        console.error('Redirect result error:',e.code,e.message);
+        showToast('⚠️ Errore accesso Google. Riprova.');
+      }
+    }
+  })();
 
   // ── PROFILE SCROLL (ex-tabs → ora pagina unica) ──────────
   window.switchProfTab=function(tab){
