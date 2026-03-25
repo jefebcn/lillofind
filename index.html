@@ -371,33 +371,35 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
 
 @media(min-width:769px){
   .mob-only,.show-mob{ display:none !important; }
-  /* DESKTOP HERO ─ split-screen: testo sinistra | foto destra */
+  /* DESKTOP HERO ─ foto full-bleed + gradient overlay direzionale */
   #pg-hero-section{
     display:grid !important;
     grid-template-columns:1fr 1fr !important;
     grid-template-rows:1fr auto !important;
     min-height:100svh !important;
-    background:#080808 !important; /* sfondo solido colonna testo */
+    background:#080808 !important;
   }
-  /* Foto confinata nella metà destra — proporzioni rispettate */
+  /* Foto full-bleed — copre l'intera sezione */
   #hero-photo-bg{
-    left:50% !important;
+    left:0 !important;
     right:0 !important;
     top:0 !important;
     bottom:0 !important;
   }
-  /* Overlay: solo sul lato destro (foto), svanisce verso sinistra */
-  #hero-overlay{
-    background:linear-gradient(90deg,
-      rgba(8,8,8,1) 0%,
-      rgba(8,8,8,.92) 38%,
-      rgba(8,8,8,.35) 52%,
-      rgba(0,0,0,.12) 100%
-    ) !important;
-  }
+  /* Soggetto centrato leggermente a destra per bilanciare il testo a sinistra */
   #hero-photo-bg .hero-slide{
-    background-position:center center !important;
+    background-position:62% center !important;
     background-size:cover !important;
+  }
+  /* Overlay sinistra→destra: buio per leggibilità testo, trasparente per mostrare la foto */
+  #hero-overlay{
+    background:linear-gradient(100deg,
+      rgba(5,5,5,.96) 0%,
+      rgba(5,5,5,.88) 28%,
+      rgba(5,5,5,.55) 46%,
+      rgba(0,0,0,.15) 65%,
+      transparent 100%
+    ) !important;
   }
   #hero-spacer{ grid-column:1; grid-row:1; }
   #hero-content{
