@@ -371,12 +371,33 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
 
 @media(min-width:769px){
   .mob-only,.show-mob{ display:none !important; }
-  /* DESKTOP HERO ─ 2-column grid */
+  /* DESKTOP HERO ─ split-screen: testo sinistra | foto destra */
   #pg-hero-section{
     display:grid !important;
     grid-template-columns:1fr 1fr !important;
     grid-template-rows:1fr auto !important;
     min-height:100svh !important;
+    background:#080808 !important; /* sfondo solido colonna testo */
+  }
+  /* Foto confinata nella metà destra — proporzioni rispettate */
+  #hero-photo-bg{
+    left:50% !important;
+    right:0 !important;
+    top:0 !important;
+    bottom:0 !important;
+  }
+  /* Overlay: solo sul lato destro (foto), svanisce verso sinistra */
+  #hero-overlay{
+    background:linear-gradient(90deg,
+      rgba(8,8,8,1) 0%,
+      rgba(8,8,8,.92) 38%,
+      rgba(8,8,8,.35) 52%,
+      rgba(0,0,0,.12) 100%
+    ) !important;
+  }
+  #hero-photo-bg .hero-slide{
+    background-position:center center !important;
+    background-size:cover !important;
   }
   #hero-spacer{ grid-column:1; grid-row:1; }
   #hero-content{
@@ -397,7 +418,6 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
   }
   #hero-glows{ display:block !important; }
   #hero-lines{ display:block !important; }
-  #hero-photo-bg .hero-slide{ background-position:center 30% !important; }
 }
 
 /* App: no tap highlight, prevent iOS zoom on inputs, smooth scroll */
@@ -802,8 +822,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       @keyframes hero-xfade{0%,45%{opacity:1;}50%,95%{opacity:0;}100%{opacity:1;}}
     </style>
 
-    <!-- ── DARK OVERLAY: leggero in alto, più denso in basso dove c'è il testo ── -->
-    <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.15) 40%,rgba(0,0,0,.55) 75%,rgba(0,0,0,.80) 100%);"></div>
+    <!-- ── DARK OVERLAY ── -->
+    <div id="hero-overlay" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.15) 40%,rgba(0,0,0,.55) 75%,rgba(0,0,0,.80) 100%);"></div>
 
     <!-- ── SCANLINE TEXTURE ── -->
     <div style="position:absolute;inset:0;z-index:4;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);"></div>
