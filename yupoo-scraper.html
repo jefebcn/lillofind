@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LilloFind — Yupoo Scraper</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
+const app=initializeApp(cfg);
+window.__imp={db:getFirestore(app),auth:getAuth(app),collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
+</script>
+</head>
+<style>
+:root{--k:#080808;--w:#f0f0f0;--led:#C8FF00;--dim:#555;--border:#1a1a1a;--card:#0f0f0f;--card2:#141414;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospace;min-height:100vh;}
+.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.led-strip{height:3px;background:linear-gradient(90deg,transparent,var(--led) 30%,#00FFB2 60%,var(--led) 80%,transparent);box-shadow:0 0 10px var(--led);}
+.lf-in{width:100%;background:#0c0c0c;border:1.5px solid #222;color:var(--w);font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.5px;padding:13px 14px;outline:none;transition:border-color .15s;}
+.lf-in:focus{border-color:var(--led);}
+.lf-in::placeholder{color:#333;}
+.btn-led{background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:14px 28px;transition:opacity .15s;box-shadow:0 0 20px rgba(200,255,0,.2);}
+.btn-led:hover{opacity:.85;}
+.btn-led:disabled{opacity:.35;cursor:not-allowed;}
+.btn-g{background:var(--card2);color:#bbb;border:1.5px solid #242424;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:10px 18px;transition:all .15s;text-decoration:none;display:inline-block;}
+.btn-g:hover{border-color:var(--led);color:var(--led);}
+#hdr{background:var(--k);border-bottom:2px solid var(--border);padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+#app-body{max-width:1200px;margin:0 auto;padding:40px 24px 110px;}
+.sec-wrap{margin-bottom:44px;padding-bottom:44px;border-bottom:1px solid #141414;}
+.sec-num{font-size:10px;color:var(--led);letter-spacing:4px;margin-bottom:6px;text-transform:uppercase;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;margin-bottom:20px;}
+/* SIZE CHIPS */
+.sz-chip{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border:1.5px solid #242424;cursor:pointer;font-size:12px;letter-spacing:1px;color:#666;background:var(--card2);transition:all .15s;min-width:48px;}
+.sz-chip.on{border-color:var(--led);color:var(--led);background:rgba(200,255,0,.06);}
+.sz-chip:hover{border-color:#444;color:#ccc;}
+.sz-chip.on:hover{border-color:var(--led);}
+/* MARKUP TOGGLE */
+.mk-toggle{display:inline-flex;border:1.5px solid #242424;overflow:hidden;}
+.mk-btn{padding:10px 20px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#666;background:var(--card2);border:none;transition:all .15s;}
+.mk-btn.active{background:rgba(200,255,0,.1);color:var(--led);}
+/* ALBUM GRID */
+#albums-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.album-card{background:var(--card);border:1.5px solid #1a1a1a;cursor:pointer;transition:border-color .15s,transform .1s;position:relative;overflow:hidden;}
+.album-card:hover{border-color:#333;transform:translateY(-1px);}
+.album-card.sel{border-color:var(--led);background:rgba(200,255,0,.03);box-shadow:0 0 12px rgba(200,255,0,.12);}
+.card-chk{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;background:var(--card);border:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .15s;z-index:2;}
+.album-card.sel .card-chk{background:var(--led);border-color:var(--led);color:var(--k);}
+.card-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#111;}
+.card-body{padding:12px;}
+.card-name{font-size:11px;color:var(--w);line-height:1.4;margin-bottom:10px;}
+.card-prices{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.card-src-price{font-size:10px;color:#444;letter-spacing:1px;}
+.card-sell-wrap{display:flex;align-items:center;gap:4px;}
+.card-sell-lbl{font-size:10px;color:#666;}
+.card-sell-in{width:72px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--led);background:#0a0a0a;border:1.5px solid #222;font-family:'IBM Plex Mono',monospace;outline:none;}
+.card-sell-in:focus{border-color:var(--led);}
+.card-brand{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--led);border:1px solid rgba(200,255,0,.25);padding:2px 7px;display:inline-block;}
+.card-status{font-size:9px;letter-spacing:1px;margin-top:8px;display:none;}
+/* NAME INPUT IN CARD */
+.card-name-in{width:100%;background:transparent;border:none;border-bottom:1px solid #1e1e1e;color:var(--w);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 0;outline:none;line-height:1.4;margin-bottom:10px;}
+.card-name-in:focus{border-bottom-color:var(--led);}
+/* PROGRESS */
+.prog-wrap{background:#141414;height:5px;width:100%;margin-top:14px;}
+.prog-bar{background:var(--led);height:5px;width:0%;transition:width .2s;box-shadow:0 0 8px var(--led);}
+/* RESPONSIVE */
+@media(max-width:600px){
+  #albums-grid{grid-template-columns:repeat(2,1fr);}
+  #hdr{padding:0 16px;}
+  #app-body{padding:24px 16px 80px;}
+  .sec-title{font-size:24px;}
+}
+</style>
+
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--k);z-index:999;display:flex;align-items:center;justify-content:center;">
+  <div style="width:380px;padding:44px 36px;border:2px solid #1e1e1e;background:#0d0d0d;">
+    <p style="font-size:9px;color:var(--dim);letter-spacing:4px;margin-bottom:10px;">LILLOFIND</p>
+    <p class="bb" style="font-size:48px;line-height:.9;margin-bottom:4px;">YUPOO<br>SCRAPER</p>
+    <div class="led-strip" style="margin:22px 0 30px;"></div>
+    <input id="l-email" class="lf-in" type="email" placeholder="EMAIL" style="margin-bottom:10px;"/>
+    <input id="l-pass" class="lf-in" type="password" placeholder="PASSWORD" style="margin-bottom:20px;"/>
+    <button class="btn-led" id="l-btn" onclick="doLogin()" style="width:100%;">ACCEDI →</button>
+    <p id="l-err" style="color:#FF4757;font-size:11px;margin-top:12px;display:none;"></p>
+  </div>
+</div>
+
+<!-- DENIED SCREEN -->
+<div id="denied-screen" style="position:fixed;inset:0;background:var(--k);z-index:998;display:none;align-items:center;justify-content:center;">
+  <div style="text-align:center;padding:40px;">
+    <p class="bb" style="font-size:48px;color:#FF4757;margin-bottom:12px;">ACCESSO NEGATO</p>
+    <p style="color:#555;font-size:12px;letter-spacing:1px;margin-bottom:28px;">Account non autorizzato come admin.</p>
+    <button class="btn-g" onclick="doLogout()">DISCONNETTI</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="hdr">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="bb" style="font-size:22px;color:var(--led);letter-spacing:2px;">LILLOFIND</span>
+    <span style="color:#333;font-size:11px;letter-spacing:3px;">YUPOO SCRAPER</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="hdr-user" style="font-size:10px;color:#444;letter-spacing:1px;"></span>
+    <a href="admin.html" class="btn-g">← ADMIN</a>
+    <a href="index.html" class="btn-g">SITO →</a>
+  </div>
+</header>
+<div class="led-strip"></div>
+
+<!-- APP BODY -->
+<div id="app-body" style="display:none;">
+
+  <!-- 01 URL INPUT -->
+  <div class="sec-wrap">
+    <p class="sec-num">01 — Sorgente</p>
+    <p class="sec-title">URL VENDITORE YUPOO</p>
+    <p style="font-size:11px;color:#555;letter-spacing:.5px;margin-bottom:16px;">Incolla l'URL della categoria Yupoo del tuo fornitore</p>
+    <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;">
+      <input id="yupoo-url" class="lf-in" type="text"
+        placeholder="woodtableguy888.x.yupoo.com/categories/4633144"
+        style="flex:1;min-width:280px;"
+        onkeydown="if(event.key==='Enter')loadAlbums()"/>
+      <button class="btn-led" id="fetch-btn" onclick="loadAlbums()" style="white-space:nowrap;">CARICA SCARPE →</button>
+    </div>
+    <p id="fetch-status" style="font-size:11px;margin-top:12px;color:#555;letter-spacing:.5px;min-height:18px;"></p>
+    <div style="margin-top:16px;padding:16px;background:#0a0a0a;border:1px solid #1a1a1a;font-size:10px;color:#444;line-height:1.8;">
+      <span style="color:var(--led);">⚠ NOTA CORS:</span> Il sito Yupoo può bloccare i proxy CORS. Se il caricamento fallisce, riprova tra qualche minuto o usa una VPN. Vengono tentati 2 proxy in sequenza automaticamente.
+    </div>
+  </div>
+
+  <!-- 02 MARKUP -->
+  <div class="sec-wrap">
+    <p class="sec-num">02 — Prezzo</p>
+    <p class="sec-title">SOVRAPPREZZO (MARKUP)</p>
+    <p style="font-size:11px;color:#555;margin-bottom:18px;">Il prezzo di vendita viene calcolato aggiungendo il tuo markup al prezzo fornitore Yupoo</p>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16px;">
+      <div class="mk-toggle">
+        <button class="mk-btn active" id="mk-fixed" onclick="setMarkupType('fixed')">€ FISSO</button>
+        <button class="mk-btn" id="mk-pct" onclick="setMarkupType('pct')">% PERCENTUALE</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:#555;" id="mk-symbol">+€</span>
+        <input id="markup-val" class="lf-in" type="number" value="20" min="0" step="1"
+          style="width:100px;padding:10px 12px;" oninput="updateMarkupPreview()"/>
+      </div>
+    </div>
+    <div style="padding:14px 18px;background:#0a1200;border:1px solid rgba(200,255,0,.15);display:inline-block;">
+      <span style="font-size:11px;color:#555;">Es: fornitore </span>
+      <span style="color:#666;">33€</span>
+      <span style="font-size:11px;color:#555;"> → vendita </span>
+      <span id="mk-preview" style="color:var(--led);font-size:14px;font-weight:600;">53€</span>
+    </div>
+  </div>
+
+  <!-- 03 SIZES -->
+  <div class="sec-wrap">
+    <p class="sec-num">03 — Taglie</p>
+    <p class="sec-title">TAGLIE DISPONIBILI (EU)</p>
+    <p style="font-size:11px;color:#555;margin-bottom:16px;">Seleziona le taglie che hai in stock — applicate a tutti gli album importati</p>
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button class="btn-g" onclick="allSizes()">TUTTE</button>
+      <button class="btn-g" onclick="noSizes()">NESSUNA</button>
+    </div>
+    <div id="size-chips" style="display:flex;flex-wrap:wrap;gap:6px;">
+    </div>
+  </div>
+
+  <!-- 04 ALBUM GRID -->
+  <div id="albums-section" style="display:none;">
+    <div class="sec-wrap" style="border-bottom:none;padding-bottom:20px;">
+      <p class="sec-num">04 — Selezione</p>
+      <p class="sec-title" id="albums-title">SCARPE TROVATE</p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+        <button class="btn-g" onclick="selectAll()">✓ SELEZIONA TUTTE</button>
+        <button class="btn-g" onclick="deselectAll()">✕ DESELEZIONA TUTTE</button>
+        <span id="sel-count" style="font-size:11px;color:var(--led);letter-spacing:2px;">0 selezionate</span>
+        <span id="total-count" style="font-size:10px;color:#444;"></span>
+      </div>
+      <div id="albums-grid"></div>
+    </div>
+  </div>
+
+  <!-- 05 IMPORT -->
+  <div id="import-section" style="display:none;padding-top:12px;">
+    <div class="sec-wrap">
+      <p class="sec-num">05 — Importa</p>
+      <p class="sec-title">IMPORTA SU LILLOFIND</p>
+      <button class="btn-led" id="import-btn" onclick="importSelected()" style="font-size:14px;padding:18px 48px;letter-spacing:3px;">IMPORTA SELEZIONATE →</button>
+      <div id="imp-progress" style="display:none;margin-top:18px;max-width:600px;">
+        <div class="prog-wrap"><div id="imp-bar" class="prog-bar"></div></div>
+        <p id="imp-lbl" style="font-size:11px;color:var(--led);margin-top:8px;letter-spacing:1px;"></p>
+      </div>
+      <div id="imp-result" style="display:none;margin-top:20px;"></div>
+    </div>
+  </div>
+
+</div><!-- /app-body -->
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+let user = null;
+let albums = [];
+let selected = new Set();
+let markupType = 'fixed'; // 'fixed' | 'pct'
+
+const EU_SIZES = ['35','36','37','38','39','40','41','42','43','44','45','46'];
+const BRANDS = [
+  ['nike dunk','Nike'],['nike air','Nike'],['nike','Nike'],
+  ['air jordan','Jordan'],['jordan','Jordan'],
+  ['adidas yeezy','Yeezy'],['yeezy','Yeezy'],['adidas','Adidas'],
+  ['new balance','New Balance'],[' nb ','New Balance'],
+  ['balenciaga','Balenciaga'],['puma','Puma'],['reebok','Reebok'],
+  ['asics','Asics'],['converse','Converse'],['vans','Vans'],
+  ['salomon','Salomon'],['saucony','Saucony'],['hoka','Hoka'],
+  ['on running','On Running'],['on ','On Running']
+];
+
+// ── FIREBASE WAIT ──────────────────────────────────────────
+function waitFB(cb){ window.__imp ? cb() : setTimeout(()=>waitFB(cb),80); }
+
+// ── INIT ───────────────────────────────────────────────────
+waitFB(()=>{
+  const imp = window.__imp;
+  imp.onAuthStateChanged(imp.auth, async u=>{
+    user = u;
+    if(!u){ showLogin(); return; }
+    try{
+      const snap = await imp.getDoc(imp.doc(imp.db,'users',u.uid));
+      if(snap.data()?.isAdmin !== true){ showDenied(u.email); return; }
+      showApp(u.email);
+    } catch(e){ showDenied(u.email); }
+  });
+  initSizeChips();
+});
+
+// ── AUTH ───────────────────────────────────────────────────
+function showLogin(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app-body').style.display='none';
+}
+function showDenied(email){
+  document.getElementById('login-screen').style.display='none';
+  const d=document.getElementById('denied-screen');
+  d.style.display='flex';
+}
+function showApp(email){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('denied-screen').style.display='none';
+  document.getElementById('app-body').style.display='block';
+  document.getElementById('hdr-user').textContent=email;
+}
+
+window.doLogin = async function(){
+  const imp=window.__imp;
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const err=document.getElementById('l-err');
+  const btn=document.getElementById('l-btn');
+  if(!email||!pass){showErr('Inserisci email e password');return;}
+  btn.textContent='...'; btn.disabled=true; err.style.display='none';
+  try{
+    await imp.signInWithEmailAndPassword(imp.auth,email,pass);
+  }catch(e){
+    showErr(e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Credenziali non valide':e.message);
+    btn.textContent='ACCEDI →'; btn.disabled=false;
+  }
+};
+function showErr(m){const e=document.getElementById('l-err');e.textContent=m;e.style.display='block';}
+window.doLogout=async()=>{ await window.__imp.signOut(window.__imp.auth); location.reload(); };
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none')doLogin();});
+
+// ── SIZE CHIPS ─────────────────────────────────────────────
+function initSizeChips(){
+  const wrap=document.getElementById('size-chips');
+  wrap.innerHTML=EU_SIZES.map(s=>
+    `<span class="sz-chip on" data-size="${s}" onclick="toggleSize(this)">${s}</span>`
+  ).join('');
+}
+window.toggleSize=el=>{el.classList.toggle('on');};
+window.allSizes=()=>document.querySelectorAll('#size-chips .sz-chip').forEach(el=>el.classList.add('on'));
+window.noSizes=()=>document.querySelectorAll('#size-chips .sz-chip').forEach(el=>el.classList.remove('on'));
+function getSelectedSizes(){
+  return [...document.querySelectorAll('#size-chips .sz-chip.on')].map(el=>el.dataset.size);
+}
+
+// ── MARKUP ─────────────────────────────────────────────────
+window.setMarkupType=function(type){
+  markupType=type;
+  document.getElementById('mk-fixed').classList.toggle('active',type==='fixed');
+  document.getElementById('mk-pct').classList.toggle('active',type==='pct');
+  document.getElementById('mk-symbol').textContent=type==='pct'?'+%':'+€';
+  updateMarkupPreview();
+  // Recalculate all card sell prices
+  albums.forEach(a=>{
+    const el=document.getElementById('sp-'+a.id);
+    if(el&&a.sourcePrice) el.value=calcSellPrice(a.sourcePrice);
+  });
+};
+window.updateMarkupPreview=function(){
+  const val=parseFloat(document.getElementById('markup-val')?.value)||0;
+  const sell=calcSellPrice(33, val, markupType);
+  const el=document.getElementById('mk-preview');
+  if(el) el.textContent=sell+'€';
+};
+function calcSellPrice(srcPrice, val, type){
+  val = val !== undefined ? val : parseFloat(document.getElementById('markup-val')?.value)||0;
+  type = type || markupType;
+  if(!srcPrice) return 0;
+  if(type==='pct') return Math.round(srcPrice*(1+val/100));
+  return Math.round(srcPrice+val);
+}
+</script>
+
+<script>
+// ── CORS PROXY FETCH ───────────────────────────────────────
+async function fetchWithProxy(url){
+  const proxies=[
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+  ];
+  let lastErr='';
+  for(const purl of proxies){
+    try{
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),12000);
+      const r=await fetch(purl,{signal:ctrl.signal});
+      clearTimeout(tid);
+      if(r.ok){
+        const t=await r.text();
+        if(t.length>200) return t;
+      }
+    }catch(e){ lastErr=e.message; }
+  }
+  throw new Error('Tutti i proxy CORS hanno fallito. '+lastErr+
+    ' — Riprova tra qualche minuto o verifica che il sito Yupoo sia accessibile.');
+}
+
+// ── TITLE PARSING ──────────────────────────────────────────
+function parseAlbumTitle(raw){
+  const pm=raw.match(/(\d+)\s*[$€]/);
+  const sourcePrice=pm?parseInt(pm[1]):0;
+  const lc=raw.toLowerCase();
+  let brand='Nike';
+  for(const [k,v] of BRANDS){ if(lc.includes(k)){brand=v;break;} }
+  // Clean name: remove price, CJK chars, version codes
+  let name=raw
+    .replace(/^\d+\s*[$€]\s*/,'')
+    .replace(/[一-鿿㐀-䶿豈-﫿⺀-⻿　-〿]+/g,' ')
+    .replace(/[A-Z][0-9]*版?\s*/g,' ')
+    .replace(/\s+/g,' ').trim();
+  return {sourcePrice,brand,name};
+}
+
+// ── HTML PARSING ───────────────────────────────────────────
+function parseAlbumsFromHtml(html,baseUrl){
+  const d=new DOMParser().parseFromString(html,'text/html');
+  const selectors=['a.album__a','a[href*="/albums/"]','.album-item a','.categories-album__item a'];
+  let anchors=[];
+  for(const sel of selectors){
+    anchors=[...d.querySelectorAll(sel)];
+    if(anchors.length) break;
+  }
+  const seen=new Set();
+  return anchors.map(a=>{
+    const href=a.getAttribute('href')||'';
+    const m=href.match(/\/albums\/(\w+)/);
+    if(!m) return null;
+    const id=m[1];
+    if(seen.has(id)) return null;
+    seen.add(id);
+    const img=a.querySelector('img');
+    let cover=img?.getAttribute('data-src')||img?.getAttribute('data-original')||img?.getAttribute('src')||'';
+    if(cover.startsWith('//')) cover='https:'+cover;
+    const nameEl=a.querySelector('[class*="name"],[class*="title"]');
+    const rawName=(nameEl?.textContent||a.getAttribute('title')||a.textContent||'').trim();
+    if(!rawName||rawName.length<2) return null;
+    const parsed=parseAlbumTitle(rawName);
+    return {id,rawName,...parsed,cover,albumUrl:`${baseUrl}/albums/${id}`};
+  }).filter(Boolean);
+}
+
+// ── JSON PARSING ───────────────────────────────────────────
+function parseAlbumsFromJson(json,baseUrl){
+  const list=json?.albums||json?.data?.albums||json?.response?.albums||[];
+  if(!Array.isArray(list)||!list.length) return [];
+  const seen=new Set();
+  return list.map(a=>{
+    const id=String(a.id||a.albumId||'');
+    if(!id||seen.has(id)) return null;
+    seen.add(id);
+    const rawName=a.name||a.title||'';
+    const parsed=parseAlbumTitle(rawName);
+    let cover=a.coverPhoto?.url||a.cover?.url||a.coverUrl||a.thumb||'';
+    if(cover.startsWith('//')) cover='https:'+cover;
+    return {id,rawName,...parsed,cover,albumUrl:`${baseUrl}/albums/${id}`};
+  }).filter(Boolean);
+}
+
+// ── LOAD ALBUMS ────────────────────────────────────────────
+window.loadAlbums=async function(){
+  const rawUrl=document.getElementById('yupoo-url').value.trim();
+  if(!rawUrl){toast('Inserisci un URL Yupoo','err');return;}
+
+  // Parse URL
+  let str=rawUrl.startsWith('http')?rawUrl:'https://'+rawUrl;
+  let parsed;
+  try{
+    const u=new URL(str);
+    const parts=u.pathname.split('/').filter(Boolean);
+    // expect: categories/{id} or albums/{id}
+    if(parts.length<2) throw new Error('URL non valido — serve: dominio.x.yupoo.com/categories/ID');
+    parsed={domain:u.hostname,type:parts[0],catId:parts[1],baseUrl:'https://'+u.hostname};
+    if(isNaN(Number(parsed.catId))) throw new Error('ID categoria non trovato nell'URL');
+  }catch(e){setStatus(e.message,'err');return;}
+
+  setStatus('Connessione in corso...','');
+  setBtnLoading(true);
+  albums=[];selected=new Set();
+  document.getElementById('albums-section').style.display='none';
+  document.getElementById('import-section').style.display='none';
+
+  try{
+    let page=1,allAlbums=[];
+    while(page<=15){
+      setStatus(`Caricamento pagina ${page}...`,'');
+      const pageUrl=`${parsed.baseUrl}/${parsed.type}/${parsed.catId}?page=${page}`;
+      let pageAlbums=[];
+      try{
+        // Try JSON API
+        const text=await fetchWithProxy(pageUrl+'&format=json');
+        try{
+          const json=JSON.parse(text);
+          pageAlbums=parseAlbumsFromJson(json,parsed.baseUrl);
+        }catch(e){ pageAlbums=[]; }
+      }catch(e){}
+
+      if(!pageAlbums.length){
+        // Fallback: HTML
+        try{
+          const html=await fetchWithProxy(pageUrl);
+          pageAlbums=parseAlbumsFromHtml(html,parsed.baseUrl);
+        }catch(e2){
+          if(page===1) throw e2;
+          break;
+        }
+      }
+
+      if(!pageAlbums.length) break;
+      const existIds=new Set(allAlbums.map(a=>a.id));
+      const newOnes=pageAlbums.filter(a=>!existIds.has(a.id));
+      if(!newOnes.length) break;
+      allAlbums=[...allAlbums,...newOnes];
+      setStatus(`Pagina ${page} — ${allAlbums.length} album trovati...`,'');
+      if(pageAlbums.length<6) break; // last page
+      page++;
+    }
+
+    if(!allAlbums.length){
+      setStatus('Nessun album trovato. Prova a verificare l'URL o riprova tra qualche minuto (proxy CORS rate limit).','err');
+      return;
+    }
+
+    albums=allAlbums;
+    selected=new Set(albums.map(a=>a.id));
+    renderAlbums();
+    document.getElementById('albums-section').style.display='block';
+    document.getElementById('import-section').style.display='block';
+    setStatus(`${albums.length} scarpe caricate ✓`,'ok');
+    updateSelCount();
+  }catch(e){
+    setStatus('Errore: '+e.message,'err');
+  }finally{
+    setBtnLoading(false);
+  }
+};
+</script>
+
+<script>
+// ── RENDER ALBUMS ──────────────────────────────────────────
+function renderAlbums(){
+  const markup=parseFloat(document.getElementById('markup-val')?.value)||0;
+  document.getElementById('albums-title').textContent=`SCARPE TROVATE — ${albums.length} ALBUM`;
+  document.getElementById('total-count').textContent=`su ${albums.length} totali`;
+
+  const grid=document.getElementById('albums-grid');
+  grid.innerHTML=albums.map(a=>{
+    const sell=a.sourcePrice?calcSellPrice(a.sourcePrice):'';
+    const imgSrc=a.cover||'';
+    return `<div class="album-card sel" id="card-${a.id}" onclick="toggleAlbum('${a.id}')">
+      <div class="card-chk">✓</div>
+      ${imgSrc
+        ? `<img class="card-img" src="${escH(imgSrc)}" loading="lazy"
+            onerror="this.style.display='none'" crossorigin="anonymous"/>`
+        : `<div class="card-img" style="background:#111;display:flex;align-items:center;justify-content:center;">
+            <span style="color:#333;font-size:10px;letter-spacing:2px;">NO IMG</span></div>`
+      }
+      <div class="card-body">
+        <input class="card-name-in" id="nm-${a.id}"
+          value="${escH(a.name)}" onclick="event.stopPropagation()"
+          placeholder="Nome scarpa"/>
+        <div class="card-prices">
+          ${a.sourcePrice?`<span class="card-src-price">Fornitore: ${a.sourcePrice}€</span>`:''}
+          <div class="card-sell-wrap">
+            <span class="card-sell-lbl">Vendita:</span>
+            <input class="card-sell-in" id="sp-${a.id}" type="number"
+              value="${sell}" placeholder="€"
+              onclick="event.stopPropagation()"
+              oninput="event.stopPropagation()"/>
+            <span style="font-size:11px;color:#555;">€</span>
+          </div>
+        </div>
+        <span class="card-brand">${escH(a.brand)}</span>
+        <p class="card-status" id="st-${a.id}"></p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escH(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── SELECTION ──────────────────────────────────────────────
+window.toggleAlbum=function(id){
+  if(selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  document.getElementById('card-'+id)?.classList.toggle('sel',selected.has(id));
+  updateSelCount();
+};
+window.selectAll=function(){
+  albums.forEach(a=>{ selected.add(a.id); document.getElementById('card-'+a.id)?.classList.add('sel'); });
+  updateSelCount();
+};
+window.deselectAll=function(){
+  selected.clear();
+  albums.forEach(a=>document.getElementById('card-'+a.id)?.classList.remove('sel'));
+  updateSelCount();
+};
+function updateSelCount(){
+  document.getElementById('sel-count').textContent=selected.size+' selezionate';
+}
+
+// ── IMPORT ─────────────────────────────────────────────────
+window.importSelected=async function(){
+  if(!user){toast('Non autenticato','err');return;}
+  const imp=window.__imp;
+  const sizes=getSelectedSizes();
+  if(!sizes.length){toast('Seleziona almeno una taglia','err');return;}
+  const toImport=albums.filter(a=>selected.has(a.id));
+  if(!toImport.length){toast('Nessuna scarpa selezionata','err');return;}
+
+  const btn=document.getElementById('import-btn');
+  const bar=document.getElementById('imp-bar');
+  const lbl=document.getElementById('imp-lbl');
+  const prog=document.getElementById('imp-progress');
+  const res=document.getElementById('imp-result');
+
+  btn.disabled=true; btn.textContent='IMPORTANDO...';
+  prog.style.display='block'; res.style.display='none';
+
+  let saved=0,errors=0;
+  const errLog=[];
+
+  for(let i=0;i<toImport.length;i++){
+    const a=toImport[i];
+    const pct=Math.round(((i+1)/toImport.length)*100);
+    bar.style.width=pct+'%';
+    lbl.textContent=`${i+1}/${toImport.length} — ${a.name}`;
+
+    const nameIn=document.getElementById('nm-'+a.id);
+    const priceIn=document.getElementById('sp-'+a.id);
+    const name=nameIn?.value.trim()||a.name;
+    const price=parseFloat(priceIn?.value)||0;
+    const imageUrl=a.cover||'';
+
+    const stEl=document.getElementById('st-'+a.id);
+    try{
+      await imp.addDoc(imp.collection(imp.db,'products'),{
+        name,price,brand:a.brand,
+        model:'Sneakers',style:'Sneakers',
+        sizes,size:sizes.join(', '),
+        colors:[],imageUrl,description:'',
+        createdAt:imp.serverTimestamp()
+      });
+      saved++;
+      if(stEl){stEl.style.display='block';stEl.style.color='var(--led)';stEl.textContent='✅ SALVATO';}
+      const card=document.getElementById('card-'+a.id);
+      if(card){card.style.opacity='.45';card.style.transform='none';}
+    }catch(e){
+      errors++;
+      errLog.push(`• ${name}: ${e.message}`);
+      if(stEl){stEl.style.display='block';stEl.style.color='#FF4757';stEl.textContent='❌ '+e.message;}
+    }
+  }
+
+  btn.disabled=false; btn.textContent='IMPORTA SELEZIONATE →';
+  lbl.textContent=`✅ ${saved} importate${errors?' | ❌ '+errors+' errori':''}`;
+
+  res.style.display='block';
+  res.innerHTML=`
+    <div style="padding:20px;background:#0a1200;border:1px solid rgba(200,255,0,.2);">
+      <p style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--led);letter-spacing:2px;">${saved} PRODOTTI IMPORTATI</p>
+      ${errors?`<p style="color:#FF4757;font-size:11px;margin-top:8px;">⚠️ ${errors} errori:</p>
+        <pre style="font-size:9px;color:#555;margin-top:8px;white-space:pre-wrap;line-height:1.6;">${errLog.join('\n')}</pre>`:''}
+      <div style="margin-top:16px;display:flex;gap:10px;">
+        <a href="admin.html" class="btn-g">← ADMIN</a>
+        <a href="index.html" class="btn-g">VEDI SITO →</a>
+      </div>
+    </div>`;
+  res.scrollIntoView({behavior:'smooth'});
+  toast(`✅ ${saved} scarpe importate!${errors?' ⚠️ '+errors+' errori':''}`);
+};
+
+// ── HELPERS ────────────────────────────────────────────────
+function setStatus(msg,type){
+  const el=document.getElementById('fetch-status');
+  if(!el) return;
+  el.textContent=msg;
+  el.style.color=type==='ok'?'var(--led)':type==='err'?'#FF4757':'#666';
+}
+function setBtnLoading(loading){
+  const btn=document.getElementById('fetch-btn');
+  if(!btn) return;
+  btn.disabled=loading;
+  btn.textContent=loading?'CARICAMENTO...':'CARICA SCARPE →';
+}
+function toast(msg,type='ok'){
+  const t=document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:28px;right:28px;z-index:9999;
+    background:${type==='err'?'#1a0808':'#0a1200'};
+    border:1.5px solid ${type==='err'?'rgba(255,71,87,.4)':'rgba(200,255,0,.4)'};
+    color:${type==='err'?'#FF4757':'#C8FF00'};
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.5px;
+    padding:14px 20px;max-width:340px;line-height:1.5;box-shadow:0 8px 32px rgba(0,0,0,.6);`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+</script>
+</body>
+</html>
