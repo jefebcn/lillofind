@@ -412,7 +412,7 @@ window.loadAlbums=async function(){
     // expect: categories/{id} or albums/{id}
     if(parts.length<2) throw new Error('URL non valido — serve: dominio.x.yupoo.com/categories/ID');
     parsed={domain:u.hostname,type:parts[0],catId:parts[1],baseUrl:'https://'+u.hostname};
-    if(isNaN(Number(parsed.catId))) throw new Error('ID categoria non trovato nell'URL');
+    if(isNaN(Number(parsed.catId))) throw new Error("ID categoria non trovato nell'URL");
   }catch(e){setStatus(e.message,'err');return;}
 
   setStatus('Connessione in corso...','');
