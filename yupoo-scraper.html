@@ -9,9 +9,11 @@
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{getFunctions,httpsCallable}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
-window.__imp={db:getFirestore(app),auth:getAuth(app),collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
+const _fn=getFunctions(app,'europe-west1');
+window.__imp={db:getFirestore(app),auth:getAuth(app),functions:_fn,httpsCallable,collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
 </script>
 </head>
 <style>
@@ -130,7 +132,7 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
     </div>
     <p id="fetch-status" style="font-size:11px;margin-top:12px;color:#555;letter-spacing:.5px;min-height:18px;"></p>
     <div style="margin-top:16px;padding:16px;background:#0a0a0a;border:1px solid #1a1a1a;font-size:10px;color:#444;line-height:1.8;">
-      <span style="color:var(--led);">⚠ NOTA CORS:</span> Il sito Yupoo può bloccare i proxy CORS. Se il caricamento fallisce, riprova tra qualche minuto o usa una VPN. Vengono tentati 2 proxy in sequenza automaticamente.
+      <span style="color:var(--led);">ℹ INFO:</span> Il fetch avviene tramite Firebase Cloud Function (server-side) — nessun problema CORS. Assicurati che le funzioni siano deployate.
     </div>
   </div>
 
@@ -209,7 +211,13 @@ let albums = [];
 let selected = new Set();
 let markupType = 'fixed'; // 'fixed' | 'pct'
 
-const EU_SIZES = ['35','36','37','38','39','40','41','42','43','44','45','46'];
+// EU sizes 40–47.5 with 0.5 step, pre-selected 40–46
+const EU_SIZES = (()=>{
+  const s=[];
+  for(let v=40;v<=47.5;v+=0.5) s.push(String(v%1===0?v.toFixed(0):v.toFixed(1)));
+  return s;
+})();
+const EU_SIZES_DEFAULT_ON = new Set(EU_SIZES.filter(s=>parseFloat(s)<=46));
 const BRANDS = [
   ['nike dunk','Nike'],['nike air','Nike'],['nike','Nike'],
   ['air jordan','Jordan'],['jordan','Jordan'],
@@ -279,7 +287,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementB
 function initSizeChips(){
   const wrap=document.getElementById('size-chips');
   wrap.innerHTML=EU_SIZES.map(s=>
-    `<span class="sz-chip on" data-size="${s}" onclick="toggleSize(this)">${s}</span>`
+    `<span class="sz-chip${EU_SIZES_DEFAULT_ON.has(s)?' on':''}" data-size="${s}" onclick="toggleSize(this)">${s}</span>`
   ).join('');
 }
 window.toggleSize=el=>{el.classList.toggle('on');};
@@ -318,27 +326,15 @@ function calcSellPrice(srcPrice, val, type){
 </script>
 
 <script>
-// ── CORS PROXY FETCH ───────────────────────────────────────
-async function fetchWithProxy(url){
-  const proxies=[
-    `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-  ];
-  let lastErr='';
-  for(const purl of proxies){
-    try{
-      const ctrl=new AbortController();
-      const tid=setTimeout(()=>ctrl.abort(),12000);
-      const r=await fetch(purl,{signal:ctrl.signal});
-      clearTimeout(tid);
-      if(r.ok){
-        const t=await r.text();
-        if(t.length>200) return t;
-      }
-    }catch(e){ lastErr=e.message; }
-  }
-  throw new Error('Tutti i proxy CORS hanno fallito. '+lastErr+
-    ' — Riprova tra qualche minuto o verifica che il sito Yupoo sia accessibile.');
+// ── SERVER-SIDE FETCH VIA FIREBASE FUNCTION ────────────────
+// Usa la Cloud Function yupooFetch che gira su Node.js (nessun CORS)
+async function fetchViaFunction(url){
+  const imp=window.__imp;
+  const fn=imp.httpsCallable(imp.functions,'yupooFetch');
+  const result=await fn({url});
+  const {html,status}=result.data;
+  if(!html||html.length<100) throw new Error(`Risposta vuota (HTTP ${status})`);
+  return html;
 }
 
 // ── TITLE PARSING ──────────────────────────────────────────
@@ -433,7 +429,7 @@ window.loadAlbums=async function(){
       let pageAlbums=[];
       try{
         // Try JSON API
-        const text=await fetchWithProxy(pageUrl+'&format=json');
+        const text=await fetchViaFunction(pageUrl+'&format=json');
         try{
           const json=JSON.parse(text);
           pageAlbums=parseAlbumsFromJson(json,parsed.baseUrl);
@@ -443,7 +439,7 @@ window.loadAlbums=async function(){
       if(!pageAlbums.length){
         // Fallback: HTML
         try{
-          const html=await fetchWithProxy(pageUrl);
+          const html=await fetchViaFunction(pageUrl);
           pageAlbums=parseAlbumsFromHtml(html,parsed.baseUrl);
         }catch(e2){
           if(page===1) throw e2;
@@ -462,7 +458,7 @@ window.loadAlbums=async function(){
     }
 
     if(!allAlbums.length){
-      setStatus('Nessun album trovato. Prova a verificare l'URL o riprova tra qualche minuto (proxy CORS rate limit).','err');
+      setStatus('Nessun album trovato. Verifica l\'URL — es: woodtableguy888.x.yupoo.com/categories/4633144','err');
       return;
     }
 

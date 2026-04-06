@@ -10,6 +10,56 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west1' });
 
+// ══════════════════════════════════════════════════════════════════
+// yupooFetch
+// Proxy server-side per Yupoo — bypassa CORS.
+// Solo admin. Accetta URL *.x.yupoo.com e restituisce l'HTML.
+//
+// Input:  { url: string }  — es. "https://woodtableguy888.x.yupoo.com/categories/4633144?page=1"
+// Output: { html: string, status: number }
+// ══════════════════════════════════════════════════════════════════
+exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
+  // 1 — Autenticazione + check admin
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login richiesto.');
+  }
+  const userSnap = await admin.firestore().collection('users').doc(request.auth.uid).get();
+  if (userSnap.data()?.isAdmin !== true) {
+    throw new HttpsError('permission-denied', 'Solo gli admin possono usare questo endpoint.');
+  }
+
+  const { url } = request.data;
+  if (!url || typeof url !== 'string') {
+    throw new HttpsError('invalid-argument', 'Parametro url mancante.');
+  }
+
+  // 2 — Valida: solo domini *.yupoo.com
+  let parsedUrl;
+  try { parsedUrl = new URL(url); } catch(e) {
+    throw new HttpsError('invalid-argument', 'URL non valido.');
+  }
+  if (!parsedUrl.hostname.endsWith('.yupoo.com')) {
+    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com sono permessi.');
+  }
+
+  // 3 — Fetch server-side (Node 20 native fetch — nessun CORS)
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/json,*/*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Referer': `https://${parsedUrl.hostname}/`,
+      },
+      redirect: 'follow',
+    });
+    const html = await resp.text();
+    return { html, status: resp.status };
+  } catch (e) {
+    throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
+  }
+});
+
 const db = admin.firestore();
 
 // ══════════════════════════════════════════════════════════════════
