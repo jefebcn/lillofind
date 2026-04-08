@@ -362,7 +362,13 @@ function parseAlbumsFromHtml(html,baseUrl){
   let anchors=[];
   for(const sel of selectors){
     anchors=[...d.querySelectorAll(sel)];
-    if(anchors.length) break;
+    if(anchors.length){ console.log('[yupoo] selettore usato:',sel,'— album trovati:',anchors.length); break; }
+  }
+  // DEBUG: stampa innerHTML del primo anchor per vedere la struttura reale
+  if(anchors.length){
+    console.log('[yupoo] primo anchor innerHTML:', anchors[0].innerHTML.slice(0,600));
+  } else {
+    console.warn('[yupoo] NESSUN ANCHOR TROVATO — HTML ricevuto (primi 800 chars):',html.slice(0,800));
   }
   const seen=new Set();
   return anchors.map(a=>{
