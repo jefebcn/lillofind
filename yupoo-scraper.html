@@ -372,9 +372,26 @@ function parseAlbumsFromHtml(html,baseUrl){
     const id=m[1];
     if(seen.has(id)) return null;
     seen.add(id);
+    // Prova tutti gli attributi lazy-loading comuni di Yupoo
     const img=a.querySelector('img');
-    let cover=img?.getAttribute('data-src')||img?.getAttribute('data-original')||img?.getAttribute('src')||'';
+    let cover='';
+    if(img){
+      const LAZY=['data-src','data-original','data-lazy','data-lazy-src',
+                  'data-echo','data-url','data-original-src','src'];
+      for(const attr of LAZY){
+        const v=img.getAttribute(attr)||'';
+        // Salta placeholder base64, URL vuoti, href "#", placeholder corti
+        if(v && !v.startsWith('data:') && v!=='#' && v.length>12){ cover=v; break; }
+      }
+    }
+    // Fallback: cerca background-image nei div figli (alcuni temi Yupoo)
+    if(!cover){
+      const stEl=a.querySelector('[style*="background"]');
+      const bm=stEl?.getAttribute('style')?.match(/url\(['"]?([^'")\s]+)['"]?\)/);
+      if(bm) cover=bm[1];
+    }
     if(cover.startsWith('//')) cover='https:'+cover;
+    if(cover) console.log('[yupoo cover]',cover);
     const nameEl=a.querySelector('[class*="name"],[class*="title"]');
     const rawName=(nameEl?.textContent||a.getAttribute('title')||a.textContent||'').trim();
     if(!rawName||rawName.length<2) return null;
