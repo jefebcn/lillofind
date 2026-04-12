@@ -54,7 +54,36 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       redirect: 'follow',
     });
     const html = await resp.text();
-    return { html, status: resp.status };
+
+    // Estrai cover URL per album ID via regex (server-side — ha il Referer corretto)
+    const albumCovers = {};
+
+    // Pattern A: href="/albums/ID" seguito da <img data-src/src="//...photo/img...">
+    const anchorImgRe =
+      /href=["']\/albums\/(\w+)["'][^]*?<img[^>]+(?:data-src|data-original|data-lazy|src)=["'](\/\/[^"'>\s]+)["']/gs;
+    let m;
+    while ((m = anchorImgRe.exec(html)) !== null) {
+      const u = m[2];
+      if (!albumCovers[m[1]] && (u.includes('photo.yupoo') || u.includes('img.yupoo') || u.includes('.jpg') || u.includes('.png') || u.includes('.webp'))) {
+        albumCovers[m[1]] = u.startsWith('//') ? 'https:' + u : u;
+      }
+    }
+
+    // Pattern B: fallback — abbina tutti gli URL photo.yupoo.com per posizione agli album ID
+    if (!Object.keys(albumCovers).length) {
+      const allPhotoUrls = [];
+      const photoRe = /["'](\/\/(?:photo|img)\.yupoo\.com\/[^"'?\s]{20,})["']/g;
+      let pm;
+      while ((pm = photoRe.exec(html)) !== null) allPhotoUrls.push('https:' + pm[1]);
+      const albumIdRe = /\/albums\/(\w+)/g;
+      let ai; const albumIds = [];
+      while ((ai = albumIdRe.exec(html)) !== null) {
+        if (!albumIds.includes(ai[1])) albumIds.push(ai[1]);
+      }
+      albumIds.forEach((id, i) => { if (allPhotoUrls[i]) albumCovers[id] = allPhotoUrls[i]; });
+    }
+
+    return { html, status: resp.status, albumCovers };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
