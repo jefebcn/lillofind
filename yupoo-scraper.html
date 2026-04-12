@@ -327,14 +327,15 @@ function calcSellPrice(srcPrice, val, type){
 
 <script>
 // ── SERVER-SIDE FETCH VIA FIREBASE FUNCTION ────────────────
-// Usa la Cloud Function yupooFetch che gira su Node.js (nessun CORS)
+// Usa la Cloud Function yupooFetch che gira su Node.js (nessun CORS).
+// Ritorna {html, albumCovers:{id:url}} — albumCovers estratti server-side.
 async function fetchViaFunction(url){
   const imp=window.__imp;
   const fn=imp.httpsCallable(imp.functions,'yupooFetch');
   const result=await fn({url});
-  const {html,status}=result.data;
+  const {html,status,albumCovers}=result.data;
   if(!html||html.length<100) throw new Error(`Risposta vuota (HTTP ${status})`);
-  return html;
+  return {html, albumCovers: albumCovers||{}};
 }
 
 // ── TITLE PARSING ──────────────────────────────────────────
@@ -356,7 +357,7 @@ function parseAlbumTitle(raw){
 }
 
 // ── HTML PARSING ───────────────────────────────────────────
-function parseAlbumsFromHtml(html,baseUrl){
+function parseAlbumsFromHtml(html,baseUrl,albumCovers={}){
   const d=new DOMParser().parseFromString(html,'text/html');
   const selectors=['a.album__a','a[href*="/albums/"]','.album-item a','.categories-album__item a'];
   let anchors=[];
@@ -372,8 +373,26 @@ function parseAlbumsFromHtml(html,baseUrl){
     const id=m[1];
     if(seen.has(id)) return null;
     seen.add(id);
-    const img=a.querySelector('img');
-    let cover=img?.getAttribute('data-src')||img?.getAttribute('data-original')||img?.getAttribute('src')||'';
+    // Priorità 1: cover estratta server-side dalla Cloud Function
+    let cover=albumCovers[id]||'';
+    // Priorità 2: attributi lazy-loading nell'HTML (fallback)
+    if(!cover){
+      const img=a.querySelector('img');
+      if(img){
+        const LAZY=['data-src','data-original','data-lazy','data-lazy-src',
+                    'data-echo','data-url','data-original-src','src'];
+        for(const attr of LAZY){
+          const v=img.getAttribute(attr)||'';
+          if(v && !v.startsWith('data:') && v!=='#' && v.length>12){ cover=v; break; }
+        }
+      }
+    }
+    // Priorità 3: background-image CSS inline
+    if(!cover){
+      const stEl=a.querySelector('[style*="background"]');
+      const bm=stEl?.getAttribute('style')?.match(/url\(['"]?([^'")\s]+)['"]?\)/);
+      if(bm) cover=bm[1];
+    }
     if(cover.startsWith('//')) cover='https:'+cover;
     const nameEl=a.querySelector('[class*="name"],[class*="title"]');
     const rawName=(nameEl?.textContent||a.getAttribute('title')||a.textContent||'').trim();
@@ -384,17 +403,27 @@ function parseAlbumsFromHtml(html,baseUrl){
 }
 
 // ── JSON PARSING ───────────────────────────────────────────
-function parseAlbumsFromJson(json,baseUrl){
-  const list=json?.albums||json?.data?.albums||json?.response?.albums||[];
+function parseAlbumsFromJson(json,baseUrl,albumCovers={}){
+  const list=json?.albums||json?.data?.albums||json?.response?.albums||
+             json?.showdata?.albums||json?.albumlist||json?.albumList||[];
   if(!Array.isArray(list)||!list.length) return [];
   const seen=new Set();
   return list.map(a=>{
     const id=String(a.id||a.albumId||'');
     if(!id||seen.has(id)) return null;
     seen.add(id);
-    const rawName=a.name||a.title||'';
+    const rawName=a.name||a.title||a.albumname||a.albumName||'';
     const parsed=parseAlbumTitle(rawName);
-    let cover=a.coverPhoto?.url||a.cover?.url||a.coverUrl||a.thumb||'';
+    // Controlla tutti i campi cover noti di Yupoo + server-side albumCovers come priorità
+    let cover=albumCovers[id]||
+      a.coverPhoto?.url||a.coverPhoto?.imgurl||
+      (typeof a.coverPhoto==='string'?a.coverPhoto:'')||
+      a.cover?.url||a.cover?.imgurl||
+      (typeof a.cover==='string'?a.cover:'')||
+      a.coverphoto?.imgurl||a.coverphoto?.url||
+      a.coverUrl||a.coverImg||a.thumb||
+      a.icon?.url||a.icon?.imgurl||
+      (typeof a.icon==='string'?a.icon:'')||'';
     if(cover.startsWith('//')) cover='https:'+cover;
     return {id,rawName,...parsed,cover,albumUrl:`${baseUrl}/albums/${id}`};
   }).filter(Boolean);
@@ -430,19 +459,19 @@ window.loadAlbums=async function(){
       const pageUrl=`${parsed.baseUrl}/${parsed.type}/${parsed.catId}?page=${page}`;
       let pageAlbums=[];
       try{
-        // Try JSON API
-        const text=await fetchViaFunction(pageUrl+'&format=json');
+        // Try JSON API (+ albumCovers estratti server-side)
+        const {html:jsonText,albumCovers:ac1}=await fetchViaFunction(pageUrl+'&format=json');
         try{
-          const json=JSON.parse(text);
-          pageAlbums=parseAlbumsFromJson(json,parsed.baseUrl);
+          const json=JSON.parse(jsonText);
+          pageAlbums=parseAlbumsFromJson(json,parsed.baseUrl,ac1);
         }catch(e){ pageAlbums=[]; }
       }catch(e){}
 
       if(!pageAlbums.length){
         // Fallback: HTML
         try{
-          const html=await fetchViaFunction(pageUrl);
-          pageAlbums=parseAlbumsFromHtml(html,parsed.baseUrl);
+          const {html,albumCovers:ac2}=await fetchViaFunction(pageUrl);
+          pageAlbums=parseAlbumsFromHtml(html,parsed.baseUrl,ac2);
         }catch(e2){
           if(page===1) throw e2;
           break;
