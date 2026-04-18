@@ -1425,7 +1425,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <div id="cart-disc-row" style="display:none;justify-content:space-between;font-size:11px;">
               <span style="color:var(--led);">Bonus Riscattato</span><span id="cart-disc" style="color:var(--led);font-weight:600;"></span>
             </div>
-            <div style="font-size:9px;color:var(--dim);letter-spacing:1px;">Gratuita sopra €80</div>
+            <div id="cart-ship-tier" style="font-size:9px;color:var(--dim);letter-spacing:1px;"></div>
           </div>
           <!-- UPSELL SHIPPING BAR -->
           <div id="free-ship-bar" style="margin:12px 0 4px;display:none;">
@@ -3042,6 +3042,33 @@ img{ -webkit-user-drag:none; user-select:none; }
     }).join('');
   }
 
+  // ── Cart — weight & shipping config ────────────────────
+  const CATEGORY_WEIGHTS={
+    tshirt:0.35,tshirt_branded:0.40,felpa:0.80,
+    scarpe:2.00,scarpe_box:2.50,pantaloni:0.80,
+    shorts:0.50,cappello:0.30,giacchetto:1.20,
+    borsa:1.50,accessori:0.20,
+  };
+  const SHIPPING_TIERS=[
+    {maxKg:1,   price:12,label:'0–1 kg'},
+    {maxKg:3,   price:18,label:'1–3 kg'},
+    {maxKg:6,   price:25,label:'3–6 kg'},
+    {maxKg:10,  price:35,label:'6–10 kg'},
+    {maxKg:9999,price:50,label:'10+ kg'},
+  ];
+  function getProductWeight(item){
+    if(item.weightKg&&item.weightKg>0) return item.weightKg;
+    return CATEGORY_WEIGHTS[item.category]??0.5;
+  }
+  function getShippingCost(totalWeightKg){
+    const tier=SHIPPING_TIERS.find(t=>totalWeightKg<=t.maxKg);
+    return tier?tier.price:50;
+  }
+  function getShippingTierLabel(totalWeightKg){
+    const tier=SHIPPING_TIERS.find(t=>totalWeightKg<=t.maxKg);
+    return tier?tier.label:'10+ kg';
+  }
+
   // ── Cart ───────────────────────────────────────────────
   let cart=JSON.parse(localStorage.getItem('lf_cart')||'[]');
   
@@ -3095,6 +3122,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <p style="font-size:12px;font-weight:500;margin:2px 0;">${item.name}</p>
           ${item.size?`<p style="font-size:10px;color:var(--dim);">SZ ${item.size}</p>`:''}
+          ${(item.category||item.weightKg)?`<p style="font-size:10px;color:var(--dim);">${[item.category,getProductWeight(item).toFixed(1)+'kg'].filter(Boolean).join(' · ')}</p>`:''}
           <p style="font-size:9px;color:var(--led);letter-spacing:1px;margin-top:2px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -3107,7 +3135,10 @@ img{ -webkit-user-drag:none; user-select:none; }
           <button onclick="removeCart(${idx})" style="font-size:9px;color:#c00;background:none;border:none;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:4px;">Rimuovi</button>
         </div>
       </div>`).join('');
-    const ship=allDigital?0:(total>=80?0:6.90);
+    const physicalItems=cart.filter(i=>!i.isDigital);
+    const totalWeight=physicalItems.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
+    const ship=allDigital?0:getShippingCost(totalWeight);
+    const tierLabel=allDigital?'':getShippingTierLabel(totalWeight);
     const ar=(typeof udata!=='undefined'&&udata)?udata.activeReward:null;
     let discount=0;
     if(ar){
@@ -3116,7 +3147,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
     const finalTotal=Math.max(0,total+ship-discount);
     document.getElementById('cart-subtotal').textContent='€'+total.toFixed(2);
-    document.getElementById('cart-ship').textContent=(ship===0&&allDigital)?'Digitale — Gratis':(ship===0?'Gratis':'€'+ship.toFixed(2));
+    document.getElementById('cart-ship').textContent=(ship===0&&allDigital)?'Digitale — Gratis':'€'+ship.toFixed(2);
+    const shipTierEl=document.getElementById('cart-ship-tier');
+    if(shipTierEl) shipTierEl.textContent=tierLabel?'Fascia '+tierLabel:'';
     const discRow=document.getElementById('cart-disc-row');
     const discEl=document.getElementById('cart-disc');
     if(ar&&discount>0){
@@ -3209,7 +3242,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const sz=_pickedSz||prod.size||'';
     const existing=cart.find(i=>i.id===_buyPid&&i.size===sz&&i.color===finalColor);
     if(existing){existing.qty++;}
-    else{cart.push({id:_buyPid,name:prod.name||'Prodotto',price:_buyPrice,brand:prod.brand||'',size:sz,color:finalColor,img:prod.imageUrl||'',qty:1});}
+    else{cart.push({id:_buyPid,name:prod.name||'Prodotto',price:_buyPrice,brand:prod.brand||'',size:sz,color:finalColor,img:prod.imageUrl||'',qty:1,category:prod.category||'',weightKg:prod.weightKg||0});}
     saveCart();updateCartBadge();
     document.getElementById('size-picker-modal').classList.remove('open');
     _pickedSz=''; _pickedCol='';
@@ -3241,7 +3274,10 @@ img{ -webkit-user-drag:none; user-select:none; }
   function renderCheckoutSummary(){
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
     const allDigital=cart.length>0&&cart.every(i=>i.isDigital);
-    const ship=allDigital?0:(total>=80?0:6.90);
+    const physItems=cart.filter(i=>!i.isDigital);
+    const totW=physItems.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
+    const ship=allDigital?0:getShippingCost(totW);
+    const tierLbl=allDigital?'':getShippingTierLabel(totW);
     const pts=Math.floor(total);
     // Toggle digital vs shipping sections
     const digitalNotice=document.getElementById('ck-digital-notice');
@@ -3269,7 +3305,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const finalTotal2=Math.max(0,total+ship-discount2);
     const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     set('ck-sub','€'+total.toFixed(2));
-    set('ck-ship',allDigital?'Digitale — Gratis':(ship===0?'Gratis':'€'+ship.toFixed(2)));
+    set('ck-ship',allDigital?'Digitale — Gratis':'€'+ship.toFixed(2)+(tierLbl?' (fascia '+tierLbl+')':''));
     const ckDiscRow=document.getElementById('ck-disc-row');
     if(ar2&&discount2>0){
       set('ck-disc','−€'+discount2.toFixed(2)+' ('+ar2.label+')');
@@ -4231,27 +4267,26 @@ img{ -webkit-user-drag:none; user-select:none; }
   // FEATURE 6 — Free shipping upsell bar
   // ══════════════════════════════════════════════════════════════
   function updateShipBar(){
-    const FREE_THRESHOLD = 80;
-    const bar   = document.getElementById('free-ship-bar');
-    const fill  = document.getElementById('free-ship-fill');
-    const msg   = document.getElementById('free-ship-msg');
+    const bar=document.getElementById('free-ship-bar');
+    const fill=document.getElementById('free-ship-fill');
+    const msg=document.getElementById('free-ship-msg');
     if(!bar||!fill||!msg) return;
-
-    const cart   = JSON.parse(localStorage.getItem('lf_cart')||'[]');
-    const subtot = cart.reduce((s,i)=>s+(i.price||0)*(i.qty||1),0);
-
-    if(subtot <= 0){ bar.style.display='none'; return; }
-    bar.style.display = 'block';
-
-    if(subtot >= FREE_THRESHOLD){
-      const pct = 100;
-      fill.style.width = pct + '%';
-      msg.innerHTML = '<span style="color:#2ecc71;font-weight:600;">✅ Spedizione DHL gratuita!</span>';
+    const cartData=JSON.parse(localStorage.getItem('lf_cart')||'[]');
+    const physItems=cartData.filter(i=>!i.isDigital);
+    if(!physItems.length){bar.style.display='none';return;}
+    const totW=physItems.reduce((s,i)=>s+getProductWeight(i)*(i.qty||1),0);
+    bar.style.display='block';
+    const tierIdx=SHIPPING_TIERS.findIndex(t=>totW<=t.maxKg);
+    const tier=SHIPPING_TIERS[tierIdx];
+    const prevMax=tierIdx>0?SHIPPING_TIERS[tierIdx-1].maxKg:0;
+    const nextTier=SHIPPING_TIERS[tierIdx+1];
+    const pct=Math.min(((totW-prevMax)/(tier.maxKg-prevMax))*100,100);
+    fill.style.width=pct+'%';
+    if(nextTier){
+      const rem=(tier.maxKg-totW).toFixed(2);
+      msg.innerHTML=`Peso: <strong>${totW.toFixed(2)} kg</strong> · Fascia: <strong>${tier.label}</strong> · Spedizione: <strong>€${tier.price}</strong> — Ancora <strong>${rem} kg</strong> alla fascia successiva (€${nextTier.price})`;
     } else {
-      const remaining = FREE_THRESHOLD - subtot;
-      const pct = Math.min((subtot / FREE_THRESHOLD) * 100, 100);
-      fill.style.width = pct + '%';
-      msg.innerHTML = `Aggiungi altri <strong>€${remaining.toFixed(2)}</strong> per la <strong>spedizione DHL gratuita</strong> 🚀`;
+      msg.innerHTML=`Peso: <strong>${totW.toFixed(2)} kg</strong> · Fascia: <strong>${tier.label}</strong> · Spedizione: <strong>€${tier.price}</strong>`;
     }
   }
   // Hook into renderCart
