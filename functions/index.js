@@ -91,6 +91,30 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
 
 const db = admin.firestore();
 
+// ── Logica peso e fasce spedizione ─────────────────────────────────
+const CATEGORY_WEIGHTS_SV = {
+  tshirt:0.35, tshirt_branded:0.40, felpa:0.80,
+  scarpe:2.00, scarpe_box:2.50, pantaloni:0.80,
+  shorts:0.50, cappello:0.30, giacchetto:1.20,
+  borsa:1.50, accessori:0.20,
+};
+const SHIPPING_TIERS_SV = [
+  {maxKg:1,   price:12},
+  {maxKg:3,   price:18},
+  {maxKg:6,   price:25},
+  {maxKg:10,  price:35},
+  {maxKg:9999,price:50},
+];
+function getProductWeightSv(prod){
+  if(prod.weightKg && prod.weightKg > 0) return prod.weightKg;
+  if(prod.weight_kg && prod.weight_kg > 0) return prod.weight_kg;
+  return CATEGORY_WEIGHTS_SV[prod.category] ?? 0.5;
+}
+function getShippingCostSv(totalWeightKg){
+  const tier = SHIPPING_TIERS_SV.find(t => totalWeightKg <= t.maxKg);
+  return tier ? tier.price : 50;
+}
+
 // ══════════════════════════════════════════════════════════════════
 // validateOrder
 // Valida i prezzi del carrello server-side, crea l'ordine e
@@ -156,6 +180,8 @@ exports.validateOrder = onCall(async (request) => {
       name: prod.name || '',
       price: prod.price || 0,        // prezzo REALE da Firestore
       brand: prod.brand || '',
+      category: prod.category || '',
+      weightKg: prod.weightKg || prod.weight_kg || 0,
       qty,
       size: items[idx].size || '',
       color: items[idx].color || '',
@@ -167,7 +193,9 @@ exports.validateOrder = onCall(async (request) => {
   // 5 — Calcola totali (stessa logica di index.html ma server-side)
   const allDigital = verifiedItems.every(i => i.isDigital);
   const subtotal = verifiedItems.reduce((s, i) => s + i.price * i.qty, 0);
-  const shipping = allDigital ? 0 : (subtotal >= 80 ? 0 : 6.90);
+  const physItems = verifiedItems.filter(i => !i.isDigital);
+  const totalWeight = physItems.reduce((s, i) => s + getProductWeightSv(i) * i.qty, 0);
+  const shipping = allDigital ? 0 : getShippingCostSv(totalWeight);
   const lfpoints = Math.floor(subtotal);
 
   // 6 — Leggi eventuale activeReward dell'utente da Firestore
