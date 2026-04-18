@@ -4264,7 +4264,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ══════════════════════════════════════════════════════════════
-  // FEATURE 6 — Free shipping upsell bar
+  // FEATURE 6 — Weight-tier upsell bar
   // ══════════════════════════════════════════════════════════════
   function updateShipBar(){
     const bar=document.getElementById('free-ship-bar');
@@ -4280,13 +4280,33 @@ img{ -webkit-user-drag:none; user-select:none; }
     const tier=SHIPPING_TIERS[tierIdx];
     const prevMax=tierIdx>0?SHIPPING_TIERS[tierIdx-1].maxKg:0;
     const nextTier=SHIPPING_TIERS[tierIdx+1];
+    const remaining=+(tier.maxKg-totW).toFixed(2);
     const pct=Math.min(((totW-prevMax)/(tier.maxKg-prevMax))*100,100);
     fill.style.width=pct+'%';
-    if(nextTier){
-      const rem=(tier.maxKg-totW).toFixed(2);
-      msg.innerHTML=`Peso: <strong>${totW.toFixed(2)} kg</strong> · Fascia: <strong>${tier.label}</strong> · Spedizione: <strong>€${tier.price}</strong> — Ancora <strong>${rem} kg</strong> alla fascia successiva (€${nextTier.price})`;
+    // Suggerimento articoli per il peso rimanente
+    function weightHint(kg){
+      if(kg>=2.0) return '~1 paio di scarpe';
+      if(kg>=1.6) return '~2 felpe';
+      if(kg>=0.8) return '~1 felpa o 2 t-shirt';
+      if(kg>=0.7) return '~2 t-shirt';
+      if(kg>=0.35) return '~1 t-shirt o 1 cappello';
+      if(kg>=0.2) return '~1 cappello o accessorio';
+      return null;
+    }
+    if(!nextTier){
+      // Fascia massima — info neutrale
+      fill.style.background='linear-gradient(90deg,var(--led),var(--led2))';
+      msg.innerHTML=`Peso ordine: <strong>${totW.toFixed(2)} kg</strong> · Spedizione: <strong>€${tier.price}</strong>`;
+    } else if(remaining<=0.5){
+      // Vicino alla fascia successiva — avviso
+      fill.style.background='linear-gradient(90deg,#ff9500,#ff6b00)';
+      msg.innerHTML=`⚠️ Attenzione — sei a <strong>${remaining} kg</strong> dalla fascia successiva: la spedizione salirà da <strong>€${tier.price}</strong> a <strong>€${nextTier.price}</strong>`;
     } else {
-      msg.innerHTML=`Peso: <strong>${totW.toFixed(2)} kg</strong> · Fascia: <strong>${tier.label}</strong> · Spedizione: <strong>€${tier.price}</strong>`;
+      // Ampio margine — upsell
+      fill.style.background='linear-gradient(90deg,var(--led),var(--led2))';
+      const hint=weightHint(remaining);
+      const hintStr=hint?` — equivale a ${hint}`:'';
+      msg.innerHTML=`🛒 Aggiungi altri articoli, la spedizione non cambia! Hai ancora <strong>${remaining} kg</strong> in questa fascia${hintStr} per la stessa spedizione di <strong>€${tier.price}</strong>`;
     }
   }
   // Hook into renderCart
