@@ -5,10 +5,13 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
+const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west1' });
+
+const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 
 // ══════════════════════════════════════════════════════════════════
 // yupooFetch
@@ -120,7 +123,7 @@ function getShippingCostSv(totalWeightKg){
 // Crea un Stripe PaymentIntent con il totale verificato server-side.
 // Il client usa il clientSecret per confermare il pagamento via Stripe.js.
 // ══════════════════════════════════════════════════════════════════
-exports.createPaymentIntent = onCall(async (request) => {
+exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Login richiesto.');
   }
@@ -183,7 +186,7 @@ exports.createPaymentIntent = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'Importo minimo non raggiunto.');
   }
 
-  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  const stripe = require('stripe')(STRIPE_SECRET_KEY.value());
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amountCents,
     currency: 'eur',
@@ -209,7 +212,7 @@ exports.createPaymentIntent = onCall(async (request) => {
 // Output:
 //   { orderId, subtotal, shipping, discount, total }
 // ══════════════════════════════════════════════════════════════════
-exports.validateOrder = onCall(async (request) => {
+exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
   // 1 — Autenticazione obbligatoria
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Devi essere autenticato per completare un ordine.');
@@ -310,7 +313,7 @@ exports.validateOrder = onCall(async (request) => {
     if (!stripePaymentIntentId) {
       throw new HttpsError('invalid-argument', 'Pagamento con carta non completato correttamente.');
     }
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const stripe = require('stripe')(STRIPE_SECRET_KEY.value());
     let pi;
     try {
       pi = await stripe.paymentIntents.retrieve(stripePaymentIntentId);
