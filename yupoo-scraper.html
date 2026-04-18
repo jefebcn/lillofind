@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>LilloFind — Yupoo Scraper</title>
+<title>LilloFind — Importa Scarpe</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import{getFunctions,httpsCallable}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
+import{getStorage,ref,uploadBytes,getDownloadURL}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
-const _fn=getFunctions(app,'europe-west1');
-window.__imp={db:getFirestore(app),auth:getAuth(app),functions:_fn,httpsCallable,collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
+const _storage=getStorage(app);
+window.__imp={db:getFirestore(app),auth:getAuth(app),storage:_storage,storageRef:ref,uploadBytes,getDownloadURL,collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
 </script>
 </head>
 <style>
@@ -68,6 +68,13 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 /* PROGRESS */
 .prog-wrap{background:#141414;height:5px;width:100%;margin-top:14px;}
 .prog-bar{background:var(--led);height:5px;width:0%;transition:width .2s;box-shadow:0 0 8px var(--led);}
+/* DROPZONE */
+.dropzone{border:2px dashed #252525;padding:44px 24px;text-align:center;cursor:pointer;transition:all .2s;background:#090909;position:relative;}
+.dropzone:hover,.dropzone.drag-over{border-color:var(--led);background:rgba(200,255,0,.03);}
+.dropzone input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+.dz-icon{font-size:32px;margin-bottom:12px;color:#2a2a2a;}
+.dz-txt{font-size:11px;color:#444;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.dz-sub{font-size:10px;color:#2a2a2a;letter-spacing:1px;}
 /* RESPONSIVE */
 @media(max-width:600px){
   #albums-grid{grid-template-columns:repeat(2,1fr);}
@@ -105,7 +112,7 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 <header id="hdr">
   <div style="display:flex;align-items:center;gap:16px;">
     <span class="bb" style="font-size:22px;color:var(--led);letter-spacing:2px;">LILLOFIND</span>
-    <span style="color:#333;font-size:11px;letter-spacing:3px;">YUPOO SCRAPER</span>
+    <span style="color:#333;font-size:11px;letter-spacing:3px;">IMPORTA SCARPE</span>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <span id="hdr-user" style="font-size:10px;color:#444;letter-spacing:1px;"></span>
@@ -118,26 +125,26 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 <!-- APP BODY -->
 <div id="app-body" style="display:none;">
 
-  <!-- 01 URL INPUT -->
+  <!-- 01 CARICA IMMAGINI -->
   <div class="sec-wrap">
-    <p class="sec-num">01 — Sorgente</p>
-    <p class="sec-title">URL VENDITORE YUPOO</p>
-    <p style="font-size:11px;color:#555;letter-spacing:.5px;margin-bottom:16px;">Incolla l'URL della categoria Yupoo del tuo fornitore</p>
-    <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;">
-      <input id="yupoo-url" class="lf-in" type="text"
-        placeholder="woodtableguy888.x.yupoo.com/categories/4633144"
-        style="flex:1;min-width:280px;"
-        onkeydown="if(event.key==='Enter')loadAlbums()"/>
-      <button class="btn-led" id="fetch-btn" onclick="loadAlbums()" style="white-space:nowrap;">CARICA SCARPE →</button>
+    <p class="sec-num">01 — Immagini</p>
+    <p class="sec-title">CARICA FOTO SCARPE</p>
+    <p style="font-size:11px;color:#555;letter-spacing:.5px;margin-bottom:20px;">Scarica le foto da Yupoo e trascinale qui, oppure clicca per scegliere i file</p>
+    <div class="dropzone" id="dropzone"
+         ondrop="dropFiles(event)" ondragover="dzDrag(event,true)" ondragleave="dzDrag(event,false)">
+      <input type="file" id="file-input" multiple accept="image/*" onchange="handleFileInput(event)"/>
+      <div class="dz-icon">⬆</div>
+      <p class="dz-txt">TRASCINA LE FOTO QUI</p>
+      <p class="dz-sub">oppure clicca per scegliere i file · JPG, PNG, WEBP</p>
     </div>
-    <p id="fetch-status" style="font-size:11px;margin-top:12px;color:#555;letter-spacing:.5px;min-height:18px;"></p>
-    <div style="margin-top:16px;padding:16px;background:#0a0a0a;border:1px solid #1a1a1a;font-size:10px;color:#444;line-height:1.8;">
-      <span style="color:var(--led);">ℹ INFO:</span> Il fetch avviene tramite Firebase Cloud Function (server-side) — nessun problema CORS. Assicurati che le funzioni siano deployate.
+    <div style="display:flex;align-items:center;gap:16px;margin-top:14px;">
+      <p id="dz-status" style="font-size:11px;color:#555;letter-spacing:.5px;"></p>
+      <button id="dz-clear" class="btn-g" onclick="clearImages()" style="display:none;">✕ RIMUOVI TUTTO</button>
     </div>
   </div>
 
   <!-- 02 MARKUP -->
-  <div class="sec-wrap">
+  <div class="sec-wrap" id="sec-markup" style="display:none;">
     <p class="sec-num">02 — Prezzo</p>
     <p class="sec-title">SOVRAPPREZZO (MARKUP)</p>
     <p style="font-size:11px;color:#555;margin-bottom:18px;">Il prezzo di vendita viene calcolato aggiungendo il tuo markup al prezzo fornitore Yupoo</p>
@@ -161,7 +168,7 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
   </div>
 
   <!-- 03 SIZES -->
-  <div class="sec-wrap">
+  <div class="sec-wrap" id="sec-sizes" style="display:none;">
     <p class="sec-num">03 — Taglie</p>
     <p class="sec-title">TAGLIE DISPONIBILI (EU)</p>
     <p style="font-size:11px;color:#555;margin-bottom:16px;">Seleziona le taglie che hai in stock — applicate a tutti gli album importati</p>
@@ -177,7 +184,7 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
   <div id="albums-section" style="display:none;">
     <div class="sec-wrap" style="border-bottom:none;padding-bottom:20px;">
       <p class="sec-num">04 — Selezione</p>
-      <p class="sec-title" id="albums-title">SCARPE TROVATE</p>
+      <p class="sec-title" id="albums-title">SCARPE CARICATE</p>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
         <button class="btn-g" onclick="selectAll()">✓ SELEZIONA TUTTE</button>
         <button class="btn-g" onclick="deselectAll()">✕ DESELEZIONA TUTTE</button>
@@ -326,17 +333,54 @@ function calcSellPrice(srcPrice, val, type){
 </script>
 
 <script>
-// ── SERVER-SIDE FETCH VIA FIREBASE FUNCTION ────────────────
-// Usa la Cloud Function yupooFetch che gira su Node.js (nessun CORS).
-// Ritorna {html, albumCovers:{id:url}} — albumCovers estratti server-side.
-async function fetchViaFunction(url){
-  const imp=window.__imp;
-  const fn=imp.httpsCallable(imp.functions,'yupooFetch');
-  const result=await fn({url});
-  const {html,status,albumCovers}=result.data;
-  if(!html||html.length<100) throw new Error(`Risposta vuota (HTTP ${status})`);
-  return {html, albumCovers: albumCovers||{}};
+// ── FILE HANDLING ──────────────────────────────────────────
+let fileIdCounter=0;
+
+function dzDrag(e,over){
+  e.preventDefault();
+  document.getElementById('dropzone').classList.toggle('drag-over',over);
 }
+function dropFiles(e){
+  e.preventDefault();
+  dzDrag(e,false);
+  handleFiles(e.dataTransfer.files);
+}
+window.handleFileInput=function(e){
+  handleFiles(e.target.files);
+  e.target.value='';
+};
+function handleFiles(fileList){
+  if(!fileList||!fileList.length) return;
+  const imgs=[...fileList].filter(f=>f.type.startsWith('image/'));
+  if(!imgs.length){toast('Nessuna immagine trovata','err');return;}
+  imgs.forEach(file=>{
+    const id='img-'+(++fileIdCounter);
+    const cover=URL.createObjectURL(file);
+    const parsed=parseAlbumTitle(
+      file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()
+    );
+    albums.push({id,cover,file,...parsed,albumUrl:''});
+    selected.add(id);
+  });
+  renderAlbums();
+  document.getElementById('sec-markup').style.display='block';
+  document.getElementById('sec-sizes').style.display='block';
+  document.getElementById('albums-section').style.display='block';
+  document.getElementById('import-section').style.display='block';
+  document.getElementById('dz-status').textContent=`${albums.length} foto caricate`;
+  document.getElementById('dz-clear').style.display='inline-block';
+  updateSelCount();
+}
+window.clearImages=function(){
+  albums.forEach(a=>{if(a.cover?.startsWith('blob:'))URL.revokeObjectURL(a.cover);});
+  albums=[];selected.clear();
+  ['albums-section','import-section','sec-markup','sec-sizes'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
+  document.getElementById('dz-status').textContent='';
+  document.getElementById('dz-clear').style.display='none';
+  updateSelCount();
+};
 
 // ── TITLE PARSING ──────────────────────────────────────────
 function parseAlbumTitle(raw){
@@ -356,173 +400,23 @@ function parseAlbumTitle(raw){
   return {sourcePrice,brand,name};
 }
 
-// ── HTML PARSING ───────────────────────────────────────────
-function parseAlbumsFromHtml(html,baseUrl,albumCovers={}){
-  const d=new DOMParser().parseFromString(html,'text/html');
-  const selectors=['a.album__a','a[href*="/albums/"]','.album-item a','.categories-album__item a'];
-  let anchors=[];
-  for(const sel of selectors){
-    anchors=[...d.querySelectorAll(sel)];
-    if(anchors.length) break;
-  }
-  const seen=new Set();
-  return anchors.map(a=>{
-    const href=a.getAttribute('href')||'';
-    const m=href.match(/\/albums\/(\w+)/);
-    if(!m) return null;
-    const id=m[1];
-    if(seen.has(id)) return null;
-    seen.add(id);
-    // Priorità 1: cover estratta server-side dalla Cloud Function
-    let cover=albumCovers[id]||'';
-    // Priorità 2: attributi lazy-loading nell'HTML (fallback)
-    if(!cover){
-      const img=a.querySelector('img');
-      if(img){
-        const LAZY=['data-src','data-original','data-lazy','data-lazy-src',
-                    'data-echo','data-url','data-original-src','src'];
-        for(const attr of LAZY){
-          const v=img.getAttribute(attr)||'';
-          if(v && !v.startsWith('data:') && v!=='#' && v.length>12){ cover=v; break; }
-        }
-      }
-    }
-    // Priorità 3: background-image CSS inline
-    if(!cover){
-      const stEl=a.querySelector('[style*="background"]');
-      const bm=stEl?.getAttribute('style')?.match(/url\(['"]?([^'")\s]+)['"]?\)/);
-      if(bm) cover=bm[1];
-    }
-    if(cover.startsWith('//')) cover='https:'+cover;
-    const nameEl=a.querySelector('[class*="name"],[class*="title"]');
-    const rawName=(nameEl?.textContent||a.getAttribute('title')||a.textContent||'').trim();
-    if(!rawName||rawName.length<2) return null;
-    const parsed=parseAlbumTitle(rawName);
-    return {id,rawName,...parsed,cover,albumUrl:`${baseUrl}/albums/${id}`};
-  }).filter(Boolean);
-}
-
-// ── JSON PARSING ───────────────────────────────────────────
-function parseAlbumsFromJson(json,baseUrl,albumCovers={}){
-  const list=json?.albums||json?.data?.albums||json?.response?.albums||
-             json?.showdata?.albums||json?.albumlist||json?.albumList||[];
-  if(!Array.isArray(list)||!list.length) return [];
-  const seen=new Set();
-  return list.map(a=>{
-    const id=String(a.id||a.albumId||'');
-    if(!id||seen.has(id)) return null;
-    seen.add(id);
-    const rawName=a.name||a.title||a.albumname||a.albumName||'';
-    const parsed=parseAlbumTitle(rawName);
-    // Controlla tutti i campi cover noti di Yupoo + server-side albumCovers come priorità
-    let cover=albumCovers[id]||
-      a.coverPhoto?.url||a.coverPhoto?.imgurl||
-      (typeof a.coverPhoto==='string'?a.coverPhoto:'')||
-      a.cover?.url||a.cover?.imgurl||
-      (typeof a.cover==='string'?a.cover:'')||
-      a.coverphoto?.imgurl||a.coverphoto?.url||
-      a.coverUrl||a.coverImg||a.thumb||
-      a.icon?.url||a.icon?.imgurl||
-      (typeof a.icon==='string'?a.icon:'')||'';
-    if(cover.startsWith('//')) cover='https:'+cover;
-    return {id,rawName,...parsed,cover,albumUrl:`${baseUrl}/albums/${id}`};
-  }).filter(Boolean);
-}
-
-// ── LOAD ALBUMS ────────────────────────────────────────────
-window.loadAlbums=async function(){
-  const rawUrl=document.getElementById('yupoo-url').value.trim();
-  if(!rawUrl){toast('Inserisci un URL Yupoo','err');return;}
-
-  // Parse URL
-  let str=rawUrl.startsWith('http')?rawUrl:'https://'+rawUrl;
-  let parsed;
-  try{
-    const u=new URL(str);
-    const parts=u.pathname.split('/').filter(Boolean);
-    // expect: categories/{id} or albums/{id}
-    if(parts.length<2) throw new Error('URL non valido — serve: dominio.x.yupoo.com/categories/ID');
-    parsed={domain:u.hostname,type:parts[0],catId:parts[1],baseUrl:'https://'+u.hostname};
-    if(isNaN(Number(parsed.catId))) throw new Error("ID categoria non trovato nell'URL");
-  }catch(e){setStatus(e.message,'err');return;}
-
-  setStatus('Connessione in corso...','');
-  setBtnLoading(true);
-  albums=[];selected=new Set();
-  document.getElementById('albums-section').style.display='none';
-  document.getElementById('import-section').style.display='none';
-
-  try{
-    let page=1,allAlbums=[];
-    while(page<=15){
-      setStatus(`Caricamento pagina ${page}...`,'');
-      const pageUrl=`${parsed.baseUrl}/${parsed.type}/${parsed.catId}?page=${page}`;
-      let pageAlbums=[];
-      try{
-        // Try JSON API (+ albumCovers estratti server-side)
-        const {html:jsonText,albumCovers:ac1}=await fetchViaFunction(pageUrl+'&format=json');
-        try{
-          const json=JSON.parse(jsonText);
-          pageAlbums=parseAlbumsFromJson(json,parsed.baseUrl,ac1);
-        }catch(e){ pageAlbums=[]; }
-      }catch(e){}
-
-      if(!pageAlbums.length){
-        // Fallback: HTML
-        try{
-          const {html,albumCovers:ac2}=await fetchViaFunction(pageUrl);
-          pageAlbums=parseAlbumsFromHtml(html,parsed.baseUrl,ac2);
-        }catch(e2){
-          if(page===1) throw e2;
-          break;
-        }
-      }
-
-      if(!pageAlbums.length) break;
-      const existIds=new Set(allAlbums.map(a=>a.id));
-      const newOnes=pageAlbums.filter(a=>!existIds.has(a.id));
-      if(!newOnes.length) break;
-      allAlbums=[...allAlbums,...newOnes];
-      setStatus(`Pagina ${page} — ${allAlbums.length} album trovati...`,'');
-      if(pageAlbums.length<6) break; // last page
-      page++;
-    }
-
-    if(!allAlbums.length){
-      setStatus('Nessun album trovato. Verifica l\'URL — es: woodtableguy888.x.yupoo.com/categories/4633144','err');
-      return;
-    }
-
-    albums=allAlbums;
-    selected=new Set(albums.map(a=>a.id));
-    renderAlbums();
-    document.getElementById('albums-section').style.display='block';
-    document.getElementById('import-section').style.display='block';
-    setStatus(`${albums.length} scarpe caricate ✓`,'ok');
-    updateSelCount();
-  }catch(e){
-    setStatus('Errore: '+e.message,'err');
-  }finally{
-    setBtnLoading(false);
-  }
-};
 </script>
 
 <script>
 // ── RENDER ALBUMS ──────────────────────────────────────────
 function renderAlbums(){
-  const markup=parseFloat(document.getElementById('markup-val')?.value)||0;
-  document.getElementById('albums-title').textContent=`SCARPE TROVATE — ${albums.length} ALBUM`;
+  document.getElementById('albums-title').textContent=`SCARPE CARICATE — ${albums.length}`;
   document.getElementById('total-count').textContent=`su ${albums.length} totali`;
 
   const grid=document.getElementById('albums-grid');
   grid.innerHTML=albums.map(a=>{
     const sell=a.sourcePrice?calcSellPrice(a.sourcePrice):'';
     const imgSrc=a.cover||'';
+    // Blob URL locale — nessun proxy necessario
     return `<div class="album-card sel" id="card-${a.id}" onclick="toggleAlbum('${a.id}')">
       <div class="card-chk">✓</div>
       ${imgSrc
-        ? `<img class="card-img" src="${escH(proxyImg(imgSrc))}" loading="lazy"
+        ? `<img class="card-img" src="${escH(imgSrc)}" loading="lazy"
             onerror="this.style.display='none'"/>`
         : `<div class="card-img" style="background:#111;display:flex;align-items:center;justify-content:center;">
             <span style="color:#333;font-size:10px;letter-spacing:2px;">NO IMG</span></div>`
@@ -551,12 +445,6 @@ function renderAlbums(){
 
 function escH(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// Proxy Yupoo CDN images via wsrv.nl per bypassare il referer check
-function proxyImg(url){
-  if(!url) return '';
-  return 'https://wsrv.nl/?url='+encodeURIComponent(url.replace(/^https?:\/\//,''));
 }
 
 // ── SELECTION ──────────────────────────────────────────────
@@ -610,10 +498,19 @@ window.importSelected=async function(){
     const priceIn=document.getElementById('sp-'+a.id);
     const name=nameIn?.value.trim()||a.name;
     const price=parseFloat(priceIn?.value)||0;
-    const imageUrl=proxyImg(a.cover);
 
     const stEl=document.getElementById('st-'+a.id);
     try{
+      // Carica immagine su Firebase Storage
+      let imageUrl='';
+      if(a.file){
+        if(stEl){stEl.style.display='block';stEl.style.color='#888';stEl.textContent='⬆ Upload...';}
+        const ext=a.file.name.split('.').pop().toLowerCase()||'jpg';
+        const path=`products/${Date.now()}-${a.id}.${ext}`;
+        const fileRef=imp.storageRef(imp.storage,path);
+        await imp.uploadBytes(fileRef,a.file);
+        imageUrl=await imp.getDownloadURL(fileRef);
+      }
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand:a.brand,
         model:'Sneakers',style:'Sneakers',
@@ -651,18 +548,6 @@ window.importSelected=async function(){
 };
 
 // ── HELPERS ────────────────────────────────────────────────
-function setStatus(msg,type){
-  const el=document.getElementById('fetch-status');
-  if(!el) return;
-  el.textContent=msg;
-  el.style.color=type==='ok'?'var(--led)':type==='err'?'#FF4757':'#666';
-}
-function setBtnLoading(loading){
-  const btn=document.getElementById('fetch-btn');
-  if(!btn) return;
-  btn.disabled=loading;
-  btn.textContent=loading?'CARICAMENTO...':'CARICA SCARPE →';
-}
 function toast(msg,type='ok'){
   const t=document.createElement('div');
   t.style.cssText=`position:fixed;bottom:28px;right:28px;z-index:9999;
