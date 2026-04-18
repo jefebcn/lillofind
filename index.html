@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0a0a0a"/>
 <meta name="description" content="LILLOFIND — Streetwear autentico. Shop, LFPoints loyalty program, spedizione DHL."/>
 <title>LILLOFIND — DROP YOUR STYLE</title>
+<script src="https://js.stripe.com/v3/"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <meta name="mobile-web-app-capable" content="yes"/>
@@ -1553,12 +1554,13 @@ img{ -webkit-user-drag:none; user-select:none; }
             <!-- Card fields -->
             <div id="pay-card-fields" style="padding:16px 18px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
               <div style="display:flex;flex-direction:column;gap:12px;">
-                <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Numero Carta</label><input class="lf-in" id="ck-card-num" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"/></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                  <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Scadenza</label><input class="lf-in" id="ck-card-exp" placeholder="MM/AA" maxlength="5"/></div>
-                  <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">CVV</label><input class="lf-in" id="ck-card-cvv" placeholder="123" maxlength="4" type="password"/></div>
-                </div>
                 <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome sulla Carta</label><input class="lf-in" id="ck-card-name" placeholder="MARIO ROSSI"/></div>
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                  <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Dati Carta</label>
+                  <div id="stripe-card-element" style="padding:11px 12px;border:1.5px solid #ddd;background:#fff;border-radius:0;transition:border-color .2s;"></div>
+                  <div id="stripe-card-error" style="font-size:10px;color:#c00;margin-top:2px;display:none;"></div>
+                </div>
+                <p style="font-size:9px;color:var(--dim);letter-spacing:.5px;">🔒 I dati della carta sono gestiti direttamente da Stripe — non transitano mai sui nostri server.</p>
               </div>
             </div>
 
@@ -3321,6 +3323,28 @@ img{ -webkit-user-drag:none; user-select:none; }
     const bc=document.getElementById('bonifico-causale');
     if(bc&&bc.textContent==='LILLO-ORDER') bc.textContent=causale;
   }
+  // ── Stripe Elements ────────────────────────────────────
+  let _stripe=null, _cardElement=null;
+  function initStripeElements(){
+    if(_stripe) return;
+    _stripe=Stripe('pk_live_51TMliuRvWqYkPkeQYTXaeZIoMBhdZMxDWwVOUrgZCm25X3NzJaJK1qFO4ZsxaDqiX0Y8H2W8XA8tGJrKpGCqVoyf00jxrPsLXT');
+    const elements=_stripe.elements();
+    _cardElement=elements.create('card',{
+      style:{
+        base:{fontFamily:'"IBM Plex Mono",monospace',fontSize:'13px',color:'#0a0a0a','::placeholder':{color:'#aaa'}},
+        invalid:{color:'#c00'},
+      },
+      hidePostalCode:true,
+    });
+    _cardElement.mount('#stripe-card-element');
+    _cardElement.on('change',e=>{
+      const err=document.getElementById('stripe-card-error');
+      if(err){err.textContent=e.error?e.error.message:'';err.style.display=e.error?'block':'none';}
+      const el=document.getElementById('stripe-card-element');
+      if(el) el.style.borderColor=e.error?'#c00':'#ddd';
+    });
+  }
+
   window.placeOrder=async function(){
     if(!user){showToast('Accedi per completare l\'ordine');showPg('auth');return;}
     if(!cart.length){showToast('Carrello vuoto!');return;}
@@ -3361,18 +3385,15 @@ img{ -webkit-user-drag:none; user-select:none; }
 
     // ── 2. Validate payment ─────────────────────────────────
     if(selectedPayment==='card'){
-      const cardNum=(document.getElementById('ck-card-num')?.value||'').replace(/\s/g,'');
-      const cardExp=document.getElementById('ck-card-exp')?.value.trim()||'';
-      const cardCvv=document.getElementById('ck-card-cvv')?.value.trim()||'';
       const cardName=document.getElementById('ck-card-name')?.value.trim()||'';
-      let cardOk=true;
-      if(cardNum.length<15){markErr('ck-card-num');cardOk=false;}else clearErr('ck-card-num');
-      if(!/^\d{2}\/\d{2}$/.test(cardExp)){markErr('ck-card-exp');cardOk=false;}else clearErr('ck-card-exp');
-      if(cardCvv.length<3){markErr('ck-card-cvv');cardOk=false;}else clearErr('ck-card-cvv');
-      if(!cardName){markErr('ck-card-name');cardOk=false;}else clearErr('ck-card-name');
-      if(!cardOk){
-        showToast('⚠️ Compila correttamente i dati della carta.');
+      if(!cardName){
+        markErr('ck-card-name');
+        showToast('⚠️ Inserisci il nome sulla carta.');
         document.getElementById('pay-card-fields')?.scrollIntoView({behavior:'smooth',block:'start'});
+        return;
+      }
+      if(!_stripe||!_cardElement){
+        showToast('⚠️ Errore pagamento. Ricarica la pagina.');
         return;
       }
     } else if(selectedPayment==='bonifico'){
@@ -3389,11 +3410,34 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
     // ── Chiama Cloud Function: prezzi validati server-side ───
     const fb=window.__fb;
+    const placeBtn=document.querySelector('#pg-checkout .btn-led.cta-primary-glow');
+    const _origBtnText=placeBtn?placeBtn.textContent:'';
     try{
+      let stripePaymentIntentId=null;
+      // ── Pagamento con carta: Stripe flow ────────────────
+      if(selectedPayment==='card'){
+        if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Elaborazione...';}
+        const cardName=document.getElementById('ck-card-name')?.value.trim()||'';
+        // 1. Crea PaymentIntent server-side
+        const createPI=fb.httpsCallable(fb.functions,'createPaymentIntent');
+        const piResult=await createPI({items:_orderItems.map(i=>({id:i.id,qty:i.qty}))});
+        const {clientSecret,paymentIntentId}=piResult.data;
+        // 2. Conferma pagamento via Stripe.js
+        const {paymentIntent,error}=await _stripe.confirmCardPayment(clientSecret,{
+          payment_method:{card:_cardElement,billing_details:{name:cardName}},
+        });
+        if(error){
+          if(placeBtn){placeBtn.disabled=false;placeBtn.textContent=_origBtnText;}
+          showToast('⚠️ '+(error.message||'Pagamento fallito. Controlla i dati carta.'));
+          return;
+        }
+        stripePaymentIntentId=paymentIntent.id;
+      }
       const validateOrder=fb.httpsCallable(fb.functions,'validateOrder');
       const result=await validateOrder({
         items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||''})),
         paymentMethod:selectedPayment||'card',
+        stripePaymentIntentId,
         shippingAddress:{street,city,zip,country},
         name:fname+' '+lname,
         phone,
@@ -3428,8 +3472,9 @@ img{ -webkit-user-drag:none; user-select:none; }
       setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
       setTimeout(()=>showPg('profile'),1200);
     } catch(e){
-      console.error('validateOrder error:',e.code,e.message);
-      showToast('⚠️ Si è verificato un errore. Riprova.');
+      console.error('placeOrder error:',e.code,e.message);
+      if(placeBtn){placeBtn.disabled=false;placeBtn.textContent=_origBtnText;}
+      showToast('⚠️ '+(e.message||'Si è verificato un errore. Riprova.'));
     }
   };
   updateCartBadge();
@@ -4187,7 +4232,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.showPg=function(id){
     _origShowPg(id);
     if(id==='cart'){setTimeout(()=>{renderCart();if(typeof showQCOption==='function')showQCOption();},80);}
-    if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');},50);}
+    if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');initStripeElements();},50);}
     if(id==='profile'&&user&&window.__fb){
       // Re-fetch fresh user data from Firestore every time profile is opened
       window.__fb.getDoc(window.__fb.doc(window.__fb.db,'users',user.uid)).then(s=>{

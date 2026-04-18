@@ -116,6 +116,84 @@ function getShippingCostSv(totalWeightKg){
 }
 
 // ══════════════════════════════════════════════════════════════════
+// createPaymentIntent
+// Crea un Stripe PaymentIntent con il totale verificato server-side.
+// Il client usa il clientSecret per confermare il pagamento via Stripe.js.
+// ══════════════════════════════════════════════════════════════════
+exports.createPaymentIntent = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login richiesto.');
+  }
+  const { items } = request.data;
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new HttpsError('invalid-argument', 'Carrello vuoto.');
+  }
+
+  // Leggi prezzi reali da Firestore
+  const productDocs = await Promise.all(
+    items.map(item => {
+      if (!item.id || typeof item.id !== 'string') {
+        throw new HttpsError('invalid-argument', 'ID prodotto non valido.');
+      }
+      const qty = parseInt(item.qty, 10);
+      if (!qty || qty < 1 || qty > 50) {
+        throw new HttpsError('invalid-argument', `Quantità non valida per ${item.id}.`);
+      }
+      return db.collection('products').doc(item.id).get();
+    })
+  );
+
+  const verifiedItems = productDocs.map((snap, idx) => {
+    if (!snap.exists) throw new HttpsError('not-found', `Prodotto non trovato: ${items[idx].id}`);
+    const prod = snap.data();
+    return {
+      price: prod.price || 0,
+      category: prod.category || '',
+      weightKg: prod.weightKg || prod.weight_kg || 0,
+      qty: parseInt(items[idx].qty, 10),
+      isDigital: prod.isDigital || false,
+    };
+  });
+
+  const allDigital = verifiedItems.every(i => i.isDigital);
+  const subtotal = verifiedItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const physItems = verifiedItems.filter(i => !i.isDigital);
+  const totalWeight = physItems.reduce((s, i) => s + getProductWeightSv(i) * i.qty, 0);
+  const shipping = allDigital ? 0 : getShippingCostSv(totalWeight);
+
+  // Leggi eventuale reward attivo
+  let discountAmount = 0;
+  try {
+    const userSnap = await db.collection('users').doc(request.auth.uid).get();
+    if (userSnap.exists) {
+      const ar = userSnap.data().activeReward || null;
+      if (ar) {
+        if (ar.type === 'fisso') discountAmount = Math.min(ar.val, subtotal);
+        else if (ar.type === 'percentuale') discountAmount = subtotal * (ar.val / 100);
+        if (ar.freeShipping) discountAmount += shipping;
+        discountAmount = Math.round(discountAmount * 100) / 100;
+      }
+    }
+  } catch (e) { /* non bloccante */ }
+
+  const total = Math.max(0, Math.round((subtotal + shipping - discountAmount) * 100) / 100);
+  const amountCents = Math.round(total * 100);
+
+  if (amountCents < 50) {
+    throw new HttpsError('invalid-argument', 'Importo minimo non raggiunto.');
+  }
+
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amountCents,
+    currency: 'eur',
+    metadata: { uid: request.auth.uid, subtotal: String(subtotal), shipping: String(shipping) },
+  });
+
+  return { clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id };
+});
+
+// ══════════════════════════════════════════════════════════════════
 // validateOrder
 // Valida i prezzi del carrello server-side, crea l'ordine e
 // restituisce il totale verificato. Impedisce la price manipulation.
@@ -225,6 +303,31 @@ exports.validateOrder = onCall(async (request) => {
   }
 
   const total = Math.max(0, Math.round((subtotal + shipping - discountAmount) * 100) / 100);
+
+  // 6b — Per pagamenti con carta, verifica PaymentIntent Stripe server-side
+  if (paymentMethod === 'card') {
+    const { stripePaymentIntentId } = request.data;
+    if (!stripePaymentIntentId) {
+      throw new HttpsError('invalid-argument', 'Pagamento con carta non completato correttamente.');
+    }
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    let pi;
+    try {
+      pi = await stripe.paymentIntents.retrieve(stripePaymentIntentId);
+    } catch (e) {
+      throw new HttpsError('invalid-argument', 'PaymentIntent non valido.');
+    }
+    if (pi.status !== 'succeeded') {
+      throw new HttpsError('failed-precondition', 'Il pagamento non è stato completato.');
+    }
+    if (pi.metadata?.uid !== uid) {
+      throw new HttpsError('permission-denied', 'PaymentIntent non appartiene a questo utente.');
+    }
+    // Verifica che l'importo corrisponda (tolleranza 1 cent per arrotondamenti)
+    if (Math.abs(pi.amount - Math.round(total * 100)) > 1) {
+      throw new HttpsError('failed-precondition', 'Importo del pagamento non corrisponde al totale ordine.');
+    }
+  }
 
   // 7 — Genera orderId
   const orderId = 'LILLO-' + Date.now().toString(36).toUpperCase().slice(-6);
