@@ -123,7 +123,7 @@ function getShippingCostSv(totalWeightKg){
 // Crea un Stripe PaymentIntent con il totale verificato server-side.
 // Il client usa il clientSecret per confermare il pagamento via Stripe.js.
 // ══════════════════════════════════════════════════════════════════
-exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Login richiesto.');
   }
