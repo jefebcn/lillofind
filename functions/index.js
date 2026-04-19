@@ -132,19 +132,25 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (re
     throw new HttpsError('invalid-argument', 'Carrello vuoto.');
   }
 
+  // Valida prima di fetchare
+  for (const item of items) {
+    if (!item.id || typeof item.id !== 'string') {
+      throw new HttpsError('invalid-argument', 'ID prodotto non valido.');
+    }
+    const qty = parseInt(item.qty, 10);
+    if (!qty || qty < 1 || qty > 50) {
+      throw new HttpsError('invalid-argument', `Quantità non valida: ${item.id}`);
+    }
+  }
+
   // Leggi prezzi reali da Firestore
-  const productDocs = await Promise.all(
-    items.map(item => {
-      if (!item.id || typeof item.id !== 'string') {
-        throw new HttpsError('invalid-argument', 'ID prodotto non valido.');
-      }
-      const qty = parseInt(item.qty, 10);
-      if (!qty || qty < 1 || qty > 50) {
-        throw new HttpsError('invalid-argument', `Quantità non valida per ${item.id}.`);
-      }
-      return db.collection('products').doc(item.id).get();
-    })
-  );
+  let productDocs;
+  try {
+    productDocs = await Promise.all(items.map(item => db.collection('products').doc(item.id).get()));
+  } catch (e) {
+    console.error('Firestore error in createPaymentIntent:', e);
+    throw new HttpsError('internal', 'Errore lettura prodotti.');
+  }
 
   const verifiedItems = productDocs.map((snap, idx) => {
     if (!snap.exists) throw new HttpsError('not-found', `Prodotto non trovato: ${items[idx].id}`);
@@ -183,17 +189,23 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (re
   const amountCents = Math.round(total * 100);
 
   if (amountCents < 50) {
-    throw new HttpsError('invalid-argument', 'Importo minimo non raggiunto.');
+    throw new HttpsError('invalid-argument', 'Importo minimo €0.50 non raggiunto.');
   }
 
-  const stripe = require('stripe')(STRIPE_SECRET_KEY.value());
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amountCents,
-    currency: 'eur',
-    metadata: { uid: request.auth.uid, subtotal: String(subtotal), shipping: String(shipping) },
-  });
-
-  return { clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id };
+  // Crea PaymentIntent Stripe
+  try {
+    const stripe = require('stripe')(STRIPE_SECRET_KEY.value());
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: 'eur',
+      automatic_payment_methods: { enabled: true },
+      metadata: { uid: request.auth.uid, subtotal: String(subtotal), shipping: String(shipping) },
+    });
+    return { clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id };
+  } catch (e) {
+    console.error('Stripe createPaymentIntent error:', e.message);
+    throw new HttpsError('internal', 'Errore Stripe: ' + e.message);
+  }
 });
 
 // ══════════════════════════════════════════════════════════════════
