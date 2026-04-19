@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0a0a0a"/>
 <meta name="description" content="LILLOFIND — Streetwear autentico. Shop, LFPoints loyalty program, spedizione DHL."/>
 <title>LILLOFIND — DROP YOUR STYLE</title>
+<script src="https://js.stripe.com/v3/"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <meta name="mobile-web-app-capable" content="yes"/>
@@ -1552,13 +1553,12 @@ img{ -webkit-user-drag:none; user-select:none; }
             </label>
             <!-- Card fields -->
             <div id="pay-card-fields" style="padding:16px 18px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
-              <div style="display:flex;flex-direction:column;gap:12px;">
-                <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Numero Carta</label><input class="lf-in" id="ck-card-num" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"/></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                  <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Scadenza</label><input class="lf-in" id="ck-card-exp" placeholder="MM/AA" maxlength="5"/></div>
-                  <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">CVV</label><input class="lf-in" id="ck-card-cvv" placeholder="123" maxlength="4" type="password"/></div>
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div style="font-size:30px;flex-shrink:0;">💳</div>
+                <div>
+                  <p style="font-size:11px;font-weight:600;margin-bottom:4px;">Paga con Stripe</p>
+                  <p style="font-size:10px;color:var(--dim);line-height:1.6;">Carte Visa, Mastercard, Amex · Apple Pay · Google Pay e altri metodi. Clicca "Conferma Ordine" per aprire la schermata di pagamento sicura.</p>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome sulla Carta</label><input class="lf-in" id="ck-card-name" placeholder="MARIO ROSSI"/></div>
               </div>
             </div>
 
@@ -1652,6 +1652,34 @@ img{ -webkit-user-drag:none; user-select:none; }
   </div>
 </div>
 
+<!-- ── Stripe Payment Modal ─────────────────────────── -->
+<div id="stripe-payment-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;max-width:480px;width:100%;position:relative;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;">
+    <!-- Header -->
+    <div style="padding:24px 24px 16px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <p class="bb" style="font-size:22px;line-height:1;">Completa il Pagamento</p>
+        <p style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-top:3px;">🔒 Crittografia SSL · Gestito da Stripe</p>
+      </div>
+      <button onclick="closeStripeModal()" style="background:none;border:1px solid #e0e0e0;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+    </div>
+    <!-- Total -->
+    <div style="padding:16px 24px;background:#f8f8f8;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:10px;color:var(--mid);letter-spacing:1px;text-transform:uppercase;">Totale ordine</span>
+      <span class="bb" id="stripe-modal-total" style="font-size:26px;">€0.00</span>
+    </div>
+    <!-- Payment Element mount -->
+    <div style="padding:20px 24px 0;">
+      <div id="stripe-payment-element"></div>
+      <div id="stripe-payment-error" style="font-size:10px;color:#c00;margin-top:10px;display:none;padding:8px;background:#fff5f5;"></div>
+    </div>
+    <!-- Submit -->
+    <div style="padding:20px 24px 24px;">
+      <button id="stripe-submit-btn" onclick="submitStripePayment()" class="btn-led cta-primary-glow" style="width:100%;font-size:13px;padding:16px;letter-spacing:1px;">Paga →</button>
+      <p style="font-size:9px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:.5px;">Carte · Apple Pay · Google Pay · e altri</p>
+    </div>
+  </div>
+</div>
 
 <div id="pg-lfpoints" class="pg">
 
@@ -3321,6 +3349,72 @@ img{ -webkit-user-drag:none; user-select:none; }
     const bc=document.getElementById('bonifico-causale');
     if(bc&&bc.textContent==='LILLO-ORDER') bc.textContent=causale;
   }
+  // ── Stripe Payment Modal ───────────────────────────────
+  let _stripe=null, _stripeElements=null, _pendingOrderData=null;
+
+  function initStripeElements(){
+    if(!_stripe) _stripe=Stripe('pk_live_51TMliuRvWqYkPkeQYTXaeZIoMBhdZMxDWwVOUrgZCm25X3NzJaJK1qFO4ZsxaDqiX0Y8H2W8XA8tGJrKpGCqVoyf00jxrPsLXT');
+  }
+
+  window.closeStripeModal=function(){
+    const modal=document.getElementById('stripe-payment-modal');
+    if(modal) modal.style.display='none';
+    document.getElementById('stripe-payment-element').innerHTML='';
+    _stripeElements=null;
+    const btn=document.querySelector('#pg-checkout .btn-led.cta-primary-glow');
+    if(btn){btn.disabled=false;btn.textContent='🔒 CONFERMA ORDINE →';}
+  };
+
+  window.submitStripePayment=async function(){
+    const btn=document.getElementById('stripe-submit-btn');
+    const errEl=document.getElementById('stripe-payment-error');
+    if(!btn||!_stripeElements||!_pendingOrderData) return;
+    btn.disabled=true; btn.textContent='🔄 Elaborazione...';
+    if(errEl) errEl.style.display='none';
+    const {error,paymentIntent}=await _stripe.confirmPayment({
+      elements:_stripeElements,
+      redirect:'if_required',
+      confirmParams:{return_url:window.location.origin+'/'},
+    });
+    if(error){
+      if(errEl){errEl.textContent=error.message;errEl.style.display='block';}
+      btn.disabled=false; btn.textContent=btn.dataset.label||'Paga →';
+      return;
+    }
+    // Pagamento completato — chiudi modal e salva ordine
+    closeStripeModal();
+    const fb=window.__fb;
+    try{
+      const validateOrder=fb.httpsCallable(fb.functions,'validateOrder');
+      const result=await validateOrder({..._pendingOrderData,stripePaymentIntentId:paymentIntent.id});
+      _handleOrderSuccess(result.data,_pendingOrderData);
+    }catch(e){
+      showToast('⚠️ Pagamento completato ma errore nel salvataggio. Contatta il supporto.');
+      console.error('validateOrder post-stripe:',e);
+    }
+  };
+
+  function _handleOrderSuccess(data, orderData){
+    const {orderId,subtotal,shipping,discount,total,lfpoints:pts}=data;
+    const fname=(orderData.name||'').split(' ')[0]||'';
+    const lname=(orderData.name||'').split(' ').slice(1).join(' ')||'';
+    const {street='',city='',zip='',country='Italia'}=orderData.shippingAddress||{};
+    const phone=orderData.phone||'—';
+    const _orderItems=orderData._items||[];
+    const prevPts=(udata?.lfpoints||0);
+    const newPts=prevPts+pts;
+    udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null};
+    updateNav(user,udata); updateHomeDisplay();
+    const newReward=REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts);
+    cart=[];saveCart();updateCartBadge();
+    showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
+    if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
+    const _itemLines=_orderItems.map(i=>'  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2)).join('\n');
+    const waMsg='🛍 *NUOVO ORDINE — LILLOFIND*\n\n📋 ID: '+orderId+'\n👤 Cliente: '+orderData.name+'\n📧 Email: '+user.email+'\n📞 Tel: '+phone+'\n\n📦 Indirizzo:\n'+street+', '+city+' '+zip+' ('+country+')\n\n🧾 Articoli:\n'+_itemLines+'\n\n💶 Subtotale: €'+subtotal.toFixed(2)+'\n🚚 Spedizione: '+(shipping===0?'Gratis':'€'+shipping.toFixed(2))+'\n'+(discount>0?'🎁 Bonus: −€'+discount.toFixed(2)+'\n':'')+'💰 TOTALE: €'+total.toFixed(2)+'\n⬡ LFPOINTS: +'+pts;
+    setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
+    setTimeout(()=>showPg('shop'),1200);
+  }
+
   window.placeOrder=async function(){
     if(!user){showToast('Accedi per completare l\'ordine');showPg('auth');return;}
     if(!cart.length){showToast('Carrello vuoto!');return;}
@@ -3359,77 +3453,73 @@ img{ -webkit-user-drag:none; user-select:none; }
       }
     }
 
-    // ── 2. Validate payment ─────────────────────────────────
-    if(selectedPayment==='card'){
-      const cardNum=(document.getElementById('ck-card-num')?.value||'').replace(/\s/g,'');
-      const cardExp=document.getElementById('ck-card-exp')?.value.trim()||'';
-      const cardCvv=document.getElementById('ck-card-cvv')?.value.trim()||'';
-      const cardName=document.getElementById('ck-card-name')?.value.trim()||'';
-      let cardOk=true;
-      if(cardNum.length<15){markErr('ck-card-num');cardOk=false;}else clearErr('ck-card-num');
-      if(!/^\d{2}\/\d{2}$/.test(cardExp)){markErr('ck-card-exp');cardOk=false;}else clearErr('ck-card-exp');
-      if(cardCvv.length<3){markErr('ck-card-cvv');cardOk=false;}else clearErr('ck-card-cvv');
-      if(!cardName){markErr('ck-card-name');cardOk=false;}else clearErr('ck-card-name');
-      if(!cardOk){
-        showToast('⚠️ Compila correttamente i dati della carta.');
-        document.getElementById('pay-card-fields')?.scrollIntoView({behavior:'smooth',block:'start'});
-        return;
-      }
-    } else if(selectedPayment==='bonifico'){
-      // Bonifico: show reminder that order will be held until payment received
-      showToast('ℹ️ Ordine in attesa — confermato alla ricezione del bonifico.');
-    }
-    const _orderItems=[...cart]; // snapshot before clearing
+    const _orderItems=[...cart];
     const phone=document.getElementById('ck-phone')?.value.trim()||'—';
     const country=document.getElementById('ck-country')?.value||'Italia';
     const notes=document.getElementById('ck-notes')?.value.trim()||'';
+    const _orderPayload={
+      items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||''})),
+      paymentMethod:selectedPayment||'card',
+      shippingAddress:{street,city,zip,country},
+      name:fname+' '+lname,
+      phone,
+      notes,
+      _items:_orderItems,
+    };
+    const fb=window.__fb;
+    const placeBtn=document.querySelector('#pg-checkout .btn-led.cta-primary-glow');
+
+    // ── Carta: apri modal Stripe ─────────────────────────
+    if(selectedPayment==='card'){
+      if(!_stripe){showToast('⚠️ Errore. Ricarica la pagina.');return;}
+      if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Apertura pagamento...';}
+      try{
+        const createPI=fb.httpsCallable(fb.functions,'createPaymentIntent');
+        const piResult=await createPI({items:_orderItems.map(i=>({id:i.id,qty:i.qty}))});
+        const {clientSecret}=piResult.data;
+        // Calcola totale per display modale
+        const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
+        const phys=cart.filter(i=>!i.isDigital);
+        const totW=phys.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
+        const shipAmt=allDigital?0:getShippingCost(totW);
+        const grandTotal=+(sub+shipAmt).toFixed(2);
+        // Monta Payment Element
+        _stripeElements=_stripe.elements({clientSecret,appearance:{theme:'stripe',variables:{fontFamily:'"IBM Plex Mono",monospace',colorPrimary:'#0a0a0a'}}});
+        const pe=_stripeElements.create('payment',{layout:'tabs'});
+        document.getElementById('stripe-payment-element').innerHTML='';
+        pe.mount('#stripe-payment-element');
+        document.getElementById('stripe-modal-total').textContent='€'+grandTotal.toFixed(2);
+        const sb=document.getElementById('stripe-submit-btn');
+        if(sb){sb.textContent='Paga €'+grandTotal.toFixed(2);sb.dataset.label='Paga €'+grandTotal.toFixed(2);sb.disabled=false;}
+        document.getElementById('stripe-payment-error').style.display='none';
+        _pendingOrderData=_orderPayload;
+        document.getElementById('stripe-payment-modal').style.display='flex';
+      }catch(e){
+        showToast('⚠️ '+(e.message||'Errore avvio pagamento. Riprova.'));
+      }finally{
+        if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
+      }
+      return;
+    }
+
+    // ── Bonifico / PayPal: flusso esistente ──────────────
     if(selectedPayment==='paypal'){
       showToast('🔄 Reindirizzamento a PayPal...');
       setTimeout(()=>showToast('✅ Demo: PayPal completato!'),2000);
     }
-    // ── Chiama Cloud Function: prezzi validati server-side ───
-    const fb=window.__fb;
+    if(selectedPayment==='bonifico'){
+      showToast('ℹ️ Ordine in attesa — confermato alla ricezione del bonifico.');
+    }
+    if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Elaborazione...';}
     try{
       const validateOrder=fb.httpsCallable(fb.functions,'validateOrder');
-      const result=await validateOrder({
-        items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||''})),
-        paymentMethod:selectedPayment||'card',
-        shippingAddress:{street,city,zip,country},
-        name:fname+' '+lname,
-        phone,
-        notes
-      });
-      const {orderId,subtotal,shipping,discount,total,lfpoints:pts}=result.data;
-      // ── Aggiorna UI con dati verificati dal server ───────
-      const prevPts=(udata?.lfpoints||0);
-      const newPts=prevPts+pts;
-      udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null};
-      updateNav(user,udata); updateHomeDisplay();
-      const newReward=REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts);
-      cart=[];saveCart();updateCartBadge();
-      showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
-      if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
-      // ── WhatsApp notification to owner ──────────────────
-      const _itemLines=_orderItems.map(function(i){
-        return '  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2);
-      }).join('\n');
-      const waMsg='🛍 *NUOVO ORDINE — LILLOFIND*\n\n'+
-        '📋 ID: '+orderId+'\n'+
-        '👤 Cliente: '+fname+' '+lname+'\n'+
-        '📧 Email: '+user.email+'\n'+
-        '📞 Tel: '+phone+'\n\n'+
-        '📦 Indirizzo:\n'+street+', '+city+' '+zip+' ('+country+')\n\n'+
-        '🧾 Articoli:\n'+_itemLines+'\n\n'+
-        '💶 Subtotale: €'+subtotal.toFixed(2)+'\n'+
-        '🚚 Spedizione: '+(shipping===0?'Gratis':'€'+shipping.toFixed(2))+'\n'+
-        (discount>0?'🎁 Bonus: −€'+discount.toFixed(2)+'\n':'')+
-        '💰 TOTALE: €'+total.toFixed(2)+'\n'+
-        '⬡ LFPOINTS: +'+pts;
-      setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
-      setTimeout(()=>showPg('profile'),1200);
-    } catch(e){
-      console.error('validateOrder error:',e.code,e.message);
-      showToast('⚠️ Si è verificato un errore. Riprova.');
+      const result=await validateOrder(_orderPayload);
+      _handleOrderSuccess(result.data,_orderPayload);
+    }catch(e){
+      console.error('placeOrder error:',e.code,e.message);
+      showToast('⚠️ '+(e.message||'Si è verificato un errore. Riprova.'));
+    }finally{
+      if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
     }
   };
   updateCartBadge();
@@ -4187,7 +4277,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.showPg=function(id){
     _origShowPg(id);
     if(id==='cart'){setTimeout(()=>{renderCart();if(typeof showQCOption==='function')showQCOption();},80);}
-    if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');},50);}
+    if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');initStripeElements();},50);}
     if(id==='profile'&&user&&window.__fb){
       // Re-fetch fresh user data from Firestore every time profile is opened
       window.__fb.getDoc(window.__fb.doc(window.__fb.db,'users',user.uid)).then(s=>{
@@ -4264,7 +4354,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ══════════════════════════════════════════════════════════════
-  // FEATURE 6 — Free shipping upsell bar
+  // FEATURE 6 — Weight-tier upsell bar
   // ══════════════════════════════════════════════════════════════
   function updateShipBar(){
     const bar=document.getElementById('free-ship-bar');
@@ -4280,13 +4370,33 @@ img{ -webkit-user-drag:none; user-select:none; }
     const tier=SHIPPING_TIERS[tierIdx];
     const prevMax=tierIdx>0?SHIPPING_TIERS[tierIdx-1].maxKg:0;
     const nextTier=SHIPPING_TIERS[tierIdx+1];
+    const remaining=+(tier.maxKg-totW).toFixed(2);
     const pct=Math.min(((totW-prevMax)/(tier.maxKg-prevMax))*100,100);
     fill.style.width=pct+'%';
-    if(nextTier){
-      const rem=(tier.maxKg-totW).toFixed(2);
-      msg.innerHTML=`Peso: <strong>${totW.toFixed(2)} kg</strong> · Fascia: <strong>${tier.label}</strong> · Spedizione: <strong>€${tier.price}</strong> — Ancora <strong>${rem} kg</strong> alla fascia successiva (€${nextTier.price})`;
+    // Suggerimento articoli per il peso rimanente
+    function weightHint(kg){
+      if(kg>=2.0) return '~1 paio di scarpe';
+      if(kg>=1.6) return '~2 felpe';
+      if(kg>=0.8) return '~1 felpa o 2 t-shirt';
+      if(kg>=0.7) return '~2 t-shirt';
+      if(kg>=0.35) return '~1 t-shirt o 1 cappello';
+      if(kg>=0.2) return '~1 cappello o accessorio';
+      return null;
+    }
+    if(!nextTier){
+      // Fascia massima — info neutrale
+      fill.style.background='linear-gradient(90deg,var(--led),var(--led2))';
+      msg.innerHTML=`Peso ordine: <strong>${totW.toFixed(2)} kg</strong> · Spedizione: <strong>€${tier.price}</strong>`;
+    } else if(remaining<=0.5){
+      // Vicino alla fascia successiva — avviso
+      fill.style.background='linear-gradient(90deg,#ff9500,#ff6b00)';
+      msg.innerHTML=`⚠️ Attenzione — sei a <strong>${remaining} kg</strong> dalla fascia successiva: la spedizione salirà da <strong>€${tier.price}</strong> a <strong>€${nextTier.price}</strong>`;
     } else {
-      msg.innerHTML=`Peso: <strong>${totW.toFixed(2)} kg</strong> · Fascia: <strong>${tier.label}</strong> · Spedizione: <strong>€${tier.price}</strong>`;
+      // Ampio margine — upsell
+      fill.style.background='linear-gradient(90deg,var(--led),var(--led2))';
+      const hint=weightHint(remaining);
+      const hintStr=hint?` — equivale a ${hint}`:'';
+      msg.innerHTML=`🛒 Aggiungi altri articoli, la spedizione non cambia! Hai ancora <strong>${remaining} kg</strong> in questa fascia${hintStr} per la stessa spedizione di <strong>€${tier.price}</strong>`;
     }
   }
   // Hook into renderCart
