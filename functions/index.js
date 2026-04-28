@@ -59,26 +59,66 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     });
     const html = await resp.text();
 
-    // Estrai cover URL per album ID via regex (server-side — ha il Referer corretto)
+    // Estrai cover URL per album ID — 4 strategie in cascata
     const albumCovers = {};
 
-    // Pattern A: href="/albums/ID" seguito da <img data-src/src="//...photo/img...">
-    const anchorImgRe =
-      /href=["']\/albums\/(\w+)["'][^]*?<img[^>]+(?:data-src|data-original|data-lazy|src)=["'](\/\/[^"'>\s]+)["']/gs;
-    let m;
-    while ((m = anchorImgRe.exec(html)) !== null) {
-      const u = m[2];
-      if (!albumCovers[m[1]] && (u.includes('photo.yupoo') || u.includes('img.yupoo') || u.includes('.jpg') || u.includes('.png') || u.includes('.webp'))) {
-        albumCovers[m[1]] = u.startsWith('//') ? 'https:' + u : u;
+    // Helper: normalizza URL
+    const norm = u => (!u ? null : u.startsWith('//') ? 'https:' + u : u);
+    const isImg = u => u && (u.includes('yupoo') || u.includes('yunjifen') || /\.(jpg|jpeg|png|webp)/i.test(u));
+
+    // Strategia 1 — JSON embedded in <script> (React/Next.js/preloaded state)
+    const scriptRe = /<script[^>]*>([\s\S]{80,50000}?)<\/script>/gi;
+    let sm;
+    function crawlJson(obj, depth) {
+      if (depth > 7 || !obj || typeof obj !== 'object') return;
+      if (Array.isArray(obj)) { obj.forEach(v => crawlJson(v, depth + 1)); return; }
+      // Yupoo album object: has numeric id + cover/coverUrl
+      const rawId = obj.albumId ?? obj.album_id ?? obj.id;
+      const id = rawId != null ? String(rawId) : null;
+      if (id && /^\d+$/.test(id)) {
+        const co = obj.cover ?? obj.covers?.[0] ?? obj.coverImage ?? obj.thumbnail ?? obj.thumb;
+        const cu = typeof co === 'string' ? co : (co?.url ?? co?.imageUrl ?? co?.src ?? null);
+        if (cu) { const u = norm(cu); if (u && isImg(u)) albumCovers[id] = u; }
+      }
+      Object.values(obj).forEach(v => { if (v && typeof v === 'object') crawlJson(v, depth + 1); });
+    }
+    while ((sm = scriptRe.exec(html)) !== null) {
+      const src = sm[1];
+      // Look for large JSON-like blobs
+      const jsonRe = /(\{[\s\S]{60,}?\})/g;
+      let jm;
+      while ((jm = jsonRe.exec(src)) !== null) {
+        try { crawlJson(JSON.parse(jm[1]), 0); } catch(e) {}
+        if (Object.keys(albumCovers).length > 5) break;
       }
     }
 
-    // Pattern B: fallback — abbina tutti gli URL photo.yupoo.com per posizione agli album ID
+    // Strategia 2 — href="/albums/ID" (relativo O assoluto) seguito da <img>
+    // Accetta sia /albums/ID sia https://domain.com/albums/ID
+    const re2 = /href=["'](?:https?:\/\/[^"']*)?\/albums\/(\w+)[^"']*["'][\s\S]*?<img[^>]+(?:data-src|data-original|data-lazy|data-url|src)=["']((?:https?:)?\/\/[^"'>\s]+)["']/gs;
+    let m2;
+    while ((m2 = re2.exec(html)) !== null) {
+      const u = norm(m2[2]);
+      if (!albumCovers[m2[1]] && isImg(u)) albumCovers[m2[1]] = u;
+    }
+
+    // Strategia 3 — <img> PRIMA del href (ordine inverso nel DOM)
+    const re3 = /<img[^>]+(?:data-src|data-original|data-lazy|src)=["']((?:https?:)?\/\/[^"'>\s]+)["'][\s\S]{0,600}?href=["'](?:https?:\/\/[^"']*)?\/albums\/(\w+)/gs;
+    let m3;
+    while ((m3 = re3.exec(html)) !== null) {
+      const u = norm(m3[1]);
+      if (!albumCovers[m3[2]] && isImg(u)) albumCovers[m3[2]] = u;
+    }
+
+    // Strategia 4 — Fallback posizionale: accoppia tutti gli URL immagine con tutti gli album ID
     if (!Object.keys(albumCovers).length) {
       const allPhotoUrls = [];
-      const photoRe = /["'](\/\/(?:photo|img)\.yupoo\.com\/[^"'?\s]{20,})["']/g;
+      const photoRe = /["']((?:https?:)?\/\/[^"'?\s]*(?:yupoo|yunjifen)[^"'?\s]{3,})["']/g;
       let pm;
-      while ((pm = photoRe.exec(html)) !== null) allPhotoUrls.push('https:' + pm[1]);
+      while ((pm = photoRe.exec(html)) !== null) {
+        const u = norm(pm[1]);
+        if (u && isImg(u) && !allPhotoUrls.includes(u)) allPhotoUrls.push(u);
+      }
       const albumIdRe = /\/albums\/(\w+)/g;
       let ai; const albumIds = [];
       while ((ai = albumIdRe.exec(html)) !== null) {
@@ -87,7 +127,15 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       albumIds.forEach((id, i) => { if (allPhotoUrls[i]) albumCovers[id] = allPhotoUrls[i]; });
     }
 
-    return { html, status: resp.status, albumCovers };
+    // Debug info per diagnostica quando nessun album trovato
+    const albumIdsInHtml = [];
+    const debugRe = /\/albums\/(\w+)/g; let di;
+    while ((di = debugRe.exec(html)) !== null && albumIdsInHtml.length < 5) {
+      if (!albumIdsInHtml.includes(di[1])) albumIdsInHtml.push(di[1]);
+    }
+    const htmlPreview = html.slice(0, 400).replace(/\s+/g, ' ');
+
+    return { html, status: resp.status, albumCovers, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
