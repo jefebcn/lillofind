@@ -12,6 +12,7 @@ admin.initializeApp();
 setGlobalOptions({ region: 'europe-west1' });
 
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
+const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 
 // ══════════════════════════════════════════════════════════════════
 // yupooFetch
@@ -93,6 +94,99 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
 });
 
 const db = admin.firestore();
+
+// ══════════════════════════════════════════════════════════════════
+// yupooAnalyze
+// Fetcha un'immagine Yupoo server-side e la analizza con Claude Haiku.
+// Restituisce: { name, brand, model, category, colors, description }
+//
+// Input:  { imageUrl: string }  — URL cover album Yupoo
+// Output: { name, brand, model, category, colors, description }
+// ══════════════════════════════════════════════════════════════════
+exports.yupooAnalyze = onCall({ secrets: [ANTHROPIC_API_KEY], cors: true, timeoutSeconds: 45 }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Login richiesto.');
+
+  const userSnap = await admin.firestore().collection('users').doc(request.auth.uid).get();
+  if (userSnap.data()?.isAdmin !== true) throw new HttpsError('permission-denied', 'Solo admin.');
+
+  const { imageUrl } = request.data;
+  if (!imageUrl || typeof imageUrl !== 'string') throw new HttpsError('invalid-argument', 'imageUrl mancante.');
+
+  const url = imageUrl.startsWith('//') ? 'https:' + imageUrl : imageUrl;
+
+  // 1 — Fetch immagine server-side (bypassa CORS Yupoo)
+  let imageBase64, mediaType;
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.yupoo.com/',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    const ct = resp.headers.get('content-type') || 'image/jpeg';
+    mediaType = ct.split(';')[0].trim();
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)) mediaType = 'image/jpeg';
+
+    const buf = await resp.arrayBuffer();
+    if (buf.byteLength > 4.5 * 1024 * 1024) throw new Error('Immagine troppo grande (>4.5MB)');
+    imageBase64 = Buffer.from(buf).toString('base64');
+  } catch (e) {
+    throw new HttpsError('unavailable', 'Fetch immagine fallito: ' + e.message);
+  }
+
+  // 2 — Analisi con Claude Haiku via API diretta
+  try {
+    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY.value(),
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 350,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: imageBase64 },
+            },
+            {
+              type: 'text',
+              text: `Sei un esperto di streetwear e sneaker. Analizza questa immagine prodotto e rispondi SOLO con JSON valido (nessun markdown, nessun testo extra prima o dopo):
+{"name":"Brand Modello Colorway dettagliato (es. Nike Dunk Low Panda Bianco Nero)","brand":"Nike","model":"Dunk Low","category":"scarpe","colors":["Bianco","Nero"],"description":"Sneaker Nike Dunk Low colorway Panda, tomaia in pelle bianca e dettagli neri."}
+
+Categorie disponibili (scegli la più adatta): tshirt, tshirt_branded, felpa, scarpe, scarpe_box, pantaloni, shorts, cappello, giacchetto, borsa, accessori
+Se non identificabile con certezza, usa valori plausibili in base a ciò che vedi.`,
+            },
+          ],
+        }],
+      }),
+      signal: AbortSignal.timeout(25000),
+    });
+
+    if (!aiResp.ok) {
+      const errText = await aiResp.text();
+      throw new Error('Anthropic ' + aiResp.status + ': ' + errText.slice(0, 300));
+    }
+
+    const aiData = await aiResp.json();
+    const text = (aiData.content?.[0]?.text || '{}').trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Risposta AI non contiene JSON: ' + text.slice(0, 100));
+    const parsed = JSON.parse(jsonMatch[0]);
+    return parsed;
+  } catch (e) {
+    console.error('yupooAnalyze AI error:', e.message);
+    throw new HttpsError('internal', 'Analisi AI fallita: ' + e.message);
+  }
+});
 
 // ── Logica peso e fasce spedizione ─────────────────────────────────
 const CATEGORY_WEIGHTS_SV = {

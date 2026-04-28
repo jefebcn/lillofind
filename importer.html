@@ -13,9 +13,10 @@
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{getFunctions,httpsCallable}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
-window.__imp={db:getFirestore(app),auth:getAuth(app),collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
+window.__imp={db:getFirestore(app),auth:getAuth(app),functions:getFunctions(app,'europe-west1'),httpsCallable,collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
 </script>
 
 <style>
@@ -143,6 +144,17 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 }
 #toast.show{opacity:1;}
 
+/* ALBUM GRID */
+.alb-card{border:1.5px solid #181818;background:#0d0d0d;cursor:pointer;position:relative;transition:all .15s;user-select:none;overflow:hidden;}
+.alb-card:hover{border-color:#333;}
+.alb-card.on{border-color:var(--led);box-shadow:0 0 14px rgba(200,255,0,.1);}
+.alb-check{position:absolute;top:7px;right:7px;width:19px;height:19px;background:var(--led);color:var(--k);border-radius:50%;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;z-index:2;line-height:1;}
+.alb-card.on .alb-check{display:flex;}
+.alb-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#111;}
+.alb-meta{padding:8px 10px 10px;}
+.alb-name{font-size:11px;font-weight:500;color:var(--w);line-height:1.35;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.alb-status{font-size:9px;letter-spacing:1px;color:#333;}
+
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:var(--k);}
 ::-webkit-scrollbar-thumb{background:#252525;}
@@ -199,6 +211,38 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 <div class="led-strip"></div>
 
 <div id="app-body">
+
+  <!-- 00 YUPOO AUTO-IMPORT -->
+  <div class="sec-wrap" id="yupoo-sec">
+    <p class="sec-num">00 — Import Automatico</p>
+    <p class="sec-title">🔗 YUPOO <span style="color:var(--led);">+ AI</span></p>
+    <p style="font-size:12px;color:#555;margin-bottom:22px;line-height:1.9;">Incolla l'URL di una categoria Yupoo → il sistema scarica tutti gli album e usa <strong style="color:#888;">Claude Haiku</strong> per riconoscere automaticamente brand, nome e categoria prodotto.</p>
+
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <input class="lf-in" id="yupoo-url" placeholder="es. https://woodtableguy888.x.yupoo.com/categories/4633144" style="flex:1;min-width:260px;" onkeydown="if(event.key==='Enter')fetchYupooAlbums()"/>
+      <button class="btn-led" id="yupoo-fetch-btn" onclick="fetchYupooAlbums()" style="white-space:nowrap;padding:14px 28px;">CARICA ALBUM →</button>
+    </div>
+
+    <p id="yupoo-status" style="font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:18px;display:none;min-height:16px;"></p>
+
+    <div id="yupoo-grid" style="display:none;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+        <button class="btn-g" onclick="selectAllAlbums(true)" style="padding:9px 16px;font-size:10px;">✅ TUTTI</button>
+        <button class="btn-g" onclick="selectAllAlbums(false)" style="padding:9px 16px;font-size:10px;">○ NESSUNO</button>
+        <span id="yupoo-sel-count" style="font-size:10px;color:var(--dim);letter-spacing:1px;flex:1;text-align:right;padding-right:12px;"></span>
+        <button class="btn-led" id="yupoo-analyze-btn" onclick="analyzeAndAddRows()" style="padding:14px 30px;font-size:12px;letter-spacing:2px;">🤖 ANALIZZA CON AI →</button>
+      </div>
+
+      <div id="yupoo-albums" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:20px;"></div>
+
+      <div id="yupoo-progress" style="display:none;margin-bottom:8px;">
+        <div style="background:#161616;height:4px;width:100%;border-radius:2px;margin-bottom:10px;">
+          <div id="yupoo-prog-bar" style="background:var(--led);height:4px;width:0%;transition:width .25s;box-shadow:0 0 8px var(--led);border-radius:2px;"></div>
+        </div>
+        <p id="yupoo-prog-lbl" style="font-size:11px;color:var(--led);letter-spacing:1px;"></p>
+      </div>
+    </div>
+  </div>
 
   <!-- 01 BRAND -->
   <div class="sec-wrap">
@@ -588,7 +632,9 @@ function updateStats(){
 // SAVE ALL
 window.saveAll=async function(){
   if(!user){ toast('⚠️ Non autenticato'); return; }
-  if(!currentBrand){ toast('⚠️ Scegli il brand al punto 01'); return; }
+  const rowsCheck=document.querySelectorAll('.prod-row:not(.saved-ok)');
+  const hasRowBrands=[...rowsCheck].some(r=>r.dataset.brand);
+  if(!currentBrand && !hasRowBrands){ toast('⚠️ Scegli il brand al punto 01 o usa il Yupoo Importer'); return; }
 
   const imp=window.__imp;
   const btn=document.getElementById('save-btn');
@@ -604,6 +650,8 @@ window.saveAll=async function(){
     const price=parseFloat(document.getElementById('rp-'+id)?.value);
     if(!name||isNaN(price)||price<=0){ skipped++; continue; }
 
+    const rowBrand=row.dataset.brand||currentBrand||'';
+    const rowCategory=row.dataset.category||'';
     const imgUrl=row.dataset.imgUrl||document.getElementById('ru-'+id)?.value.trim()||'';
     const colorsRaw=document.getElementById('rc-'+id)?.value.trim()||'';
     const colors=colorsRaw?colorsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
@@ -613,7 +661,8 @@ window.saveAll=async function(){
     try{
       const rowModel=document.getElementById('rt-'+id)?.value||'';
       await imp.addDoc(imp.collection(imp.db,'products'),{
-        name,price,brand:currentBrand,model:rowModel,style:rowModel,
+        name,price,brand:rowBrand,model:rowModel,style:rowModel,
+        category:rowCategory,
         sizes:sizes.length?sizes:['S','M','L','XL'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description:'',createdAt:imp.serverTimestamp()
       });
@@ -811,6 +860,197 @@ window.saveCSV = async function(){
   toast(msg);
   document.getElementById('csv-count-lbl').textContent = saved + ' prodotti importati con successo';
 };
+
+// ══════════════════════════════════════════════════════════════════
+// YUPOO AUTO-IMPORT + HAIKU AI
+// ══════════════════════════════════════════════════════════════════
+let yupooAlbumsData = {}; // albumId -> { cover, analysis }
+
+window.fetchYupooAlbums = async function(){
+  const url = document.getElementById('yupoo-url').value.trim();
+  if(!url){ toast('⚠️ Incolla un URL Yupoo'); return; }
+  if(!url.includes('yupoo.com')){ toast('⚠️ URL non valido — deve essere yupoo.com'); return; }
+
+  const btn = document.getElementById('yupoo-fetch-btn');
+  const status = document.getElementById('yupoo-status');
+  btn.textContent = 'Caricamento...'; btn.disabled = true;
+  status.textContent = '⏳ Connessione a Yupoo...'; status.style.display = 'block';
+  document.getElementById('yupoo-grid').style.display = 'none';
+
+  try {
+    const imp = window.__imp;
+    const fn = imp.httpsCallable(imp.functions, 'yupooFetch');
+    const result = await fn({ url });
+    const { albumCovers } = result.data;
+    const albumIds = Object.keys(albumCovers || {});
+
+    if(!albumIds.length){
+      status.textContent = '⚠️ Nessun album trovato. Prova un URL categoria diverso.';
+      btn.textContent = 'CARICA ALBUM →'; btn.disabled = false;
+      return;
+    }
+
+    yupooAlbumsData = {};
+    albumIds.forEach(id => { yupooAlbumsData[id] = { cover: albumCovers[id], analysis: null }; });
+
+    renderYupooGrid();
+    document.getElementById('yupoo-grid').style.display = 'block';
+    status.textContent = `✅ ${albumIds.length} album trovati — seleziona quelli da importare, poi clicca "Analizza con AI"`;
+  } catch(e) {
+    status.textContent = '⚠️ Errore: ' + (e.message || 'Impossibile caricare. Riprova.');
+    console.error('fetchYupooAlbums:', e);
+  }
+  btn.textContent = 'CARICA ALBUM →'; btn.disabled = false;
+};
+
+function renderYupooGrid(){
+  const grid = document.getElementById('yupoo-albums');
+  grid.innerHTML = Object.entries(yupooAlbumsData).map(([id, d]) => `
+    <div class="alb-card on" id="alb-${id}" data-cover="${d.cover}" onclick="toggleAlbum('${id}')">
+      <div class="alb-check">✓</div>
+      <img class="alb-img" src="${d.cover}" alt="" onerror="this.style.opacity='.15'" loading="lazy"/>
+      <div class="alb-meta">
+        <p class="alb-name" id="alb-name-${id}">Album ${id.slice(-6)}</p>
+        <p class="alb-status" id="alb-st-${id}">In attesa</p>
+      </div>
+    </div>`).join('');
+  updateYupooSelCount();
+}
+
+window.toggleAlbum = function(id){
+  const card = document.getElementById('alb-'+id);
+  if(card){ card.classList.toggle('on'); updateYupooSelCount(); }
+};
+
+window.selectAllAlbums = function(sel){
+  document.querySelectorAll('.alb-card').forEach(c => sel ? c.classList.add('on') : c.classList.remove('on'));
+  updateYupooSelCount();
+};
+
+function updateYupooSelCount(){
+  const n = document.querySelectorAll('.alb-card.on').length;
+  const tot = document.querySelectorAll('.alb-card').length;
+  const el = document.getElementById('yupoo-sel-count');
+  if(el) el.textContent = n + ' / ' + tot + ' selezionati';
+}
+
+window.analyzeAndAddRows = async function(){
+  const selected = [...document.querySelectorAll('.alb-card.on')];
+  if(!selected.length){ toast('⚠️ Seleziona almeno un album'); return; }
+
+  const btn = document.getElementById('yupoo-analyze-btn');
+  const prog = document.getElementById('yupoo-progress');
+  const bar  = document.getElementById('yupoo-prog-bar');
+  const lbl  = document.getElementById('yupoo-prog-lbl');
+  btn.disabled = true; btn.textContent = '🤖 Analisi in corso...';
+  prog.style.display = 'block'; bar.style.width = '0%';
+
+  const imp = window.__imp;
+  const fn  = imp.httpsCallable(imp.functions, 'yupooAnalyze');
+  let done = 0, addedCount = 0;
+
+  for(const card of selected){
+    const id = card.id.replace('alb-','');
+    const d  = yupooAlbumsData[id];
+    if(!d) continue;
+
+    const nameEl = document.getElementById('alb-name-'+id);
+    const stEl   = document.getElementById('alb-st-'+id);
+    if(stEl){ stEl.textContent = '🤖 AI in corso...'; stEl.style.color = '#aaa'; }
+
+    try {
+      const result = await fn({ imageUrl: d.cover });
+      d.analysis = result.data;
+      if(nameEl) nameEl.textContent = d.analysis.name || ('Album '+id.slice(-6));
+      if(stEl){ stEl.textContent = '✅ ' + (d.analysis.brand||'OK'); stEl.style.color = 'var(--led)'; }
+    } catch(e) {
+      d.analysis = { name: 'Prodotto '+id.slice(-6), brand: currentBrand||'', model:'', category:'', colors:[] };
+      if(stEl){ stEl.textContent = '⚠️ Analisi fallita'; stEl.style.color = '#FF4757'; }
+      console.warn('yupooAnalyze err', id, e.message);
+    }
+
+    done++;
+    bar.style.width = Math.round((done/selected.length)*100) + '%';
+    lbl.textContent = done + ' / ' + selected.length + ' analizzati...';
+
+    // Aggiungi riga al form subito dopo l'analisi
+    addAnalyzedRow(d);
+    addedCount++;
+  }
+
+  lbl.textContent = '✅ Completato! ' + addedCount + ' prodotti aggiunti. Imposta i prezzi e clicca SALVA TUTTO.';
+  btn.disabled = false; btn.textContent = '✅ ' + addedCount + ' AGGIUNTI AL FORM';
+  updateStats();
+  toast('🤖 ' + addedCount + ' prodotti AI aggiunti al form!');
+  setTimeout(()=>{ document.getElementById('rows-container').scrollIntoView({behavior:'smooth',block:'start'}); }, 400);
+};
+
+function addAnalyzedRow(d){
+  const id = rowId++;
+  const container = document.getElementById('rows-container');
+  const div = document.createElement('div');
+  div.className = 'prod-row';
+  div.id = 'row-'+id;
+  div.dataset.imgUrl   = d.cover;
+  div.dataset.brand    = d.analysis.brand    || '';
+  div.dataset.category = d.analysis.category || '';
+
+  const name   = (d.analysis.name   || '').replace(/"/g,'&quot;');
+  const colors = (d.analysis.colors || []).join(', ');
+  // Trova se c'è un model match nei MODELS
+  const modelMatch = MODELS.find(m => m.toLowerCase() === (d.analysis.model||'').toLowerCase()) || '';
+
+  div.innerHTML = `
+    <div class="row-grid">
+      <div id="img-area-${id}">
+        <img class="img-prev" src="${d.cover}" alt="" onerror="this.style.opacity='.15'"/>
+      </div>
+      <div>
+        <p class="row-label">URL Immagine</p>
+        <input class="lf-in" id="ru-${id}" value="${d.cover}" style="font-size:10px;" oninput="handleUrlInput(this,${id})"/>
+      </div>
+      <div>
+        <p class="row-label">Nome Prodotto *</p>
+        <input class="lf-in" id="rn-${id}" value="${name}" placeholder="es. Nike Dunk Low Panda" style="font-size:13px;"/>
+      </div>
+      <div>
+        <p class="row-label">Prezzo €</p>
+        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" placeholder="89.99" style="font-size:16px;font-weight:600;color:var(--led);"/>
+      </div>
+      <div>
+        <p class="row-label">Tipo</p>
+        <select class="lf-in" id="rt-${id}" style="font-size:11px;padding:8px 10px;cursor:pointer;background:#0c0c0c;color:#aaa;">
+          <option value="">— scegli —</option>
+          ${MODELS.map(m=>`<option value="${m}"${m===modelMatch?' selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <p class="row-label">Taglie <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button></p>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
+          ${SIZES_ALL.map(s=>`<span class="sz-toggle on" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
+        </div>
+      </div>
+      <div>
+        <p class="row-label">Colori</p>
+        <input class="lf-in" id="rc-${id}" value="${colors}" placeholder="Nero, Bianco" style="font-size:12px;"/>
+      </div>
+      <div style="padding-top:20px;">
+        <button class="btn-red" onclick="removeRow(${id})" style="padding:10px;font-size:14px;">✕</button>
+      </div>
+    </div>
+    <div style="padding:4px 0 2px 16px;font-size:9px;color:#2a2a2a;letter-spacing:1px;">
+      🤖 AI: <span style="color:#444;">${d.analysis.brand||''}</span>${d.analysis.category?' · '+d.analysis.category:''}${d.analysis.description?' · '+d.analysis.description.slice(0,60):''}
+    </div>
+    <div id="rst-${id}" style="display:none;margin-top:6px;font-size:10px;letter-spacing:2px;padding:3px 0;"></div>`;
+
+  container.appendChild(div);
+
+  // Auto-imposta brand globale se non ancora impostato
+  if(d.analysis.brand && !currentBrand){
+    currentBrand = d.analysis.brand;
+    document.getElementById('sb-brand').textContent = d.analysis.brand;
+  }
+}
 
 document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveAll();} });
 </script>
