@@ -885,7 +885,14 @@ window.fetchYupooAlbums = async function(){
     const albumIds = Object.keys(albumCovers || {});
 
     if(!albumIds.length){
-      status.textContent = '⚠️ Nessun album trovato. Prova un URL categoria diverso.';
+      const dbg = result.data._debug || {};
+      const hint = dbg.albumIdsInHtml?.length
+        ? `Album ID trovati nell'HTML (${dbg.albumIdsInHtml.join(', ')}) ma senza cover — HTML ${dbg.htmlLen||0} chars`
+        : dbg.htmlLen < 2000
+          ? `Pagina quasi vuota (${dbg.htmlLen||0} chars) — possibile blocco bot o login richiesto`
+          : `Nessun album trovato — HTML ${dbg.htmlLen||0} chars. Prova URL /albums invece di /categories`;
+      status.textContent = '⚠️ ' + hint;
+      console.log('[yupooFetch debug]', dbg);
       btn.textContent = 'CARICA ALBUM →'; btn.disabled = false;
       return;
     }
