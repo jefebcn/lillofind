@@ -447,7 +447,12 @@ const SHIPPING_TIERS_SV = [
 function getProductWeightSv(prod){
   if(prod.weightKg && prod.weightKg > 0) return prod.weightKg;
   if(prod.weight_kg && prod.weight_kg > 0) return prod.weight_kg;
-  return CATEGORY_WEIGHTS_SV[prod.category] ?? 0.5;
+  const cat = prod.category || '';
+  if(cat === 'scarpe' || cat === 'scarpe_box') {
+    const box = prod.boxOption || (cat === 'scarpe_box' ? 'con_scatola' : 'senza_scatola');
+    return box === 'con_scatola' ? 2.5 : 2.0;
+  }
+  return CATEGORY_WEIGHTS_SV[cat] ?? 0.5;
 }
 function getShippingCostSv(totalWeightKg){
   const tier = SHIPPING_TIERS_SV.find(t => totalWeightKg <= t.maxKg);
@@ -495,6 +500,7 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
       price: prod.price || 0,
       category: prod.category || '',
       weightKg: prod.weightKg || prod.weight_kg || 0,
+      boxOption: items[idx].boxOption || '',
       qty: parseInt(items[idx].qty, 10),
       isDigital: prod.isDigital || false,
     };
@@ -611,6 +617,7 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
       brand: prod.brand || '',
       category: prod.category || '',
       weightKg: prod.weightKg || prod.weight_kg || 0,
+      boxOption: items[idx].boxOption || '',
       qty,
       size: items[idx].size || '',
       color: items[idx].color || '',
