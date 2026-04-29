@@ -13,6 +13,43 @@ setGlobalOptions({ region: 'europe-west1' });
 
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
+const GMAIL_PASS = defineSecret('GMAIL_PASS');
+
+const NOTIFY_EMAIL = 'yishionvt@gmail.com';
+
+async function sendOrderNotification(order, gmailPass) {
+  try {
+    const nodemailer = require('nodemailer');
+    const t = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: NOTIFY_EMAIL, pass: gmailPass },
+    });
+    const itemsHtml = (order.items || []).map(i =>
+      `<tr><td>${i.name}</td><td>${i.brand}</td><td>${i.size||'—'}</td><td>x${i.qty}</td><td>€${(i.price*i.qty).toFixed(2)}</td></tr>`
+    ).join('');
+    await t.sendMail({
+      from: `"LilloFind Orders" <${NOTIFY_EMAIL}>`,
+      to: NOTIFY_EMAIL,
+      subject: `🛍 Nuovo Ordine ${order.orderId} — €${order.total}`,
+      html: `<h2>Nuovo Ordine: ${order.orderId}</h2>
+<p><b>Cliente:</b> ${order.name} — ${order.email}</p>
+<p><b>Telefono:</b> ${order.phone||'—'}</p>
+<p><b>Indirizzo:</b> ${order.address?.street}, ${order.address?.city} ${order.address?.zip}</p>
+<p><b>Pagamento:</b> ${order.payment}</p>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+<tr><th>Prodotto</th><th>Brand</th><th>Taglia</th><th>Qtà</th><th>Prezzo</th></tr>
+${itemsHtml}
+</table>
+<p><b>Subtotale:</b> €${order.subtotal?.toFixed(2)}<br>
+<b>Spedizione:</b> €${order.shipping?.toFixed(2)}<br>
+<b>Sconto:</b> -€${order.discount?.toFixed(2)||'0.00'}<br>
+<b>TOTALE:</b> €${order.total?.toFixed(2)}</p>
+<p><b>Note:</b> ${order.notes||'—'}</p>`,
+    });
+  } catch(e) {
+    console.error('Email notification failed:', e.message);
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════
 // yupooFetch
@@ -311,6 +348,51 @@ exports.saveProduct = onCall({ cors: true }, async (request) => {
   return { id: ref.id };
 });
 
+// ══════════════════════════════════════════════════════════════════════
+// Admin CRUD helpers (tutti usano Admin SDK — bypass regole Firestore)
+// ══════════════════════════════════════════════════════════════════════
+async function checkAdmin(request) {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Login richiesto.');
+  const snap = await admin.firestore().collection('users').doc(request.auth.uid).get();
+  if (snap.data()?.isAdmin !== true) throw new HttpsError('permission-denied', 'Solo admin.');
+}
+
+exports.getAdminOrders = onCall({ cors: true }, async (request) => {
+  await checkAdmin(request);
+  const snap = await admin.firestore().collection('orders').orderBy('createdAt', 'desc').get();
+  return snap.docs.map(d => ({ _docId: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate?.()?.toISOString() || null }));
+});
+
+exports.getAdminProducts = onCall({ cors: true }, async (request) => {
+  await checkAdmin(request);
+  const snap = await admin.firestore().collection('products').orderBy('createdAt', 'desc').get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate?.()?.toISOString() || null }));
+});
+
+exports.deleteAdminProduct = onCall({ cors: true }, async (request) => {
+  await checkAdmin(request);
+  const { id } = request.data;
+  if (!id) throw new HttpsError('invalid-argument', 'ID mancante.');
+  await admin.firestore().collection('products').doc(id).delete();
+  return { ok: true };
+});
+
+exports.updateAdminProduct = onCall({ cors: true }, async (request) => {
+  await checkAdmin(request);
+  const { id, data } = request.data;
+  if (!id || !data) throw new HttpsError('invalid-argument', 'Dati mancanti.');
+  await admin.firestore().collection('products').doc(id).update(data);
+  return { ok: true };
+});
+
+exports.updateAdminOrder = onCall({ cors: true }, async (request) => {
+  await checkAdmin(request);
+  const { id, status } = request.data;
+  if (!id || !status) throw new HttpsError('invalid-argument', 'Dati mancanti.');
+  await admin.firestore().collection('orders').doc(id).update({ status });
+  return { ok: true };
+});
+
 // ── Logica peso e fasce spedizione ─────────────────────────────────
 const CATEGORY_WEIGHTS_SV = {
   tshirt:0.35, tshirt_branded:0.40, felpa:0.80,
@@ -441,7 +523,7 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
 // Output:
 //   { orderId, subtotal, shipping, discount, total }
 // ══════════════════════════════════════════════════════════════════
-exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, GMAIL_PASS] }, async (request) => {
   // 1 — Autenticazione obbligatoria
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Devi essere autenticato per completare un ordine.');
@@ -619,6 +701,9 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
     // Non bloccare — l'ordine è già stato creato
   }
 
-  // 10 — Ritorna al client i dati verificati
+  // 10 — Invia notifica email (fire-and-forget)
+  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, GMAIL_PASS.value());
+
+  // 11 — Ritorna al client i dati verificati
   return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints };
 });

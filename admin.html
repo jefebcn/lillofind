@@ -542,16 +542,17 @@ waitFB(()=>{
     const btn=document.getElementById('ad-btn');
     btn.textContent='...'; btn.disabled=true;
     try{
-      await fb.addDoc(fb.collection(fb.db,'products'),{
+      const saveFn=fb.httpsCallable(fb.functions,'saveProduct');
+      await saveFn({
         name,price,
         description:document.getElementById('ad-desc').value.trim(),
         model:document.getElementById('ad-model').value.trim(),
         brand:document.getElementById('ad-brand').value.trim(),
         sizes, colors,
-        size:sizes.join(', '), // backward compat for filters
+        size:sizes.join(', '),
         style:document.getElementById('ad-style').value,
         imageUrl:document.getElementById('ad-img').value.trim(),
-        createdAt:fb.serverTimestamp()
+        category:'', weightKg:0
       });
       showToast('✅ Prodotto salvato!');
       ['ad-name','ad-price','ad-desc','ad-model','ad-brand','ad-img','ad-colors'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -571,7 +572,8 @@ waitFB(()=>{
     if(!confirm('Eliminare '+name+'?'))return;
     const fb=window.__fb;
     try{
-      await fb.deleteDoc(fb.doc(fb.db,'products',pid));
+      const fn=fb.httpsCallable(fb.functions,'deleteAdminProduct');
+      await fn({id:pid});
       showToast('🗑 Prodotto eliminato.');
       loadAdminCatalog();
     }catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
@@ -737,13 +739,14 @@ waitFB(()=>{
       const imgUrl=imgInput?.dataset.b64||'';
       if(!name||isNaN(price)){errors++;continue;}
       try{
-        await fb.addDoc(fb.collection(fb.db,'products'),{
+        const saveFn=fb.httpsCallable(fb.functions,'saveProduct');
+        await saveFn({
           name,price,
           brand:bulkSelectedCat.brand||'',
           model:model||bulkSelectedCat.model||'',
-          style,size,imageUrl:imgUrl,
-          description:'',
-          createdAt:fb.serverTimestamp()
+          category:'', weightKg:0,
+          sizes:size?[size]:['S','M','L','XL'],
+          size,imageUrl:imgUrl,colors:[],description:''
         });
         saved++;
         if(status) status.textContent=`${saved} prodotti salvati...`;
@@ -767,11 +770,11 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento ordini...</p>';
     try{
-      const q = fb.query(fb.collection(fb.db,'orders'), fb.orderBy('createdAt','desc'));
-      const snap = await fb.getDocs(q);
-      adminOrders = snap.docs.map(d=>({_docId:d.id,...d.data()}));
+      const fn = fb.httpsCallable(fb.functions,'getAdminOrders');
+      const res = await fn();
+      adminOrders = res.data;
       renderAdminOrders();
-    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Si è verificato un errore. Riprova.</p>'; }
+    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
   };
 
   window.renderAdminOrders = function(){
@@ -839,7 +842,8 @@ waitFB(()=>{
     if(!docId) return;
     if(btn){ btn.textContent='...'; btn.disabled=true; }
     try{
-      await fb.updateDoc(fb.doc(fb.db,'orders',docId),{status:'confirmed'});
+      const fn=fb.httpsCallable(fb.functions,'updateAdminOrder');
+      await fn({id:docId, status:'confirmed'});
       const idx = adminOrders.findIndex(o=>o._docId===docId);
       if(idx>=0) adminOrders[idx].status='confirmed';
       renderAdminOrders();
@@ -867,11 +871,11 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const q = fb.query(fb.collection(fb.db,'products'), fb.orderBy('createdAt','desc'));
-      const snap = await fb.getDocs(q);
-      adminCatalogProducts = snap.docs.map(d=>({id:d.id,...d.data()}));
+      const fn=fb.httpsCallable(fb.functions,'getAdminProducts');
+      const res=await fn();
+      adminCatalogProducts=res.data;
       renderAdminCatalog();
-    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Si è verificato un errore. Riprova.</p>'; }
+    } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
   };
 
   let bulkMode = false;
@@ -932,8 +936,9 @@ waitFB(()=>{
     if(btn){ btn.textContent = 'Eliminazione...'; btn.style.pointerEvents='none'; }
     let deleted = 0;
     const ids = [...bulkSelected];
+    const delFn=fb.httpsCallable(fb.functions,'deleteAdminProduct');
     for(const pid of ids){
-      try{ await fb.deleteDoc(fb.doc(fb.db,'products',pid)); deleted++; }
+      try{ await delFn({id:pid}); deleted++; }
       catch(e){ console.error('Errore eliminando',pid,e); }
     }
     showToast('Eliminat' + (deleted===1?'o':'i') + ' ' + deleted + ' prodott' + (deleted===1?'o':'i') + '.');
@@ -1055,10 +1060,8 @@ waitFB(()=>{
     const btn = document.getElementById('edit-save-btn');
     btn.textContent = 'Salvando...'; btn.disabled = true;
     try{
-      await fb.updateDoc(fb.doc(fb.db,'products',pid),{
-        name, price, brand, model, description:desc,
-        imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')
-      });
+      const fn=fb.httpsCallable(fb.functions,'updateAdminProduct');
+      await fn({id:pid, data:{name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')}});
       // Update local cache
       const idx = adminCatalogProducts.findIndex(p=>p.id===pid);
       if(idx>=0) adminCatalogProducts[idx] = {...adminCatalogProducts[idx], name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')};
