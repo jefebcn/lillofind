@@ -3,7 +3,7 @@
  * Region: europe-west1 (Belgio)
  */
 
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
@@ -51,6 +51,42 @@ ${itemsHtml}
     console.error('Email notification failed:', e.message);
   }
 }
+
+// ══════════════════════════════════════════════════════════════════
+// proxyImage  — proxy immagini server-side (bypassa hotlink Yupoo)
+// Pubblico, cacheable. GET /proxyImage?url=ENCODED_URL
+// ══════════════════════════════════════════════════════════════════
+exports.proxyImage = onRequest({ cors: true, maxInstances: 20, timeoutSeconds: 15 }, async (req, res) => {
+  const url = req.query.url;
+  if (!url) { res.status(400).send('Missing url'); return; }
+
+  let parsed;
+  try { parsed = new URL(url); } catch(e) { res.status(400).send('Invalid URL'); return; }
+
+  const ok = parsed.hostname.endsWith('.yupoo.com') || parsed.hostname.endsWith('.yunjifen.com')
+    || parsed.hostname === 'yupoo.com' || parsed.hostname === 'yunjifen.com';
+  if (!ok) { res.status(403).send('Host not allowed'); return; }
+
+  try {
+    const upstream = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': `https://${parsed.hostname}/`,
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!upstream.ok) { res.status(upstream.status).send('Upstream error'); return; }
+    const ct = (upstream.headers.get('content-type') || 'image/jpeg').split(';')[0];
+    const buf = Buffer.from(await upstream.arrayBuffer());
+    res.set('Content-Type', ct);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.set('Access-Control-Allow-Origin', '*');
+    res.send(buf);
+  } catch(e) {
+    res.status(502).send('Fetch failed: ' + e.message);
+  }
+});
 
 // ══════════════════════════════════════════════════════════════════
 // yupooFetch
