@@ -1043,7 +1043,7 @@ function addAnalyzedRow(d){
 
   // Prezzo fisso 50€ per scarpe, altrimenti vuoto
   const supplierUSD  = d.albumInfo?.supplierPriceUSD || null;
-  const priceDefault = isShoe ? 50 : (supplierUSD ? Math.round(supplierUSD * 1.8) : '');
+  const priceDefault = isShoe ? 45 : (supplierUSD ? Math.round(supplierUSD * 1.8) : '');
   const priceHint    = supplierUSD && !isShoe ? `(fornitore: ${supplierUSD}$)` : '';
 
   div.innerHTML = `
