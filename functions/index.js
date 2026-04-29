@@ -273,7 +273,7 @@ exports.yupooAnalyze = onCall({ secrets: [ANTHROPIC_API_KEY], cors: true, timeou
   const userSnap = await admin.firestore().collection('users').doc(request.auth.uid).get();
   if (userSnap.data()?.isAdmin !== true) throw new HttpsError('permission-denied', 'Solo admin.');
 
-  const { imageUrl } = request.data;
+  const { imageUrl, brandHint = '', modelHint = '' } = request.data;
   if (!imageUrl || typeof imageUrl !== 'string') throw new HttpsError('invalid-argument', 'imageUrl mancante.');
 
   const url = imageUrl.startsWith('//') ? 'https:' + imageUrl : imageUrl;
@@ -323,11 +323,11 @@ exports.yupooAnalyze = onCall({ secrets: [ANTHROPIC_API_KEY], cors: true, timeou
             },
             {
               type: 'text',
-              text: `Sei un esperto di streetwear e sneaker. Analizza questa immagine prodotto e rispondi SOLO con JSON valido (nessun markdown, nessun testo extra prima o dopo):
+              text: `Sei un esperto di moda, streetwear e sneaker. Analizza questa immagine prodotto e rispondi SOLO con JSON valido (nessun markdown, nessun testo extra prima o dopo):
 {"name":"Brand Modello Colorway dettagliato (es. Nike Dunk Low Panda Bianco Nero)","brand":"Nike","model":"Dunk Low","category":"scarpe","colors":["Bianco","Nero"],"description":"Sneaker Nike Dunk Low colorway Panda, tomaia in pelle bianca e dettagli neri."}
 
 Categorie disponibili (scegli la più adatta): tshirt, tshirt_branded, felpa, scarpe, scarpe_box, pantaloni, shorts, cappello, giacchetto, borsa, accessori
-Se non identificabile con certezza, usa valori plausibili in base a ciò che vedi.`,
+${brandHint || modelHint ? `\nL'utente indica che questo prodotto è probabilmente: ${[brandHint, modelHint].filter(Boolean).join(' — ')}. Usa questo come riferimento forte e identifica il modello e colorway specifici dall'immagine.` : 'Se non identificabile con certezza, usa valori plausibili in base a ciò che vedi.'}`,
             },
           ],
         }],
