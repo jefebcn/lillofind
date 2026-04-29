@@ -3148,8 +3148,16 @@ img{ -webkit-user-drag:none; user-select:none; }
     {maxKg:10,  price:35,label:'6–10 kg'},
     {maxKg:9999,price:50,label:'10+ kg'},
   ];
+  function isShoeItem(item){
+    const cat=item.category||'';
+    return cat==='scarpe'||cat==='scarpe_box'||(item.model||'').toLowerCase()==='sneakers';
+  }
   function getProductWeight(item){
     if(item.weightKg&&item.weightKg>0) return item.weightKg;
+    if(isShoeItem(item)){
+      const box=item.boxOption||(item.category==='scarpe_box'?'con_scatola':'senza_scatola');
+      return box==='con_scatola'?2.5:2.0;
+    }
     return CATEGORY_WEIGHTS[item.category]??0.5;
   }
   function getShippingCost(totalWeightKg){
@@ -3200,8 +3208,15 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>`;
     }
     setTimeout(updateShipBar, 80);
-    wrap.innerHTML=digitalNotice+cart.map((item,idx)=>`
-      <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #e0e0e0;align-items:center;">
+    wrap.innerHTML=digitalNotice+cart.map((item,idx)=>{
+      const _shoe=isShoeItem(item);
+      const _box=_shoe?(item.boxOption||(item.category==='scarpe_box'?'con_scatola':'senza_scatola')):null;
+      const _wkg=getProductWeight(item).toFixed(1);
+      const _boxHtml=_shoe?`<div style="display:flex;gap:4px;margin-top:5px;">
+        <button onclick="setBoxOption(${idx},'con_scatola')" style="font-size:8px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='con_scatola'?'background:var(--k);color:var(--w);':'background:none;color:var(--k);'}">📦 Con Scatola</button>
+        <button onclick="setBoxOption(${idx},'senza_scatola')" style="font-size:8px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='senza_scatola'?'background:var(--k);color:var(--w);':'background:none;color:var(--k);'}">Senza Scatola</button>
+      </div>`:'';
+      return `<div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #e0e0e0;align-items:center;">
         <div style="width:72px;height:72px;background:${item.isDigital?'linear-gradient(135deg,#f5f0eb,#ede6de)':'#f0f0f0'};flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;">
           ${item.img?`<img src="${pImg(item.img)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:''}
           ${item.isDigital&&!item.img?`<span style="font-size:28px;">${item.icon||'📱'}</span>`:''}
@@ -3214,9 +3229,21 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <p style="font-size:12px;font-weight:500;margin:2px 0;">${item.name}</p>
           ${item.size?`<p style="font-size:10px;color:var(--dim);">SZ ${item.size}</p>`:''}
-          ${(item.category||item.weightKg)?`<p style="font-size:10px;color:var(--dim);">${[item.category,getProductWeight(item).toFixed(1)+'kg'].filter(Boolean).join(' · ')}</p>`:''}
-          <p style="font-size:9px;color:var(--led);letter-spacing:1px;margin-top:2px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
+          <p style="font-size:10px;color:var(--dim);">${_wkg} kg</p>
+          ${_boxHtml}
+          <p style="font-size:9px;color:var(--led);letter-spacing:1px;margin-top:3px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <button onclick="changeQty(${idx},-1)" style="width:28px;height:28px;border:1.5px solid var(--k);background:none;cursor:pointer;font-size:14px;">−</button>
+          <span style="font-size:12px;min-width:16px;text-align:center;">${item.qty}</span>
+          <button onclick="changeQty(${idx},1)" style="width:28px;height:28px;border:1.5px solid var(--k);background:none;cursor:pointer;font-size:14px;">+</button>
+        </div>
+        <div style="text-align:right;flex-shrink:0;min-width:70px;">
+          <p class="bb" style="font-size:18px;">€${(item.price*item.qty).toFixed(2)}</p>
+          <button onclick="removeCart(${idx})" style="font-size:9px;color:#c00;background:none;border:none;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:4px;">Rimuovi</button>
+        </div>
+      </div>`;
+    }).join('');
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
           <button onclick="changeQty(${idx},-1)" style="width:28px;height:28px;border:1.5px solid var(--k);background:none;cursor:pointer;font-size:14px;">−</button>
           <span style="font-size:12px;min-width:16px;text-align:center;">${item.qty}</span>
@@ -3260,6 +3287,11 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
   window.removeCart=function(idx){
     cart.splice(idx,1);saveCart();updateCartBadge();renderCart();
+  };
+  window.setBoxOption=function(idx,opt){
+    if(!cart[idx]) return;
+    cart[idx].boxOption=opt;
+    saveCart();renderCart();
   };
 
   // ── Buy — shows size/color picker ─────────────────────
@@ -3384,7 +3416,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <div style="flex:1;min-width:0;">
           <p style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i.name}</p>
-          <p style="font-size:10px;color:var(--mid);margin-top:1px;">${[i.size?'SZ '+i.size:'',i.color||'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;'}</p>
+          <p style="font-size:10px;color:var(--mid);margin-top:1px;">${[i.size?'SZ '+i.size:'',i.color||'',i.boxOption==='con_scatola'?'📦 Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;'}</p>
         </div>
         <span style="font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;">€${(i.price*i.qty).toFixed(2)}</span>
       </div>`).join('');
@@ -3473,7 +3505,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     cart=[];saveCart();updateCartBadge();
     showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
     if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
-    const _itemLines=_orderItems.map(i=>'  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2)).join('\n');
+    const _itemLines=_orderItems.map(i=>'  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+(i.boxOption==='con_scatola'?' — Con Scatola':i.boxOption==='senza_scatola'?' — Senza Scatola':'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2)).join('\n');
     const waMsg='🛍 *NUOVO ORDINE — LILLOFIND*\n\n📋 ID: '+orderId+'\n👤 Cliente: '+orderData.name+'\n📧 Email: '+user.email+'\n📞 Tel: '+phone+'\n\n📦 Indirizzo:\n'+street+', '+city+' '+zip+' ('+country+')\n\n🧾 Articoli:\n'+_itemLines+'\n\n💶 Subtotale: €'+subtotal.toFixed(2)+'\n🚚 Spedizione: '+(shipping===0?'Gratis':'€'+shipping.toFixed(2))+'\n'+(discount>0?'🎁 Bonus: −€'+discount.toFixed(2)+'\n':'')+'💰 TOTALE: €'+total.toFixed(2)+'\n⬡ LFPOINTS: +'+pts;
     setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
     setTimeout(()=>showPg('shop'),1200);
@@ -3522,7 +3554,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const country=document.getElementById('ck-country')?.value||'Italia';
     const notes=document.getElementById('ck-notes')?.value.trim()||'';
     const _orderPayload={
-      items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||''})),
+      items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||'',boxOption:i.boxOption||''})),
       paymentMethod:selectedPayment||'card',
       shippingAddress:{street,city,zip,country},
       name:fname+' '+lname,

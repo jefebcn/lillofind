@@ -793,7 +793,10 @@ waitFB(()=>{
       const isPending = o.status === 'pending';
       const ts = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000).toLocaleString('it-IT') : '—';
       const payEmoji = {card:'💳',paypal:'🅿',bonifico:'🏦'}[o.payment]||'💳';
-      const itemsSummary = (o.items||[]).map(i=>`${i.name}${i.size?' – Sz '+i.size:''} x${i.qty}`).join(' · ');
+      const itemsSummary = (o.items||[]).map(i=>{
+        const box=i.boxOption==='con_scatola'?' 📦':i.boxOption==='senza_scatola'?' (no box)':'';
+        return `${i.name}${i.size?' – Sz '+i.size:''}${box} x${i.qty}`;
+      }).join(' · ');
       const orderJsonSafe = JSON.stringify(o).replace(/'/g,"\\'").replace(/"/g,'&quot;');
       return `
       <div class="admin-order-card ${isPending?'pending':'confirmed'}">
