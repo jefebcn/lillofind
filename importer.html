@@ -226,6 +226,45 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
     <p id="yupoo-status" style="font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:18px;display:none;min-height:16px;"></p>
 
     <div id="yupoo-grid" style="display:none;">
+
+      <!-- HINT AI PANEL -->
+      <div style="background:#0d0d0d;border:1.5px solid #1e1e1e;padding:16px 18px;margin-bottom:16px;">
+        <p style="font-size:9px;letter-spacing:3px;color:var(--led);text-transform:uppercase;margin-bottom:10px;">💡 Suggerisci al AI (opzionale)</p>
+        <p style="font-size:10px;color:#444;letter-spacing:1px;margin-bottom:12px;">Se sai già brand/modello, specificalo qui — il AI lo userà come riferimento per ogni album selezionato.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:160px;">
+            <p style="font-size:8px;letter-spacing:2px;color:#333;margin-bottom:5px;">BRAND (es. Alexander McQueen)</p>
+            <input class="lf-in" id="ai-hint-brand" placeholder="Brand..." style="font-size:12px;"/>
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <p style="font-size:8px;letter-spacing:2px;color:#333;margin-bottom:5px;">TIPO (es. Sneakers)</p>
+            <select class="lf-in" id="ai-hint-model" style="font-size:11px;padding:8px 10px;cursor:pointer;background:#0c0c0c;color:#aaa;">
+              <option value="">— qualsiasi —</option>
+              <option value="Sneakers">Sneakers</option>
+              <option value="T-Shirt">T-Shirt</option>
+              <option value="Hoodie">Hoodie</option>
+              <option value="Crewneck">Crewneck</option>
+              <option value="Jacket">Jacket</option>
+              <option value="Pants">Pants</option>
+              <option value="Shorts">Shorts</option>
+              <option value="Cap">Cap</option>
+              <option value="Bag">Bag</option>
+              <option value="Altro">Altro</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:2px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:#555;letter-spacing:1px;">
+              <input type="checkbox" id="ai-hint-override" style="accent-color:var(--led);" checked/>
+              Forza sui non riconosciuti
+            </label>
+          </div>
+        </div>
+        <!-- Quick brand chips per brand comuni non in lista -->
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;" id="hint-quick-brands">
+          <span style="font-size:8px;color:#333;letter-spacing:1px;align-self:center;">VELOCI:</span>
+        </div>
+      </div>
+
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
         <button class="btn-g" onclick="selectAllAlbums(true)" style="padding:9px 16px;font-size:10px;">✅ TUTTI</button>
         <button class="btn-g" onclick="selectAllAlbums(false)" style="padding:9px 16px;font-size:10px;">○ NESSUNO</button>
@@ -413,16 +452,24 @@ let currentBrand='', rowId=0, savedCount=0, user=null;
 
 const BRANDS = [
   'Nike','Adidas','Jordan','New Balance','Asics','Puma','Reebok','Converse',
+  'Veja','On Running','Salomon','Hoka','New Balance 550','Saucony',
   'Ralph Lauren','Tommy Hilfiger','Lacoste','Fred Perry','Stone Island',
   'Moncler','Canada Goose','Arc\'teryx','Patagonia','The North Face',
   'Stussy','Supreme','Palace','Carhartt WIP','Dickies','Wrangler',
   'Off-White','Vetements','Raf Simons','Rick Owens','Fear of God','Essentials',
   'Balenciaga','Gucci','Versace','Prada','Fendi','Dior','LV','Burberry','YSL',
+  'Alexander McQueen','Bottega Veneta','Valentino','Loewe','Celine','Givenchy',
+  'Alexander Wang','Acne Studios','Toteme','Ganni','Nanushka','Jacquemus',
   'Broken Planet','RTA','Alo Yoga','Lululemon','Vuori',
   'New Era','Mitchell & Ness','Kangol','Red Bull',
   'Stefano Ricci','Ferragamo','Guess','The Couture Club','Born x Raised',
   'Moschino','Marni','A.P.C.','Ami Paris','Kenzo','Isabel Marant',
   'Tuff Crowd','Derschutze','Morta','Altro',
+];
+// Brand comuni spesso non riconosciuti dall'AI — mostrati come chip veloci nell'hint panel
+const HINT_QUICK_BRANDS = [
+  'Alexander McQueen','Balenciaga','Bottega Veneta','Valentino','Loewe',
+  'Veja','On Running','Salomon','New Balance','Asics',
 ];
 const MODELS = [
   'T-Shirt','Polo','Longsleeve','Hoodie','Crewneck','Zip Hoodie',
@@ -490,6 +537,9 @@ function initApp(){
   for(let i=0;i<8;i++) createRow('','');
   updateStats();
   document.getElementById('brand-chips').innerHTML=BRANDS.map(b=>`<span class="brand-chip" onclick="selectBrand('${b.replace(/'/g,"\\'")}',this)">${b}</span>`).join('');
+  // Popola quick hint chips
+  const hqb = document.getElementById('hint-quick-brands');
+  if(hqb) hqb.insertAdjacentHTML('beforeend', HINT_QUICK_BRANDS.map(b=>`<span style="display:inline-flex;align-items:center;padding:6px 12px;border:1px solid #1e1e1e;font-size:10px;letter-spacing:1px;cursor:pointer;background:#0a0a0a;color:#666;transition:all .15s;" onclick="document.getElementById('ai-hint-brand').value='${b.replace(/'/g,"\\'")}';this.parentElement.querySelectorAll('span').forEach(s=>s.style.borderColor='#1e1e1e');this.style.borderColor='var(--led)';this.style.color='var(--led)';">${b}</span>`).join(''));
   updateStats();
 }
 
@@ -974,6 +1024,11 @@ window.analyzeAndAddRows = async function(){
   const fnFetch = imp.httpsCallable(imp.functions, 'yupooFetch');
   let done = 0, addedCount = 0;
 
+  // Read optional hints from the panel
+  const hintBrand  = (document.getElementById('ai-hint-brand')?.value||'').trim();
+  const hintModel  = (document.getElementById('ai-hint-model')?.value||'').trim();
+  const hintOverride = document.getElementById('ai-hint-override')?.checked ?? true;
+
   for(const card of selected){
     const id = card.id.replace('alb-','');
     const d  = yupooAlbumsData[id];
@@ -986,13 +1041,25 @@ window.analyzeAndAddRows = async function(){
     // Fetch AI analysis + album detail page in parallelo
     const albumUrl = _yupooHostname ? `https://${_yupooHostname}/albums/${id}` : null;
     const [aiRes, detailRes] = await Promise.allSettled([
-      fnAI({ imageUrl: d.cover }),
+      fnAI({ imageUrl: d.cover, brandHint: hintBrand||'', modelHint: hintModel||'' }),
       albumUrl ? fnFetch({ url: albumUrl }) : Promise.resolve(null),
     ]);
 
     d.analysis = aiRes.status === 'fulfilled'
       ? aiRes.value.data
-      : { name: 'Prodotto '+id.slice(-6), brand: currentBrand||'', model:'', category:'', colors:[] };
+      : { name: 'Prodotto '+id.slice(-6), brand: currentBrand||hintBrand||'', model:hintModel||'', category:'', colors:[] };
+
+    // If override is on: apply hints to brand/model when AI didn't recognize the product well
+    if(hintOverride && hintBrand){
+      const aiName = d.analysis.name || '';
+      const looksUnrecognized = !d.analysis.brand || aiName.toLowerCase().startsWith('album') || aiName.toLowerCase().startsWith('prodotto');
+      if(looksUnrecognized){
+        d.analysis.brand = hintBrand;
+        if(hintModel) d.analysis.model = hintModel;
+        if(!d.analysis.name || aiName.toLowerCase().startsWith('album') || aiName.toLowerCase().startsWith('prodotto'))
+          d.analysis.name = hintBrand + (hintModel ? ' ' + hintModel : '') + ' ' + id.slice(-6);
+      }
+    }
 
     if(detailRes.status === 'fulfilled' && detailRes.value?.data?.albumInfo){
       d.albumInfo = detailRes.value.data.albumInfo;
