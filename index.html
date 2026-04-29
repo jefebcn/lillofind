@@ -2677,9 +2677,10 @@ img{ -webkit-user-drag:none; user-select:none; }
       const s=await fb.getDocs(q);
       products=s.docs.map(d=>({id:d.id,...d.data()}));
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-      buildChips(); renderShop(); renderHomeProds();
+      try{buildChips();}catch(_){}
+      renderShop(); renderHomeProds();
       localStorage.setItem('lf_wishlist', JSON.stringify(wishlist));
-    updateWishBadge();
+      updateWishBadge();
     } catch(e){ document.getElementById('s-load').textContent='Errore caricamento.'; }
   }
 
@@ -2749,7 +2750,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         ).join('');
         htmlMob=html;
       } else if(k==='size'){
-        const vals=[...new Set(products.flatMap(p=>p.sizes||[]).filter(Boolean))].sort((a,b)=>{
+        const vals=[...new Set(products.flatMap(p=>Array.isArray(p.sizes)?p.sizes:p.sizes?[p.sizes]:[]).filter(v=>v&&typeof v==='string'))].sort((a,b)=>{
           const order=['XS','S','M','L','XL','XXL','Unica'];
           const ia=order.indexOf(a), ib=order.indexOf(b);
           if(ia>=0&&ib>=0) return ia-ib;
@@ -2789,8 +2790,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   window.resetFilters=function(){
-    filters={model:'',brand:'',size:'',style:''};
-    document.querySelectorAll('.chip[data-key]').forEach(c=>c.classList.remove('on'));
+    filters={model:'',brand:'',size:'',style:'',color:''};
+    document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     const rb=document.getElementById('rst-btn'); if(rb) rb.style.display='none';
     const rbm=document.getElementById('rst-btn-m'); if(rbm) rbm.style.display='none';
     renderShop();
@@ -3011,8 +3012,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     const filtered=products.filter(p=>
       (!filters.model||matchesModelFilter(p,filters.model))&&
       (!filters.brand||p.brand===filters.brand)&&
-      (!filters.size ||(p.sizes&&p.sizes.includes(filters.size))||p.size===filters.size)&&
-      (!filters.style||p.style===filters.style)&&
+      (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
+      (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>c.toLowerCase()===filters.color.toLowerCase()))||''+(p.color||'').toLowerCase()===filters.color.toLowerCase())&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
     if(_sLoad) _sLoad.style.display='none';
@@ -3807,7 +3808,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           if(products.length)return; // già caricati dall'auth
           products=s.docs.map(d=>({id:d.id,...d.data()}));
           products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-          renderHomeProds(); buildChips();
+          renderHomeProds(); try{buildChips();}catch(_){}
         }).catch(()=>{});
     }
   });
@@ -3837,7 +3838,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
           const s=await fb.getDocs(q);
           products=s.docs.map(d=>({id:d.id,...d.data()}));
-          renderHomeProds(); buildChips();
+          renderHomeProds(); try{buildChips();}catch(_){}
         } catch(_){}
       }
     });
@@ -4402,11 +4403,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Reset all active chips/size-boxes/swatches first
     document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     // Reset all filters then apply the one requested
-    filters = {model:'',brand:'',size:'',style:''};
+    filters = {model:'',brand:'',size:'',style:'',color:''};
     if(type === 'brand') filters.brand = value;
     if(type === 'style') filters.style = value;
     if(type === 'model') filters.model = value;
     if(type === 'size')  filters.size  = value;
+    if(type === 'color') filters.color = value;
     // Highlight the matching chip if visible
     document.querySelectorAll(`.chip[data-key="${type}"][data-val="${value}"],.size-box[data-key="${type}"][data-val="${value}"]`).forEach(c=>c.classList.add('on'));
     const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=value?'':'none';
