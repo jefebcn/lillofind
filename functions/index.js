@@ -13,25 +13,23 @@ setGlobalOptions({ region: 'europe-west1' });
 
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
-const GMAIL_PASS = defineSecret('GMAIL_PASS');
+const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
 
 const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
-async function sendOrderNotification(order, gmailPass) {
+async function sendOrderNotification(order, resendKey) {
   try {
-    const nodemailer = require('nodemailer');
-    const t = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: NOTIFY_EMAIL, pass: gmailPass },
-    });
     const itemsHtml = (order.items || []).map(i =>
-      `<tr><td>${i.name}</td><td>${i.brand}</td><td>${i.size||'—'}</td><td>x${i.qty}</td><td>€${(i.price*i.qty).toFixed(2)}</td></tr>`
+      `<tr><td>${i.name}</td><td>${i.brand||'—'}</td><td>${i.size||'—'}</td><td>x${i.qty}</td><td>€${(i.price*i.qty).toFixed(2)}</td></tr>`
     ).join('');
-    await t.sendMail({
-      from: `"LilloFind Orders" <${NOTIFY_EMAIL}>`,
-      to: NOTIFY_EMAIL,
-      subject: `🛍 Nuovo Ordine ${order.orderId} — €${order.total}`,
-      html: `<h2>Nuovo Ordine: ${order.orderId}</h2>
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'LilloFind Orders <onboarding@resend.dev>',
+        to: [NOTIFY_EMAIL],
+        subject: `🛍 Nuovo Ordine ${order.orderId} — €${order.total}`,
+        html: `<h2>Nuovo Ordine: ${order.orderId}</h2>
 <p><b>Cliente:</b> ${order.name} — ${order.email}</p>
 <p><b>Telefono:</b> ${order.phone||'—'}</p>
 <p><b>Indirizzo:</b> ${order.address?.street}, ${order.address?.city} ${order.address?.zip}</p>
@@ -42,10 +40,12 @@ ${itemsHtml}
 </table>
 <p><b>Subtotale:</b> €${order.subtotal?.toFixed(2)}<br>
 <b>Spedizione:</b> €${order.shipping?.toFixed(2)}<br>
-<b>Sconto:</b> -€${order.discount?.toFixed(2)||'0.00'}<br>
+<b>Sconto:</b> -€${(order.discount||0).toFixed(2)}<br>
 <b>TOTALE:</b> €${order.total?.toFixed(2)}</p>
 <p><b>Note:</b> ${order.notes||'—'}</p>`,
+      }),
     });
+    if (!resp.ok) console.error('Resend error:', await resp.text());
   } catch(e) {
     console.error('Email notification failed:', e.message);
   }
@@ -523,7 +523,7 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
 // Output:
 //   { orderId, subtotal, shipping, discount, total }
 // ══════════════════════════════════════════════════════════════════
-exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, GMAIL_PASS] }, async (request) => {
+exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, RESEND_API_KEY] }, async (request) => {
   // 1 — Autenticazione obbligatoria
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Devi essere autenticato per completare un ordine.');
@@ -702,7 +702,7 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, GMAIL_PASS] }, asy
   }
 
   // 10 — Invia notifica email (fire-and-forget)
-  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, GMAIL_PASS.value());
+  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, RESEND_API_KEY.value());
 
   // 11 — Ritorna al client i dati verificati
   return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints };
