@@ -3416,7 +3416,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <div style="flex:1;min-width:0;">
           <p style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i.name}</p>
-          <p style="font-size:10px;color:var(--mid);margin-top:1px;">${[i.size?'SZ '+i.size:'',i.color||'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;'}</p>
+          <p style="font-size:10px;color:var(--mid);margin-top:1px;">${[i.size?'SZ '+i.size:'',i.color||'',i.boxOption==='con_scatola'?'📦 Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;'}</p>
         </div>
         <span style="font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;">€${(i.price*i.qty).toFixed(2)}</span>
       </div>`).join('');
@@ -3505,7 +3505,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     cart=[];saveCart();updateCartBadge();
     showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
     if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
-    const _itemLines=_orderItems.map(i=>'  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2)).join('\n');
+    const _itemLines=_orderItems.map(i=>'  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+(i.boxOption==='con_scatola'?' — Con Scatola':i.boxOption==='senza_scatola'?' — Senza Scatola':'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2)).join('\n');
     const waMsg='🛍 *NUOVO ORDINE — LILLOFIND*\n\n📋 ID: '+orderId+'\n👤 Cliente: '+orderData.name+'\n📧 Email: '+user.email+'\n📞 Tel: '+phone+'\n\n📦 Indirizzo:\n'+street+', '+city+' '+zip+' ('+country+')\n\n🧾 Articoli:\n'+_itemLines+'\n\n💶 Subtotale: €'+subtotal.toFixed(2)+'\n🚚 Spedizione: '+(shipping===0?'Gratis':'€'+shipping.toFixed(2))+'\n'+(discount>0?'🎁 Bonus: −€'+discount.toFixed(2)+'\n':'')+'💰 TOTALE: €'+total.toFixed(2)+'\n⬡ LFPOINTS: +'+pts;
     setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
     setTimeout(()=>showPg('shop'),1200);

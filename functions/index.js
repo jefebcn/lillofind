@@ -20,9 +20,11 @@ const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
 async function sendOrderNotification(order, resendKey) {
   try {
-    const itemsHtml = (order.items || []).map(i =>
-      `<tr><td>${i.name}</td><td>${i.brand||'—'}</td><td>${i.size||'—'}</td><td>x${i.qty}</td><td>€${(i.price*i.qty).toFixed(2)}</td></tr>`
-    ).join('');
+    const itemsHtml = (order.items || []).map(i => {
+      const box = i.boxOption==='con_scatola'?'📦 Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'—';
+      const sizeBox = [i.size||'—', ['scarpe','scarpe_box'].includes(i.category||'')?box:''].filter(s=>s&&s!=='—').join(' / ') || '—';
+      return `<tr><td>${i.name}</td><td>${i.brand||'—'}</td><td>${sizeBox}</td><td>x${i.qty}</td><td>€${(i.price*i.qty).toFixed(2)}</td></tr>`;
+    }).join('');
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
