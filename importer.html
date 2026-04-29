@@ -400,6 +400,14 @@ function waitFB(cb){ window.__imp ? cb() : setTimeout(()=>waitFB(cb),80); }
 // su imgbb.com (account settings) e valutare un proxy backend in produzione
 const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
 const SIZES_ALL = ['XS','S','M','L','XL','XXL','Unica'];
+const _PROXY = 'https://yupoo-proxy.conti9708.workers.dev';
+function pImg(url){
+  if(!url) return '';
+  const u = url.startsWith('//') ? 'https:' + url : url;
+  if(u.includes('yupoo.com') || u.includes('yunjifen.com'))
+    return _PROXY + '/?url=' + encodeURIComponent(u);
+  return u;
+}
 let currentBrand='', rowId=0, savedCount=0, user=null;
 
 const BRANDS = [
@@ -915,7 +923,7 @@ function renderYupooGrid(){
   grid.innerHTML = Object.entries(yupooAlbumsData).map(([id, d]) => `
     <div class="alb-card on" id="alb-${id}" data-cover="${d.cover}" onclick="toggleAlbum('${id}')">
       <div class="alb-check">✓</div>
-      <img class="alb-img" src="${d.cover}" alt="" onerror="this.style.opacity='.15'" loading="lazy"/>
+      <img class="alb-img" src="${pImg(d.cover)}" alt="" onerror="this.style.opacity='.15'" loading="lazy"/>
       <div class="alb-meta">
         <p class="alb-name" id="alb-name-${id}">Album ${id.slice(-6)}</p>
         <p class="alb-status" id="alb-st-${id}">In attesa</p>
@@ -1010,7 +1018,7 @@ function addAnalyzedRow(d){
   div.innerHTML = `
     <div class="row-grid">
       <div id="img-area-${id}">
-        <img class="img-prev" src="${d.cover}" alt="" onerror="this.style.opacity='.15'"/>
+        <img class="img-prev" src="${pImg(d.cover)}" alt="" onerror="this.style.opacity='.15'"/>
       </div>
       <div>
         <p class="row-label">URL Immagine</p>
