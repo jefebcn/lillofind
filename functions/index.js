@@ -135,7 +135,47 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     }
     const htmlPreview = html.slice(0, 400).replace(/\s+/g, ' ');
 
-    return { html, status: resp.status, albumCovers, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length } };
+    // ── Estrazione dati album (quando URL è una pagina /albums/ID) ──
+    let albumInfo = null;
+    const isAlbumPage = /\/albums\/\w+/.test(parsedUrl.pathname);
+    if (isAlbumPage) {
+      // Titolo pagina
+      const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const pageTitle = titleM ? titleM[1].replace(/\s*[-|—].*$/, '').trim() : '';
+
+      // Testo descrizione album (contiene size + prezzo)
+      const bodyText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+
+      // Taglie scarpe: "size: 40 40.5 41 42..." o "尺码: ..."
+      const sizeM = bodyText.match(/(?:size|sizes|尺码|尺寸)[：:\s]+([0-9][0-9\s.\/,]+)/i);
+      const sizesRaw = sizeM ? sizeM[1].trim() : '';
+      const shoeSizes = sizesRaw
+        ? [...new Set(sizesRaw.split(/[\s,\/]+/).filter(s => /^\d{2}(\.\d)?$/.test(s)))]
+        : [];
+
+      // Taglie abbigliamento: "S M L XL" o "XS-XXL"
+      const clothM = bodyText.match(/(?:size|sizes|尺码)[：:\s]+([A-Z]{1,3}(?:\s+[A-Z]{1,3})+)/i);
+      const clothSizes = clothM
+        ? clothM[1].split(/\s+/).filter(s => ['XS','S','M','L','XL','XXL','XXXL'].includes(s))
+        : [];
+
+      // Prezzo fornitore in dollari
+      const priceM = bodyText.match(/(\d{1,4})\s*\$/) || bodyText.match(/\$\s*(\d{1,4})/);
+      const supplierPriceUSD = priceM ? parseInt(priceM[1], 10) : null;
+
+      // Prime immagini dell'album (max 8)
+      const photos = [];
+      const photoRe2 = /(?:data-src|data-original|data-lazy|src)=["']((?:https?:)?\/\/[^"'>\s]+)["']/g;
+      let pm2;
+      while ((pm2 = photoRe2.exec(html)) !== null && photos.length < 8) {
+        const u = norm(pm2[1]);
+        if (u && isImg(u) && !photos.includes(u)) photos.push(u);
+      }
+
+      albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceUSD, photos };
+    }
+
+    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }

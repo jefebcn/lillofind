@@ -663,7 +663,11 @@ window.saveAll=async function(){
     const imgUrl=row.dataset.imgUrl||document.getElementById('ru-'+id)?.value.trim()||'';
     const colorsRaw=document.getElementById('rc-'+id)?.value.trim()||'';
     const colors=colorsRaw?colorsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
-    const sizes=getRowSizes(id);
+    // Shoe sizes (text field) hanno priorità sulle toggle
+    const szTextField=document.getElementById('sz-text-'+id);
+    const sizes = szTextField && szTextField.value.trim()
+      ? szTextField.value.trim().split(/[\s,]+/).filter(Boolean)
+      : getRowSizes(id);
     const rst=document.getElementById('rst-'+id);
 
     try{
@@ -872,7 +876,8 @@ window.saveCSV = async function(){
 // ══════════════════════════════════════════════════════════════════
 // YUPOO AUTO-IMPORT + HAIKU AI
 // ══════════════════════════════════════════════════════════════════
-let yupooAlbumsData = {}; // albumId -> { cover, analysis }
+let yupooAlbumsData = {}; // albumId -> { cover, analysis, albumInfo }
+let _yupooHostname = ''; // es. woodtableguy888.x.yupoo.com
 
 window.fetchYupooAlbums = async function(){
   const url = document.getElementById('yupoo-url').value.trim();
@@ -905,8 +910,9 @@ window.fetchYupooAlbums = async function(){
       return;
     }
 
+    try { _yupooHostname = new URL(url).hostname; } catch(e) { _yupooHostname = ''; }
     yupooAlbumsData = {};
-    albumIds.forEach(id => { yupooAlbumsData[id] = { cover: albumCovers[id], analysis: null }; });
+    albumIds.forEach(id => { yupooAlbumsData[id] = { cover: albumCovers[id], analysis: null, albumInfo: null }; });
 
     renderYupooGrid();
     document.getElementById('yupoo-grid').style.display = 'block';
@@ -960,8 +966,9 @@ window.analyzeAndAddRows = async function(){
   btn.disabled = true; btn.textContent = '🤖 Analisi in corso...';
   prog.style.display = 'block'; bar.style.width = '0%';
 
-  const imp = window.__imp;
-  const fn  = imp.httpsCallable(imp.functions, 'yupooAnalyze');
+  const imp    = window.__imp;
+  const fnAI   = imp.httpsCallable(imp.functions, 'yupooAnalyze');
+  const fnFetch = imp.httpsCallable(imp.functions, 'yupooFetch');
   let done = 0, addedCount = 0;
 
   for(const card of selected){
@@ -971,24 +978,34 @@ window.analyzeAndAddRows = async function(){
 
     const nameEl = document.getElementById('alb-name-'+id);
     const stEl   = document.getElementById('alb-st-'+id);
-    if(stEl){ stEl.textContent = '🤖 AI in corso...'; stEl.style.color = '#aaa'; }
+    if(stEl){ stEl.textContent = '🤖 Analisi AI + dettagli...'; stEl.style.color = '#aaa'; }
 
-    try {
-      const result = await fn({ imageUrl: d.cover });
-      d.analysis = result.data;
-      if(nameEl) nameEl.textContent = d.analysis.name || ('Album '+id.slice(-6));
-      if(stEl){ stEl.textContent = '✅ ' + (d.analysis.brand||'OK'); stEl.style.color = 'var(--led)'; }
-    } catch(e) {
-      d.analysis = { name: 'Prodotto '+id.slice(-6), brand: currentBrand||'', model:'', category:'', colors:[] };
-      if(stEl){ stEl.textContent = '⚠️ Analisi fallita'; stEl.style.color = '#FF4757'; }
-      console.warn('yupooAnalyze err', id, e.message);
+    // Fetch AI analysis + album detail page in parallelo
+    const albumUrl = _yupooHostname ? `https://${_yupooHostname}/albums/${id}` : null;
+    const [aiRes, detailRes] = await Promise.allSettled([
+      fnAI({ imageUrl: d.cover }),
+      albumUrl ? fnFetch({ url: albumUrl }) : Promise.resolve(null),
+    ]);
+
+    d.analysis = aiRes.status === 'fulfilled'
+      ? aiRes.value.data
+      : { name: 'Prodotto '+id.slice(-6), brand: currentBrand||'', model:'', category:'', colors:[] };
+
+    if(detailRes.status === 'fulfilled' && detailRes.value?.data?.albumInfo){
+      d.albumInfo = detailRes.value.data.albumInfo;
+    }
+
+    if(nameEl) nameEl.textContent = d.analysis.name || d.albumInfo?.pageTitle || ('Album '+id.slice(-6));
+    if(stEl){
+      const pHint = d.albumInfo?.supplierPriceUSD ? ` · ${d.albumInfo.supplierPriceUSD}$` : '';
+      stEl.textContent = (aiRes.status === 'fulfilled' ? '✅ ' : '⚠️ ') + (d.analysis.brand||'OK') + pHint;
+      stEl.style.color = aiRes.status === 'fulfilled' ? 'var(--led)' : '#FF4757';
     }
 
     done++;
     bar.style.width = Math.round((done/selected.length)*100) + '%';
     lbl.textContent = done + ' / ' + selected.length + ' analizzati...';
 
-    // Aggiungi riga al form subito dopo l'analisi
     addAnalyzedRow(d);
     addedCount++;
   }
@@ -1010,10 +1027,21 @@ function addAnalyzedRow(d){
   div.dataset.brand    = d.analysis.brand    || '';
   div.dataset.category = d.analysis.category || '';
 
-  const name   = (d.analysis.name   || '').replace(/"/g,'&quot;');
+  const name   = (d.analysis.name || d.albumInfo?.pageTitle || '').replace(/"/g,'&quot;');
   const colors = (d.analysis.colors || []).join(', ');
-  // Trova se c'è un model match nei MODELS
   const modelMatch = MODELS.find(m => m.toLowerCase() === (d.analysis.model||'').toLowerCase()) || '';
+
+  // Taglie dal fornitore
+  const shoeSizes  = d.albumInfo?.shoeSizes  || [];
+  const clothSizes = d.albumInfo?.clothSizes || [];
+  const isShoe     = d.analysis.category === 'scarpe' || d.analysis.category === 'scarpe_box' || shoeSizes.length > 0;
+  const sizesStr   = shoeSizes.length ? shoeSizes.join(' ') : clothSizes.join(' ');
+  div.dataset.shoeSizes = shoeSizes.join(',');
+
+  // Prezzo fornitore come suggerimento
+  const supplierUSD = d.albumInfo?.supplierPriceUSD || null;
+  const priceHint   = supplierUSD ? `(fornitore: ${supplierUSD}$ → suggerito ~€${Math.round(supplierUSD*1.8)})` : '';
+  const priceDefault = supplierUSD ? Math.round(supplierUSD * 1.8) : '';
 
   div.innerHTML = `
     <div class="row-grid">
@@ -1029,8 +1057,8 @@ function addAnalyzedRow(d){
         <input class="lf-in" id="rn-${id}" value="${name}" placeholder="es. Nike Dunk Low Panda" style="font-size:13px;"/>
       </div>
       <div>
-        <p class="row-label">Prezzo €</p>
-        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" placeholder="89.99" style="font-size:16px;font-weight:600;color:var(--led);"/>
+        <p class="row-label">Prezzo € * <span style="font-size:8px;color:#444;font-weight:normal;">${priceHint}</span></p>
+        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" value="${priceDefault}" placeholder="89.99" style="font-size:16px;font-weight:600;color:var(--led);"/>
       </div>
       <div>
         <p class="row-label">Tipo</p>
@@ -1040,10 +1068,15 @@ function addAnalyzedRow(d){
         </select>
       </div>
       <div>
-        <p class="row-label">Taglie <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button></p>
-        <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
-          ${SIZES_ALL.map(s=>`<span class="sz-toggle on" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
-        </div>
+        ${isShoe && shoeSizes.length ? `
+          <p class="row-label">Taglie Scarpe <span style="color:var(--led);font-size:8px;">(dal fornitore)</span></p>
+          <input class="lf-in" id="sz-text-${id}" value="${sizesStr}" placeholder="40 41 42 43 44 45" style="font-size:12px;letter-spacing:1px;" title="Modifica le taglie disponibili"/>
+        ` : `
+          <p class="row-label">Taglie <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button></p>
+          <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
+            ${SIZES_ALL.map(s=>`<span class="sz-toggle ${clothSizes.includes(s)?'on':''}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
+          </div>
+        `}
       </div>
       <div>
         <p class="row-label">Colori</p>
