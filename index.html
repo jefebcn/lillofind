@@ -3071,12 +3071,14 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
 
   // ── Cloudflare image proxy (bypassa hotlink protection Yupoo) ──
-  const _PROXY='https://yupoo-proxy.conti9708.workers.dev';
+  const _PROXY='https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
   function pImg(url){
     if(!url) return '';
     const u=url.startsWith('//')?'https:'+url:url;
-    if(u.includes('yupoo.com')||u.includes('yunjifen.com'))
-      return _PROXY+'/?url='+encodeURIComponent(u);
+    // Estrai l'URL originale se già passato attraverso un proxy
+    const inner=u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
+    if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
+      return _PROXY+'?url='+encodeURIComponent(inner);
     return u;
   }
 

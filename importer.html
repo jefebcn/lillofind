@@ -400,12 +400,13 @@ function waitFB(cb){ window.__imp ? cb() : setTimeout(()=>waitFB(cb),80); }
 // su imgbb.com (account settings) e valutare un proxy backend in produzione
 const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
 const SIZES_ALL = ['XS','S','M','L','XL','XXL','Unica'];
-const _PROXY = 'https://yupoo-proxy.conti9708.workers.dev';
+const _PROXY = 'https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
 function pImg(url){
   if(!url) return '';
   const u = url.startsWith('//') ? 'https:' + url : url;
-  if(u.includes('yupoo.com') || u.includes('yunjifen.com'))
-    return _PROXY + '/?url=' + encodeURIComponent(u);
+  const inner = u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
+  if(inner.includes('yupoo.com') || inner.includes('yunjifen.com'))
+    return _PROXY + '?url=' + encodeURIComponent(inner);
   return u;
 }
 let currentBrand='', rowId=0, savedCount=0, user=null;
