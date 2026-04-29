@@ -672,11 +672,12 @@ window.saveAll=async function(){
 
     try{
       const rowModel=document.getElementById('rt-'+id)?.value||'';
-      await imp.addDoc(imp.collection(imp.db,'products'),{
-        name,price,brand:rowBrand,model:rowModel,style:rowModel,
+      const saveFn=imp.httpsCallable(imp.functions,'saveProduct');
+      await saveFn({
+        name,price,brand:rowBrand,model:rowModel,
         category:rowCategory,
         sizes:sizes.length?sizes:['S','M','L','XL'],size:sizes.join(', '),
-        colors,imageUrl:imgUrl,description:'',createdAt:imp.serverTimestamp()
+        colors,imageUrl:imgUrl,description:'',weightKg:0
       });
       saved++; savedCount++;
       row.classList.add('saved-ok');
@@ -842,18 +843,19 @@ window.saveCSV = async function(){
     lbl.textContent = 'Salvo ' + (i+1) + ' / ' + csvRows.length + ' — ' + r.nome;
     bar.style.width = Math.round(((i+1)/csvRows.length)*100) + '%';
     try{
-      await imp.addDoc(imp.collection(imp.db,'products'),{
+      const saveFn=imp.httpsCallable(imp.functions,'saveProduct');
+      await saveFn({
         name:        r.nome,
         price:       r.prezzo,
         brand:       r.brand,
         model:       r.tipo,
-        style:       r.tipo,
+        category:    '',
         sizes:       r.taglie.length ? r.taglie : ['S','M','L','XL'],
         size:        r.taglie.join(', '),
         colors:      r.colori,
         imageUrl:    r.url,
         description: '',
-        createdAt:   imp.serverTimestamp()
+        weightKg:    0
       });
       saved++;
       if(stEl){ stEl.innerHTML='<span style="color:var(--led);font-size:10px;letter-spacing:1px;">✅ SALVATO</span>'; }

@@ -276,6 +276,41 @@ Se non identificabile con certezza, usa valori plausibili in base a ciò che ved
   }
 });
 
+// ══════════════════════════════════════════════════════════════════
+// saveProduct
+// Salva un prodotto in Firestore usando Admin SDK (bypassa le regole client).
+// Solo admin.
+// ══════════════════════════════════════════════════════════════════
+exports.saveProduct = onCall({ cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Login richiesto.');
+  const userSnap = await admin.firestore().collection('users').doc(request.auth.uid).get();
+  if (userSnap.data()?.isAdmin !== true) throw new HttpsError('permission-denied', 'Solo admin.');
+
+  const p = request.data;
+  if (!p || !p.name || typeof p.price !== 'number' || p.price <= 0) {
+    throw new HttpsError('invalid-argument', 'Dati prodotto non validi.');
+  }
+
+  const docData = {
+    name:        String(p.name).slice(0, 200),
+    price:       p.price,
+    brand:       String(p.brand || '').slice(0, 100),
+    model:       String(p.model || '').slice(0, 100),
+    style:       String(p.model || '').slice(0, 100),
+    category:    String(p.category || '').slice(0, 50),
+    sizes:       Array.isArray(p.sizes) ? p.sizes.slice(0, 50) : ['S','M','L','XL'],
+    size:        String(p.size || '').slice(0, 200),
+    colors:      Array.isArray(p.colors) ? p.colors.slice(0, 20) : [],
+    imageUrl:    String(p.imageUrl || '').slice(0, 500),
+    description: String(p.description || '').slice(0, 2000),
+    weightKg:    typeof p.weightKg === 'number' ? p.weightKg : 0,
+    createdAt:   admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  const ref = await admin.firestore().collection('products').add(docData);
+  return { id: ref.id };
+});
+
 // ── Logica peso e fasce spedizione ─────────────────────────────────
 const CATEGORY_WEIGHTS_SV = {
   tshirt:0.35, tshirt_branded:0.40, felpa:0.80,
