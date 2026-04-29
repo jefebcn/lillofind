@@ -1029,19 +1029,22 @@ function addAnalyzedRow(d){
 
   const name   = (d.analysis.name || d.albumInfo?.pageTitle || '').replace(/"/g,'&quot;');
   const colors = (d.analysis.colors || []).join(', ');
-  const modelMatch = MODELS.find(m => m.toLowerCase() === (d.analysis.model||'').toLowerCase()) || '';
+  // Per le scarpe: tipo sempre Sneakers, taglie EU default, prezzo 50€, colori nascosti
+  const isShoe     = ['scarpe','scarpe_box'].includes(d.analysis.category) || (d.albumInfo?.shoeSizes?.length > 0);
+  const modelMatch = isShoe ? 'Sneakers' : (MODELS.find(m => m.toLowerCase() === (d.analysis.model||'').toLowerCase()) || '');
 
-  // Taglie dal fornitore
   const shoeSizes  = d.albumInfo?.shoeSizes  || [];
   const clothSizes = d.albumInfo?.clothSizes || [];
-  const isShoe     = d.analysis.category === 'scarpe' || d.analysis.category === 'scarpe_box' || shoeSizes.length > 0;
-  const sizesStr   = shoeSizes.length ? shoeSizes.join(' ') : clothSizes.join(' ');
-  div.dataset.shoeSizes = shoeSizes.join(',');
+  const defaultShoeSizes = '38 39 40 41 42 43 44 45 46';
+  const sizesStr   = isShoe
+    ? (shoeSizes.length ? shoeSizes.join(' ') : defaultShoeSizes)
+    : clothSizes.join(' ');
+  div.dataset.shoeSizes = isShoe ? (shoeSizes.length ? shoeSizes.join(',') : defaultShoeSizes.replace(/ /g,',')) : '';
 
-  // Prezzo fornitore come suggerimento
-  const supplierUSD = d.albumInfo?.supplierPriceUSD || null;
-  const priceHint   = supplierUSD ? `(fornitore: ${supplierUSD}$ → suggerito ~€${Math.round(supplierUSD*1.8)})` : '';
-  const priceDefault = supplierUSD ? Math.round(supplierUSD * 1.8) : '';
+  // Prezzo fisso 50€ per scarpe, altrimenti vuoto
+  const supplierUSD  = d.albumInfo?.supplierPriceUSD || null;
+  const priceDefault = isShoe ? 50 : (supplierUSD ? Math.round(supplierUSD * 1.8) : '');
+  const priceHint    = supplierUSD && !isShoe ? `(fornitore: ${supplierUSD}$)` : '';
 
   div.innerHTML = `
     <div class="row-grid">
@@ -1068,19 +1071,24 @@ function addAnalyzedRow(d){
         </select>
       </div>
       <div>
-        ${isShoe && shoeSizes.length ? `
-          <p class="row-label">Taglie Scarpe <span style="color:var(--led);font-size:8px;">(dal fornitore)</span></p>
-          <input class="lf-in" id="sz-text-${id}" value="${sizesStr}" placeholder="40 41 42 43 44 45" style="font-size:12px;letter-spacing:1px;" title="Modifica le taglie disponibili"/>
+        ${isShoe ? `
+          <p class="row-label">Taglie EU <span style="color:var(--led);font-size:8px;">${shoeSizes.length ? '· da Yupoo' : '· default'}</span></p>
+          <input class="lf-in" id="sz-text-${id}" value="${sizesStr}" placeholder="38 39 40 41 42 43 44 45 46" style="font-size:12px;letter-spacing:1px;"/>
         ` : `
           <p class="row-label">Taglie <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button></p>
           <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
-            ${SIZES_ALL.map(s=>`<span class="sz-toggle ${clothSizes.includes(s)?'on':''}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
+            ${SIZES_ALL.map(s=>`<span class="sz-toggle ${clothSizes.includes(s)?'on':'on'}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
           </div>
         `}
       </div>
       <div>
-        <p class="row-label">Colori</p>
-        <input class="lf-in" id="rc-${id}" value="${colors}" placeholder="Nero, Bianco" style="font-size:12px;"/>
+        ${isShoe ? `
+          <p class="row-label" style="color:#2a2a2a;">Colori</p>
+          <input class="lf-in" id="rc-${id}" value="" placeholder="es. Nero Bianco" style="font-size:12px;opacity:.35;" disabled/>
+        ` : `
+          <p class="row-label">Colori</p>
+          <input class="lf-in" id="rc-${id}" value="${colors}" placeholder="Nero, Bianco" style="font-size:12px;"/>
+        `}
       </div>
       <div style="padding-top:20px;">
         <button class="btn-red" onclick="removeRow(${id})" style="padding:10px;font-size:14px;">✕</button>
