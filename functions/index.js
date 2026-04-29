@@ -13,7 +13,8 @@ setGlobalOptions({ region: 'europe-west1' });
 
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
-const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
+// Email notification key (non-payment, low risk)
+const RESEND_API_KEY_VAL = 're_N8LAPF8P_2Qbq8HuN7F3xdDdXLfxGgwQP';
 
 const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
@@ -523,7 +524,7 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
 // Output:
 //   { orderId, subtotal, shipping, discount, total }
 // ══════════════════════════════════════════════════════════════════
-exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, RESEND_API_KEY] }, async (request) => {
+exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
   // 1 — Autenticazione obbligatoria
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Devi essere autenticato per completare un ordine.');
@@ -702,7 +703,7 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, RESEND_API_KEY] },
   }
 
   // 10 — Invia notifica email (fire-and-forget)
-  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, RESEND_API_KEY.value());
+  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, RESEND_API_KEY_VAL);
 
   // 11 — Ritorna al client i dati verificati
   return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints };
