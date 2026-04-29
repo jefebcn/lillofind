@@ -396,6 +396,82 @@ async function checkAdmin(request) {
   if (snap.data()?.isAdmin !== true) throw new HttpsError('permission-denied', 'Solo admin.');
 }
 
+exports.getAdminStats = onCall({ cors: true }, async (request) => {
+  await checkAdmin(request);
+
+  const db = admin.firestore();
+  const now = Date.now();
+  const ms30d = 30 * 24 * 60 * 60 * 1000;
+  const cutoff30d = new Date(now - ms30d);
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+  const [usersSnap, ordersSnap] = await Promise.all([
+    db.collection('users').get(),
+    db.collection('orders').get(),
+  ]);
+
+  // ── Utenti ──────────────────────────────
+  let totalUsers = 0, newUsers30d = 0, usersWithOrders = new Set();
+  const tierCount = { none: 0, bronze: 0, silver: 0, gold: 0, platinum: 0 };
+  const topSpenders = [];
+
+  usersSnap.forEach(d => {
+    const u = d.data();
+    totalUsers++;
+    const created = u.createdAt?.toDate?.() || null;
+    if (created && created >= cutoff30d) newUsers30d++;
+    const pts = u.lfpoints || 0;
+    if      (pts >= 500) tierCount.platinum++;
+    else if (pts >= 200) tierCount.gold++;
+    else if (pts >= 80)  tierCount.silver++;
+    else if (pts >= 20)  tierCount.bronze++;
+    else                 tierCount.none++;
+    if ((u.totalSpent || 0) > 0) topSpenders.push({ email: u.email || d.id, spent: u.totalSpent || 0, pts, orders: u.orderCount || 0 });
+  });
+
+  topSpenders.sort((a, b) => b.spent - a.spent);
+  const topSpendersTop5 = topSpenders.slice(0, 5);
+
+  // ── Ordini ──────────────────────────────
+  let totalOrders = 0, pendingOrders = 0, confirmedOrders = 0;
+  let totalRevenue = 0, monthlyRevenue = 0, totalShipping = 0;
+  let itemsSold = 0;
+  const productSales = {};
+
+  ordersSnap.forEach(d => {
+    const o = d.data();
+    totalOrders++;
+    if (o.status === 'pending') pendingOrders++;
+    else if (o.status === 'confirmed') confirmedOrders++;
+    const rev = o.total || 0;
+    totalRevenue += rev;
+    totalShipping += o.shipping || 0;
+    const created = o.createdAt?.toDate?.() || null;
+    if (created && created >= startOfMonth) monthlyRevenue += rev;
+    usersWithOrders.add(o.uid || '');
+    (o.items || []).forEach(i => {
+      const qty = i.qty || 1;
+      itemsSold += qty;
+      const key = i.name || 'Unknown';
+      productSales[key] = (productSales[key] || 0) + qty;
+    });
+  });
+
+  const topProducts = Object.entries(productSales)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, qty]) => ({ name, qty }));
+
+  return {
+    users: { total: totalUsers, new30d: newUsers30d, withOrders: usersWithOrders.size, tiers: tierCount },
+    orders: { total: totalOrders, pending: pendingOrders, confirmed: confirmedOrders },
+    revenue: { total: Math.round(totalRevenue * 100) / 100, monthly: Math.round(monthlyRevenue * 100) / 100, shipping: Math.round(totalShipping * 100) / 100 },
+    itemsSold,
+    topProducts,
+    topSpenders: topSpendersTop5,
+  };
+});
+
 exports.getAdminOrders = onCall({ cors: true }, async (request) => {
   await checkAdmin(request);
   const snap = await admin.firestore().collection('orders').orderBy('createdAt', 'desc').get();
