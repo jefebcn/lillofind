@@ -1345,7 +1345,6 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Modello</p><div id="ch-model"></div></div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Marchio</p><div id="ch-brand"></div></div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Taglia</p><div id="ch-size"></div></div>
-      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Stile</p><div id="ch-style"></div></div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Colore</p><div id="ch-color"></div></div>
       <button id="rst-btn" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset</button>
     </aside>
@@ -1382,7 +1381,6 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Modello</p><div id="ch-model-m"></div></div>
         <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Marchio</p><div id="ch-brand-m"></div></div>
         <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Taglia</p><div id="ch-size-m"></div></div>
-        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Stile</p><div id="ch-style-m"></div></div>
         <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Colore</p><div id="ch-color-m"></div></div>
         <button id="rst-btn-m" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset Filtri</button>
       </div>
@@ -2697,24 +2695,78 @@ img{ -webkit-user-drag:none; user-select:none; }
     silver:'#c0c0c0',gold:'#ffd700',
   };
 
-  function buildChips(){
-    ['model','brand','size','style','color'].forEach(k=>{
-      const vals=[...new Set(products.map(p=>p[k]).filter(Boolean))];
-      let html='';
-      let htmlMob='';
+  const MODEL_FILTERS=[
+    {label:'Sneakers',       group:'👟 Calzature', aliases:['sneakers','sneaker','scarpe','scarpe_box']},
+    {label:'T-Shirt',        group:'👕 Top',        aliases:['t-shirt','tshirt','t shirt']},
+    {label:'Polo',           group:'👕 Top',        aliases:['polo']},
+    {label:'Camicia',        group:'👕 Top',        aliases:['camicia','shirt']},
+    {label:'Canotta',        group:'👕 Top',        aliases:['canotta','tank']},
+    {label:'Maglia Manica Lunga', group:'👕 Top',   aliases:['maglia manica lunga','manica lunga','longsleeve']},
+    {label:'Felpa',          group:'👕 Top',        aliases:['felpa','crewneck']},
+    {label:'Felpa con Cappuccio', group:'👕 Top',   aliases:['felpa con cappuccio','hoodie','sweatshirt']},
+    {label:'Cardigan',       group:'👕 Top',        aliases:['cardigan']},
+    {label:'Giacchetto',     group:'👕 Top',        aliases:['giacchetto','giacca','jacket']},
+    {label:'Bomber',         group:'👕 Top',        aliases:['bomber']},
+    {label:'Gilet',          group:'👕 Top',        aliases:['gilet','vest']},
+    {label:'Piumino',        group:'👕 Top',        aliases:['piumino','puffy','down']},
+    {label:'Pile',           group:'👕 Top',        aliases:['pile','fleece']},
+    {label:'Pantaloni',      group:'👖 Bottom',     aliases:['pantaloni','pants','trousers']},
+    {label:'Pantaloncini',   group:'👖 Bottom',     aliases:['pantaloncini','shorts']},
+    {label:'Jogger',         group:'👖 Bottom',     aliases:['jogger','joggers']},
+    {label:'Cappello',       group:'🧢 Accessori',  aliases:['cappello','cap','hat','beanie']},
+    {label:'Calzini',        group:'🧦 Accessori',  aliases:['calzini','socks']},
+    {label:'Sciarpa',        group:'🧢 Accessori',  aliases:['sciarpa','scarf']},
+    {label:'Zaino / Borsa',  group:'🧢 Accessori',  aliases:['zaino','borsa','bag','backpack']},
+  ];
 
-      if(k==='size'){
-        // Size boxes for desktop sidebar
+  function matchesModelFilter(p, label){
+    const mf=MODEL_FILTERS.find(f=>f.label===label);
+    if(!mf) return (p.model||'')=== label;
+    const parts=(p.model||'').toLowerCase().split(/[,;\/]+/).map(s=>s.trim()).filter(Boolean);
+    const cat=(p.category||'').toLowerCase();
+    return parts.some(m=>mf.aliases.some(a=>m.includes(a)||a.includes(m)))||mf.aliases.includes(cat);
+  }
+
+  function buildChips(){
+    ['model','brand','size','color'].forEach(k=>{
+      let html='', htmlMob='';
+
+      if(k==='model'){
+        // Grouped canonical model chips
+        const groups={};
+        MODEL_FILTERS.forEach(mf=>{
+          if(!products.some(p=>matchesModelFilter(p,mf.label))) return;
+          if(!groups[mf.group]) groups[mf.group]=[];
+          groups[mf.group].push(mf.label);
+        });
+        html=Object.entries(groups).map(([g,labels])=>
+          `<div style="margin-bottom:10px;">
+            <div style="font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:5px;">${g}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px;">
+              ${labels.map(lbl=>`<span class="chip" data-key="model" data-val="${lbl}" onclick="toggleF('model','${lbl}')">${lbl}</span>`).join('')}
+            </div>
+          </div>`
+        ).join('');
+        htmlMob=html;
+      } else if(k==='size'){
+        const vals=[...new Set(products.flatMap(p=>p.sizes||[]).filter(Boolean))].sort((a,b)=>{
+          const order=['XS','S','M','L','XL','XXL','Unica'];
+          const ia=order.indexOf(a), ib=order.indexOf(b);
+          if(ia>=0&&ib>=0) return ia-ib;
+          if(ia>=0) return -1; if(ib>=0) return 1;
+          return parseFloat(a)-parseFloat(b)||a.localeCompare(b);
+        });
         html=`<div class="size-box-grid">${vals.map(v=>`<div class="size-box" data-key="size" data-val="${v}" onclick="toggleF('size','${v}')">${v}</div>`).join('')}</div>`;
         htmlMob=html;
       } else if(k==='color'){
-        // Color swatches
+        const vals=[...new Set(products.map(p=>p.colors||[]).flat().filter(Boolean))];
         html=`<div class="swatch-grid">${vals.map(v=>{
           const col=COLOR_MAP[v.toLowerCase()]||'#888';
           return `<div class="swatch-wrap" onclick="toggleF('color','${v}')"><div class="swatch" data-key="color" data-val="${v}" style="background:${col};${col==='#fff'?'border:2px solid #ddd;':''}"></div><div class="swatch-label">${v}</div></div>`;
         }).join('')}</div>`;
         htmlMob=html;
       } else {
+        const vals=[...new Set(products.map(p=>p[k]).filter(Boolean))];
         html=vals.map(v=>`<span class="chip" data-key="${k}" data-val="${v}" onclick="toggleF('${k}','${v}')">${v}</span>`).join('');
         htmlMob=html;
       }
@@ -2957,7 +3009,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     _sCount = _sCount || document.getElementById('s-count');
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     const filtered=products.filter(p=>
-      (!filters.model||(p.model===filters.model)||(filters.model==='Sneakers'&&(p.category==='scarpe'||p.category==='scarpe_box')))&&
+      (!filters.model||matchesModelFilter(p,filters.model))&&
       (!filters.brand||p.brand===filters.brand)&&
       (!filters.size ||(p.sizes&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.style||p.style===filters.style)&&
