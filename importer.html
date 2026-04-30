@@ -530,21 +530,26 @@ waitFB(()=>{
       document.getElementById('login-screen').style.display='flex';
       return;
     }
-    // Verifica isAdmin in Firestore
+    // Verifica isAdmin in Firestore (o fallback email hardcoded)
+    const ADMIN_EMAILS_IMP = ['admin@lillofind.com','yishionvt@gmail.com'];
     try{
       const snap=await imp.getDoc(imp.doc(imp.db,'users',u.uid));
       const data=snap.exists()?snap.data():{};
-      if(data.isAdmin!==true){
+      const isAdmin = data.isAdmin===true || ADMIN_EMAILS_IMP.includes(u.email);
+      if(!isAdmin){
         document.getElementById('login-screen').style.display='none';
         document.getElementById('denied-email').textContent=u.email||'';
         document.getElementById('denied-screen').style.display='flex';
         return;
       }
     }catch(e){
-      console.error('importer isAdmin check:',e.code);
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('denied-screen').style.display='flex';
-      return;
+      // Se Firestore fallisce, controlla email fallback
+      if(!ADMIN_EMAILS_IMP.includes(u.email)){
+        console.error('importer isAdmin check:',e.code);
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('denied-screen').style.display='flex';
+        return;
+      }
     }
     // Admin confermato
     document.getElementById('login-screen').style.display='none';
