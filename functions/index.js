@@ -113,13 +113,93 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     throw new HttpsError('invalid-argument', 'Parametro url mancante.');
   }
 
-  // 2 — Valida: solo domini *.yupoo.com
+  // 2 — Valida: domini permessi (*.yupoo.com + Taobao + Tmall)
   let parsedUrl;
   try { parsedUrl = new URL(url); } catch(e) {
     throw new HttpsError('invalid-argument', 'URL non valido.');
   }
-  if (!parsedUrl.hostname.endsWith('.yupoo.com')) {
-    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com sono permessi.');
+  const isTaobao = parsedUrl.hostname.endsWith('.taobao.com')
+    || parsedUrl.hostname.endsWith('.tmall.com')
+    || parsedUrl.hostname.endsWith('.tb.cn')
+    || parsedUrl.hostname === 'taobao.com'
+    || parsedUrl.hostname === 'tmall.com';
+  if (!parsedUrl.hostname.endsWith('.yupoo.com') && !isTaobao) {
+    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com o Taobao/Tmall sono permessi.');
+  }
+
+  // ── BRANCH TAOBAO ─────────────────────────────────────────────
+  if (isTaobao) {
+    const TB_HEADERS = {
+      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15A372 Safari/604.1',
+      'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Referer': 'https://www.taobao.com/',
+    };
+    // Segui il redirect del short link
+    let resolvedUrl = url;
+    try {
+      const r0 = await fetch(url, { headers: TB_HEADERS, redirect: 'follow', signal: AbortSignal.timeout(12000) });
+      resolvedUrl = r0.url || url;
+    } catch(e) { /* usa URL originale */ }
+
+    // Estrai item ID
+    let itemId = '';
+    const idMatch = resolvedUrl.match(/[?&]id=(\d+)/) || resolvedUrl.match(/item\.htm.*?(\d{10,})/);
+    if (idMatch) itemId = idMatch[1];
+
+    // Fetch pagina
+    const tryUrls = itemId
+      ? [`https://item.taobao.com/item.htm?id=${itemId}`, resolvedUrl]
+      : [resolvedUrl];
+    let html = '', finalUrl = resolvedUrl;
+    for (const u of tryUrls) {
+      try {
+        const r = await fetch(u, { headers: TB_HEADERS, redirect: 'follow', signal: AbortSignal.timeout(15000) });
+        if (r.ok) { html = await r.text(); finalUrl = r.url; break; }
+      } catch(e) { continue; }
+    }
+    if (!html) throw new HttpsError('unavailable', 'Impossibile caricare la pagina Taobao.');
+
+    // Estrai titolo
+    let title = '';
+    const t1 = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']{4,200})["']/i);
+    const t2 = html.match(/"title"\s*:\s*"([^"]{10,150})"/);
+    const t3 = html.match(/<title[^>]*>([^<]{4,200})<\/title>/i);
+    title = ((t1||t2||t3)||[])[1] || '';
+    title = title.replace(/[-|–—].*$/, '').replace(/【[^】]*】/g, '').replace(/\s+/g, ' ').trim();
+
+    // Estrai immagini da alicdn.com
+    const imgSet = new Set();
+    const imgRe = /https?:\/\/[a-z0-9.\-]*alicdn\.com\/img[^"'\s,>]+\.jpg/gi;
+    let mm;
+    while ((mm = imgRe.exec(html)) !== null) {
+      const base = mm[0].replace(/_\d+x\d+[^.]*\.(jpg|jpeg|png|webp)$/i, '') + '.jpg';
+      if (!base.includes('avatar') && !base.includes('logo') && !base.includes('icon')) {
+        imgSet.add(base);
+        if (imgSet.size >= 8) break;
+      }
+    }
+    const ogImg = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+    if (ogImg?.[1]) imgSet.add(ogImg[1].split('?')[0].replace(/_\d+x\d+/, ''));
+
+    // Estrai prezzo
+    let priceYuan = 0;
+    for (const p of [/"price"\s*:\s*"?([\d.]+)"?/, /¥\s*([\d.]+)/, /"defaultItemPrice"\s*:\s*"?([\d.]+)"?/]) {
+      const pm = html.match(p);
+      if (pm && parseFloat(pm[1]) > 0) { priceYuan = parseFloat(pm[1]); break; }
+    }
+
+    const images = [...imgSet].slice(0, 6);
+    return {
+      mode: 'taobao',
+      itemId,
+      title,
+      images,
+      priceYuan,
+      priceEur: priceYuan > 0 ? Math.round(priceYuan * 0.13 * 100) / 100 : 0,
+      shop: (html.match(/"shopName"\s*:\s*"([^"]+)"/) || [])[1] || '',
+      sourceUrl: finalUrl,
+    };
   }
 
   // 3 — Fetch server-side (Node 20 native fetch — nessun CORS)

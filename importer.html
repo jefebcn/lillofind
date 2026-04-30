@@ -530,21 +530,26 @@ waitFB(()=>{
       document.getElementById('login-screen').style.display='flex';
       return;
     }
-    // Verifica isAdmin in Firestore
+    // Verifica isAdmin in Firestore (o fallback email hardcoded)
+    const ADMIN_EMAILS_IMP = ['admin@lillofind.com','yishionvt@gmail.com'];
     try{
       const snap=await imp.getDoc(imp.doc(imp.db,'users',u.uid));
       const data=snap.exists()?snap.data():{};
-      if(data.isAdmin!==true){
+      const isAdmin = data.isAdmin===true || ADMIN_EMAILS_IMP.includes(u.email);
+      if(!isAdmin){
         document.getElementById('login-screen').style.display='none';
         document.getElementById('denied-email').textContent=u.email||'';
         document.getElementById('denied-screen').style.display='flex';
         return;
       }
     }catch(e){
-      console.error('importer isAdmin check:',e.code);
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('denied-screen').style.display='flex';
-      return;
+      // Se Firestore fallisce, controlla email fallback
+      if(!ADMIN_EMAILS_IMP.includes(u.email)){
+        console.error('importer isAdmin check:',e.code);
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('denied-screen').style.display='flex';
+        return;
+      }
     }
     // Admin confermato
     document.getElementById('login-screen').style.display='none';
@@ -968,8 +973,9 @@ window.fetchTaobaoItems = async function(){
   prog.style.display = 'block'; bar.style.width = '0%';
 
   const imp     = window.__imp;
-  const fnTB    = imp.httpsCallable(imp.functions, 'taobaoFetch');
-  const fnAI    = imp.httpsCallable(imp.functions, 'yupooAnalyze');  // riuso per analisi immagine
+  // Usa yupooFetch (già deployata) che ora gestisce anche URL Taobao
+  const fnTB    = imp.httpsCallable(imp.functions, 'yupooFetch');
+  const fnAI    = imp.httpsCallable(imp.functions, 'yupooAnalyze');
   let done = 0, added = 0;
 
   for(const url of urls){
@@ -980,9 +986,18 @@ window.fetchTaobaoItems = async function(){
     try{
       const res = await fnTB({ url });
       tbData = res.data;
+      // yupooFetch restituisce mode:'taobao' oppure il formato Yupoo standard
+      if(!tbData || tbData.mode !== 'taobao'){
+        lbl.textContent = `⚠️ Risposta inattesa per: ${url.slice(0,50)}`;
+        done++; continue;
+      }
     }catch(e){
       done++;
-      toast(`⚠️ Errore su: ${url.slice(0,40)}...`);
+      const errMsg = e.message || e.code || 'errore sconosciuto';
+      lbl.textContent = `⚠️ ${errMsg} — ${url.slice(0,50)}`;
+      status.textContent = `⚠️ Errore: ${errMsg}`;
+      status.style.color = '#FF4757';
+      toast(`⚠️ ${errMsg}`);
       continue;
     }
 
