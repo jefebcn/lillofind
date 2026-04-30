@@ -353,6 +353,118 @@ ${brandHint || modelHint ? `\nL'utente indica che questo prodotto è probabilmen
 });
 
 // ══════════════════════════════════════════════════════════════════
+// taobaoFetch
+// Risolve un URL Taobao (anche short link e.tb.cn), scarica la pagina
+// prodotto ed estrae: titolo, immagini, prezzo, brand, descrizione.
+// Solo admin.
+// ══════════════════════════════════════════════════════════════════
+exports.taobaoFetch = onCall({ cors: true, timeoutSeconds: 40 }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Login richiesto.');
+  const userSnap = await admin.firestore().collection('users').doc(request.auth.uid).get();
+  if (userSnap.data()?.isAdmin !== true) throw new HttpsError('permission-denied', 'Solo admin.');
+
+  let { url } = request.data;
+  if (!url || typeof url !== 'string') throw new HttpsError('invalid-argument', 'URL mancante.');
+
+  const HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15A372 Safari/604.1',
+    'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+    'Referer': 'https://www.taobao.com/',
+  };
+
+  // 1 — Risolvi redirect (short link e.tb.cn o m.tb.cn)
+  try {
+    if (url.includes('e.tb.cn') || url.includes('m.tb.cn') || url.includes('tb.cn/h.')) {
+      const r = await fetch(url, { method: 'GET', headers: HEADERS, redirect: 'follow', signal: AbortSignal.timeout(12000) });
+      url = r.url || url;
+    }
+  } catch (e) { /* usa URL originale */ }
+
+  // Estrai item ID da URL
+  let itemId = '';
+  const idMatch = url.match(/[?&]id=(\d+)/) || url.match(/item[_\.]htm.*?(\d{10,})/);
+  if (idMatch) itemId = idMatch[1];
+
+  // 2 — Prova pagina mobile Taobao (più semplice)
+  const fetchUrls = [];
+  if (itemId) {
+    fetchUrls.push(`https://item.taobao.com/item.htm?id=${itemId}`);
+    fetchUrls.push(`https://h5.m.taobao.com/awp/core/detail.htm?id=${itemId}`);
+  }
+  if (!fetchUrls.includes(url) && url.includes('taobao')) fetchUrls.push(url);
+
+  let html = '';
+  let finalUrl = url;
+  for (const u of fetchUrls) {
+    try {
+      const r = await fetch(u, { headers: HEADERS, redirect: 'follow', signal: AbortSignal.timeout(15000) });
+      if (r.ok) { html = await r.text(); finalUrl = r.url; break; }
+    } catch (e) { continue; }
+  }
+
+  if (!html) throw new HttpsError('unavailable', 'Impossibile caricare la pagina Taobao. Riprova o usa URL diretto.');
+
+  // 3 — Estrai titolo
+  let title = '';
+  const ogTitle  = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
+  const metaTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const jsonTitle = html.match(/"title"\s*:\s*"([^"]{10,150})"/);
+  title = (ogTitle?.[1] || jsonTitle?.[1] || metaTitle?.[1] || '').replace(/[-|–—].*$/, '').trim();
+  // Pulizia titolo cinese
+  title = title.replace(/【[^】]*】/g, '').replace(/\s+/g, ' ').trim();
+
+  // 4 — Estrai immagini (img.alicdn.com)
+  const imgSet = new Set();
+  const imgRe = /https?:\/\/[a-z0-9\-\.]*alicdn\.com\/img[^"'\s,]+\.jpg(?:[^"'\s,]*)?/gi;
+  let m;
+  while ((m = imgRe.exec(html)) !== null) {
+    // Normalizza: rimuovi resize e prendi _1200x1200 o alta risoluzione
+    const base = m[0].replace(/_\d+x\d+\.\w+$/, '').replace(/\?.*$/, '');
+    if (!base.includes('avatar') && !base.includes('logo') && !base.includes('icon')) {
+      imgSet.add(base + '.jpg');
+      if (imgSet.size >= 8) break;
+    }
+  }
+  // Fallback: og:image
+  const ogImg = html.match(/<meta[^>]+(?:property=["']og:image["']|name=["']og:image["'])[^>]+content=["']([^"']+)["']/i);
+  if (ogImg?.[1]) imgSet.add(ogImg[1].split('?')[0]);
+
+  const images = [...imgSet].filter(u => u.length > 10).slice(0, 6);
+
+  // 5 — Estrai prezzo
+  let priceYuan = 0;
+  const pricePatterns = [
+    /"price"\s*:\s*"?([\d.]+)"?/,
+    /data-price="([\d.]+)"/,
+    /"defaultItemPrice"\s*:\s*"?([\d.]+)"?/,
+    /"sale_price"\s*:\s*"?([\d.]+)"?/,
+    /¥\s*([\d.]+)/,
+  ];
+  for (const p of pricePatterns) {
+    const pm = html.match(p);
+    if (pm && parseFloat(pm[1]) > 0) { priceYuan = parseFloat(pm[1]); break; }
+  }
+  // Converti yuan → euro (approx 0.13)
+  const priceEur = priceYuan > 0 ? Math.round(priceYuan * 0.13 * 100) / 100 : 0;
+
+  // 6 — Estrai shop/brand
+  let shop = '';
+  const shopMatch = html.match(/"shopName"\s*:\s*"([^"]+)"/) || html.match(/data-seller-name="([^"]+)"/);
+  if (shopMatch) shop = shopMatch[1];
+
+  return {
+    itemId,
+    title,
+    images,
+    priceYuan,
+    priceEur,
+    shop,
+    sourceUrl: finalUrl,
+  };
+});
+
+// ══════════════════════════════════════════════════════════════════
 // saveProduct
 // Salva un prodotto in Firestore usando Admin SDK (bypassa le regole client).
 // Solo admin.
