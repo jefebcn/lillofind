@@ -973,8 +973,9 @@ window.fetchTaobaoItems = async function(){
   prog.style.display = 'block'; bar.style.width = '0%';
 
   const imp     = window.__imp;
-  const fnTB    = imp.httpsCallable(imp.functions, 'taobaoFetch');
-  const fnAI    = imp.httpsCallable(imp.functions, 'yupooAnalyze');  // riuso per analisi immagine
+  // Usa yupooFetch (già deployata) che ora gestisce anche URL Taobao
+  const fnTB    = imp.httpsCallable(imp.functions, 'yupooFetch');
+  const fnAI    = imp.httpsCallable(imp.functions, 'yupooAnalyze');
   let done = 0, added = 0;
 
   for(const url of urls){
@@ -985,9 +986,18 @@ window.fetchTaobaoItems = async function(){
     try{
       const res = await fnTB({ url });
       tbData = res.data;
+      // yupooFetch restituisce mode:'taobao' oppure il formato Yupoo standard
+      if(!tbData || tbData.mode !== 'taobao'){
+        lbl.textContent = `⚠️ Risposta inattesa per: ${url.slice(0,50)}`;
+        done++; continue;
+      }
     }catch(e){
       done++;
-      toast(`⚠️ Errore su: ${url.slice(0,40)}...`);
+      const errMsg = e.message || e.code || 'errore sconosciuto';
+      lbl.textContent = `⚠️ ${errMsg} — ${url.slice(0,50)}`;
+      status.textContent = `⚠️ Errore: ${errMsg}`;
+      status.style.color = '#FF4757';
+      toast(`⚠️ ${errMsg}`);
       continue;
     }
 
