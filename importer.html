@@ -212,6 +212,27 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 
 <div id="app-body">
 
+  <!-- 00b TAOBAO IMPORT -->
+  <div class="sec-wrap" id="taobao-sec">
+    <p class="sec-num">00 — Import da Taobao</p>
+    <p class="sec-title">🛒 TAOBAO <span style="color:var(--led);">+ AI</span></p>
+    <p style="font-size:12px;color:#555;margin-bottom:22px;line-height:1.9;">Incolla uno o più link Taobao (anche short link <strong style="color:#888;">e.tb.cn</strong>) — uno per riga. Il sistema scarica titolo, immagini e prezzo, poi usa <strong style="color:#888;">Claude</strong> per identificare brand e categoria.</p>
+
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start;">
+      <textarea class="lf-in" id="tb-urls" placeholder="https://e.tb.cn/h.iv...&#10;https://item.taobao.com/item.htm?id=...&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
+      <button class="btn-led" id="tb-fetch-btn" onclick="fetchTaobaoItems()" style="white-space:nowrap;padding:14px 28px;align-self:flex-start;">CARICA →</button>
+    </div>
+
+    <p id="tb-status" style="font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;display:none;min-height:16px;"></p>
+
+    <div id="tb-progress" style="display:none;margin-bottom:14px;">
+      <div style="background:#161616;height:4px;width:100%;border-radius:2px;margin-bottom:8px;">
+        <div id="tb-prog-bar" style="background:var(--led);height:4px;width:0%;transition:width .25s;box-shadow:0 0 8px var(--led);border-radius:2px;"></div>
+      </div>
+      <p id="tb-prog-lbl" style="font-size:11px;color:var(--led);letter-spacing:1px;"></p>
+    </div>
+  </div>
+
   <!-- 00 YUPOO AUTO-IMPORT -->
   <div class="sec-wrap" id="yupoo-sec">
     <p class="sec-num">00 — Import Automatico</p>
@@ -925,6 +946,152 @@ window.saveCSV = async function(){
   toast(msg);
   document.getElementById('csv-count-lbl').textContent = saved + ' prodotti importati con successo';
 };
+
+// ══════════════════════════════════════════════════════════════════
+// TAOBAO IMPORT + AI
+// ══════════════════════════════════════════════════════════════════
+window.fetchTaobaoItems = async function(){
+  const raw = (document.getElementById('tb-urls')?.value||'').trim();
+  if(!raw){ toast('⚠️ Incolla almeno un URL Taobao'); return; }
+
+  const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && (u.includes('taobao')||u.includes('tb.cn')||u.includes('tmall')));
+  if(!urls.length){ toast('⚠️ Nessun URL Taobao valido rilevato'); return; }
+
+  const btn   = document.getElementById('tb-fetch-btn');
+  const status = document.getElementById('tb-status');
+  const prog  = document.getElementById('tb-progress');
+  const bar   = document.getElementById('tb-prog-bar');
+  const lbl   = document.getElementById('tb-prog-lbl');
+
+  btn.disabled = true; btn.textContent = 'Caricamento...';
+  status.textContent = `⏳ Elaboro ${urls.length} URL...`; status.style.display = 'block';
+  prog.style.display = 'block'; bar.style.width = '0%';
+
+  const imp     = window.__imp;
+  const fnTB    = imp.httpsCallable(imp.functions, 'taobaoFetch');
+  const fnAI    = imp.httpsCallable(imp.functions, 'yupooAnalyze');  // riuso per analisi immagine
+  let done = 0, added = 0;
+
+  for(const url of urls){
+    lbl.textContent = `${done+1} / ${urls.length} — ${url.slice(0,60)}...`;
+    bar.style.width = Math.round((done/urls.length)*100) + '%';
+
+    let tbData = null;
+    try{
+      const res = await fnTB({ url });
+      tbData = res.data;
+    }catch(e){
+      done++;
+      toast(`⚠️ Errore su: ${url.slice(0,40)}...`);
+      continue;
+    }
+
+    // Analisi AI dell'immagine se disponibile
+    let aiData = null;
+    const coverImg = tbData.images?.[0] || '';
+    if(coverImg){
+      try{
+        const aiRes = await fnAI({ imageUrl: coverImg, brandHint: '', modelHint: '' });
+        aiData = aiRes.data;
+      }catch(e){ /* usa solo i dati TB */ }
+    }
+
+    addTaobaoRow(tbData, aiData);
+    added++;
+    done++;
+    bar.style.width = Math.round((done/urls.length)*100) + '%';
+  }
+
+  lbl.textContent = `✅ Completato! ${added} prodotti aggiunti. Imposta i prezzi e clicca SALVA TUTTO.`;
+  btn.disabled = false; btn.textContent = 'CARICA →';
+  status.textContent = `✅ ${added} prodotti Taobao aggiunti al form`;
+  updateStats();
+  if(added) toast(`🛒 ${added} prodotti Taobao importati!`);
+  setTimeout(()=>{ document.getElementById('rows-container').scrollIntoView({behavior:'smooth',block:'start'}); }, 400);
+};
+
+function addTaobaoRow(tb, ai){
+  const id = rowId++;
+  const container = document.getElementById('rows-container');
+  const div = document.createElement('div');
+  div.className = 'prod-row'; div.id = 'row-'+id;
+
+  const coverImg = tb.images?.[0] || '';
+  div.dataset.imgUrl = coverImg;
+
+  // Preferisci dati AI se disponibili, altrimenti usa titolo Taobao
+  const brand   = ai?.brand || currentBrand || '';
+  const rawName = ai?.name  || tb.title     || '';
+  const name    = rawName.replace(/"/g,'&quot;');
+  const category= ai?.category || '';
+  const colors  = (ai?.colors||[]).join(', ');
+  const isShoe  = ['scarpe','scarpe_box'].includes(category) || (ai?.model||'').toLowerCase().includes('sneak');
+  const modelMatch = MODELS.find(m=> m.toLowerCase()===(ai?.model||'').toLowerCase()) || (isShoe?'Sneakers':'');
+
+  div.dataset.brand    = brand;
+  div.dataset.category = category;
+
+  // Prezzo: usa conversione yuan→euro dalla CF, oppure suggerimento AI
+  const priceVal = tb.priceEur > 0 ? tb.priceEur : '';
+  const priceHint = tb.priceYuan > 0 ? `(¥${tb.priceYuan})` : '';
+
+  // Mostra tutte le immagini come link cliccabili per scegliere
+  const thumbsHtml = (tb.images||[]).slice(0,5).map((img,i)=>`
+    <img src="${img}" title="Clicca per usare questa immagine" alt=""
+      style="width:38px;height:38px;object-fit:cover;border:2px solid ${i===0?'var(--led)':'#1e1e1e'};cursor:pointer;opacity:${i===0?1:.5};transition:all .15s;"
+      onclick="document.getElementById('row-${id}').dataset.imgUrl=this.src;document.getElementById('ru-${id}').value=this.src;document.getElementById('img-area-${id}').querySelector('img').src=this.src;this.parentElement.querySelectorAll('img').forEach(x=>{x.style.borderColor='#1e1e1e';x.style.opacity='.5';});this.style.borderColor='var(--led)';this.style.opacity='1';"
+      onerror="this.style.display='none'"/>`).join('');
+
+  div.innerHTML = `
+    <div class="row-grid">
+      <div id="img-area-${id}">
+        ${coverImg?`<img class="img-prev" src="${coverImg}" alt="" onerror="this.style.opacity='.2'"/>`:'<div class="img-ph" style="cursor:default;border-color:#141414;">🛒</div>'}
+      </div>
+      <div>
+        <p class="row-label">URL Immagine</p>
+        <input class="lf-in" id="ru-${id}" value="${coverImg}" style="font-size:10px;" oninput="handleUrlInput(this,${id})"/>
+        ${thumbsHtml?`<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;">${thumbsHtml}</div>`:''}
+      </div>
+      <div>
+        <p class="row-label">Nome Prodotto *</p>
+        <input class="lf-in" id="rn-${id}" value="${name}" placeholder="Nome prodotto" style="font-size:12px;"/>
+        ${tb.shop?`<p style="font-size:8px;color:#252525;margin-top:3px;letter-spacing:1px;">Shop: ${tb.shop}</p>`:''}
+      </div>
+      <div>
+        <p class="row-label">Prezzo € * <span style="font-size:8px;color:#444;">${priceHint}</span></p>
+        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" value="${priceVal}" placeholder="89.99" style="font-size:16px;font-weight:600;color:var(--led);"/>
+      </div>
+      <div>
+        <p class="row-label">Tipo</p>
+        <select class="lf-in" id="rt-${id}" style="font-size:11px;padding:8px 10px;cursor:pointer;background:#0c0c0c;color:#aaa;">
+          <option value="">— scegli —</option>
+          ${MODELS.map(m=>`<option value="${m}"${m===modelMatch?' selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        ${isShoe ? `
+          <p class="row-label">Taglie EU</p>
+          <input class="lf-in" id="sz-text-${id}" value="38 39 40 41 42 43 44 45 46" placeholder="38 39 40 41 42 43 44 45 46" style="font-size:12px;letter-spacing:1px;"/>
+        ` : `
+          <p class="row-label">Taglie <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button></p>
+          <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
+            ${SIZES_ALL.map(s=>`<span class="sz-toggle on" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
+          </div>
+        `}
+      </div>
+      <div>
+        <p class="row-label">Colori</p>
+        <input class="lf-in" id="rc-${id}" value="${colors}" placeholder="Nero, Bianco" style="font-size:12px;"/>
+      </div>
+      <div style="padding-top:20px;">
+        <button class="btn-red" onclick="removeRow(${id})" style="padding:10px;font-size:14px;">✕</button>
+      </div>
+    </div>
+    <div id="rst-${id}" style="display:none;margin-top:8px;font-size:10px;letter-spacing:2px;padding:3px 0;"></div>`;
+
+  document.getElementById('rows-container').appendChild(div);
+  updateStats();
+}
 
 // ══════════════════════════════════════════════════════════════════
 // YUPOO AUTO-IMPORT + HAIKU AI
