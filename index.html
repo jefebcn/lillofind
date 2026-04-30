@@ -1806,11 +1806,23 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   <!-- CTA -->
   <section style="padding:60px 24px;text-align:center;">
-    <h2 class="bb" style="font-size:clamp(44px,7vw,90px);margin-bottom:14px;">Inizia. Gratis.</h2>
-    <p style="font-size:11px;color:var(--dim);margin-bottom:32px;letter-spacing:1px;">50 punti ti bastano per il primo sconto. Un ordine da €50 = €5 gratis.</p>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn-led" onclick="showPg('auth');switchTab('reg')">Crea Account →</button>
-      <button class="btn-g" onclick="showPg('shop')">Vai allo Shop</button>
+    <!-- Guest: not logged in -->
+    <div id="lfp-cta-guest">
+      <h2 class="bb" style="font-size:clamp(44px,7vw,90px);margin-bottom:14px;">Inizia. Gratis.</h2>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:32px;letter-spacing:1px;">50 punti ti bastano per il primo sconto. Un ordine da €50 = €5 gratis.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-led" onclick="showPg('auth');switchTab('reg')">Crea Account →</button>
+        <button class="btn-g" onclick="showPg('shop')">Vai allo Shop</button>
+      </div>
+    </div>
+    <!-- Member: logged in -->
+    <div id="lfp-cta-member" style="display:none;">
+      <h2 class="bb" style="font-size:clamp(44px,7vw,90px);margin-bottom:14px;">Sei già <span style="color:var(--led);">Membro.</span></h2>
+      <p id="lfp-cta-pts-line" style="font-size:11px;color:var(--dim);margin-bottom:32px;letter-spacing:1px;"></p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-led" onclick="showPg('shop')">Vai allo Shop →</button>
+        <button class="btn-g" onclick="showPg('profile')">Il Tuo Profilo</button>
+      </div>
     </div>
   </section>
 
@@ -2591,6 +2603,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     const el=document.getElementById('home-pts'); if(el) el.textContent=String(pts).padStart(3,'0');
     const tEl=document.getElementById('home-tier'); if(tEl) tEl.textContent=udata?getTier(pts):'—';
     const sEl=document.getElementById('home-spent'); if(sEl) sEl.textContent=udata?'€'+(udata.totalSpent||0).toFixed(0):'€0';
+    // Sync LFPoints CTA section if page is visible
+    if(document.getElementById('pg-lfpoints')?.classList.contains('on')) renderRewardsTable();
     renderRecentlyViewed();
   }
 
@@ -3106,6 +3120,18 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── Rewards table ──────────────────────────────────────
   function renderRewardsTable(){
     const pts=udata?.lfpoints??0;
+    // Update CTA section based on login state
+    const guestEl=document.getElementById('lfp-cta-guest');
+    const memberEl=document.getElementById('lfp-cta-member');
+    const ptsLine=document.getElementById('lfp-cta-pts-line');
+    if(guestEl) guestEl.style.display=user?'none':'';
+    if(memberEl) memberEl.style.display=user?'':'none';
+    if(user&&ptsLine){
+      const next=REWARDS.find(r=>r.pts>pts);
+      ptsLine.textContent=next
+        ?`Hai ${pts} LFPOINTS — ancora ${next.pts-pts} pts per ${next.label}`
+        :`Hai ${pts} LFPOINTS — hai sbloccato tutti i premi!`;
+    }
     const tbody=document.getElementById('rew-rows');
     if(!tbody)return;
     tbody.innerHTML=REWARDS.map(r=>{
