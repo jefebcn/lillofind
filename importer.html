@@ -1034,7 +1034,6 @@ function addTaobaoRow(tb, ai){
   const coverImg = tb.images?.[0] || '';
   div.dataset.imgUrl = coverImg;
 
-  // Preferisci dati AI se disponibili, altrimenti usa titolo Taobao
   const brand   = ai?.brand || currentBrand || '';
   const rawName = ai?.name  || tb.title     || '';
   const name    = rawName.replace(/"/g,'&quot;');
@@ -1046,35 +1045,53 @@ function addTaobaoRow(tb, ai){
   div.dataset.brand    = brand;
   div.dataset.category = category;
 
-  // Prezzo: usa conversione yuan→euro dalla CF, oppure suggerimento AI
-  const priceVal = tb.priceEur > 0 ? tb.priceEur : '';
+  const priceVal  = tb.priceEur > 0 ? tb.priceEur : '';
   const priceHint = tb.priceYuan > 0 ? `(¥${tb.priceYuan})` : '';
 
-  // Mostra tutte le immagini come link cliccabili per scegliere
   const thumbsHtml = (tb.images||[]).slice(0,5).map((img,i)=>`
     <img src="${img}" title="Clicca per usare questa immagine" alt=""
       style="width:38px;height:38px;object-fit:cover;border:2px solid ${i===0?'var(--led)':'#1e1e1e'};cursor:pointer;opacity:${i===0?1:.5};transition:all .15s;"
       onclick="document.getElementById('row-${id}').dataset.imgUrl=this.src;document.getElementById('ru-${id}').value=this.src;document.getElementById('img-area-${id}').querySelector('img').src=this.src;this.parentElement.querySelectorAll('img').forEach(x=>{x.style.borderColor='#1e1e1e';x.style.opacity='.5';});this.style.borderColor='var(--led)';this.style.opacity='1';"
       onerror="this.style.display='none'"/>`).join('');
 
+  // Debug/warning panel — visibile se mancano dati
+  const dbg = tb._debug || {};
+  const missingData = !tb.title && !tb.images?.length && !tb.priceYuan;
+  const partialData = !tb.title || !tb.images?.length || !tb.priceYuan;
+  const itemLink = tb.itemId ? `https://item.taobao.com/item.htm?id=${tb.itemId}` : (tb.sourceUrl || '');
+  const debugHtml = partialData ? `
+    <div style="background:#100800;border:1px solid #2a1800;padding:8px 12px;margin-bottom:8px;border-radius:2px;">
+      <p style="font-size:9px;letter-spacing:2px;color:#c84;margin-bottom:4px;">
+        ${missingData ? '⚠️ NESSUN DATO ESTRATTO — INSERISCI MANUALMENTE' : '⚠️ DATI PARZIALI — COMPLETA I CAMPI VUOTI'}
+      </p>
+      <p style="font-size:8px;color:#555;font-family:monospace;margin-bottom:3px;">
+        itemId: ${dbg.itemId||'non trovato'} · HTML: ${dbg.htmlLen||0} byte · Immagini: ${dbg.imgCount||0}
+        ${dbg.htmlSource ? ` · Fonte: ${dbg.htmlSource.slice(0,50)}` : ''}
+      </p>
+      ${itemLink ? `<p style="font-size:8px;"><a href="${itemLink}" target="_blank" style="color:#c84;text-decoration:none;">→ Apri pagina Taobao ↗</a> per copiare foto e dati</p>` : ''}
+      <p style="font-size:8px;color:#444;margin-top:3px;">Incolla URL immagine nel campo qui sotto, poi inserisci nome e prezzo</p>
+    </div>` : '';
+
   div.innerHTML = `
+    ${debugHtml}
     <div class="row-grid">
       <div id="img-area-${id}">
-        ${coverImg?`<img class="img-prev" src="${coverImg}" alt="" onerror="this.style.opacity='.2'"/>`:'<div class="img-ph" style="cursor:default;border-color:#141414;">🛒</div>'}
+        ${coverImg?`<img class="img-prev" src="${coverImg}" alt="" onerror="this.style.opacity='.2'"/>`:'<div class="img-ph" style="cursor:default;border-color:#141414;font-size:22px;">🛒</div>'}
       </div>
       <div>
         <p class="row-label">URL Immagine</p>
-        <input class="lf-in" id="ru-${id}" value="${coverImg}" style="font-size:10px;" oninput="handleUrlInput(this,${id})"/>
+        <input class="lf-in" id="ru-${id}" value="${coverImg}" style="font-size:10px;" placeholder="https://..." oninput="handleUrlInput(this,${id})"/>
         ${thumbsHtml?`<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;">${thumbsHtml}</div>`:''}
       </div>
       <div>
         <p class="row-label">Nome Prodotto *</p>
-        <input class="lf-in" id="rn-${id}" value="${name}" placeholder="Nome prodotto" style="font-size:12px;"/>
+        <input class="lf-in" id="rn-${id}" value="${name}" placeholder="Inserisci nome prodotto" style="font-size:12px;${!name?'border-color:#c84;':''}" oninput="this.style.borderColor=''"/>
         ${tb.shop?`<p style="font-size:8px;color:#252525;margin-top:3px;letter-spacing:1px;">Shop: ${tb.shop}</p>`:''}
+        ${tb.sourceUrl?`<p style="font-size:8px;margin-top:2px;"><a href="${tb.sourceUrl}" target="_blank" style="color:#333;text-decoration:none;font-family:monospace;">↗ Link Taobao</a></p>`:''}
       </div>
       <div>
         <p class="row-label">Prezzo € * <span style="font-size:8px;color:#444;">${priceHint}</span></p>
-        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" value="${priceVal}" placeholder="89.99" style="font-size:16px;font-weight:600;color:var(--led);"/>
+        <input class="lf-in" id="rp-${id}" type="number" step="0.01" min="0" value="${priceVal}" placeholder="89.99" style="font-size:16px;font-weight:600;color:var(--led);${!priceVal?'border-color:#c84;':''}" oninput="this.style.borderColor=''"/>
       </div>
       <div>
         <p class="row-label">Tipo</p>

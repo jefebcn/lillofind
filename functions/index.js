@@ -130,178 +130,181 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
   // ── BRANCH TAOBAO ─────────────────────────────────────────────
   if (isTaobao) {
     const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
-    const TB_DESK = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-    const TB_MOB  = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15A372 Safari/604.1';
+    // Baidu Spider UA — whitelisted by Chinese sites, bypasses many bot checks
+    const UA_BAIDU = 'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)';
+    const UA_DESK  = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+    const UA_MOB   = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+    const HDR_ZH   = { 'Accept-Language': 'zh-CN,zh;q=0.9', 'Accept': 'text/html,*/*;q=0.8', 'Cache-Control': 'no-cache' };
 
-    // 1 — Risolvi short link / redirect multipli → estrai item ID
+    // 1 — Risolvi short link → itemId (segui redirect HTTP, non JS)
     let itemId = '';
     let resolvedUrl = url;
-    try {
-      // Segui redirect con UA desktop (evita redirect verso app store)
-      const r0 = await fetch(url, {
-        headers: { 'User-Agent': TB_DESK, 'Accept': 'text/html,*/*', 'Accept-Language': 'zh-CN,zh;q=0.9' },
-        redirect: 'follow', signal: AbortSignal.timeout(12000),
-      });
-      resolvedUrl = r0.url || url;
-    } catch(e) { /* usa URL originale */ }
-
-    // Cerca item ID nella catena di redirect
-    for (const u of [resolvedUrl, url]) {
-      const m = u.match(/[?&]id=(\d{8,})/) || u.match(/\/(\d{10,})[/?]/) || u.match(/item[._-]?id[=:](\d{8,})/i);
-      if (m) { itemId = m[1]; break; }
+    const redirectUAs = [UA_DESK, UA_BAIDU, UA_MOB];
+    for (const ua of redirectUAs) {
+      try {
+        const r0 = await fetch(url, {
+          headers: { 'User-Agent': ua, ...HDR_ZH },
+          redirect: 'follow', signal: AbortSignal.timeout(10000),
+        });
+        resolvedUrl = r0.url || url;
+        const m = resolvedUrl.match(/[?&]id=(\d{8,})/)
+               || resolvedUrl.match(/\/item\/(\d{10,})/)
+               || resolvedUrl.match(/[?&]itemId=(\d{8,})/);
+        if (m) { itemId = m[1]; break; }
+      } catch(e) { /* prossimo UA */ }
+    }
+    // Prova anche URL originale (per link già diretti)
+    if (!itemId) {
+      const m = url.match(/[?&]id=(\d{8,})/) || url.match(/\/item\/(\d{10,})/);
+      if (m) itemId = m[1];
     }
 
-    // 2 — Prova più endpoint per ottenere dati prodotto
-    let html = '', dataJson = null;
+    console.log(`[TB] url=${url} resolved=${resolvedUrl} itemId=${itemId}`);
 
-    // Endpoint A: pagina desktop item.taobao.com (SSR ha dati in JSON embedded)
+    // 2 — Scarica HTML con più strategie
+    let html = '', htmlSource = '';
+    const fetchAttempts = [];
     if (itemId) {
-      try {
-        const r = await fetch(`https://item.taobao.com/item.htm?id=${itemId}`, {
-          headers: { 'User-Agent': TB_DESK, 'Accept': 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9', 'Referer': 'https://www.taobao.com/' },
-          redirect: 'follow', signal: AbortSignal.timeout(15000),
-        });
-        if (r.ok) html = await r.text();
-      } catch(e) {}
+      fetchAttempts.push(
+        // world.taobao.com — internazionale, meno protetto, ha SSR con meta tag
+        { url: `https://world.taobao.com/item/${itemId}.htm`, ua: UA_DESK },
+        // Pagina desktop con Baidu Spider (spesso whitelisted)
+        { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_BAIDU },
+        // Pagina desktop standard
+        { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_DESK },
+        // Pagina mobile
+        { url: `https://h5.m.taobao.com/awp/core/detail.htm?id=${itemId}`, ua: UA_MOB },
+      );
+    }
+    // URL risolto come fallback finale
+    if (resolvedUrl !== url) {
+      fetchAttempts.push({ url: resolvedUrl, ua: UA_BAIDU });
+      fetchAttempts.push({ url: resolvedUrl, ua: UA_DESK });
     }
 
-    // Endpoint B: pagina mobile se desktop fallisce
-    if (!html && itemId) {
+    for (const att of fetchAttempts) {
+      if (html) break;
       try {
-        const r = await fetch(`https://h5.m.taobao.com/awp/core/detail.htm?id=${itemId}`, {
-          headers: { 'User-Agent': TB_MOB, 'Accept': 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9' },
+        const r = await fetch(att.url, {
+          headers: { 'User-Agent': att.ua, ...HDR_ZH, 'Referer': 'https://www.taobao.com/' },
           redirect: 'follow', signal: AbortSignal.timeout(12000),
         });
-        if (r.ok) html = await r.text();
-      } catch(e) {}
+        const txt = r.ok ? await r.text() : '';
+        // Accetta solo HTML con contenuto utile (non login/captcha pages)
+        const looksUseful = txt.length > 3000 && (
+          txt.includes('alicdn') || txt.includes('og:title') || txt.includes('og:image') ||
+          txt.includes('"title"') || txt.includes('item')
+        );
+        if (looksUseful) { html = txt; htmlSource = att.url; }
+      } catch(e) { /* prossimo */ }
     }
 
-    // Endpoint C: URL risolto originale
-    if (!html) {
-      try {
-        const r = await fetch(resolvedUrl, {
-          headers: { 'User-Agent': TB_DESK, 'Accept': 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9' },
-          redirect: 'follow', signal: AbortSignal.timeout(12000),
-        });
-        if (r.ok) html = await r.text();
-      } catch(e) {}
-    }
-
-    if (!html) throw new HttpsError('unavailable', `Impossibile caricare la pagina Taobao (itemId=${itemId||'non trovato'}). Prova con l'URL diretto item.taobao.com/item.htm?id=...`);
-
-    // 3 — Estrai dati dal JSON embedded nella pagina (più affidabile dell'HTML)
-    // Taobao inietta dati prodotto in window.__INIT_DATA__ o script JSON
-    const jsonBlobs = [];
-    const scriptRe2 = /<script[^>]*>([\s\S]{100,}?)<\/script>/gi;
-    let sm2;
-    while ((sm2 = scriptRe2.exec(html)) !== null) {
-      const src = sm2[1];
-      if (src.includes('title') || src.includes('price') || src.includes('pic_url') || src.includes('item')) {
-        const matches = src.match(/\{[\s\S]{200,10000}?\}/g) || [];
-        for (const blob of matches.slice(0, 5)) {
-          try { jsonBlobs.push(JSON.parse(blob)); } catch(e) {}
+    // 3 — Estrai titolo
+    let title = '';
+    if (html) {
+      // og:title (più affidabile - presente anche in SSR parziale)
+      const ogT = html.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']{4,300})["']/i)
+               || html.match(/<meta[^>]+content=["']([^"']{4,300})["'][^>]*property=["']og:title["']/i);
+      if (ogT) title = ogT[1];
+      // JSON nei script: cerca pattern comuni Taobao
+      if (!title) {
+        const patterns = [
+          /"title"\s*:\s*"([^"]{8,200})"/,
+          /"itemTitle"\s*:\s*"([^"]{8,200})"/,
+          /"name"\s*:\s*"([^"]{8,200})"/,
+          /data-title="([^"]{8,200})"/,
+        ];
+        for (const p of patterns) {
+          const m = html.match(p);
+          if (m && !m[1].includes('taobao') && !m[1].includes('淘宝')) { title = m[1]; break; }
         }
       }
-    }
-
-    // 4 — Estrai titolo (priorità: og:title > JSON > title tag)
-    let title = '';
-    const ogT = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']{4,300})["']/i)
-              || html.match(/<meta[^>]+content=["']([^"']{4,300})["'][^>]+property=["']og:title["']/i);
-    if (ogT) title = ogT[1];
-    if (!title) {
-      for (const blob of jsonBlobs) {
-        const t = blob?.item?.title || blob?.data?.item?.title || blob?.title || blob?.itemTitle || '';
-        if (t && t.length > 4) { title = t; break; }
+      // <title> tag — spesso "商品名 - 淘宝" o "商品名"
+      if (!title) {
+        const tM = html.match(/<title[^>]*>([^<]{6,300})<\/title>/i);
+        if (tM) title = tM[1];
+      }
+      // description meta
+      if (!title) {
+        const descM = html.match(/<meta[^>]+name=["']description["'][^>]*content=["']([^"']{8,})["']/i);
+        if (descM) title = descM[1].split('。')[0].split(',')[0].trim();
       }
     }
-    if (!title) {
-      const tMatch = html.match(/<title[^>]*>([^<]{4,300})<\/title>/i);
-      if (tMatch) title = tMatch[1];
-    }
-    // Pulizia: rimuovi suffix Taobao e testo cinese superfluo
-    title = title.replace(/[-–—|]?\s*(淘宝|天猫|Taobao|Tmall).*$/gi, '')
-                 .replace(/【[^】]*】/g, '').replace(/\s+/g, ' ').trim();
+    title = (title || '')
+      .replace(/[-–—|]?\s*(淘宝|天猫|Taobao|Tmall).*$/gi, '')
+      .replace(/【[^】]*】/g, '').replace(/\s+/g, ' ').trim();
 
-    // 5 — Estrai immagini (priorità: JSON picList > alicdn regex > og:image)
+    // 4 — Estrai immagini (alicdn URLs nel HTML)
     const imgSet = new Set();
-    // Da JSON
-    for (const blob of jsonBlobs) {
-      const pics = blob?.item?.picList || blob?.data?.item?.picList
-                || blob?.picList || blob?.pics || blob?.images || [];
-      if (Array.isArray(pics)) {
-        pics.forEach(p => {
-          const u = (typeof p === 'string' ? p : (p?.url||p?.pic||p?.src||''));
-          if (u && u.includes('alicdn')) {
-            const clean = (u.startsWith('//') ? 'https:'+u : u).split('?')[0].replace(/_\d+x\d+/, '');
-            imgSet.add(clean.endsWith('.jpg') ? clean : clean + '.jpg');
-          }
-        });
-      }
-    }
-    // Da HTML (regex alicdn.com)
-    if (imgSet.size < 2) {
-      const imgRe2 = /(?:https?:)?\/\/[a-z0-9.\-]*alicdn\.com\/img[^"'\s,>\\]+\.(?:jpg|jpeg|png|webp)/gi;
-      let mm2;
-      while ((mm2 = imgRe2.exec(html)) !== null && imgSet.size < 8) {
-        let u = mm2[0]; if (u.startsWith('//')) u = 'https:' + u;
-        const clean = u.split('?')[0].replace(/_\d+x\d+[.\w]*$/, '') + '.jpg';
-        if (!clean.includes('avatar') && !clean.includes('logo') && !clean.includes('icon') && !clean.includes('placeholder'))
+    if (html) {
+      // Regex ampia su tutti i pattern alicdn
+      const imgRe = /(?:https?:)?\/\/(?:[a-z0-9\-]+\.)?alicdn\.com\/(?:img[ex]?|imgextra)\/[^\s"'<>\\]+\.(?:jpg|jpeg|png|webp)/gi;
+      let mm;
+      while ((mm = imgRe.exec(html)) !== null && imgSet.size < 8) {
+        let u = mm[0]; if (u.startsWith('//')) u = 'https:' + u;
+        const clean = u.replace(/[?#].*$/, '').replace(/_\d+x\d+[a-z]*\.\w+$/, '.jpg').replace(/_(q\d+|compress|webp)$/, '');
+        if (!clean.includes('avatar') && !clean.includes('logo') && !clean.includes('icon') &&
+            !clean.includes('placeholder') && !clean.includes('default') && clean.length > 30)
           imgSet.add(clean);
       }
+      // og:image fallback
+      const ogI = html.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+               || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+      if (ogI?.[1]) {
+        let u = ogI[1]; if (u.startsWith('//')) u = 'https:' + u;
+        u = u.replace(/[?#].*$/, '');
+        imgSet.add(u);
+      }
     }
-    // og:image fallback
-    const ogI = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-               || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-    if (ogI?.[1]) {
-      let u = ogI[1]; if (u.startsWith('//')) u = 'https:'+u;
-      imgSet.add(u.split('?')[0].replace(/_\d+x\d+/, '')+'.jpg');
-    }
-    let images = [...imgSet].filter(u=>u.length>20).slice(0, 6);
+    let images = [...imgSet].filter(u => u.length > 20).slice(0, 6);
 
-    // 6 — Estrai prezzo
+    // 5 — Estrai prezzo
     let priceYuan = 0;
-    const pricePatterns = [
-      /"price"\s*:\s*"([\d.]+)"/,
-      /"defaultItemPrice"\s*:\s*"([\d.]+)"/,
-      /"priceText"\s*:\s*"¥([\d.]+)"/,
-      /data-price="([\d.]+)"/,
-      /\\"price\\":\\"([\d.]+)\\"/,
-      /¥\s*([\d]{1,5}(?:\.\d{2})?)/,
-    ];
-    for (const p of pricePatterns) {
-      const pm = html.match(p);
-      if (pm && parseFloat(pm[1]) > 0 && parseFloat(pm[1]) < 100000) { priceYuan = parseFloat(pm[1]); break; }
+    if (html) {
+      const pricePs = [
+        /"price"\s*:\s*"([\d]+(?:\.\d{1,2})?)"/,
+        /"defaultItemPrice"\s*:\s*"([\d]+(?:\.\d{1,2})?)"/,
+        /"sale_price"\s*:\s*"([\d]+(?:\.\d{1,2})?)"/,
+        /data-price="([\d]+(?:\.\d{1,2})?)"/,
+        /\\"price\\":\\"([\d]+(?:\.\d{1,2})?)\\"/,
+        /¥\s*([\d]{1,5}(?:\.\d{2})?)/,
+        /"priceWap"\s*:\s*"([\d]+(?:\.\d{1,2})?)"/,
+      ];
+      for (const p of pricePs) {
+        const pm = html.match(p);
+        const v = pm ? parseFloat(pm[1]) : 0;
+        if (v > 0 && v < 100000) { priceYuan = v; break; }
+      }
     }
 
-    // 7 — Upload prima immagine su imgbb per hosting permanente
+    // 6 — Upload prima immagine su imgbb
     let imgbbUrl = '';
     const firstImg = images[0] || '';
     if (firstImg) {
       try {
         const imgResp = await fetch(firstImg, {
-          headers: { 'User-Agent': TB_DESK, 'Referer': 'https://www.taobao.com/', 'Accept': 'image/*' },
-          signal: AbortSignal.timeout(12000),
+          headers: { 'User-Agent': UA_DESK, 'Referer': 'https://www.taobao.com/', 'Accept': 'image/*' },
+          signal: AbortSignal.timeout(10000),
         });
         if (imgResp.ok) {
-          const imgBuf = Buffer.from(await imgResp.arrayBuffer());
-          const b64 = imgBuf.toString('base64');
+          const buf = Buffer.from(await imgResp.arrayBuffer());
           const form = new URLSearchParams();
           form.append('key', IMGBB_KEY);
-          form.append('image', b64);
+          form.append('image', buf.toString('base64'));
           const ibRes = await fetch('https://api.imgbb.com/1/upload', {
             method: 'POST', body: form.toString(),
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            signal: AbortSignal.timeout(20000),
+            signal: AbortSignal.timeout(15000),
           });
           const ibJson = await ibRes.json();
           if (ibJson.success) imgbbUrl = ibJson.data.url;
         }
-      } catch(e) { console.warn('imgbb upload failed:', e.message); }
+      } catch(e) { console.warn('[TB] imgbb failed:', e.message); }
     }
 
-    // Shop/brand
-    const shop = (html.match(/"shopName"\s*:\s*"([^"]+)"/) || html.match(/class=["']shop-name["'][^>]*>([^<]+)</))?.[1] || '';
+    const shop = html ? ((html.match(/"shopName"\s*:\s*"([^"]{2,60})"/) || [])[1] || '') : '';
+
+    console.log(`[TB] result: title="${title}" images=${images.length} price=${priceYuan} itemId=${itemId} htmlLen=${html.length}`);
 
     return {
       mode: 'taobao',
@@ -313,7 +316,16 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       priceEur: priceYuan > 0 ? Math.round(priceYuan * 0.13 * 100) / 100 : 0,
       shop,
       sourceUrl: resolvedUrl,
-      _debug: { htmlLen: html.length, imgCount: images.length, itemId },
+      _debug: {
+        htmlLen: html.length,
+        htmlSource,
+        imgCount: images.length,
+        itemId,
+        resolvedUrl,
+        hasTitle: !!title,
+        hasImages: images.length > 0,
+        hasPrice: priceYuan > 0,
+      },
     };
   }
 
