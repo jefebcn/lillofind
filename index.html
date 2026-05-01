@@ -682,10 +682,10 @@ img{ -webkit-user-drag:none; user-select:none; }
 </div>
 
 <!-- ══════════ MOBILE HEADER ══════════ -->
-<header id="mob-hdr">
-  <button onclick="openDrawer()" style="background:none;border:none;cursor:pointer;color:var(--w);font-size:22px;padding:8px;min-width:44px;">☰</button>
-  <button onclick="showPg('home')" style="background:none;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--w);">LILLOFIND</button>
-  <div style="display:flex;align-items:center;gap:8px;">
+<header id="mob-hdr" style="position:relative;">
+  <button onclick="openDrawer()" style="background:none;border:none;cursor:pointer;color:var(--w);font-size:22px;padding:8px;min-width:44px;flex-shrink:0;">☰</button>
+  <button onclick="showPg('home')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--w);white-space:nowrap;">LILLOFIND</button>
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <div id="m-badge" style="display:none;background:var(--led);color:var(--k);padding:3px 8px;font-size:10px;letter-spacing:1px;cursor:pointer;" onclick="showPg('lfpoints')">
       <span id="m-pts">0</span>pt
     </div>
