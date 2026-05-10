@@ -272,11 +272,6 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
         if (descM) title = descM[1].split('。')[0].split(',')[0].trim();
       }
     }
-    // Prova a estrarre prezzo anche dall'URL originale/risolto (es. price=95.8 nel link Tmall)
-    if (!priceYuan) {
-      const urlPriceM = (resolvedUrl || url).match(/[?&]price=([\d.]+)/);
-      if (urlPriceM) priceYuan = parseFloat(urlPriceM[1]);
-    }
 
     title = (title || '')
       .replace(/[-–—|]?\s*(淘宝|天猫|Taobao|Tmall|AliExpress|tmall\.com).*$/gi, '')
@@ -331,6 +326,11 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
         const v = pm ? parseFloat(pm[1]) : 0;
         if (v > 0 && v < 100000) { priceYuan = v; break; }
       }
+    }
+    // Fallback: prezzo dall'URL (es. price=95.8 nei link condivisi Tmall/Taobao)
+    if (!priceYuan) {
+      const urlPriceM = (resolvedUrl || url).match(/[?&]price=([\d.]+)/);
+      if (urlPriceM) priceYuan = parseFloat(urlPriceM[1]);
     }
 
     // 6 — Upload prima immagine su imgbb
