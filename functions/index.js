@@ -199,22 +199,28 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       fetchAttempts.push({ url, ua: UA_DESK, ref: 'https://www.aliexpress.com/' });
     }
     // AliExpress con item ID (se trovato dalla catena redirect)
+    // Se abbiamo l'URL risolto completo (con bxsign, token, ecc.) mettilo PRIMA —
+    // contiene parametri anti-bot che aumentano la probabilità di successo
+    if (resolvedUrl && resolvedUrl !== url && !isResolvedAliExpress) {
+      fetchAttempts.push({ url: resolvedUrl, ua: UA_DESK });
+      fetchAttempts.push({ url: resolvedUrl, ua: UA_BAIDU });
+    }
     if (itemId) {
       fetchAttempts.push(
+        // Tmall internazionale — stessa struttura di Taobao ma prodotti Tmall
+        { url: `https://detail.tmall.com/item.htm?id=${itemId}`, ua: UA_BAIDU },
+        { url: `https://detail.tmall.com/item.htm?id=${itemId}`, ua: UA_DESK },
+        // AliExpress (prodotti cross-listati)
         { url: `https://www.aliexpress.com/item/${itemId}.html`, ua: UA_DESK, ref: 'https://www.aliexpress.com/' },
         { url: `https://it.aliexpress.com/item/${itemId}.html`,  ua: UA_DESK, ref: 'https://www.aliexpress.com/' },
         // world.taobao.com — internazionale con SSR
         { url: `https://world.taobao.com/item/${itemId}.htm`, ua: UA_DESK },
         { url: `https://world.taobao.com/item/${itemId}.htm`, ua: UA_BAIDU },
-        // Taobao con Baidu Spider
+        // Taobao standard
         { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_BAIDU },
         { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_DESK },
         { url: `https://h5.m.taobao.com/awp/core/detail.htm?id=${itemId}`, ua: UA_MOB },
       );
-    }
-    if (resolvedUrl && resolvedUrl !== url && !isResolvedAliExpress) {
-      fetchAttempts.push({ url: resolvedUrl, ua: UA_BAIDU });
-      fetchAttempts.push({ url: resolvedUrl, ua: UA_DESK });
     }
 
     for (const att of fetchAttempts) {
@@ -266,8 +272,14 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
         if (descM) title = descM[1].split('。')[0].split(',')[0].trim();
       }
     }
+    // Prova a estrarre prezzo anche dall'URL originale/risolto (es. price=95.8 nel link Tmall)
+    if (!priceYuan) {
+      const urlPriceM = (resolvedUrl || url).match(/[?&]price=([\d.]+)/);
+      if (urlPriceM) priceYuan = parseFloat(urlPriceM[1]);
+    }
+
     title = (title || '')
-      .replace(/[-–—|]?\s*(淘宝|天猫|Taobao|Tmall|AliExpress).*$/gi, '')
+      .replace(/[-–—|]?\s*(淘宝|天猫|Taobao|Tmall|AliExpress|tmall\.com).*$/gi, '')
       .replace(/【[^】]*】/g, '').replace(/\s+/g, ' ').trim();
 
     // 4 — Estrai immagini (alicdn + ae01.alicdn per AliExpress)
