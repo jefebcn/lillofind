@@ -130,33 +130,54 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
   // ── BRANCH TAOBAO ─────────────────────────────────────────────
   if (isTaobao) {
     const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
-    // Baidu Spider UA — whitelisted by Chinese sites, bypasses many bot checks
     const UA_BAIDU = 'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)';
     const UA_DESK  = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
     const UA_MOB   = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-    const HDR_ZH   = { 'Accept-Language': 'zh-CN,zh;q=0.9', 'Accept': 'text/html,*/*;q=0.8', 'Cache-Control': 'no-cache' };
+    const HDR_ZH   = { 'Accept-Language': 'zh-CN,zh;q=0.9', 'Accept': 'text/html,*/*;q=0.8' };
 
-    // 1 — Risolvi short link → itemId (segui redirect HTTP, non JS)
-    let itemId = '';
-    let resolvedUrl = url;
-    const redirectUAs = [UA_DESK, UA_BAIDU, UA_MOB];
-    for (const ua of redirectUAs) {
-      try {
-        const r0 = await fetch(url, {
-          headers: { 'User-Agent': ua, ...HDR_ZH },
-          redirect: 'follow', signal: AbortSignal.timeout(10000),
-        });
-        resolvedUrl = r0.url || url;
-        const m = resolvedUrl.match(/[?&]id=(\d{8,})/)
-               || resolvedUrl.match(/\/item\/(\d{10,})/)
-               || resolvedUrl.match(/[?&]itemId=(\d{8,})/);
-        if (m) { itemId = m[1]; break; }
-      } catch(e) { /* prossimo UA */ }
+    // Helper: estrai itemId da qualsiasi URL
+    function extractId(u) {
+      if (!u) return '';
+      const m = u.match(/[?&]id=(\d{8,})/)
+             || u.match(/\/item\/(\d{10,})/)
+             || u.match(/[?&]itemId=(\d{8,})/)
+             || u.match(/\/(\d{10,})[.?#]/);
+      return m ? m[1] : '';
     }
-    // Prova anche URL originale (per link già diretti)
+
+    // 1 — Risolvi short link: segui hop-per-hop per catturare ogni Location header
+    //     (il redirect intermedio spesso contiene l'itemId anche se quello finale no)
+    let itemId = extractId(url);
+    let resolvedUrl = url;
+
     if (!itemId) {
-      const m = url.match(/[?&]id=(\d{8,})/) || url.match(/\/item\/(\d{10,})/);
-      if (m) itemId = m[1];
+      let currentUrl = url;
+      for (let hop = 0; hop < 6 && currentUrl; hop++) {
+        try {
+          const r = await fetch(currentUrl, {
+            headers: { 'User-Agent': UA_DESK, ...HDR_ZH },
+            redirect: 'manual',
+            signal: AbortSignal.timeout(8000),
+          });
+          const loc = r.headers.get('location') || '';
+          const next = loc.startsWith('http') ? loc : (loc ? new URL(loc, currentUrl).href : '');
+          // Controlla sia l'URL corrente che il Location header
+          itemId = extractId(currentUrl) || extractId(loc) || extractId(next);
+          resolvedUrl = next || currentUrl;
+          if (itemId || !next || next === currentUrl) break;
+          currentUrl = next;
+        } catch(e) { break; }
+      }
+    }
+    // Fallback: segui redirect in modo automatico (cattura URL finale)
+    if (!itemId) {
+      for (const ua of [UA_DESK, UA_BAIDU, UA_MOB]) {
+        try {
+          const r = await fetch(url, { headers: { 'User-Agent': ua, ...HDR_ZH }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+          itemId = extractId(r.url);
+          if (itemId) { resolvedUrl = r.url; break; }
+        } catch(e) {}
+      }
     }
 
     console.log(`[TB] url=${url} resolved=${resolvedUrl} itemId=${itemId}`);
@@ -166,18 +187,17 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     const fetchAttempts = [];
     if (itemId) {
       fetchAttempts.push(
-        // world.taobao.com — internazionale, meno protetto, ha SSR con meta tag
+        // world.taobao.com — internazionale, spesso ha SSR e meta tag completi
         { url: `https://world.taobao.com/item/${itemId}.htm`, ua: UA_DESK },
-        // Pagina desktop con Baidu Spider (spesso whitelisted)
+        { url: `https://world.taobao.com/item/${itemId}.htm`, ua: UA_BAIDU },
+        // Taobao desktop con Baidu Spider (spesso whitelisted)
         { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_BAIDU },
-        // Pagina desktop standard
         { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_DESK },
-        // Pagina mobile
+        // Mobile
         { url: `https://h5.m.taobao.com/awp/core/detail.htm?id=${itemId}`, ua: UA_MOB },
       );
     }
-    // URL risolto come fallback finale
-    if (resolvedUrl !== url) {
+    if (resolvedUrl && resolvedUrl !== url) {
       fetchAttempts.push({ url: resolvedUrl, ua: UA_BAIDU });
       fetchAttempts.push({ url: resolvedUrl, ua: UA_DESK });
     }

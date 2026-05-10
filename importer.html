@@ -216,7 +216,16 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
   <div class="sec-wrap" id="taobao-sec">
     <p class="sec-num">00 — Import da Taobao</p>
     <p class="sec-title">🛒 TAOBAO <span style="color:var(--led);">+ AI</span></p>
-    <p style="font-size:12px;color:#555;margin-bottom:22px;line-height:1.9;">Incolla uno o più link Taobao (anche short link <strong style="color:#888;">e.tb.cn</strong>) — uno per riga. Il sistema scarica titolo, immagini e prezzo, poi usa <strong style="color:#888;">Claude</strong> per identificare brand e categoria.</p>
+
+    <!-- Nota su limitazioni Taobao -->
+    <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:10px 14px;margin-bottom:16px;font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">
+      <strong style="color:#666;letter-spacing:1px;">COME FUNZIONA</strong><br>
+      Incolla il link Taobao → il sistema prova a estrarre automaticamente foto, nome e prezzo.<br>
+      Se Taobao blocca la richiesta (frequente da IP europei), la riga viene creata vuota:<br>
+      <span style="color:#888;">1.</span> Apri il link nel browser &nbsp;
+      <span style="color:#888;">2.</span> Copia l'URL dell'immagine principale (tasto destro → "Copia indirizzo immagine") &nbsp;
+      <span style="color:#888;">3.</span> Incollalo nel campo URL della riga &nbsp;→&nbsp; <span style="color:var(--led);">l'AI analizzerà l'immagine automaticamente</span>
+    </div>
 
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start;">
       <textarea class="lf-in" id="tb-urls" placeholder="https://e.tb.cn/h.iv...&#10;https://item.taobao.com/item.htm?id=...&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
@@ -695,6 +704,34 @@ window.handleUrlInput = function(input, id){
   img.onerror = function(){ this.style.opacity='.2'; };
   if(imgArea){ imgArea.innerHTML=''; imgArea.appendChild(img); }
   row.dataset.imgUrl = url;
+
+  // Auto-analyze with AI if this looks like an image URL and name field is empty
+  const nameField = document.getElementById('rn-'+id);
+  const isImage = url.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i) || url.includes('alicdn') || url.includes('imgbb');
+  if(isImage && nameField && !nameField.value.trim()){
+    const statusEl = document.getElementById('rst-'+id);
+    if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--led)'; statusEl.textContent='⏳ AI analisi immagine...'; }
+    const imp = window.__imp;
+    if(!imp) return;
+    const fnAI = imp.httpsCallable(imp.functions, 'yupooAnalyze');
+    fnAI({ imageUrl: url, brandHint: '', modelHint: '' }).then(res => {
+      const ai = res.data;
+      if(ai && nameField && !nameField.value.trim()){
+        const aiName = [ai.brand, ai.model].filter(Boolean).join(' ');
+        if(aiName){ nameField.value = aiName; nameField.style.borderColor = ''; }
+        const colField = document.getElementById('rc-'+id);
+        if(colField && !colField.value && (ai.colors||[]).length) colField.value = ai.colors.join(', ');
+        const catSel = document.getElementById('rt-'+id);
+        if(catSel && !catSel.value && ai.category){
+          const opt=[...catSel.options].find(o=>o.value.toLowerCase()===ai.category.toLowerCase()||o.text.toLowerCase()===ai.category.toLowerCase());
+          if(opt) catSel.value=opt.value;
+        }
+      }
+      if(statusEl){ statusEl.style.color='var(--led)'; statusEl.textContent = ai?.brand ? `✅ AI: ${ai.brand} ${ai.model||''}`.trim() : '—'; }
+    }).catch(()=>{
+      if(statusEl){ statusEl.style.color='#555'; statusEl.textContent='⚠️ AI non disponibile'; }
+    });
+  }
 };
 
 window.toggleAllSizes=function(id){
@@ -1080,7 +1117,7 @@ function addTaobaoRow(tb, ai){
       </div>
       <div>
         <p class="row-label">URL Immagine</p>
-        <input class="lf-in" id="ru-${id}" value="${coverImg}" style="font-size:10px;" placeholder="https://..." oninput="handleUrlInput(this,${id})"/>
+        <input class="lf-in" id="ru-${id}" value="${coverImg}" style="font-size:10px;" placeholder="https://img.alicdn.com/... o qualsiasi URL immagine" oninput="handleUrlInput(this,${id})" onpaste="setTimeout(()=>handleUrlInput(this,${id}),30)"/>
         ${thumbsHtml?`<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;">${thumbsHtml}</div>`:''}
       </div>
       <div>
