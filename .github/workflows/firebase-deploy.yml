@@ -1,13 +1,15 @@
-name: Deploy Firebase Functions & Storage Rules
+name: Deploy Firebase Functions, Hosting & Storage Rules
 
 on:
   push:
     branches:
       - main
+      - 'claude/**'
     paths:
       - 'functions/**'
       - 'storage.rules'
       - 'firebase.json'
+      - '*.html'
 
 jobs:
   deploy:
@@ -29,7 +31,7 @@ jobs:
         run: npm ci
         working-directory: functions
 
-      - name: Deploy Functions & Storage Rules
-        run: npx firebase-tools deploy --only functions,storage --token "$FIREBASE_TOKEN" --project lillofind-c455c --non-interactive --force
+      - name: Deploy Functions, Hosting & Storage Rules
+        run: npx firebase-tools deploy --only functions,hosting,storage --token "$FIREBASE_TOKEN" --project lillofind-c455c --non-interactive --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
