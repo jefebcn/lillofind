@@ -113,7 +113,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     throw new HttpsError('invalid-argument', 'Parametro url mancante.');
   }
 
-  // 2 — Valida: domini permessi (*.yupoo.com + Taobao + Tmall)
+  // 2 — Valida: domini permessi (*.yupoo.com + Taobao + Tmall + AliExpress)
   let parsedUrl;
   try { parsedUrl = new URL(url); } catch(e) {
     throw new HttpsError('invalid-argument', 'URL non valido.');
@@ -121,21 +121,23 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
   const isTaobao = parsedUrl.hostname.endsWith('.taobao.com')
     || parsedUrl.hostname.endsWith('.tmall.com')
     || parsedUrl.hostname.endsWith('.tb.cn')
+    || parsedUrl.hostname.endsWith('.aliexpress.com')
     || parsedUrl.hostname === 'taobao.com'
-    || parsedUrl.hostname === 'tmall.com';
+    || parsedUrl.hostname === 'tmall.com'
+    || parsedUrl.hostname === 'aliexpress.com';
   if (!parsedUrl.hostname.endsWith('.yupoo.com') && !isTaobao) {
-    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com o Taobao/Tmall sono permessi.');
+    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com, Taobao/Tmall o AliExpress sono permessi.');
   }
 
-  // ── BRANCH TAOBAO ─────────────────────────────────────────────
+  // ── BRANCH TAOBAO / ALIEXPRESS ─────────────────────────────────
   if (isTaobao) {
     const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
     const UA_BAIDU = 'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)';
     const UA_DESK  = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
     const UA_MOB   = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-    const HDR_ZH   = { 'Accept-Language': 'zh-CN,zh;q=0.9', 'Accept': 'text/html,*/*;q=0.8' };
+    const HDR_ZH   = { 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,it;q=0.7', 'Accept': 'text/html,*/*;q=0.8' };
 
-    // Helper: estrai itemId da qualsiasi URL
+    // Helper: estrai itemId da qualsiasi URL (Taobao e AliExpress)
     function extractId(u) {
       if (!u) return '';
       const m = u.match(/[?&]id=(\d{8,})/)
@@ -183,36 +185,56 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     console.log(`[TB] url=${url} resolved=${resolvedUrl} itemId=${itemId}`);
 
     // 2 — Scarica HTML con più strategie
+    //     Priorità: AliExpress (accessibile da cloud IP) → world.taobao.com → Taobao standard
     let html = '', htmlSource = '';
+    const isResolvedAliExpress = resolvedUrl && resolvedUrl.includes('aliexpress.com');
+    const isInputAliExpress = url.includes('aliexpress.com');
     const fetchAttempts = [];
+
+    // Se l'URL risolto o originale è AliExpress, mettilo PRIMA
+    if (isResolvedAliExpress) {
+      fetchAttempts.push({ url: resolvedUrl, ua: UA_DESK, ref: 'https://www.aliexpress.com/' });
+    }
+    if (isInputAliExpress) {
+      fetchAttempts.push({ url, ua: UA_DESK, ref: 'https://www.aliexpress.com/' });
+    }
+    // AliExpress con item ID (se trovato dalla catena redirect)
+    // Se abbiamo l'URL risolto completo (con bxsign, token, ecc.) mettilo PRIMA —
+    // contiene parametri anti-bot che aumentano la probabilità di successo
+    if (resolvedUrl && resolvedUrl !== url && !isResolvedAliExpress) {
+      fetchAttempts.push({ url: resolvedUrl, ua: UA_DESK });
+      fetchAttempts.push({ url: resolvedUrl, ua: UA_BAIDU });
+    }
     if (itemId) {
       fetchAttempts.push(
-        // world.taobao.com — internazionale, spesso ha SSR e meta tag completi
+        // Tmall internazionale — stessa struttura di Taobao ma prodotti Tmall
+        { url: `https://detail.tmall.com/item.htm?id=${itemId}`, ua: UA_BAIDU },
+        { url: `https://detail.tmall.com/item.htm?id=${itemId}`, ua: UA_DESK },
+        // AliExpress (prodotti cross-listati)
+        { url: `https://www.aliexpress.com/item/${itemId}.html`, ua: UA_DESK, ref: 'https://www.aliexpress.com/' },
+        { url: `https://it.aliexpress.com/item/${itemId}.html`,  ua: UA_DESK, ref: 'https://www.aliexpress.com/' },
+        // world.taobao.com — internazionale con SSR
         { url: `https://world.taobao.com/item/${itemId}.htm`, ua: UA_DESK },
         { url: `https://world.taobao.com/item/${itemId}.htm`, ua: UA_BAIDU },
-        // Taobao desktop con Baidu Spider (spesso whitelisted)
+        // Taobao standard
         { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_BAIDU },
         { url: `https://item.taobao.com/item.htm?id=${itemId}`, ua: UA_DESK },
-        // Mobile
         { url: `https://h5.m.taobao.com/awp/core/detail.htm?id=${itemId}`, ua: UA_MOB },
       );
-    }
-    if (resolvedUrl && resolvedUrl !== url) {
-      fetchAttempts.push({ url: resolvedUrl, ua: UA_BAIDU });
-      fetchAttempts.push({ url: resolvedUrl, ua: UA_DESK });
     }
 
     for (const att of fetchAttempts) {
       if (html) break;
       try {
+        const ref = att.ref || 'https://www.taobao.com/';
         const r = await fetch(att.url, {
-          headers: { 'User-Agent': att.ua, ...HDR_ZH, 'Referer': 'https://www.taobao.com/' },
+          headers: { 'User-Agent': att.ua, ...HDR_ZH, 'Referer': ref },
           redirect: 'follow', signal: AbortSignal.timeout(12000),
         });
         const txt = r.ok ? await r.text() : '';
-        // Accetta solo HTML con contenuto utile (non login/captcha pages)
         const looksUseful = txt.length > 3000 && (
-          txt.includes('alicdn') || txt.includes('og:title') || txt.includes('og:image') ||
+          txt.includes('alicdn') || txt.includes('ae01.alicdn') ||
+          txt.includes('og:title') || txt.includes('og:image') ||
           txt.includes('"title"') || txt.includes('item')
         );
         if (looksUseful) { html = txt; htmlSource = att.url; }
@@ -250,38 +272,52 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
         if (descM) title = descM[1].split('。')[0].split(',')[0].trim();
       }
     }
+    // Prova a estrarre prezzo anche dall'URL originale/risolto (es. price=95.8 nel link Tmall)
+    if (!priceYuan) {
+      const urlPriceM = (resolvedUrl || url).match(/[?&]price=([\d.]+)/);
+      if (urlPriceM) priceYuan = parseFloat(urlPriceM[1]);
+    }
+
     title = (title || '')
-      .replace(/[-–—|]?\s*(淘宝|天猫|Taobao|Tmall).*$/gi, '')
+      .replace(/[-–—|]?\s*(淘宝|天猫|Taobao|Tmall|AliExpress|tmall\.com).*$/gi, '')
       .replace(/【[^】]*】/g, '').replace(/\s+/g, ' ').trim();
 
-    // 4 — Estrai immagini (alicdn URLs nel HTML)
+    // 4 — Estrai immagini (alicdn + ae01.alicdn per AliExpress)
     const imgSet = new Set();
     if (html) {
-      // Regex ampia su tutti i pattern alicdn
-      const imgRe = /(?:https?:)?\/\/(?:[a-z0-9\-]+\.)?alicdn\.com\/(?:img[ex]?|imgextra)\/[^\s"'<>\\]+\.(?:jpg|jpeg|png|webp)/gi;
+      // Regex ampia: cattura sia alicdn.com (Taobao) che ae01.alicdn.com (AliExpress)
+      const imgRe = /(?:https?:)?\/\/(?:[a-z0-9\-]+\.)?(?:alicdn|ae01\.alicdn|aechoice)\.com\/[^\s"'<>\\]+\.(?:jpg|jpeg|png|webp)/gi;
       let mm;
       while ((mm = imgRe.exec(html)) !== null && imgSet.size < 8) {
         let u = mm[0]; if (u.startsWith('//')) u = 'https:' + u;
-        const clean = u.replace(/[?#].*$/, '').replace(/_\d+x\d+[a-z]*\.\w+$/, '.jpg').replace(/_(q\d+|compress|webp)$/, '');
+        const clean = u.replace(/[?#_!].*$/, '').replace(/_\d+x\d+[a-z]*\.\w+$/, '');
         if (!clean.includes('avatar') && !clean.includes('logo') && !clean.includes('icon') &&
             !clean.includes('placeholder') && !clean.includes('default') && clean.length > 30)
-          imgSet.add(clean);
+          imgSet.add(clean + (clean.match(/\.(jpg|jpeg|png|webp)$/i) ? '' : '.jpg'));
       }
       // og:image fallback
       const ogI = html.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
                || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
       if (ogI?.[1]) {
         let u = ogI[1]; if (u.startsWith('//')) u = 'https:' + u;
-        u = u.replace(/[?#].*$/, '');
-        imgSet.add(u);
+        imgSet.add(u.replace(/[?#].*$/, ''));
       }
     }
     let images = [...imgSet].filter(u => u.length > 20).slice(0, 6);
 
-    // 5 — Estrai prezzo
+    // 5 — Estrai prezzo (yuan da Taobao, USD da AliExpress)
     let priceYuan = 0;
     if (html) {
+      const isAliEx = htmlSource.includes('aliexpress');
       const pricePs = [
+        // AliExpress: price in USD o EUR
+        ...(isAliEx ? [
+          /"minActivityAmount"\s*:\s*\{"value"\s*:\s*"?([\d.]+)"?/,
+          /"formatedPrice"\s*:\s*"(?:US )?\$?([\d.]+)"/,
+          /"salePrice"\s*:\s*\{"value"\s*:\s*"?([\d.]+)"?/,
+          /"price"\s*:\s*\{"value"\s*:\s*"?([\d.]+)"?/,
+        ] : []),
+        // Taobao yuan
         /"price"\s*:\s*"([\d]+(?:\.\d{1,2})?)"/,
         /"defaultItemPrice"\s*:\s*"([\d]+(?:\.\d{1,2})?)"/,
         /"sale_price"\s*:\s*"([\d]+(?:\.\d{1,2})?)"/,
@@ -333,9 +369,14 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       images: imgbbUrl ? [imgbbUrl, ...images.slice(1)] : images,
       imgbbUrl,
       priceYuan,
-      priceEur: priceYuan > 0 ? Math.round(priceYuan * 0.13 * 100) / 100 : 0,
+      // AliExpress prices are already in EUR/USD (~= EUR), Taobao prices are in yuan (* 0.13)
+      priceEur: priceYuan > 0
+        ? (htmlSource.includes('aliexpress')
+            ? Math.round(priceYuan * 100) / 100          // già in EUR/USD
+            : Math.round(priceYuan * 0.13 * 100) / 100)  // yuan → EUR
+        : 0,
       shop,
-      sourceUrl: resolvedUrl,
+      sourceUrl: resolvedUrl || url,
       _debug: {
         htmlLen: html.length,
         htmlSource,
