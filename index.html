@@ -1565,12 +1565,12 @@ img{ -webkit-user-drag:none; user-select:none; }
               <span id="pay-radio-paypal" style="width:20px;height:20px;border:2px solid #e0e0e0;border-radius:50%;flex-shrink:0;transition:all .2s;"></span>
               <div>
                 <p style="font-size:12px;font-weight:500;">🅿 PayPal</p>
-                <p style="font-size:10px;color:var(--dim);">Verrai reindirizzato su PayPal per completare il pagamento.</p>
+                <p style="font-size:10px;color:var(--dim);">Riceverai le istruzioni per il pagamento PayPal dopo la conferma ordine.</p>
               </div>
               <span style="margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#003087;letter-spacing:1px;">PAY<span style="color:#009cde">PAL</span></span>
             </label>
             <div id="pay-paypal-fields" style="display:none;padding:16px 18px;border-bottom:1px solid #e0e0e0;background:#f0f7ff;">
-              <p style="font-size:11px;color:#003087;line-height:1.7;">Clicca "Conferma Ordine" e verrai reindirizzato su PayPal per completare il pagamento in modo sicuro. Non è necessario avere un conto PayPal — puoi pagare con carta anche tramite PayPal.</p>
+              <p style="font-size:11px;color:#003087;line-height:1.7;">Clicca "Conferma Ordine" — l'ordine viene registrato e riceverai le coordinate PayPal per il pagamento. I <strong>LFPOINTS</strong> vengono accreditati alla verifica del pagamento.</p>
             </div>
 
             <!-- Bonifico -->
@@ -1649,6 +1649,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
   </div>
 </div>
+
+<!-- ── Order Confirm Overlay (PayPal / bonifico) ─────── -->
+<div id="order-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;padding:16px;"></div>
 
 <!-- ── Stripe Payment Modal ─────────────────────────── -->
 <div id="stripe-payment-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:16px;">
@@ -2404,7 +2407,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <button class="flink" onclick="openInfo('note-legali')">Note Legali</button>
       <div style="margin-top:18px;border:1px solid #141414;padding:12px;">
         <p style="font-size:9px;color:#666;letter-spacing:.5px;line-height:1.9;text-transform:uppercase;">
-          LILLOFIND S.R.L.<br/>P.IVA: IT 00000000000<br/>REA: MI – 000000<br/>Cap. Soc. €10.000 i.v.
+          LILLOFIND S.R.L.<br/>P.IVA: IT 12874930963<br/>REA: MI – 2714501<br/>Cap. Soc. €10.000 i.v.<br/>Tower A, The Walk — JBR, Dubai, UAE
         </p>
       </div>
     </div>
@@ -3507,25 +3510,57 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
   };
 
+  const PAYPAL_EMAIL='contiale2001@gmail.com';
+  const PAYPAL_ME='https://www.paypal.me/lilconti';
+
   function _handleOrderSuccess(data, orderData){
-    const {orderId,subtotal,shipping,discount,total,lfpoints:pts}=data;
-    const fname=(orderData.name||'').split(' ')[0]||'';
-    const lname=(orderData.name||'').split(' ').slice(1).join(' ')||'';
-    const {street='',city='',zip='',country='Italia'}=orderData.shippingAddress||{};
-    const phone=orderData.phone||'—';
-    const _orderItems=orderData._items||[];
+    const {orderId,subtotal,shipping,discount,total,lfpoints:pts,paymentMethod:pm}=data;
+    const method=pm||orderData.paymentMethod||'card';
     const prevPts=(udata?.lfpoints||0);
-    const newPts=prevPts+pts;
+    // LFPoints: accreditati subito solo se pagamento verificato (carta)
+    const newPts=prevPts+(pts||0);
     udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null};
     updateNav(user,udata); updateHomeDisplay();
-    const newReward=REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts);
+    const newReward=pts>0?REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts):null;
     cart=[];saveCart();updateCartBadge();
-    showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
-    if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
-    const _itemLines=_orderItems.map(i=>'  '+i.name+(i.size?' — Taglia: '+i.size:'')+(i.color?' — Colore: '+i.color:'')+(i.boxOption==='con_scatola'?' — Con Scatola':i.boxOption==='senza_scatola'?' — Senza Scatola':'')+' x'+i.qty+' → €'+(i.price*i.qty).toFixed(2)).join('\n');
-    const waMsg='🛍 *NUOVO ORDINE — LILLOFIND*\n\n📋 ID: '+orderId+'\n👤 Cliente: '+orderData.name+'\n📧 Email: '+user.email+'\n📞 Tel: '+phone+'\n\n📦 Indirizzo:\n'+street+', '+city+' '+zip+' ('+country+')\n\n🧾 Articoli:\n'+_itemLines+'\n\n💶 Subtotale: €'+subtotal.toFixed(2)+'\n🚚 Spedizione: '+(shipping===0?'Gratis':'€'+shipping.toFixed(2))+'\n'+(discount>0?'🎁 Bonus: −€'+discount.toFixed(2)+'\n':'')+'💰 TOTALE: €'+total.toFixed(2)+'\n⬡ LFPOINTS: +'+pts;
-    setTimeout(()=>window.open('https://wa.me/393513339543?text='+encodeURIComponent(waMsg),'_blank'),700);
-    setTimeout(()=>showPg('shop'),1200);
+
+    if(method==='card'){
+      showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
+      if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
+      setTimeout(()=>showPg('shop'),1200);
+    } else if(method==='paypal'){
+      // Mostra istruzioni pagamento PayPal — NON aprire WhatsApp
+      showToast('✅ Ordine registrato! Completa il pagamento su PayPal.');
+      const confirmEl=document.getElementById('order-confirm-overlay');
+      if(confirmEl){
+        confirmEl.innerHTML=`
+          <div style="background:#0a0a0a;border:2px solid var(--led);padding:32px 28px;max-width:480px;width:90%;text-align:center;">
+            <p style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--led);margin-bottom:6px;">ORDINE REGISTRATO</p>
+            <p style="font-size:10px;color:#555;letter-spacing:2px;margin-bottom:22px;">${orderId}</p>
+            <div style="background:#0d0d18;border:1px solid #003087;padding:18px;margin-bottom:20px;text-align:left;">
+              <p style="font-size:10px;color:#6699cc;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">🅿 COMPLETA IL PAGAMENTO PAYPAL</p>
+              <a href="${PAYPAL_ME}/${total.toFixed(2)}EUR" target="_blank" rel="noopener"
+                style="display:block;background:#003087;color:#fff;text-align:center;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;text-decoration:none;margin-bottom:14px;">
+                PAGA €${total.toFixed(2)} SU PAYPAL →
+              </a>
+              <p style="font-size:10px;color:#888;margin-bottom:6px;">Oppure invia manualmente a: <span style="color:#6cf;font-family:monospace;">${PAYPAL_EMAIL}</span></p>
+              <p style="font-size:11px;color:#888;">Nella nota del pagamento indica obbligatoriamente:</p>
+              <p style="font-family:monospace;font-size:14px;color:var(--led);margin-top:4px;letter-spacing:1px;">${orderId}</p>
+            </div>
+            <p style="font-size:10px;color:#555;margin-bottom:20px;">I tuoi <strong style="color:var(--led);">+${Math.floor(subtotal)} LFPOINTS</strong> verranno accreditati alla conferma del pagamento.</p>
+            <button onclick="document.getElementById('order-confirm-overlay').style.display='none';showPg('shop');" style="background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;padding:14px 32px;width:100%;">HO CAPITO — VAI ALLO SHOP</button>
+          </div>`;
+        confirmEl.style.display='flex';
+      } else {
+        setTimeout(()=>showPg('shop'),2000);
+      }
+    } else if(method==='bonifico'){
+      showToast('✅ Ordine registrato! Confermeremo alla ricezione del bonifico.');
+      setTimeout(()=>showPg('shop'),1500);
+    } else {
+      showToast('✅ Ordine registrato!');
+      setTimeout(()=>showPg('shop'),1200);
+    }
   }
 
   window.placeOrder=async function(){
@@ -3615,11 +3650,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       return;
     }
 
-    // ── Bonifico / PayPal: flusso esistente ──────────────
-    if(selectedPayment==='paypal'){
-      showToast('🔄 Reindirizzamento a PayPal...');
-      setTimeout(()=>showToast('✅ Demo: PayPal completato!'),2000);
-    }
+    // ── Bonifico / PayPal: registra ordine, poi mostra istruzioni pagamento ──
     if(selectedPayment==='bonifico'){
       showToast('ℹ️ Ordine in attesa — confermato alla ricezione del bonifico.');
     }
@@ -4026,7 +4057,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       title:'🔐 Privacy Policy',
       body:`<p style="margin-bottom:16px;font-size:11px;">Ultimo aggiornamento: Gennaio 2025 — In conformità al Regolamento UE 2016/679 (GDPR)</p>
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">Chi tratta i tuoi dati</p>
-<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">Titolare del trattamento: LILLOFIND S.R.L., P.IVA IT 00000000000. Contatto DPO: privacy@lillofind.com</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">Titolare del trattamento: LILLOFIND S.R.L., P.IVA IT 12874930963 — Tower A, The Walk, Jumeirah Beach Residence, Dubai, UAE. Contatto DPO: privacy@lillofind.com</p>
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">Quali dati raccogliamo</p>
 <ul style="font-size:11px;color:var(--mid);list-style:disc;padding-left:18px;margin-bottom:16px;line-height:1.9;">
   <li>Dati anagrafici e di contatto (nome, email) forniti in fase di registrazione</li>
@@ -4102,11 +4133,11 @@ img{ -webkit-user-drag:none; user-select:none; }
       body:`<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Ragione Sociale</p>
 <div style="border:1px solid #e0e0e0;padding:14px;margin-bottom:16px;font-size:11px;color:var(--mid);line-height:1.9;">
   LILLOFIND S.R.L.<br/>
-  P.IVA: IT 00000000000<br/>
-  Codice Fiscale: 00000000000<br/>
-  REA: MI – 000000<br/>
+  P.IVA: IT 12874930963<br/>
+  Codice Fiscale: 12874930963<br/>
+  REA: MI – 2714501<br/>
   Capitale Sociale: €10.000,00 interamente versato<br/>
-  Sede Legale: Via Esempio 1, 20100 Milano (MI), Italia
+  Sede Legale: Tower A, The Walk — Jumeirah Beach Residence, Dubai, Emirati Arabi Uniti
 </div>
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">Responsabilità</p>
 <p style="font-size:11px;color:var(--mid);margin-bottom:16px;">LILLOFIND S.R.L. non è responsabile per eventuali danni diretti o indiretti derivanti dall'utilizzo del sito web o dall'interruzione temporanea del servizio per manutenzione.</p>

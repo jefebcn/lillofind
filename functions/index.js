@@ -1141,30 +1141,31 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
     throw new HttpsError('internal', 'Errore nel salvataggio dell\'ordine. Riprova.');
   }
 
-  // 9 — Aggiorna utente: credita LFPOINTS, aggiorna totalSpent, rimuovi reward usato
+  // 9 — Aggiorna utente: credita LFPOINTS solo per pagamenti verificati (carta)
+  //     Per paypal/bonifico i punti sono "pending" — accreditati dall'admin alla conferma
+  const paymentVerified = paymentMethod === 'card';
   try {
     const userRef = db.collection('users').doc(uid);
     const userSnap2 = await userRef.get();
     const currentData = userSnap2.exists ? userSnap2.data() : {};
-    const newLfpoints = (currentData.lfpoints || 0) + lfpoints;
     const newTotalSpent = (currentData.totalSpent || 0) + subtotal;
 
-    const userUpdate = {
-      lfpoints: newLfpoints,
-      totalSpent: newTotalSpent,
-    };
-    if (activeReward) {
+    const userUpdate = { totalSpent: newTotalSpent };
+    if (paymentVerified) {
+      userUpdate.lfpoints = (currentData.lfpoints || 0) + lfpoints;
+    }
+    if (activeReward && paymentVerified) {
       userUpdate.activeReward = admin.firestore.FieldValue.delete();
     }
     await userRef.update(userUpdate);
   } catch (e) {
     console.error('Errore aggiornamento utente (non critico):', e);
-    // Non bloccare — l'ordine è già stato creato
   }
 
   // 10 — Invia notifica email (fire-and-forget)
   sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, RESEND_API_KEY_VAL);
 
   // 11 — Ritorna al client i dati verificati
-  return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints };
+  //      Per pagamenti non verificati: lfpoints=0 (verranno accreditati alla conferma admin)
+  return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints: paymentVerified ? lfpoints : 0, paymentMethod };
 });
