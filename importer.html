@@ -996,7 +996,7 @@ window.fetchTaobaoItems = async function(){
   const raw = (document.getElementById('tb-urls')?.value||'').trim();
   if(!raw){ toast('⚠️ Incolla almeno un URL Taobao'); return; }
 
-  const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && (u.includes('taobao')||u.includes('tb.cn')||u.includes('tmall')));
+  const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && (u.includes('taobao')||u.includes('tb.cn')||u.includes('tmall')||u.includes('aliexpress')));
   if(!urls.length){ toast('⚠️ Nessun URL Taobao valido rilevato'); return; }
 
   const btn   = document.getElementById('tb-fetch-btn');
