@@ -212,6 +212,125 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 
 <div id="app-body">
 
+  <!-- 00 CARICA VELOCE: Foto + CNY → € -->
+  <div class="sec-wrap" id="quick-entry-sec">
+    <p class="sec-num">00 — Carica Veloce</p>
+    <p class="sec-title">📷 FOTO <span style="color:var(--led);">+ CNY → €</span></p>
+
+    <div style="display:grid;grid-template-columns:180px 1fr;gap:28px;align-items:start;flex-wrap:wrap;">
+
+      <!-- LEFT: Image drop -->
+      <div>
+        <p class="row-label" style="margin-bottom:8px;">IMMAGINE PRODOTTO</p>
+        <div id="q-img-area"
+          onclick="document.getElementById('q-img-input').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--led)'"
+          ondragleave="this.style.borderColor='#222'"
+          ondrop="qHandleDrop(event)"
+          style="width:180px;height:180px;border:2px dashed #222;background:#090909;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s;position:relative;overflow:hidden;">
+          <div id="q-ph" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;">
+            <span style="font-size:42px;">📷</span>
+            <span style="font-size:9px;color:#333;letter-spacing:2px;text-align:center;line-height:1.7;">TRASCINA<br>O CLICCA</span>
+          </div>
+          <img id="q-prev" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" alt=""/>
+          <div id="q-imgbb-badge" style="display:none;position:absolute;bottom:6px;right:6px;background:var(--led);color:var(--k);font-size:7px;padding:3px 6px;letter-spacing:1px;font-weight:700;">ImgBB ✓</div>
+          <input type="file" id="q-img-input" accept="image/*" style="display:none;" onchange="qLoadImageFile(this)"/>
+        </div>
+        <input class="lf-in" id="q-img-url" placeholder="oppure URL immagine..." style="width:180px;margin-top:8px;font-size:11px;" oninput="qLoadImageUrl(this.value)" onpaste="setTimeout(()=>qLoadImageUrl(document.getElementById('q-img-url').value),60)"/>
+        <p id="q-ai-status" style="font-size:9px;color:#555;letter-spacing:1px;margin-top:5px;min-height:14px;"></p>
+      </div>
+
+      <!-- RIGHT: Fields -->
+      <div style="display:flex;flex-direction:column;gap:18px;">
+
+        <!-- AI detected -->
+        <div id="q-ai-result" style="display:none;background:#0a0a0a;border:1px solid #1e1e1e;padding:10px 14px;">
+          <p style="font-size:8px;color:var(--led);letter-spacing:3px;margin-bottom:5px;">🤖 AI RILEVATO</p>
+          <p id="q-ai-name" style="font-size:15px;color:var(--w);font-weight:500;letter-spacing:.5px;"></p>
+        </div>
+
+        <!-- CNY → EUR -->
+        <div>
+          <p class="row-label" style="margin-bottom:8px;">PREZZO ¥ CNY → € EUR</p>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="position:relative;">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:#444;font-weight:600;">¥</span>
+              <input class="lf-in" id="q-cny" type="number" min="0" placeholder="0" style="padding-left:28px;font-size:22px;font-family:'Bebas Neue',sans-serif;width:130px;letter-spacing:1px;" oninput="qConvertCNY()"/>
+            </div>
+            <span style="font-size:20px;color:#252525;">→</span>
+            <div style="background:#0a0a0a;border:1.5px solid #1a1a1a;padding:11px 16px;min-width:100px;text-align:center;">
+              <span style="font-size:26px;font-family:'Bebas Neue',sans-serif;color:var(--led);" id="q-eur">€ —</span>
+            </div>
+            <div>
+              <p style="font-size:8px;color:#2a2a2a;letter-spacing:1px;margin-bottom:4px;">CAMBIO</p>
+              <input class="lf-in" id="q-rate" type="number" step="0.001" min="0.001" value="0.127" style="width:82px;font-size:12px;padding:8px 10px;" oninput="qConvertCNY()" title="1 CNY = X EUR"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Type + Sizes -->
+        <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;align-items:start;">
+          <div>
+            <p class="row-label" style="margin-bottom:8px;">TIPO PRODOTTO</p>
+            <select class="lf-in" id="q-type" style="font-size:12px;padding:10px 12px;cursor:pointer;background:#0c0c0c;color:#aaa;width:100%;" onchange="qUpdateSizes(this.value)">
+              <option value="">— scegli —</option>
+              <optgroup label="Abbigliamento">
+                <option value="T-Shirt">T-Shirt</option>
+                <option value="Polo">Polo</option>
+                <option value="Longsleeve">Longsleeve</option>
+                <option value="Hoodie">Hoodie</option>
+                <option value="Crewneck">Crewneck</option>
+                <option value="Zip Hoodie">Zip Hoodie</option>
+                <option value="Jacket">Jacket</option>
+                <option value="Bomber">Bomber</option>
+                <option value="Parka">Parka</option>
+                <option value="Puffer">Puffer</option>
+                <option value="Vest">Vest</option>
+                <option value="Pants">Pants</option>
+                <option value="Cargo Pants">Cargo Pants</option>
+                <option value="Shorts">Shorts</option>
+                <option value="Jeans">Jeans</option>
+                <option value="Jogger">Jogger</option>
+              </optgroup>
+              <optgroup label="Calzature">
+                <option value="Sneakers">Sneakers</option>
+                <option value="Boots">Boots</option>
+                <option value="Sandals">Sandals</option>
+                <option value="Slides">Slides</option>
+              </optgroup>
+              <optgroup label="Accessori">
+                <option value="Cap">Cap</option>
+                <option value="Hat">Hat</option>
+                <option value="Beanie">Beanie</option>
+                <option value="Bag">Bag</option>
+                <option value="Backpack">Backpack</option>
+                <option value="Belt">Belt</option>
+                <option value="Wallet">Wallet</option>
+                <option value="Set Completo">Set Completo</option>
+                <option value="Altro">Altro</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div>
+            <p class="row-label" style="margin-bottom:8px;">
+              TAGLIE
+              <span id="q-sz-label" style="color:var(--led);font-size:8px;margin-left:6px;"></span>
+              <button onclick="qToggleAllSizes()" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:8px;">TUTTE</button>
+            </p>
+            <div id="q-sizes" style="display:flex;flex-wrap:wrap;gap:3px;"></div>
+          </div>
+        </div>
+
+        <!-- Add button -->
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <button class="btn-led" onclick="qAddRow()" id="q-add-btn" style="font-size:13px;padding:16px 40px;letter-spacing:3px;">+ AGGIUNGI RIGA →</button>
+          <span style="font-size:10px;color:#2a2a2a;letter-spacing:1px;">la riga viene aggiunta nel form in basso</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 00b TAOBAO IMPORT -->
   <div class="sec-wrap" id="taobao-sec">
     <p class="sec-num">00 — Import da Taobao</p>
@@ -575,6 +694,7 @@ function initApp(){
   // Popola quick hint chips
   const hqb = document.getElementById('hint-quick-brands');
   if(hqb) hqb.insertAdjacentHTML('beforeend', HINT_QUICK_BRANDS.map(b=>`<span style="display:inline-flex;align-items:center;padding:6px 12px;border:1px solid #1e1e1e;font-size:10px;letter-spacing:1px;cursor:pointer;background:#0a0a0a;color:#666;transition:all .15s;" onclick="document.getElementById('ai-hint-brand').value='${b.replace(/'/g,"\\'")}';this.parentElement.querySelectorAll('span').forEach(s=>s.style.borderColor='#1e1e1e');this.style.borderColor='var(--led)';this.style.color='var(--led)';">${b}</span>`).join(''));
+  qUpdateSizes('');
   updateStats();
 }
 
@@ -813,6 +933,174 @@ window.saveAll=async function(){
   if(saved>0) setTimeout(()=>{ addRow(); updateStats(); },600);
 };
 
+
+// ══════════════════════════════════════════════════════════════════
+// QUICK ENTRY — Foto + CNY → €
+// ══════════════════════════════════════════════════════════════════
+const Q_SHOE_TYPES=['Sneakers','Boots','Sandals','Slides'];
+const Q_EU_SIZES=['36','36.5','37','37.5','38','38.5','39','39.5','40','40.5','41','41.5','42','42.5','43','44','44.5','45','46','47'];
+const Q_CLOTH_SIZES=['XS','S','M','L','XL','XXL','Unica'];
+let _qImgUrl='',_qAiData=null;
+
+window.qHandleDrop=function(e){
+  e.preventDefault();
+  document.getElementById('q-img-area').style.borderColor='#222';
+  const file=[...e.dataTransfer.files].find(f=>f.type.startsWith('image/'));
+  if(!file){toast('⚠️ Trascina un\'immagine');return;}
+  qLoadImageFile({files:[file]});
+};
+
+window.qLoadImageFile=async function(input){
+  const file=input.files?.[0];if(!file)return;
+  const b64=await new Promise(r=>{const rd=new FileReader();rd.onload=e=>r(e.target.result);rd.readAsDataURL(file);});
+  _qImgUrl=b64;
+  _qSetPreview(b64,false);
+  const st=document.getElementById('q-ai-status');
+  st.textContent='⏳ Upload immagine...';st.style.color='var(--led)';
+  const hosted=await uploadToImgBB(b64);
+  if(hosted){_qImgUrl=hosted;_qSetPreview(hosted,true);}
+  _qAnalyze(_qImgUrl);
+};
+
+window.qLoadImageUrl=function(url){
+  if(!url||url.length<10)return;
+  _qImgUrl=url;
+  _qSetPreview(url,false);
+  _qAnalyze(url);
+};
+
+function _qSetPreview(src,uploaded){
+  const prev=document.getElementById('q-prev');
+  const ph=document.getElementById('q-ph');
+  const badge=document.getElementById('q-imgbb-badge');
+  if(prev){prev.src=src;prev.style.display='block';prev.onerror=()=>{prev.style.display='none';if(ph)ph.style.display='flex';};}
+  if(ph)ph.style.display='none';
+  if(badge)badge.style.display=uploaded?'block':'none';
+}
+
+async function _qAnalyze(url){
+  if(!url)return;
+  const st=document.getElementById('q-ai-status');
+  const rd=document.getElementById('q-ai-result');
+  const rn=document.getElementById('q-ai-name');
+  st.textContent='🤖 Analisi AI...';st.style.color='var(--led)';
+  const imp=window.__imp;if(!imp)return;
+  try{
+    const fn=imp.httpsCallable(imp.functions,'yupooAnalyze');
+    const res=await fn({imageUrl:url,brandHint:currentBrand||'',modelHint:''});
+    _qAiData=res.data;
+    if(_qAiData){
+      const name=[_qAiData.brand,_qAiData.model].filter(Boolean).join(' ');
+      if(rn)rn.textContent=name||'—';
+      if(rd)rd.style.display='block';
+      if(_qAiData.category){
+        const sel=document.getElementById('q-type');
+        const opt=[...sel.options].find(o=>o.value.toLowerCase()===(_qAiData.category||'').toLowerCase());
+        if(opt){sel.value=opt.value;qUpdateSizes(opt.value);}
+      }
+    }
+    st.textContent='✅ AI completato';st.style.color='#555';
+  }catch(e){
+    st.textContent='⚠️ AI non disponibile';st.style.color='#555';
+  }
+}
+
+window.qConvertCNY=function(){
+  const cny=parseFloat(document.getElementById('q-cny').value)||0;
+  const rate=parseFloat(document.getElementById('q-rate').value)||0.127;
+  const el=document.getElementById('q-eur');
+  if(el)el.textContent=cny>0?`€ ${(cny*rate).toFixed(2)}`:'€ —';
+};
+
+window.qUpdateSizes=function(type){
+  const isShoe=Q_SHOE_TYPES.includes(type);
+  const wrap=document.getElementById('q-sizes');
+  const lbl=document.getElementById('q-sz-label');
+  if(!wrap)return;
+  const sizes=isShoe?Q_EU_SIZES:Q_CLOTH_SIZES;
+  if(lbl)lbl.textContent=isShoe?'· EU':'· abbigliamento';
+  wrap.innerHTML=sizes.map(s=>`<span class="sz-toggle on" onclick="this.classList.toggle('on')">${s}</span>`).join('');
+};
+
+window.qToggleAllSizes=function(){
+  const t=document.querySelectorAll('#q-sizes .sz-toggle');
+  const allOn=[...t].every(x=>x.classList.contains('on'));
+  t.forEach(x=>allOn?x.classList.remove('on'):x.classList.add('on'));
+};
+
+window.qAddRow=function(){
+  const cny=parseFloat(document.getElementById('q-cny').value)||0;
+  const rate=parseFloat(document.getElementById('q-rate').value)||0.127;
+  const eur=cny>0?parseFloat((cny*rate).toFixed(2)):0;
+  const type=document.getElementById('q-type').value;
+  const aiName=_qAiData?[_qAiData.brand,_qAiData.model].filter(Boolean).join(' '):'';
+  const selSizes=[...document.querySelectorAll('#q-sizes .sz-toggle.on')].map(t=>t.textContent.trim());
+  const isShoe=Q_SHOE_TYPES.includes(type);
+
+  createRow(_qImgUrl,'');
+  const id=rowId-1;
+
+  const nameEl=document.getElementById('rn-'+id);
+  if(nameEl&&aiName)nameEl.value=aiName;
+  const priceEl=document.getElementById('rp-'+id);
+  if(priceEl&&eur>0)priceEl.value=eur;
+  const typeEl=document.getElementById('rt-'+id);
+  if(typeEl&&type)typeEl.value=type;
+
+  if(_qImgUrl){
+    const imgArea=document.getElementById('img-area-'+id);
+    if(imgArea)imgArea.innerHTML=`<img class="img-prev" src="${_qImgUrl}" alt="" onerror="this.style.opacity='.2'"/>`;
+    document.getElementById('row-'+id).dataset.imgUrl=_qImgUrl;
+    const urlIn=document.getElementById('ru-'+id);
+    if(urlIn&&_qImgUrl.startsWith('http'))urlIn.value=_qImgUrl;
+  }
+
+  if(isShoe&&selSizes.length){
+    const szDiv=document.getElementById('sz-'+id);
+    if(szDiv){
+      const inp=document.createElement('input');
+      inp.type='hidden';inp.id='sz-text-'+id;inp.value=selSizes.join(' ');
+      szDiv.insertAdjacentElement('afterend',inp);
+      szDiv.innerHTML=selSizes.map(s=>`<span class="sz-toggle on">${s}</span>`).join('');
+    }
+  }else if(selSizes.length){
+    document.querySelectorAll('#sz-'+id+' .sz-toggle').forEach(t=>{
+      selSizes.includes(t.textContent.trim())?t.classList.add('on'):t.classList.remove('on');
+    });
+  }
+
+  if(_qAiData?.colors?.length){
+    const colEl=document.getElementById('rc-'+id);
+    if(colEl)colEl.value=_qAiData.colors.join(', ');
+  }
+
+  updateStats();
+  toast('✅ Riga aggiunta!');
+
+  setTimeout(()=>{
+    const rowEl=document.getElementById('row-'+id);
+    if(rowEl){
+      rowEl.scrollIntoView({behavior:'smooth',block:'center'});
+      rowEl.style.borderColor='var(--led)';
+      rowEl.style.boxShadow='0 0 20px rgba(200,255,0,.12)';
+      setTimeout(()=>{rowEl.style.borderColor='';rowEl.style.boxShadow='';},2500);
+    }
+  },120);
+
+  // Reset
+  _qAiData=null;_qImgUrl='';
+  const prev=document.getElementById('q-prev');
+  const ph=document.getElementById('q-ph');
+  const badge=document.getElementById('q-imgbb-badge');
+  if(prev){prev.src='';prev.style.display='none';}
+  if(ph)ph.style.display='flex';
+  if(badge)badge.style.display='none';
+  document.getElementById('q-img-url').value='';
+  document.getElementById('q-cny').value='';
+  document.getElementById('q-eur').textContent='€ —';
+  document.getElementById('q-ai-result').style.display='none';
+  document.getElementById('q-ai-status').textContent='';
+};
 
 // ══════════════════════════════════════════
 // CSV IMPORT
