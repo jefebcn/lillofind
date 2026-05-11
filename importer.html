@@ -376,6 +376,10 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
       <input class="lf-in" id="yupoo-url" placeholder="es. https://woodtableguy888.x.yupoo.com/categories/4633144" style="flex:1;min-width:260px;" onkeydown="if(event.key==='Enter')fetchYupooAlbums()"/>
+      <div style="position:relative;">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:#333;">🔒</span>
+        <input class="lf-in" id="yupoo-pass" type="text" placeholder="Password (se protetto)" style="padding-left:30px;width:220px;" onkeydown="if(event.key==='Enter')fetchYupooAlbums()"/>
+      </div>
       <button class="btn-led" id="yupoo-fetch-btn" onclick="fetchYupooAlbums()" style="white-space:nowrap;padding:14px 28px;">CARICA ALBUM →</button>
     </div>
 
@@ -1473,21 +1477,26 @@ function addTaobaoRow(tb, ai){
 let yupooAlbumsData = {}; // albumId -> { cover, analysis, albumInfo }
 let _yupooHostname = ''; // es. woodtableguy888.x.yupoo.com
 
+let _yupooPassword = '';
+
 window.fetchYupooAlbums = async function(){
   const url = document.getElementById('yupoo-url').value.trim();
   if(!url){ toast('⚠️ Incolla un URL Yupoo'); return; }
   if(!url.includes('yupoo.com')){ toast('⚠️ URL non valido — deve essere yupoo.com'); return; }
 
+  _yupooPassword = (document.getElementById('yupoo-pass')?.value || '').trim();
+
   const btn = document.getElementById('yupoo-fetch-btn');
   const status = document.getElementById('yupoo-status');
   btn.textContent = 'Caricamento...'; btn.disabled = true;
-  status.textContent = '⏳ Connessione a Yupoo...'; status.style.display = 'block';
+  status.textContent = _yupooPassword ? '⏳ Autenticazione + connessione a Yupoo...' : '⏳ Connessione a Yupoo...';
+  status.style.display = 'block';
   document.getElementById('yupoo-grid').style.display = 'none';
 
   try {
     const imp = window.__imp;
     const fn = imp.httpsCallable(imp.functions, 'yupooFetch');
-    const result = await fn({ url });
+    const result = await fn({ url, ...(_yupooPassword ? { password: _yupooPassword } : {}) });
     const { albumCovers } = result.data;
     const albumIds = Object.keys(albumCovers || {});
 
@@ -1583,7 +1592,7 @@ window.analyzeAndAddRows = async function(){
     const albumUrl = _yupooHostname ? `https://${_yupooHostname}/albums/${id}` : null;
     const [aiRes, detailRes] = await Promise.allSettled([
       fnAI({ imageUrl: d.cover, brandHint: hintBrand||'', modelHint: hintModel||'' }),
-      albumUrl ? fnFetch({ url: albumUrl }) : Promise.resolve(null),
+      albumUrl ? fnFetch({ url: albumUrl, ...(_yupooPassword ? { password: _yupooPassword } : {}) }) : Promise.resolve(null),
     ]);
 
     d.analysis = aiRes.status === 'fulfilled'
