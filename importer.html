@@ -249,6 +249,13 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
           <p id="q-ai-name" style="font-size:15px;color:var(--w);font-weight:500;letter-spacing:.5px;"></p>
         </div>
 
+        <!-- Brand -->
+        <div>
+          <p class="row-label" style="margin-bottom:8px;">BRAND *</p>
+          <input class="lf-in" id="q-brand" list="q-brand-list" placeholder="es. Nike, Balenciaga, New Balance..." style="font-size:14px;max-width:360px;" autocomplete="off"/>
+          <datalist id="q-brand-list"></datalist>
+        </div>
+
         <!-- CNY → EUR -->
         <div>
           <p class="row-label" style="margin-bottom:8px;">PREZZO ¥ CNY → € EUR</p>
@@ -695,6 +702,9 @@ function initApp(){
   const hqb = document.getElementById('hint-quick-brands');
   if(hqb) hqb.insertAdjacentHTML('beforeend', HINT_QUICK_BRANDS.map(b=>`<span style="display:inline-flex;align-items:center;padding:6px 12px;border:1px solid #1e1e1e;font-size:10px;letter-spacing:1px;cursor:pointer;background:#0a0a0a;color:#666;transition:all .15s;" onclick="document.getElementById('ai-hint-brand').value='${b.replace(/'/g,"\\'")}';this.parentElement.querySelectorAll('span').forEach(s=>s.style.borderColor='#1e1e1e');this.style.borderColor='var(--led)';this.style.color='var(--led)';">${b}</span>`).join(''));
   qUpdateSizes('');
+  // Popola datalist brand per quick entry
+  const qbl=document.getElementById('q-brand-list');
+  if(qbl) qbl.innerHTML=BRANDS.map(b=>`<option value="${b}"/>`).join('');
   updateStats();
 }
 
@@ -993,6 +1003,9 @@ async function _qAnalyze(url){
       const name=[_qAiData.brand,_qAiData.model].filter(Boolean).join(' ');
       if(rn)rn.textContent=name||'—';
       if(rd)rd.style.display='block';
+      // Pre-compila brand se campo vuoto
+      const qb=document.getElementById('q-brand');
+      if(qb&&!qb.value&&_qAiData.brand)qb.value=_qAiData.brand;
       if(_qAiData.category){
         const sel=document.getElementById('q-type');
         const opt=[...sel.options].find(o=>o.value.toLowerCase()===(_qAiData.category||'').toLowerCase());
@@ -1033,7 +1046,8 @@ window.qAddRow=function(){
   const rate=parseFloat(document.getElementById('q-rate').value)||0.127;
   const eur=cny>0?parseFloat((cny*rate).toFixed(2)):0;
   const type=document.getElementById('q-type').value;
-  const aiName=_qAiData?[_qAiData.brand,_qAiData.model].filter(Boolean).join(' '):'';
+  const brand=document.getElementById('q-brand').value.trim()||(_qAiData?.brand||'')||currentBrand||'';
+  const aiName=_qAiData?[brand||_qAiData.brand,_qAiData.model].filter(Boolean).join(' '):(brand?brand:'');
   const selSizes=[...document.querySelectorAll('#q-sizes .sz-toggle.on')].map(t=>t.textContent.trim());
   const isShoe=Q_SHOE_TYPES.includes(type);
 
@@ -1046,6 +1060,8 @@ window.qAddRow=function(){
   if(priceEl&&eur>0)priceEl.value=eur;
   const typeEl=document.getElementById('rt-'+id);
   if(typeEl&&type)typeEl.value=type;
+  // Brand sul dataset della riga (usato da saveAll)
+  if(brand)document.getElementById('row-'+id).dataset.brand=brand;
 
   if(_qImgUrl){
     const imgArea=document.getElementById('img-area-'+id);
@@ -1100,6 +1116,7 @@ window.qAddRow=function(){
   document.getElementById('q-eur').textContent='€ —';
   document.getElementById('q-ai-result').style.display='none';
   document.getElementById('q-ai-status').textContent='';
+  document.getElementById('q-brand').value='';
 };
 
 // ══════════════════════════════════════════
