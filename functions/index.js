@@ -109,7 +109,7 @@ async function yupooPasswordAuth(baseUrl, password) {
   try {
     const r = await fetch(baseUrl, {
       headers: { 'User-Agent': UA, 'Accept': 'text/html,*/*', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8' },
-      redirect: 'follow', signal: AbortSignal.timeout(12000),
+      redirect: 'follow', signal: AbortSignal.timeout(6000),
     });
     initHtml = await r.text();
     initCookies = r.headers.getSetCookie?.() || [];
@@ -190,7 +190,7 @@ async function yupooPasswordAuth(baseUrl, password) {
         headers: { ...baseHeaders, 'Content-Type': s.ct === 'json' ? 'application/json' : 'application/x-www-form-urlencoded' },
         body: s.ct === 'json' ? s.body : s.body.toString(),
         redirect: 'manual',
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(5000),
       });
       const authCookies = authResp.headers.getSetCookie?.() || [];
       const loc = authResp.headers.get('location') || '';
@@ -207,7 +207,7 @@ async function yupooPasswordAuth(baseUrl, password) {
       const vResp = await fetch(baseUrl, {
         headers: { 'User-Agent': UA, 'Accept': 'text/html,*/*', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8', 'Cookie': merged },
         redirect: 'follow',
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(6000),
       });
       const vHtml = await vResp.text();
       const vCookies = vResp.headers.getSetCookie?.() || [];
@@ -226,7 +226,7 @@ async function yupooPasswordAuth(baseUrl, password) {
   return { cookies: initCookieStr, debug: dbg };
 }
 
-exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
+exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
   // 1 — Autenticazione + check admin
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Login richiesto.');
@@ -627,23 +627,15 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     // Strategia 5 — Yupoo JSON API (fallback quando HTML non ha album IDs)
     if (!Object.keys(albumCovers).length) {
       const UA_API = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-      const shopName = parsedUrl.hostname.split('.')[0]; // es. "enzooopticl"
+      const shopName = parsedUrl.hostname.split('.')[0];
       const catMatch = parsedUrl.pathname.match(/\/categories\/(\d+)/);
       const catId = catMatch?.[1] || '';
-      // Endpoint Yupoo API in ordine di probabilità (sia camelCase che underscore)
+
       const apiCandidates = catId ? [
-        // Shop-domain API (più comune nei nuovi shop Next.js)
         `https://${parsedUrl.hostname}/api/v2/albums?categoryId=${catId}&page=1&limit=100`,
         `https://${parsedUrl.hostname}/api/v2/albums?category_id=${catId}&page=1&limit=100`,
-        `https://${parsedUrl.hostname}/api/albums?cid=${catId}&page=1`,
-        `https://${parsedUrl.hostname}/api/v1/albums?category_id=${catId}&page=1`,
-        // Yupoo central API
         `https://api.yupoo.com/yupoo/album/listbycategory?categoryId=${catId}&owner=${shopName}&page=1&pageSize=100`,
-        `https://api.yupoo.com/api/v2/albums?category_id=${catId}&uid=${shopName}&page=1`,
-        // Photos endpoint (alcune categorie mostrano foto non album)
-        `https://${parsedUrl.hostname}/api/v2/photos?categoryId=${catId}&page=1&limit=100`,
-        `https://${parsedUrl.hostname}/photos?page=1&cid=${catId}&type=album`,
-        // Categoria con /albums appeso
+        `https://${parsedUrl.hostname}/api/albums?cid=${catId}&page=1`,
         `https://${parsedUrl.hostname}/categories/${catId}/albums?page=1`,
       ] : [];
 
@@ -655,26 +647,43 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
         ...(authCookieStr ? { 'Cookie': authCookieStr } : {}),
       };
 
-      for (const apiUrl of apiCandidates) {
-        try {
-          const apiResp = await fetch(apiUrl, { headers: ajaxHeaders, signal: AbortSignal.timeout(8000) });
-          const ct = apiResp.headers.get('content-type') || '';
-          const apiBody = ct.includes('json') ? await apiResp.json() : null;
-          console.log(`[yupoo api] ${apiUrl} → ${apiResp.status} ct="${ct.slice(0,40)}" json=${!!apiBody}`);
-          if (apiBody) {
-            crawlJson(apiBody, 0);
-            if (Object.keys(albumCovers).length > 0) break;
-          }
-        } catch(e) { console.warn('[yupoo api]', apiUrl.split('?')[0], e.message); }
+      // Prova tutti gli endpoint in parallelo — prendi il primo che ritorna JSON con album
+      const apiResults = await Promise.allSettled(
+        apiCandidates.map(async apiUrl => {
+          const r = await fetch(apiUrl, { headers: ajaxHeaders, signal: AbortSignal.timeout(4000) });
+          const ct = r.headers.get('content-type') || '';
+          const body = ct.includes('json') ? await r.json() : null;
+          console.log(`[yupoo api] ${apiUrl.split('?')[0]} → ${r.status} json=${!!body}`);
+          return { apiUrl, body };
+        })
+      );
+      for (const res of apiResults) {
+        if (res.status === 'fulfilled' && res.value?.body) {
+          crawlJson(res.value.body, 0);
+          if (Object.keys(albumCovers).length > 0) break;
+        }
       }
     }
 
-    // Debug info per diagnostica quando nessun album trovato
+    // Debug diagnostico approfondito
     const albumIdsInHtml = [];
     const debugRe = /\/albums\/(\w+)/g; let di;
     while ((di = debugRe.exec(html)) !== null && albumIdsInHtml.length < 5) {
       if (!albumIdsInHtml.includes(di[1])) albumIdsInHtml.push(di[1]);
     }
+
+    // Informazioni struttura pagina
+    const hrefCount    = (html.match(/href=/gi) || []).length;
+    const hasAlbumsPath = html.includes('/albums/');
+    // Prime 5 href trovate nell'HTML
+    const hrefSamples = [];
+    const hrefRe = /href=["']([^"']{1,120})["']/gi; let hm;
+    while ((hm = hrefRe.exec(html)) !== null && hrefSamples.length < 5) hrefSamples.push(hm[1]);
+    // Sezione HTML intorno alla prima occorrenza di "album"
+    const aIdx = html.toLowerCase().indexOf('album');
+    const firstAlbumContext = aIdx >= 0
+      ? html.slice(Math.max(0, aIdx - 100), aIdx + 400).replace(/\s+/g, ' ')
+      : null;
 
     // Analisi __NEXT_DATA__ — chiavi e preview
     let nextDataInfo = null;
@@ -745,7 +754,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceUSD, photos };
     }
 
-    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null, nextDataInfo, apiUrlsInHtml } };
+    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
