@@ -560,21 +560,28 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     const scriptRe = /<script[^>]*>([\s\S]{80,50000}?)<\/script>/gi;
     let sm;
     function crawlJson(obj, depth) {
-      if (depth > 7 || !obj || typeof obj !== 'object') return;
+      if (depth > 8 || !obj || typeof obj !== 'object') return;
       if (Array.isArray(obj)) { obj.forEach(v => crawlJson(v, depth + 1)); return; }
-      // Yupoo album object: has numeric id + cover/coverUrl
+      // Yupoo album object: ha un ID numerico + url cover
       const rawId = obj.albumId ?? obj.album_id ?? obj.id;
       const id = rawId != null ? String(rawId) : null;
-      if (id && /^\d+$/.test(id)) {
-        const co = obj.cover ?? obj.covers?.[0] ?? obj.coverImage ?? obj.thumbnail ?? obj.thumb;
-        const cu = typeof co === 'string' ? co : (co?.url ?? co?.imageUrl ?? co?.src ?? null);
+      if (id && /^\d{5,}$/.test(id)) { // almeno 5 cifre per escludere ID troppo corti
+        const co = obj.cover ?? obj.covers?.[0] ?? obj.coverImage ?? obj.thumbnail ?? obj.thumb ?? obj.image ?? obj.img;
+        const cu = typeof co === 'string' ? co : (co?.url ?? co?.imageUrl ?? co?.src ?? co?.path ?? null);
         if (cu) { const u = norm(cu); if (u && isImg(u)) albumCovers[id] = u; }
       }
       Object.values(obj).forEach(v => { if (v && typeof v === 'object') crawlJson(v, depth + 1); });
     }
-    while ((sm = scriptRe.exec(html)) !== null) {
+
+    // 1a — __NEXT_DATA__ (Next.js SSR — nessun limite di dimensione)
+    const nextDataM = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]+?)<\/script>/i);
+    if (nextDataM) {
+      try { crawlJson(JSON.parse(nextDataM[1]), 0); } catch(e) {}
+    }
+
+    // 1b — altri script JSON
+    while ((sm = scriptRe.exec(html)) !== null && Object.keys(albumCovers).length < 3) {
       const src = sm[1];
-      // Look for large JSON-like blobs
       const jsonRe = /(\{[\s\S]{60,}?\})/g;
       let jm;
       while ((jm = jsonRe.exec(src)) !== null) {
@@ -617,13 +624,55 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       albumIds.forEach((id, i) => { if (allPhotoUrls[i]) albumCovers[id] = allPhotoUrls[i]; });
     }
 
+    // Strategia 5 — Yupoo JSON API (fallback quando HTML non ha album IDs)
+    if (!Object.keys(albumCovers).length) {
+      const UA_API = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      const catMatch = parsedUrl.pathname.match(/\/categories\/(\d+)/);
+      const catId = catMatch?.[1] || '';
+      const apiCandidates = catId ? [
+        `https://${parsedUrl.hostname}/api/v2/albums?category_id=${catId}&page=1&limit=100`,
+        `https://${parsedUrl.hostname}/photos/albums?page=1&type=0&cid=${catId}`,
+        `https://${parsedUrl.hostname}/api/albums?cid=${catId}&page=1`,
+        `https://${parsedUrl.hostname}/photos/categories/${catId}/albums?page=1`,
+      ] : [];
+      // Prova anche un endpoint che ritorna tutte le foto della categoria (per shop senza album)
+      if (catId) {
+        apiCandidates.push(`https://${parsedUrl.hostname}/photos?page=1&type=image&cid=${catId}`);
+      }
+      for (const apiUrl of apiCandidates) {
+        try {
+          const apiResp = await fetch(apiUrl, {
+            headers: {
+              'User-Agent': UA_API,
+              'Accept': 'application/json, text/plain, */*',
+              'Referer': `https://${parsedUrl.hostname}/`,
+              ...(authCookieStr ? { 'Cookie': authCookieStr } : {}),
+            },
+            signal: AbortSignal.timeout(8000),
+          });
+          const ct = apiResp.headers.get('content-type') || '';
+          if (!apiResp.ok || !ct.includes('json')) continue;
+          const apiJson = await apiResp.json();
+          crawlJson(apiJson, 0);
+          console.log(`[yupoo api] ${apiUrl} → ${apiResp.status}, albums found: ${Object.keys(albumCovers).length}`);
+          if (Object.keys(albumCovers).length > 0) break;
+        } catch(e) { console.warn('[yupoo api]', apiUrl, e.message); }
+      }
+    }
+
     // Debug info per diagnostica quando nessun album trovato
     const albumIdsInHtml = [];
     const debugRe = /\/albums\/(\w+)/g; let di;
     while ((di = debugRe.exec(html)) !== null && albumIdsInHtml.length < 5) {
       if (!albumIdsInHtml.includes(di[1])) albumIdsInHtml.push(di[1]);
     }
-    const htmlPreview = html.slice(0, 400).replace(/\s+/g, ' ');
+    // Preview: 400 chars inizio + 600 chars zona corpo (per vedere struttura album)
+    const bodyStart = Math.max(0, html.indexOf('<body'));
+    const htmlPreview = [
+      html.slice(0, 300).replace(/\s+/g, ' '),
+      '…',
+      html.slice(bodyStart > 0 ? bodyStart : 2000, (bodyStart > 0 ? bodyStart : 2000) + 800).replace(/\s+/g, ' '),
+    ].join('');
 
     // ── Estrazione dati album (quando URL è una pagina /albums/ID) ──
     let albumInfo = null;
