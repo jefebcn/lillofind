@@ -99,27 +99,39 @@ exports.proxyImage = onRequest({ cors: true, maxInstances: 20, timeoutSeconds: 1
 // Output: { html: string, status: number }
 // ══════════════════════════════════════════════════════════════════
 
-// Helper: autentica su Yupoo password-protected, ritorna { cookies, html, debug }
+// Helper: autentica su Yupoo password-protected, ritorna { cookies, html, apiAlbums, debug }
 async function yupooPasswordAuth(baseUrl, password) {
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   const dbg = [];
 
-  // Step 1: GET page → rileva form password + cookies iniziali
+  // Step 1: GET page → ottieni PHPSESSID/XSRF-TOKEN + rileva tipo template
+  // Timeout lungo: il server Yupoo può rispondere lentamente (>6s)
   let initHtml = '', initCookies = [];
   try {
     const r = await fetch(baseUrl, {
       headers: { 'User-Agent': UA, 'Accept': 'text/html,*/*', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8' },
-      redirect: 'follow', signal: AbortSignal.timeout(6000),
+      redirect: 'follow', signal: AbortSignal.timeout(25000),
     });
     initHtml = await r.text();
     initCookies = r.headers.getSetCookie?.() || [];
-    dbg.push(`GET ${baseUrl} → ${r.status}, ${initHtml.length} chars, cookies: ${initCookies.map(c=>c.split('=')[0]).join(',')}`);
-  } catch(e) { dbg.push(`GET failed: ${e.message}`); return { cookies: '', debug: dbg }; }
+    dbg.push(`GET → ${r.status}, ${initHtml.length} chars, cookies: [${initCookies.map(c=>c.split('=')[0]).join(',')}]`);
+  } catch(e) {
+    dbg.push(`GET failed: ${e.message}`);
+    // Continua: prova strategie POST anche senza cookie iniziali
+  }
 
-  // Rileva se la pagina è davvero protetta da password
+  // Rileva tipo di pagina
   const isPasswordPage = /type=["']password["']|name=["']password["']|id=["']password["']/i.test(initHtml);
-  if (!isPasswordPage) {
-    dbg.push('Nessun form password — pagina già aperta');
+  // SPA shell: form non nell'HTML ma la pagina usa template CSR (Yupoo v4.31+)
+  const isSpaShell = !isPasswordPage && (
+    initHtml.includes('opacity: 0') || initHtml.includes('//undefined') ||
+    (initHtml.length < 40000 && initHtml.includes('yupoo') && initHtml.includes('<script'))
+  );
+  dbg.push(`template: isPasswordPage=${isPasswordPage} isSpaShell=${isSpaShell}`);
+
+  // Pagina classic già aperta senza form → non serve auth
+  if (!isPasswordPage && !isSpaShell && initHtml.length > 0) {
+    dbg.push('Pagina classic già aperta — nessun form password trovato');
     return { cookies: initCookies.map(c=>c.split(';')[0]).join('; '), debug: dbg };
   }
 
@@ -133,11 +145,11 @@ async function yupooPasswordAuth(baseUrl, password) {
     /"_token"\s*:\s*"([^"]{20,})"/,
   ]) { const m = initHtml.match(p); if (m) { csrfToken = m[1]; break; } }
 
-  // Estrai XSRF-TOKEN da cookie (Laravel SPA)
+  // Estrai XSRF-TOKEN da cookie (Laravel SPA → X-XSRF-TOKEN header)
   const xsrfRaw = initCookies.find(c => /^XSRF-TOKEN=/i.test(c));
   const xsrfVal = xsrfRaw ? decodeURIComponent(xsrfRaw.split(';')[0].split('=').slice(1).join('=')) : '';
 
-  // Estrai form action
+  // Estrai form action (per template classic)
   let formAction = baseUrl;
   const actionM = initHtml.match(/<form[^>]*method=["']post["'][^>]*action=["']([^"']+)["']/i)
                || initHtml.match(/<form[^>]*action=["']([^"']+)["'][^>]*method=["']post["']/i);
@@ -148,7 +160,7 @@ async function yupooPasswordAuth(baseUrl, password) {
   const parsedBase = new URL(baseUrl);
   const categoryId = parsedBase.pathname.split('/').filter(Boolean).pop();
 
-  dbg.push(`csrf="${csrfToken.slice(0,16)}…" xsrf="${xsrfVal.slice(0,16)}…" action="${formAction}" catId="${categoryId}"`);
+  dbg.push(`csrf="${csrfToken.slice(0,16)}…" xsrf="${xsrfVal.slice(0,16)}…" catId="${categoryId}"`);
 
   function mergeCookies(arrays) {
     const map = {};
@@ -162,23 +174,26 @@ async function yupooPasswordAuth(baseUrl, password) {
 
   const initCookieStr = initCookies.map(c => c.split(';')[0]).join('; ');
   const baseHeaders = {
-    'User-Agent': UA, 'Accept': 'text/html,*/*',
+    'User-Agent': UA, 'Accept': 'text/html,application/json,*/*',
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8', 'Referer': baseUrl,
     ...(initCookieStr ? { 'Cookie': initCookieStr } : {}),
     ...(xsrfVal ? { 'X-XSRF-TOKEN': xsrfVal } : {}),
   };
 
-  // Strategie di autenticazione (in ordine di probabilità)
+  // URL di verifica: albums API (più veloce che ri-fetchare l'HTML per SPA)
+  const albumsApiUrl = `${parsedBase.origin}/api/v2/albums?categoryId=${categoryId}&page=1&limit=10`;
+
   const strategies = [
-    // A — form POST con _token all'URL rilevato (più comune su Yupoo/Laravel)
+    // A-D: SPA strategies (Yupoo v4.31+ — template CSR, form renderizzato da JS)
+    { url: `${parsedBase.origin}/api/v2/categories/${categoryId}/authorize`, body: JSON.stringify({ password }), ct: 'json' },
+    { url: `${parsedBase.origin}/api/v2/categories/${categoryId}/verify`,    body: JSON.stringify({ password }), ct: 'json' },
+    { url: `${parsedBase.origin}/api/categories/${categoryId}/authorize`,    body: JSON.stringify({ password }), ct: 'json' },
+    { url: `${parsedBase.origin}/api/v2/authorize`, body: JSON.stringify({ id: categoryId, type: 'category', password }), ct: 'json' },
+    // E-I: Classic PHP form strategies
     { url: formAction, body: new URLSearchParams({ _token: csrfToken, password }), ct: 'form' },
-    // B — form POST senza _token (alcune pagine semplici)
-    { url: baseUrl, body: new URLSearchParams({ password }), ct: 'form' },
-    // C — POST a /categories/ID/password (endpoint dedicato)
+    { url: baseUrl,    body: new URLSearchParams({ password }), ct: 'form' },
     { url: `${parsedBase.origin}/categories/${categoryId}/password`, body: new URLSearchParams({ _token: csrfToken, password }), ct: 'form' },
-    // D — POST a /albums/ID/password (per URL album diretto)
-    { url: `${parsedBase.origin}/albums/${categoryId}/password`, body: new URLSearchParams({ _token: csrfToken, password }), ct: 'form' },
-    // E — JSON API
+    { url: `${parsedBase.origin}/albums/${categoryId}/password`,     body: new URLSearchParams({ _token: csrfToken, password }), ct: 'form' },
     { url: `${parsedBase.origin}/api/v2/verify_password`, body: JSON.stringify({ id: categoryId, password }), ct: 'json' },
   ];
 
@@ -190,35 +205,55 @@ async function yupooPasswordAuth(baseUrl, password) {
         headers: { ...baseHeaders, 'Content-Type': s.ct === 'json' ? 'application/json' : 'application/x-www-form-urlencoded' },
         body: s.ct === 'json' ? s.body : s.body.toString(),
         redirect: 'manual',
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(6000),
       });
       const authCookies = authResp.headers.getSetCookie?.() || [];
       const loc = authResp.headers.get('location') || '';
-      dbg.push(`[${label}] POST ${s.url} → ${authResp.status} loc="${loc.slice(0,60)}" newCookies=[${authCookies.map(c=>c.split('=')[0]).join(',')}]`);
+      const authBodyRaw = await authResp.text().catch(() => '');
+      dbg.push(`[${label}] POST ${s.url} → ${authResp.status} loc="${loc.slice(0,50)}" body="${authBodyRaw.slice(0,100)}" cookies=[${authCookies.map(c=>c.split('=')[0]).join(',')}]`);
 
-      // Considera successo se: riceve nuovi cookie OPPURE status 302 verso la stessa pagina
       const gotCookies = authCookies.length > 0;
       const redirected  = authResp.status === 302 || authResp.status === 301;
-      if (!gotCookies && !redirected) continue;
+      const jsonOk = authResp.status === 200 && s.ct === 'json' && /success|"code"\s*:\s*0|"ok"\s*:\s*true/i.test(authBodyRaw);
+      if (!gotCookies && !redirected && !jsonOk) continue;
 
       const merged = mergeCookies([initCookies, authCookies]);
 
-      // Verifica: ri-fetcha la pagina con i nuovi cookie
-      const vResp = await fetch(baseUrl, {
-        headers: { 'User-Agent': UA, 'Accept': 'text/html,*/*', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8', 'Cookie': merged },
-        redirect: 'follow',
-        signal: AbortSignal.timeout(6000),
-      });
-      const vHtml = await vResp.text();
-      const vCookies = vResp.headers.getSetCookie?.() || [];
-      const stillForm = /type=["']password["']|name=["']password["']/i.test(vHtml);
-      dbg.push(`[${label}] verify → ${vResp.status}, ${vHtml.length} chars, stillForm=${stillForm}`);
+      // Verifica 1: albums API (SPA) — più veloce e affidabile di ri-fetchare l'HTML
+      try {
+        const vApiResp = await fetch(albumsApiUrl, {
+          headers: { 'User-Agent': UA, 'Accept': 'application/json, */*', 'X-Requested-With': 'XMLHttpRequest', 'Referer': baseUrl, 'Cookie': merged },
+          signal: AbortSignal.timeout(8000),
+        });
+        const vApiCt = vApiResp.headers.get('content-type') || '';
+        const vApiCookies = vApiResp.headers.getSetCookie?.() || [];
+        const vApiBody = await vApiResp.text().catch(() => '');
+        dbg.push(`[${label}] verify albums API → ${vApiResp.status} ct="${vApiCt}" body="${vApiBody.slice(0,150)}"`);
+        if (vApiResp.ok && vApiCt.includes('json')) {
+          const finalCookies = mergeCookies([initCookies, authCookies, vApiCookies]);
+          dbg.push(`[${label}] ✅ AUTH OK (via API)`);
+          let apiAlbums = null;
+          try { apiAlbums = JSON.parse(vApiBody); } catch(e) {}
+          return { cookies: finalCookies, apiAlbums, debug: dbg };
+        }
+      } catch(e) { dbg.push(`[${label}] verify API failed: ${e.message}`); }
 
-      if (!stillForm) {
-        const finalCookies = mergeCookies([initCookies, authCookies, vCookies]);
-        dbg.push(`[${label}] ✅ AUTH OK`);
-        return { cookies: finalCookies, html: vHtml, debug: dbg };
-      }
+      // Verifica 2: ri-fetcha HTML (per template classic)
+      try {
+        const vResp = await fetch(baseUrl, {
+          headers: { 'User-Agent': UA, 'Accept': 'text/html,*/*', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8', 'Cookie': merged },
+          redirect: 'follow', signal: AbortSignal.timeout(12000),
+        });
+        const vHtml = await vResp.text();
+        const vCookies = vResp.headers.getSetCookie?.() || [];
+        const stillForm = /type=["']password["']|name=["']password["']/i.test(vHtml);
+        dbg.push(`[${label}] verify HTML → ${vResp.status}, ${vHtml.length} chars, stillForm=${stillForm}`);
+        if (!stillForm) {
+          const finalCookies = mergeCookies([initCookies, authCookies, vCookies]);
+          dbg.push(`[${label}] ✅ AUTH OK (HTML verify)`);
+          return { cookies: finalCookies, html: vHtml, debug: dbg };
+        }
+      } catch(e) { dbg.push(`[${label}] verify HTML failed: ${e.message}`); }
     } catch(e) { dbg.push(`[${label}] errore: ${e.message}`); }
   }
 
@@ -520,12 +555,13 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
 
   // 3 — Fetch server-side (Node 20 native fetch — nessun CORS)
   // Se password fornita, autentica prima e ottieni cookies di sessione
-  let authCookieStr = '', authDebug = [], authHtml = null;
+  let authCookieStr = '', authDebug = [], authHtml = null, authApiAlbums = null;
   if (password && typeof password === 'string' && password.trim().length > 0) {
     const authResult = await yupooPasswordAuth(url, password.trim());
-    authCookieStr = authResult.cookies || '';
-    authDebug     = authResult.debug  || [];
-    authHtml      = authResult.html   || null; // già verificato da yupooPasswordAuth
+    authCookieStr  = authResult.cookies    || '';
+    authDebug      = authResult.debug      || [];
+    authHtml       = authResult.html       || null;
+    authApiAlbums  = authResult.apiAlbums  || null;
     console.log('[yupoo auth]', JSON.stringify(authDebug));
   }
 
@@ -572,6 +608,9 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
       }
       Object.values(obj).forEach(v => { if (v && typeof v === 'object') crawlJson(v, depth + 1); });
     }
+
+    // 0 — Se auth ha già ottenuto album via API diretta (SPA autenticata), crawla subito
+    if (authApiAlbums) crawlJson(authApiAlbums, 0);
 
     // 1a — __NEXT_DATA__ (Next.js SSR — nessun limite di dimensione)
     const nextDataM = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]+?)<\/script>/i);
@@ -650,7 +689,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
       // Prova tutti gli endpoint in parallelo — prendi il primo che ritorna JSON con album
       const apiResults = await Promise.allSettled(
         apiCandidates.map(async apiUrl => {
-          const r = await fetch(apiUrl, { headers: ajaxHeaders, signal: AbortSignal.timeout(4000) });
+          const r = await fetch(apiUrl, { headers: ajaxHeaders, signal: AbortSignal.timeout(8000) });
           const ct = r.headers.get('content-type') || '';
           const body = ct.includes('json') ? await r.json() : null;
           console.log(`[yupoo api] ${apiUrl.split('?')[0]} → ${r.status} json=${!!body}`);
@@ -754,7 +793,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
       albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceUSD, photos };
     }
 
-    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
+    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null, authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
