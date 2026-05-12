@@ -95,9 +95,77 @@ exports.proxyImage = onRequest({ cors: true, maxInstances: 20, timeoutSeconds: 1
 // Proxy server-side per Yupoo — bypassa CORS.
 // Solo admin. Accetta URL *.x.yupoo.com e restituisce l'HTML.
 //
-// Input:  { url: string }  — es. "https://woodtableguy888.x.yupoo.com/categories/4633144?page=1"
+// Input:  { url: string, password?: string }
 // Output: { html: string, status: number }
 // ══════════════════════════════════════════════════════════════════
+
+// Helper: autentica su Yupoo password-protected, ritorna stringa Cookie da usare
+async function yupooPasswordAuth(baseUrl, password) {
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  let initCookies = [];
+  let csrfToken = '';
+  let formAction = baseUrl;
+
+  try {
+    const initResp = await fetch(baseUrl, {
+      headers: { 'User-Agent': UA, 'Accept': 'text/html,*/*', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(10000),
+    });
+    const initHtml = await initResp.text();
+    initCookies = initResp.headers.getSetCookie?.() || [];
+
+    if (!initHtml.includes('password') && !initHtml.includes('passwd')) return null;
+
+    const tokenM = initHtml.match(/name=["']_token["'][^>]*value=["']([^"']+)["']/)
+                || initHtml.match(/value=["']([^"']+)["'][^>]*name=["']_token["']/);
+    csrfToken = tokenM?.[1] || '';
+
+    const actionM = initHtml.match(/<form[^>]+method=["']post["'][^>]*action=["']([^"']+)["']/i)
+                 || initHtml.match(/<form[^>]+action=["']([^"']+)["'][^>]*method=["']post["']/i);
+    if (actionM) {
+      const a = actionM[1];
+      formAction = a.startsWith('http') ? a : new URL(a, baseUrl).href;
+    }
+  } catch(e) { console.warn('[yupoo auth] init:', e.message); }
+
+  const postBody = new URLSearchParams();
+  if (csrfToken) postBody.append('_token', csrfToken);
+  postBody.append('password', password);
+
+  const initCookieStr = initCookies.map(c => c.split(';')[0]).join('; ');
+  try {
+    const authResp = await fetch(formAction, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': UA,
+        'Accept': 'text/html,*/*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Referer': baseUrl,
+        ...(initCookieStr ? { 'Cookie': initCookieStr } : {}),
+      },
+      body: postBody.toString(),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000),
+    });
+    const authCookies = authResp.headers.getSetCookie?.() || [];
+    // Merge: auth cookies override initial cookies by name
+    const cookieMap = {};
+    [...initCookies, ...authCookies].forEach(c => {
+      const nv = c.split(';')[0].trim();
+      const [name] = nv.split('=');
+      cookieMap[name.trim()] = nv;
+    });
+    const merged = Object.values(cookieMap).join('; ');
+    console.log(`[yupoo auth] done — cookies: ${merged.length} chars, action: ${formAction}`);
+    return merged || null;
+  } catch(e) {
+    console.warn('[yupoo auth] POST:', e.message);
+    return initCookieStr || null;
+  }
+}
+
 exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
   // 1 — Autenticazione + check admin
   if (!request.auth) {
@@ -108,7 +176,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     throw new HttpsError('permission-denied', 'Solo gli admin possono usare questo endpoint.');
   }
 
-  const { url } = request.data;
+  const { url, password } = request.data;
   if (!url || typeof url !== 'string') {
     throw new HttpsError('invalid-argument', 'Parametro url mancante.');
   }
@@ -391,6 +459,12 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
   }
 
   // 3 — Fetch server-side (Node 20 native fetch — nessun CORS)
+  // Se password fornita, autentica prima e ottieni cookies di sessione
+  let authCookieStr = '';
+  if (password && typeof password === 'string' && password.trim().length > 0) {
+    authCookieStr = await yupooPasswordAuth(url, password.trim()) || '';
+  }
+
   try {
     const resp = await fetch(url, {
       headers: {
@@ -398,6 +472,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
         'Accept': 'text/html,application/xhtml+xml,application/json,*/*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'Referer': `https://${parsedUrl.hostname}/`,
+        ...(authCookieStr ? { 'Cookie': authCookieStr } : {}),
       },
       redirect: 'follow',
     });
