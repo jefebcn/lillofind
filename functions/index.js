@@ -665,12 +665,25 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
       }
     }
 
-    // Debug info per diagnostica quando nessun album trovato
+    // Debug diagnostico approfondito
     const albumIdsInHtml = [];
     const debugRe = /\/albums\/(\w+)/g; let di;
     while ((di = debugRe.exec(html)) !== null && albumIdsInHtml.length < 5) {
       if (!albumIdsInHtml.includes(di[1])) albumIdsInHtml.push(di[1]);
     }
+
+    // Informazioni struttura pagina
+    const hrefCount    = (html.match(/href=/gi) || []).length;
+    const hasAlbumsPath = html.includes('/albums/');
+    // Prime 5 href trovate nell'HTML
+    const hrefSamples = [];
+    const hrefRe = /href=["']([^"']{1,120})["']/gi; let hm;
+    while ((hm = hrefRe.exec(html)) !== null && hrefSamples.length < 5) hrefSamples.push(hm[1]);
+    // Sezione HTML intorno alla prima occorrenza di "album"
+    const aIdx = html.toLowerCase().indexOf('album');
+    const firstAlbumContext = aIdx >= 0
+      ? html.slice(Math.max(0, aIdx - 100), aIdx + 400).replace(/\s+/g, ' ')
+      : null;
 
     // Analisi __NEXT_DATA__ — chiavi e preview
     let nextDataInfo = null;
@@ -741,7 +754,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
       albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceUSD, photos };
     }
 
-    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null, nextDataInfo, apiUrlsInHtml } };
+    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
