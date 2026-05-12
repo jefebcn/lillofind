@@ -675,6 +675,28 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     while ((di = debugRe.exec(html)) !== null && albumIdsInHtml.length < 5) {
       if (!albumIdsInHtml.includes(di[1])) albumIdsInHtml.push(di[1]);
     }
+
+    // Analisi __NEXT_DATA__ — chiavi e preview
+    let nextDataInfo = null;
+    const ndM = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]+?)<\/script>/i);
+    if (ndM) {
+      try {
+        const nd = JSON.parse(ndM[1]);
+        const ndStr = JSON.stringify(nd);
+        nextDataInfo = {
+          topKeys: Object.keys(nd),
+          pagePropsKeys: nd.props?.pageProps ? Object.keys(nd.props.pageProps) : [],
+          hasAlbum: ndStr.includes('album'),
+          hasCover: ndStr.includes('cover'),
+          preview: ndStr.slice(0, 800),
+        };
+      } catch(e) { nextDataInfo = { parseError: e.message, raw: ndM[1].slice(0,200) }; }
+    } else { nextDataInfo = { found: false }; }
+
+    // Estrai tutti gli URL API presenti nell'HTML (per trovare endpoint giusti)
+    const apiUrlsInHtml = [...new Set(
+      (html.match(/["']\/api\/[^"'<>\s]{3,}["']/g) || []).map(u => u.replace(/["']/g, ''))
+    )].slice(0, 20);
     // Preview multi-sezione per diagnostica struttura pagina
     const mid = Math.floor(html.length / 2);
     const htmlPreview = {
@@ -723,7 +745,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
       albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceUSD, photos };
     }
 
-    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null } };
+    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null, nextDataInfo, apiUrlsInHtml } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
