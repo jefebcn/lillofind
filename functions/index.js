@@ -627,36 +627,45 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     // Strategia 5 — Yupoo JSON API (fallback quando HTML non ha album IDs)
     if (!Object.keys(albumCovers).length) {
       const UA_API = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      const shopName = parsedUrl.hostname.split('.')[0]; // es. "enzooopticl"
       const catMatch = parsedUrl.pathname.match(/\/categories\/(\d+)/);
       const catId = catMatch?.[1] || '';
+      // Endpoint Yupoo API in ordine di probabilità (sia camelCase che underscore)
       const apiCandidates = catId ? [
+        // Shop-domain API (più comune nei nuovi shop Next.js)
+        `https://${parsedUrl.hostname}/api/v2/albums?categoryId=${catId}&page=1&limit=100`,
         `https://${parsedUrl.hostname}/api/v2/albums?category_id=${catId}&page=1&limit=100`,
-        `https://${parsedUrl.hostname}/photos/albums?page=1&type=0&cid=${catId}`,
         `https://${parsedUrl.hostname}/api/albums?cid=${catId}&page=1`,
-        `https://${parsedUrl.hostname}/photos/categories/${catId}/albums?page=1`,
+        `https://${parsedUrl.hostname}/api/v1/albums?category_id=${catId}&page=1`,
+        // Yupoo central API
+        `https://api.yupoo.com/yupoo/album/listbycategory?categoryId=${catId}&owner=${shopName}&page=1&pageSize=100`,
+        `https://api.yupoo.com/api/v2/albums?category_id=${catId}&uid=${shopName}&page=1`,
+        // Photos endpoint (alcune categorie mostrano foto non album)
+        `https://${parsedUrl.hostname}/api/v2/photos?categoryId=${catId}&page=1&limit=100`,
+        `https://${parsedUrl.hostname}/photos?page=1&cid=${catId}&type=album`,
+        // Categoria con /albums appeso
+        `https://${parsedUrl.hostname}/categories/${catId}/albums?page=1`,
       ] : [];
-      // Prova anche un endpoint che ritorna tutte le foto della categoria (per shop senza album)
-      if (catId) {
-        apiCandidates.push(`https://${parsedUrl.hostname}/photos?page=1&type=image&cid=${catId}`);
-      }
+
+      const ajaxHeaders = {
+        'User-Agent': UA_API,
+        'Accept': 'application/json, text/plain, */*',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Referer': `https://${parsedUrl.hostname}/categories/${catId}`,
+        ...(authCookieStr ? { 'Cookie': authCookieStr } : {}),
+      };
+
       for (const apiUrl of apiCandidates) {
         try {
-          const apiResp = await fetch(apiUrl, {
-            headers: {
-              'User-Agent': UA_API,
-              'Accept': 'application/json, text/plain, */*',
-              'Referer': `https://${parsedUrl.hostname}/`,
-              ...(authCookieStr ? { 'Cookie': authCookieStr } : {}),
-            },
-            signal: AbortSignal.timeout(8000),
-          });
+          const apiResp = await fetch(apiUrl, { headers: ajaxHeaders, signal: AbortSignal.timeout(8000) });
           const ct = apiResp.headers.get('content-type') || '';
-          if (!apiResp.ok || !ct.includes('json')) continue;
-          const apiJson = await apiResp.json();
-          crawlJson(apiJson, 0);
-          console.log(`[yupoo api] ${apiUrl} → ${apiResp.status}, albums found: ${Object.keys(albumCovers).length}`);
-          if (Object.keys(albumCovers).length > 0) break;
-        } catch(e) { console.warn('[yupoo api]', apiUrl, e.message); }
+          const apiBody = ct.includes('json') ? await apiResp.json() : null;
+          console.log(`[yupoo api] ${apiUrl} → ${apiResp.status} ct="${ct.slice(0,40)}" json=${!!apiBody}`);
+          if (apiBody) {
+            crawlJson(apiBody, 0);
+            if (Object.keys(albumCovers).length > 0) break;
+          }
+        } catch(e) { console.warn('[yupoo api]', apiUrl.split('?')[0], e.message); }
       }
     }
 
@@ -666,13 +675,13 @@ exports.yupooFetch = onCall({ timeoutSeconds: 30 }, async (request) => {
     while ((di = debugRe.exec(html)) !== null && albumIdsInHtml.length < 5) {
       if (!albumIdsInHtml.includes(di[1])) albumIdsInHtml.push(di[1]);
     }
-    // Preview: 400 chars inizio + 600 chars zona corpo (per vedere struttura album)
-    const bodyStart = Math.max(0, html.indexOf('<body'));
-    const htmlPreview = [
-      html.slice(0, 300).replace(/\s+/g, ' '),
-      '…',
-      html.slice(bodyStart > 0 ? bodyStart : 2000, (bodyStart > 0 ? bodyStart : 2000) + 800).replace(/\s+/g, ' '),
-    ].join('');
+    // Preview multi-sezione per diagnostica struttura pagina
+    const mid = Math.floor(html.length / 2);
+    const htmlPreview = {
+      head:  html.slice(0, 300).replace(/\s+/g, ' '),
+      mid:   html.slice(mid, mid + 600).replace(/\s+/g, ' '),
+      tail:  html.slice(-400).replace(/\s+/g, ' '),
+    };
 
     // ── Estrazione dati album (quando URL è una pagina /albums/ID) ──
     let albumInfo = null;
