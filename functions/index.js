@@ -804,10 +804,10 @@ const db = admin.firestore();
 // ══════════════════════════════════════════════════════════════════
 // yupooAnalyze
 // Fetcha un'immagine Yupoo server-side e la analizza con Claude Haiku.
-// Restituisce: { name, brand, model, category, colors, description }
+// Restituisce: { name, brand, model, category, colors, description, supplierPrice }
 //
 // Input:  { imageUrl: string }  — URL cover album Yupoo
-// Output: { name, brand, model, category, colors, description }
+// Output: { name, brand, model, category, colors, description, supplierPrice }
 // ══════════════════════════════════════════════════════════════════
 exports.yupooAnalyze = onCall({ secrets: [ANTHROPIC_API_KEY], cors: true, timeoutSeconds: 45 }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Login richiesto.');
@@ -855,7 +855,7 @@ exports.yupooAnalyze = onCall({ secrets: [ANTHROPIC_API_KEY], cors: true, timeou
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 350,
+        max_tokens: 420,
         messages: [{
           role: 'user',
           content: [
@@ -866,9 +866,10 @@ exports.yupooAnalyze = onCall({ secrets: [ANTHROPIC_API_KEY], cors: true, timeou
             {
               type: 'text',
               text: `Sei un esperto di moda, streetwear e sneaker. Analizza questa immagine prodotto e rispondi SOLO con JSON valido (nessun markdown, nessun testo extra prima o dopo):
-{"name":"Brand Modello Colorway dettagliato (es. Nike Dunk Low Panda Bianco Nero)","brand":"Nike","model":"Dunk Low","category":"scarpe","colors":["Bianco","Nero"],"description":"Sneaker Nike Dunk Low colorway Panda, tomaia in pelle bianca e dettagli neri."}
+{"name":"Brand Modello Colorway dettagliato (es. Nike Dunk Low Panda Bianco Nero)","brand":"Nike","model":"Dunk Low","category":"scarpe","colors":["Bianco","Nero"],"description":"Sneaker Nike Dunk Low colorway Panda, tomaia in pelle bianca e dettagli neri.","supplierPrice":null}
 
 Categorie disponibili (scegli la più adatta): tshirt, tshirt_branded, felpa, scarpe, scarpe_box, pantaloni, shorts, cappello, giacchetto, borsa, accessori
+PREZZO: Se nell'immagine è visibile un prezzo (cartellino, etichetta, testo sovrapposto, numero con simbolo $ ¥ €), estrai il valore numerico e inseriscilo in "supplierPrice" come numero (es. 45 per "45$" o "¥320"). Se non visibile, lascia null.
 ${brandHint || modelHint ? `\nL'utente indica che questo prodotto è probabilmente: ${[brandHint, modelHint].filter(Boolean).join(' — ')}. Usa questo come riferimento forte e identifica il modello e colorway specifici dall'immagine.` : 'Se non identificabile con certezza, usa valori plausibili in base a ciò che vedi.'}`,
             },
           ],
