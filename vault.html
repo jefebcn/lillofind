@@ -5,307 +5,803 @@
 <meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>LF VAULT — Gestionale Investimenti</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script type="module" src="firebase.js"></script>
 <style>
 :root{
-  --k:#080808;--k2:#0f0f0f;--k3:#161616;--k4:#1e1e1e;
+  --k:#080808;--k2:#0f0f0f;--k3:#141414;--k4:#1c1c1c;
   --w:#f0f0f0;--w2:#aaa;--w3:#555;
-  --g:#C8FF00;--g2:rgba(200,255,0,.12);--g3:rgba(200,255,0,.06);
+  --g:#C8FF00;--g2:rgba(200,255,0,.12);--g3:rgba(200,255,0,.05);
   --gold:#FFD166;--red:#FF4757;--blue:#00C4FF;
-  --border:rgba(255,255,255,.07);
-  --border2:rgba(200,255,0,.2);
-  --r:0px;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(200,255,0,.22);
+  --r:16px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospace;overflow-x:hidden;}
-body{padding-bottom:80px;}
+body{padding-bottom:88px;}
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar{width:2px;height:2px;}
 ::-webkit-scrollbar-track{background:var(--k);}
 ::-webkit-scrollbar-thumb{background:var(--g);}
 
-/* ── LOGIN ── */
+/* ── ANIMATIONS ── */
+@keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes led-pulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* ════════════════════════════
+   LOGIN
+════════════════════════════ */
 #login-screen{
   position:fixed;inset:0;z-index:9999;background:var(--k);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:0;
+  padding:24px;
 }
-.login-logo{font-family:'Bebas Neue',sans-serif;font-size:72px;letter-spacing:8px;color:var(--g);
-  text-shadow:0 0 40px rgba(200,255,0,.4);line-height:1;margin-bottom:4px;}
-.login-sub{font-size:9px;letter-spacing:6px;color:var(--w3);text-transform:uppercase;margin-bottom:48px;}
-.login-box{background:var(--k3);border:1px solid var(--border);padding:40px 32px;width:100%;max-width:340px;}
-.login-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:12px;}
+.login-logo{
+  font-family:'Bebas Neue',sans-serif;font-size:80px;letter-spacing:10px;
+  color:var(--g);text-shadow:0 0 60px rgba(200,255,0,.35),0 0 120px rgba(200,255,0,.1);
+  line-height:1;margin-bottom:6px;
+}
+.login-sub{
+  font-size:8px;letter-spacing:8px;color:var(--w3);text-transform:uppercase;
+  margin-bottom:48px;
+}
+.login-box{
+  background:var(--k2);
+  border:1px solid var(--border);
+  border-top:2px solid var(--border2);
+  padding:36px 28px;width:100%;max-width:340px;
+  border-radius:var(--r);
+}
+.login-label{
+  font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--w3);
+  margin-bottom:8px;display:block;
+}
 .login-input{
-  width:100%;background:var(--k2);border:1.5px solid var(--border);color:var(--w);
-  font-family:'IBM Plex Mono',monospace;font-size:28px;letter-spacing:16px;text-align:center;
-  padding:18px;outline:none;transition:border-color .2s;
-  -webkit-text-security:disc;text-security:disc;
+  width:100%;background:var(--k3);border:1.5px solid var(--border);color:var(--w);
+  font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.5px;
+  padding:14px 16px;outline:none;transition:border-color .2s,box-shadow .2s;
+  margin-bottom:12px;border-radius:12px;
 }
-.login-input:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(200,255,0,.1);}
+.login-input:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(200,255,0,.08);}
+.login-input::placeholder{color:var(--w3);}
 .login-btn{
-  width:100%;margin-top:16px;background:var(--g);color:var(--k);border:none;
-  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;
+  width:100%;margin-top:4px;background:var(--g);color:var(--k);border:none;
+  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:5px;
   padding:16px;cursor:pointer;transition:opacity .2s,box-shadow .2s;
+  display:block;text-align:center;border-radius:12px;
 }
-.login-btn:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.4);}
+.login-btn:hover{opacity:.88;box-shadow:0 0 32px rgba(200,255,0,.35);}
 .login-err{
-  font-size:10px;letter-spacing:2px;color:var(--red);text-transform:uppercase;
-  margin-top:12px;text-align:center;min-height:16px;
+  font-size:9px;letter-spacing:2px;color:var(--red);text-transform:uppercase;
+  margin-top:10px;text-align:center;min-height:16px;
 }
-.login-dots{display:flex;gap:8px;justify-content:center;margin-bottom:24px;}
-.dot{width:10px;height:10px;border:1.5px solid var(--w3);border-radius:50%;transition:all .2s;}
-.dot.filled{background:var(--g);border-color:var(--g);box-shadow:0 0 8px var(--g);}
-.login-back{margin-top:28px;font-size:9px;color:var(--w3);letter-spacing:2px;text-align:center;}
+.login-back{margin-top:32px;font-size:8px;color:var(--w3);letter-spacing:3px;text-align:center;text-transform:uppercase;}
 .login-back a{color:var(--g);text-decoration:none;cursor:pointer;}
 
-/* ── APP ── */
+/* ════════════════════════════
+   APP
+════════════════════════════ */
 #app{display:none;}
 #app.show{display:block;}
 
-/* ── MOBILE HEADER ── */
+/* ════════════════════════════
+   HEADER
+════════════════════════════ */
 #mob-hdr{
-  position:sticky;top:0;z-index:90;background:var(--k2);
-  border-bottom:1px solid var(--border);
-  height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+  position:sticky;top:0;z-index:90;
+  background:var(--k2);
+  height:60px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;
 }
-.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--g);}
+#mob-hdr::after{
+  content:'';position:absolute;bottom:0;left:0;width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--g),transparent);
+  opacity:.25;
+}
+.hdr-logo{
+  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:5px;color:var(--g);
+  display:flex;align-items:center;gap:6px;
+}
+.hdr-right{display:flex;align-items:center;gap:10px;}
 .hdr-badge{
-  background:var(--g2);border:1px solid var(--border2);color:var(--g);
-  font-size:8px;letter-spacing:2px;padding:4px 10px;
+  background:var(--g2);
+  border:1px solid var(--border2);
+  color:var(--g);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:15px;letter-spacing:1px;
+  padding:5px 12px;
+  line-height:1;
+  border-radius:20px;
 }
-.hdr-logout{background:none;border:none;color:var(--w3);font-size:18px;cursor:pointer;padding:8px;}
+.hdr-logout{
+  background:none;border:none;color:var(--w3);font-size:16px;
+  cursor:pointer;padding:8px;transition:color .2s;
+}
+.hdr-logout:hover{color:var(--w);}
 
-/* ── BOTTOM NAV ── */
+/* ════════════════════════════
+   BOTTOM NAV
+════════════════════════════ */
 #bnav{
   position:fixed;bottom:0;left:0;width:100%;z-index:100;
-  background:var(--k2);border-top:1px solid var(--border);
-  display:flex;padding-bottom:env(safe-area-inset-bottom);
+  background:var(--k2);
+  border-top:1px solid var(--border);
+  display:flex;
+  height:70px;
+  padding-bottom:env(safe-area-inset-bottom);
 }
 .bn{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 4px;background:none;border:none;cursor:pointer;
-  color:var(--w3);font-family:'IBM Plex Mono',monospace;font-size:8px;
-  letter-spacing:1px;text-transform:uppercase;gap:4px;transition:color .2s;min-height:56px;
+  background:none;border:none;cursor:pointer;
+  color:var(--w3);font-family:'IBM Plex Mono',monospace;
+  font-size:7px;letter-spacing:1.5px;text-transform:uppercase;
+  gap:4px;transition:color .2s;position:relative;
+  padding-top:0;
 }
-.bn.active,.bn:hover{color:var(--g);}
-.bn-icon{font-size:20px;line-height:1;}
+.bn.active{color:var(--g);}
+.bn:hover:not(.active){color:var(--w2);}
+.bn-icon{
+  font-size:20px;line-height:1;
+  width:44px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:20px;transition:background .2s;
+}
+.bn.active .bn-icon{
+  background:var(--g2);
+  box-shadow:0 0 12px rgba(200,255,0,.15);
+}
 
-/* ── PAGES ── */
-.pg{display:none;padding:20px 16px;}
+/* ════════════════════════════
+   PAGES
+════════════════════════════ */
+.pg{display:none;padding:22px 16px 16px;}
 .pg.on{display:block;}
 .fadein{animation:fadeup .3s ease forwards;}
-@keyframes fadeup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── SECTION HEADER ── */
-.sec-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
-.sec-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--w);}
-.sec-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);}
+/* ════════════════════════════
+   SECTION HEADER
+════════════════════════════ */
+.sec-hdr{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin-bottom:22px;flex-wrap:wrap;gap:8px;
+}
+.sec-eyebrow{font-size:7px;letter-spacing:4px;text-transform:uppercase;color:var(--w3);margin-bottom:4px;}
+.sec-title{
+  font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;
+  color:var(--w);line-height:1;
+}
+.sec-date{
+  font-size:8px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;
+  background:var(--k4);padding:5px 10px;border:1px solid var(--border);
+  white-space:nowrap;
+}
+.sec-divider{
+  width:100%;height:1px;margin-bottom:20px;
+  background:linear-gradient(90deg,var(--g),transparent);
+  opacity:.35;
+}
 
-/* ── STAT CARDS ── */
+/* ════════════════════════════
+   STAT CARDS
+════════════════════════════ */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-.stat-card{background:var(--k3);border:1px solid var(--border);padding:16px 14px;position:relative;overflow:hidden;}
-.stat-card.accent{border-color:var(--border2);background:var(--g3);}
-.stat-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;}
-.stat-card.green::before{background:var(--g);box-shadow:0 0 8px var(--g);}
-.stat-card.gold::before{background:var(--gold);}
-.stat-card.blue::before{background:var(--blue);}
-.stat-card.red::before{background:var(--red);}
-.sc-label{font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:8px;}
-.sc-val{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;line-height:1;}
-.sc-val.green{color:var(--g);}
+.stat-card{
+  position:relative;overflow:hidden;
+  padding:18px 16px;
+  background:var(--k3);
+  border-radius:var(--r);
+}
+/* Glow border via box-shadow instead of top bar */
+.stat-card.green{box-shadow:0 0 0 1px rgba(200,255,0,.2),inset 0 1px 0 rgba(200,255,0,.3);}
+.stat-card.gold{box-shadow:0 0 0 1px rgba(255,209,102,.2),inset 0 1px 0 rgba(255,209,102,.3);}
+.stat-card.blue{box-shadow:0 0 0 1px rgba(0,196,255,.2),inset 0 1px 0 rgba(0,196,255,.25);}
+.stat-card.red{box-shadow:0 0 0 1px rgba(200,255,0,.15),inset 0 1px 0 rgba(200,255,0,.2);}
+.stat-card.accent{box-shadow:0 0 0 1px var(--border2);background:var(--g3);}
+/* subtle bg gradient */
+.stat-card.green::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at top left,rgba(200,255,0,.06) 0%,transparent 70%);pointer-events:none;}
+.stat-card.gold::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at top left,rgba(255,209,102,.06) 0%,transparent 70%);pointer-events:none;}
+.stat-card.blue::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at top left,rgba(0,196,255,.06) 0%,transparent 70%);pointer-events:none;}
+.stat-card.red::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at top left,rgba(200,255,0,.04) 0%,transparent 70%);pointer-events:none;}
+
+.sc-label{
+  font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);
+  margin-bottom:10px;position:relative;z-index:1;
+}
+.sc-val{
+  font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:1px;
+  line-height:1;position:relative;z-index:1;
+}
+.sc-val.green{color:var(--g);text-shadow:0 0 20px rgba(200,255,0,.2);}
 .sc-val.gold{color:var(--gold);}
 .sc-val.blue{color:var(--blue);}
-.sc-sub{font-size:9px;color:var(--w3);margin-top:4px;}
+.sc-sub{font-size:8px;color:var(--w3);margin-top:5px;letter-spacing:1px;position:relative;z-index:1;}
 
-/* ── CHART CARD ── */
-.chart-card{background:var(--k3);border:1px solid var(--border);padding:18px;margin-bottom:16px;}
-.chart-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:16px;}
-.chart-wrap{position:relative;height:180px;}
-
-/* ── INVEST FORM ── */
-.form-card{background:var(--k3);border:1px solid var(--border);padding:20px;margin-bottom:14px;}
-.form-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:10px;}
-.amount-display{
-  font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:2px;color:var(--g);
-  text-shadow:0 0 20px rgba(200,255,0,.3);text-align:center;padding:10px 0;line-height:1;
+/* ════════════════════════════
+   CHART CARDS
+════════════════════════════ */
+.chart-card{
+  background:var(--k3);border:1px solid var(--border);
+  padding:18px;margin-bottom:14px;position:relative;
+  border-radius:var(--r);
 }
-.range-wrap{position:relative;margin:12px 0 8px;}
+.chart-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.chart-title{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);}
+.chart-badge{
+  background:var(--g2);border:1px solid var(--border2);
+  color:var(--g);font-family:'Bebas Neue',sans-serif;
+  font-size:14px;letter-spacing:1px;padding:2px 8px;
+}
+.chart-wrap{position:relative;height:220px;}
+.chart-wrap.sm{height:130px;}
+
+/* ════════════════════════════
+   RATE TABLE
+════════════════════════════ */
+.rate-section{margin-bottom:16px;}
+.rate-section-label{font-size:7px;letter-spacing:3.5px;text-transform:uppercase;color:var(--w3);margin-bottom:10px;}
+.rate-table{width:100%;border-collapse:collapse;}
+.rate-table thead th{
+  background:var(--k4);
+  font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--w3);
+  padding:10px 10px;text-align:center;border-bottom:1px solid var(--border);
+}
+.rate-table thead th:first-child{text-align:left;}
+.rate-table tbody tr{border-bottom:1px solid rgba(255,255,255,.04);}
+.rate-table tbody tr:last-child{border-bottom:none;}
+.rate-table tbody tr:nth-child(even){background:rgba(255,255,255,.02);}
+.rate-table tbody td{
+  padding:11px 10px;font-size:10px;color:var(--w2);text-align:center;
+}
+.rate-table tbody td:first-child{
+  font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--w);
+  text-align:left;letter-spacing:1px;
+}
+.rate-table .lime{
+  font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--g);
+}
+.rate-table .ann{color:var(--w3);font-size:9px;}
+
+/* ════════════════════════════
+   INVEST FORM
+════════════════════════════ */
+.form-card{
+  background:var(--k3);border:1px solid var(--border);
+  padding:22px 18px;margin-bottom:12px;
+  border-radius:var(--r);
+}
+.form-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:12px;}
+
+/* Amount display */
+.amount-display{
+  font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:2px;color:var(--g);
+  text-shadow:0 0 40px rgba(200,255,0,.25);text-align:center;
+  padding:8px 0;line-height:1;
+}
+
+/* Range */
+.range-wrap{position:relative;margin:16px 0 8px;}
 input[type=range]{
-  width:100%;height:4px;background:var(--k4);outline:none;border-radius:2px;
-  -webkit-appearance:none;cursor:pointer;
+  width:100%;height:3px;background:var(--k4);outline:none;
+  -webkit-appearance:none;cursor:pointer;border-radius:0;
 }
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
-  background:var(--g);box-shadow:0 0 12px rgba(200,255,0,.6);cursor:pointer;
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--g);box-shadow:0 0 14px rgba(200,255,0,.5);cursor:pointer;
+  border:2px solid var(--k);
 }
 input[type=range]::-webkit-slider-runnable-track{
   background:linear-gradient(90deg,var(--g) var(--pct,0%),var(--k4) var(--pct,0%));
-  height:4px;border-radius:2px;
+  height:3px;
 }
-.range-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--w3);}
+.range-labels{display:flex;justify-content:space-between;font-size:7px;color:var(--w3);letter-spacing:1px;}
+
+/* Quick amount pills */
+.quick-amounts{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;}
+.quick-btn{
+  flex:1;min-width:0;padding:9px 4px;background:var(--k4);
+  border:1px solid var(--border);color:var(--w3);
+  font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;
+  cursor:pointer;text-align:center;transition:all .2s;white-space:nowrap;
+  border-radius:8px;
+}
+.quick-btn:hover{border-color:rgba(200,255,0,.35);color:var(--g);}
+
+/* Duration buttons */
 .duration-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;}
 .dur-btn{
-  background:var(--k4);border:1.5px solid var(--border);padding:12px 6px;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;text-align:center;cursor:pointer;
-  transition:all .2s;color:var(--w2);
+  background:var(--k4);border:1.5px solid var(--border);
+  padding:16px 6px;cursor:pointer;transition:all .2s;color:var(--w2);
+  text-align:center;border-radius:12px;
 }
-.dur-btn:hover{border-color:rgba(200,255,0,.4);color:var(--w);}
-.dur-btn.on{background:var(--g2);border-color:var(--g);color:var(--g);}
-.dur-month{font-family:'Bebas Neue',sans-serif;font-size:26px;color:inherit;line-height:1;display:block;}
-.dur-return{font-size:8px;letter-spacing:1px;color:rgba(200,255,0,.6);margin-top:2px;}
+.dur-btn:hover{border-color:rgba(200,255,0,.35);}
+.dur-btn.on{background:var(--g2);border-color:var(--g);}
+.dur-month{
+  font-family:'Bebas Neue',sans-serif;font-size:32px;color:inherit;
+  line-height:1;display:block;
+}
+.dur-sublabel{font-size:6px;letter-spacing:1px;color:var(--w3);text-transform:uppercase;margin-top:1px;}
+.dur-return{
+  font-family:'Bebas Neue',sans-serif;font-size:15px;
+  color:var(--g);margin-top:5px;letter-spacing:.5px;
+}
+.dur-btn:not(.on) .dur-return{opacity:.5;}
+
+/* Type buttons */
 .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
 .type-btn{
-  background:var(--k4);border:1.5px solid var(--border);padding:16px 10px;
-  cursor:pointer;transition:all .2s;text-align:center;
+  background:var(--k4);border:1.5px solid var(--border);
+  padding:20px 10px;cursor:pointer;transition:all .2s;text-align:center;
+  border-radius:12px;
 }
-.type-btn.on.standard{background:rgba(0,196,255,.08);border-color:var(--blue);}
-.type-btn.on.locked{background:rgba(255,209,102,.08);border-color:var(--gold);}
-.type-icon{font-size:22px;margin-bottom:6px;}
-.type-name{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--w2);}
-.type-badge{font-size:8px;color:var(--w3);margin-top:3px;}
+.type-btn:hover{border-color:rgba(255,255,255,.15);}
+.type-btn.on.standard{background:rgba(0,196,255,.06);border-color:var(--blue);box-shadow:inset 0 0 20px rgba(0,196,255,.05);}
+.type-btn.on.locked{background:rgba(255,209,102,.06);border-color:var(--gold);box-shadow:inset 0 0 20px rgba(255,209,102,.05);}
+.type-icon{font-size:24px;margin-bottom:8px;}
+.type-name{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w2);}
+.type-badge{font-size:7px;color:var(--w3);margin-top:4px;letter-spacing:1px;}
 
-/* ── PREVIEW BOX ── */
-.preview{background:var(--k);border:1px solid var(--border2);padding:18px;margin-bottom:14px;}
-.prev-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border);}
-.prev-row:last-child{border-bottom:none;}
-.prev-key{font-size:9px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
-.prev-val{font-family:'Bebas Neue',sans-serif;font-size:18px;}
+/* ════════════════════════════
+   PREVIEW BOX
+════════════════════════════ */
+.preview{
+  background:var(--k);border:1px solid var(--border2);
+  padding:0;margin-bottom:14px;overflow:hidden;
+  border-radius:var(--r);
+}
+.prev-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.05);
+}
+.prev-row:last-child{border-bottom:none;background:rgba(255,209,102,.04);padding:14px 18px;}
+.prev-key{font-size:8px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
+.prev-val{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.5px;}
 .prev-val.green{color:var(--g);}
-.prev-val.gold{color:var(--gold);}
+.prev-val.gold{color:var(--gold);font-size:26px;}
 
-/* ── PRIMARY BTN ── */
+/* ════════════════════════════
+   BUTTONS
+════════════════════════════ */
 .btn-primary{
   width:100%;background:var(--g);color:var(--k);border:none;
-  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;
+  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:5px;
   padding:18px;cursor:pointer;transition:opacity .2s,box-shadow .2s;
   display:flex;align-items:center;justify-content:center;gap:10px;
+  border-radius:12px;
 }
-.btn-primary:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.35);}
-.btn-primary:disabled{opacity:.3;cursor:not-allowed;}
+.btn-primary:hover{opacity:.88;box-shadow:0 0 28px rgba(200,255,0,.3);}
+.btn-primary:disabled{opacity:.25;cursor:not-allowed;}
 .btn-secondary{
-  width:100%;background:transparent;color:var(--w);border:1.5px solid var(--border);
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
-  padding:14px;cursor:pointer;transition:all .2s;margin-top:8px;
+  width:100%;background:transparent;color:var(--w2);
+  border:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;padding:14px;cursor:pointer;transition:all .2s;margin-top:8px;
+  border-radius:12px;
 }
-.btn-secondary:hover{border-color:var(--w3);background:rgba(255,255,255,.04);}
+.btn-secondary:hover{border-color:var(--w3);color:var(--w);}
 
-/* ── INVESTMENT LIST ── */
-.inv-card{background:var(--k3);border:1px solid var(--border);padding:16px;margin-bottom:10px;position:relative;overflow:hidden;}
-.inv-card.locked{border-color:rgba(255,209,102,.2);}
-.inv-card.locked::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--gold);}
-.inv-card.standard::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--blue);}
-.inv-card.matured{border-color:rgba(200,255,0,.3);}
-.inv-card.matured::before{background:var(--g);}
-.inv-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
-.inv-amount{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--w);}
+/* ════════════════════════════
+   PORTFOLIO CARDS
+════════════════════════════ */
+.inv-card{
+  background:var(--k3);border:1px solid var(--border);
+  margin-bottom:0;position:relative;overflow:hidden;
+  border-left:3px solid var(--border);
+  border-radius:var(--r);
+}
+.inv-card.locked{border-left-color:var(--gold);}
+.inv-card.standard{border-left-color:var(--blue);}
+.inv-card.matured{border-left-color:var(--g);}
+.inv-card-inner{padding:16px 16px 0;}
+.inv-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.inv-amount{
+  font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--w);line-height:1;
+}
+.inv-id{font-size:7px;color:var(--w3);letter-spacing:2px;margin-top:3px;text-transform:uppercase;}
 .inv-type-badge{
-  font-size:7px;letter-spacing:2px;padding:3px 8px;text-transform:uppercase;
-  border:1px solid currentColor;
+  font-size:7px;letter-spacing:2px;padding:4px 10px;text-transform:uppercase;
+  border:1px solid currentColor;line-height:1;margin-top:2px;
 }
 .inv-type-badge.locked{color:var(--gold);}
 .inv-type-badge.standard{color:var(--blue);}
 .inv-type-badge.matured{color:var(--g);}
-.inv-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:6px;}
-.inv-lbl{color:var(--w3);}
+.inv-rows{margin-bottom:10px;}
+.inv-row{display:flex;justify-content:space-between;align-items:center;font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.inv-row:last-child{border-bottom:none;}
+.inv-lbl{color:var(--w3);letter-spacing:1px;}
 .inv-val{color:var(--w);}
 .inv-val.green{color:var(--g);}
-.prog-bg{background:var(--k4);height:3px;margin:10px 0 6px;border-radius:1px;}
-.prog-fill{height:3px;border-radius:1px;background:var(--g);transition:width .6s ease;box-shadow:0 0 6px rgba(200,255,0,.4);}
-.prog-fill.gold{background:var(--gold);}
-.inv-actions{display:flex;gap:8px;margin-top:12px;}
-.inv-act-btn{
-  flex:1;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:9px;
-  letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1.5px solid var(--border);
-  background:none;color:var(--w2);transition:all .2s;
-}
-.inv-act-btn.redeem{border-color:rgba(200,255,0,.3);color:var(--g);}
-.inv-act-btn.redeem:hover{background:var(--g2);}
-.inv-act-btn:hover{border-color:var(--w3);}
 
-/* ── RICHIESTA ── */
-.req-card{background:var(--k3);border:1px solid var(--border);padding:16px;margin-bottom:10px;}
-.req-status{display:inline-flex;align-items:center;gap:6px;font-size:8px;letter-spacing:2px;padding:3px 10px;border:1px solid currentColor;}
+/* Progress */
+.prog-section{padding:10px 0 6px;}
+.prog-label-row{display:flex;justify-content:space-between;font-size:8px;margin-bottom:6px;}
+.prog-lbl{color:var(--w3);}
+.prog-pct{color:var(--w2);}
+.prog-bg{background:var(--k4);height:3px;border-radius:1px;}
+.prog-fill{height:3px;border-radius:1px;background:var(--g);transition:width .6s ease;box-shadow:0 0 8px rgba(200,255,0,.3);}
+.prog-fill.gold{background:var(--gold);box-shadow:0 0 8px rgba(255,209,102,.35);}
+.days-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--k4);border:1px solid var(--border);
+  font-size:7px;letter-spacing:1.5px;padding:4px 9px;
+  color:var(--w3);margin-top:8px;text-transform:uppercase;
+}
+
+/* Totale row */
+.inv-total-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 16px;background:rgba(255,209,102,.04);
+  border-top:1px solid rgba(255,209,102,.1);
+}
+.inv-total-lbl{font-size:7px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
+.inv-total-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);}
+
+/* Early exit row */
+.early-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 16px;background:rgba(255,71,87,.05);
+  border-top:1px solid rgba(255,71,87,.12);
+}
+.early-lbl{font-size:7px;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;}
+.early-val{font-size:11px;color:var(--red);}
+
+/* Actions */
+.inv-actions{
+  display:flex;gap:0;border-top:1px solid var(--border);
+}
+.inv-act-btn{
+  flex:1;padding:12px 8px;font-family:'IBM Plex Mono',monospace;
+  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;border:none;border-right:1px solid var(--border);
+  background:none;color:var(--w3);transition:all .15s;text-align:center;
+}
+.inv-act-btn:last-child{border-right:none;}
+.inv-act-btn:hover{background:rgba(255,255,255,.03);color:var(--w);}
+.inv-act-btn.redeem{color:var(--g);background:rgba(200,255,0,.04);}
+.inv-act-btn.redeem:hover{background:var(--g2);}
+.inv-act-btn.danger{color:var(--red);background:rgba(255,71,87,.04);}
+.inv-act-btn.danger:hover{background:rgba(255,71,87,.1);}
+.inv-act-col{flex-direction:column;gap:0;}
+.inv-act-col .inv-act-btn{border-right:none;border-bottom:1px solid var(--border);}
+.inv-act-col .inv-act-btn:last-child{border-bottom:none;}
+
+/* ════════════════════════════
+   REQUEST CARDS
+════════════════════════════ */
+.req-card{
+  background:var(--k3);border:1px solid var(--border);
+  padding:16px;margin-bottom:10px;border-radius:var(--r);
+}
+.req-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.req-id{font-size:7px;color:var(--w3);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.req-type-label{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;}
+.req-status{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:7px;letter-spacing:2px;padding:4px 10px;
+  border:1px solid currentColor;text-transform:uppercase;
+}
 .req-status.pending{color:var(--gold);}
 .req-status.approved{color:var(--g);}
 .req-status.rejected{color:var(--red);}
-.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.req-meta{font-size:8px;color:var(--w3);margin-top:4px;letter-spacing:1px;}
 
-/* ── TABLE ── */
-.inv-table{width:100%;border-collapse:collapse;font-size:9px;}
-.inv-table th{padding:10px 8px;text-align:left;background:var(--k4);color:var(--w3);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);}
-.inv-table td{padding:10px 8px;border-bottom:1px solid var(--border);color:var(--w2);}
-.inv-table tr:last-child td{border-bottom:none;}
-.inv-table .green{color:var(--g);}
-.inv-table .gold{color:var(--gold);}
-
-/* ── MODAL ── */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:flex-end;justify-content:center;padding:0;}
-.modal-bg.open{display:flex;}
-.modal-box{background:var(--k2);border-top:2px solid var(--g);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:28px 20px;}
-.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:20px;}
-.modal-close{float:right;background:none;border:none;color:var(--w3);font-size:22px;cursor:pointer;margin-top:-4px;}
-.input-group{margin-bottom:16px;}
-.input-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:8px;display:block;}
-.lf-in{
-  width:100%;background:var(--k4);border:1.5px solid var(--border);color:var(--w);
-  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:12px 14px;outline:none;
-  transition:border-color .2s;
-}
-.lf-in:focus{border-color:var(--g);}
-textarea.lf-in{resize:vertical;min-height:80px;}
-
-/* ── TICKER ── */
-.ticker-wrap{overflow:hidden;background:var(--g);padding:8px 0;margin-bottom:16px;}
-.ticker{display:inline-flex;animation:tick 25s linear infinite;white-space:nowrap;}
-.ticker span{padding:0 32px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--k);font-weight:700;}
-@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-
-/* ── TOAST ── */
-#toast{
-  position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:9998;
-  background:var(--k2);color:var(--w);padding:12px 20px;font-size:10px;letter-spacing:2px;
-  text-transform:uppercase;white-space:nowrap;border-bottom:2px solid var(--g);
-  opacity:0;transition:opacity .3s;pointer-events:none;
-}
-#toast.show{opacity:1;}
-
-/* ── EMPTY ── */
-.empty-state{text-align:center;padding:48px 20px;color:var(--w3);}
-.empty-icon{font-size:40px;margin-bottom:12px;opacity:.4;}
-.empty-text{font-size:10px;letter-spacing:2px;text-transform:uppercase;}
-
-/* ── RATE TABLE ── */
-.rate-highlight{background:var(--g2);border:1px solid var(--border2);padding:16px;margin-bottom:16px;}
-.rate-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px;}
-.rate-cell{background:var(--k4);padding:10px 6px;text-align:center;}
-.rate-cell.header{background:var(--k3);font-size:7px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
-.rate-cell.active-dur{background:var(--g2);border:1px solid var(--g);}
-.rate-cell .big{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g);}
-.rate-cell .small{font-size:7px;color:var(--w3);letter-spacing:1px;margin-top:2px;}
-
-/* ── TABS ── */
+/* ════════════════════════════
+   TABS
+════════════════════════════ */
 .tab-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
 .tab-btn{
-  flex:1;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;
-  color:var(--w3);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;
-  text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:-1px;
+  flex:1;padding:12px 8px;background:none;border:none;
+  border-bottom:2px solid transparent;
+  color:var(--w3);font-family:'IBM Plex Mono',monospace;font-size:8px;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  transition:all .2s;margin-bottom:-1px;
 }
 .tab-btn.on{color:var(--g);border-bottom-color:var(--g);}
 .tabp{display:none;}
 .tabp.on{display:block;}
 
-/* ── MOBILE ONLY ── */
-@media(min-width:769px){
-  body{max-width:480px;margin:0 auto;}
-  #mob-hdr{max-width:480px;left:50%;transform:translateX(-50%);}
-  #bnav{max-width:480px;left:50%;transform:translateX(-50%);}
+/* Portfolio tab buttons (in sec-hdr) */
+.port-tab-btn{
+  padding:7px 14px;background:none;border:1px solid var(--border);
+  color:var(--w3);font-family:'IBM Plex Mono',monospace;
+  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+}
+.port-tab-btn.on{border-color:var(--g);color:var(--g);}
+
+/* ════════════════════════════
+   TICKER
+════════════════════════════ */
+.ticker-wrap{
+  overflow:hidden;background:var(--g);
+  padding:6px 0;margin-bottom:16px;
+}
+.ticker{display:inline-flex;animation:tick 28s linear infinite;white-space:nowrap;}
+.ticker span{
+  padding:0 28px;font-size:9px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--k);font-weight:700;
+}
+
+/* ════════════════════════════
+   MODAL
+════════════════════════════ */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.8);z-index:500;
+  align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(2px);
+}
+.modal-bg.open{display:flex;}
+.modal-box{
+  background:var(--k2);border-top:2px solid var(--g);
+  width:100%;max-width:480px;max-height:90vh;overflow-y:auto;
+  padding:0;
+  animation:fadeup .25s ease;
+  border-radius:var(--r) var(--r) 0 0;
+}
+.modal-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 20px 16px;border-bottom:1px solid var(--border);
+}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;}
+.modal-close{
+  background:var(--k4);border:1px solid var(--border);
+  color:var(--w3);width:32px;height:32px;cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.modal-close:hover{color:var(--w);border-color:var(--w3);}
+.modal-body{padding:20px;}
+
+/* Form inputs (modal) */
+.input-group{margin-bottom:14px;}
+.input-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:7px;display:block;}
+.lf-in{
+  width:100%;background:var(--k4);border:1.5px solid var(--border);color:var(--w);
+  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:12px 14px;outline:none;
+  transition:border-color .2s;border-radius:12px;
+}
+.lf-in:focus{border-color:var(--g);}
+textarea.lf-in{resize:vertical;min-height:80px;}
+
+/* ════════════════════════════
+   TOAST
+════════════════════════════ */
+#toast{
+  position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:9998;
+  background:var(--k2);color:var(--w);padding:11px 20px;
+  font-size:8px;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;
+  border-bottom:2px solid var(--g);
+  box-shadow:0 4px 24px rgba(0,0,0,.5);
+  opacity:0;transition:opacity .3s;pointer-events:none;
+}
+#toast.show{opacity:1;}
+
+/* ════════════════════════════
+   EMPTY STATES
+════════════════════════════ */
+.empty-state{text-align:center;padding:52px 20px;color:var(--w3);}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.25;}
+.empty-text{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);}
+
+/* ════════════════════════════
+   WHATSAPP LINK
+════════════════════════════ */
+.wa-link{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:10px;padding:13px;
+  border:1px solid rgba(200,255,0,.2);color:var(--g);
+  font-family:'IBM Plex Mono',monospace;font-size:9px;
+  letter-spacing:2px;text-transform:uppercase;text-decoration:none;
+  background:rgba(200,255,0,.03);transition:background .2s;
+}
+.wa-link:hover{background:rgba(200,255,0,.07);}
+
+/* ════════════════════════════
+   SPINNER
+════════════════════════════ */
+.spinner{
+  width:28px;height:28px;border:2px solid #1a1a1a;
+  border-top-color:var(--g);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+
+/* ════════════════════════════
+   GREETING SECTION
+════════════════════════════ */
+.greeting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;
+}
+.greeting-avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:var(--g2);border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g);
+  flex-shrink:0;
+}
+.greeting-text{flex:1;padding:0 12px;}
+.greeting-hello{
+  font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:3px;
+}
+.greeting-name{
+  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--w);
+}
+.greeting-notif{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--k3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;
+}
+
+/* ════════════════════════════
+   BALANCE HERO CARD
+════════════════════════════ */
+.balance-hero{
+  background:var(--k3);border:1px solid var(--border);
+  border-radius:var(--r);padding:24px 20px;margin-bottom:16px;
+  position:relative;overflow:hidden;
+}
+.balance-hero::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,255,0,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.balance-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:8px;}
+.balance-value{
+  font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:2px;
+  color:var(--g);text-shadow:0 0 40px rgba(200,255,0,.2);line-height:1;margin-bottom:4px;
+}
+.balance-change{font-size:11px;color:var(--g);letter-spacing:1px;}
+
+/* ════════════════════════════
+   QUICK ACTIONS
+════════════════════════════ */
+.quick-actions{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:10px;margin-bottom:20px;
+}
+.qa-btn{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  background:none;border:none;cursor:pointer;padding:0;
+}
+.qa-icon{
+  width:52px;height:52px;border-radius:16px;
+  background:var(--k3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;transition:all .2s;
+}
+.qa-btn:hover .qa-icon{border-color:rgba(200,255,0,.3);background:var(--g2);}
+.qa-label{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--w3);}
+
+/* ════════════════════════════
+   NUMERIC KEYPAD
+════════════════════════════ */
+.keypad-display{
+  font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:2px;color:var(--g);
+  text-shadow:0 0 40px rgba(200,255,0,.25);text-align:center;
+  padding:8px 0 4px;line-height:1;min-height:72px;
+}
+.keypad-display .kd-hint{font-size:10px;letter-spacing:2px;color:var(--w3);display:block;margin-top:4px;}
+.keypad-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;margin-top:16px;
+}
+.kp-btn{
+  background:var(--k4);border:1px solid var(--border);
+  padding:16px 8px;font-family:'Bebas Neue',sans-serif;font-size:24px;
+  color:var(--w);cursor:pointer;text-align:center;
+  border-radius:12px;transition:all .15s;
+}
+.kp-btn:hover{background:var(--g2);border-color:rgba(200,255,0,.3);color:var(--g);}
+.kp-btn:active{transform:scale(.95);}
+.kp-btn.kp-del{font-size:18px;color:var(--w3);}
+.kp-btn.kp-zero{grid-column:span 1;}
+
+/* ════════════════════════════
+   SIDEBAR BRAND (hidden mobile)
+════════════════════════════ */
+.sidebar-brand{display:none;}
+
+/* ════════════════════════════
+   INVEST LAYOUT WRAPPER
+════════════════════════════ */
+.invest-cols{display:contents;}
+
+/* ════════════════════════════
+   PORT GRID (mobile: single col)
+════════════════════════════ */
+.port-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+
+/* ════════════════════════════
+   DESKTOP — ≥ 900px
+════════════════════════════ */
+@media(min-width:900px){
+  /* ── Layout shell ── */
+  body{padding-bottom:0;padding-left:220px;}
+
+  /* ── Sidebar nav ── */
+  #bnav{
+    width:220px;height:100vh;
+    top:0;bottom:auto;left:0;
+    flex-direction:column;
+    padding:0;
+    border-top:none;
+    border-right:1px solid var(--border);
+    justify-content:flex-start;
+    align-items:stretch;
+    gap:0;
+    overflow:hidden;
+  }
+  .sidebar-brand{
+    display:flex;align-items:center;gap:10px;
+    padding:22px 22px 18px;
+    font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--g);
+    border-bottom:1px solid var(--border);margin-bottom:12px;
+    text-shadow:0 0 16px rgba(200,255,0,.35);
+  }
+  .bn{
+    flex:none;flex-direction:row;
+    gap:12px;padding:13px 22px;
+    justify-content:flex-start;
+    font-size:9px;letter-spacing:1.5px;
+    min-height:auto;border-top:none !important;
+    border-left:2px solid transparent;
+    transition:all .15s;
+  }
+  .bn.active{
+    color:var(--g);border-left-color:var(--g);
+    background:rgba(200,255,0,.05);
+  }
+  .bn-icon{font-size:16px;}
+
+  /* ── Top header ── */
+  #mob-hdr{
+    left:220px;width:calc(100% - 220px);
+    max-width:none;transform:none;
+  }
+
+  /* ── Pages ── */
+  .pg{max-width:1160px;padding:36px 44px;}
+
+  /* ── Stats: 4 col ── */
+  .stats-grid{grid-template-columns:repeat(4,1fr);gap:14px;}
+
+  /* ── Charts ── */
+  .chart-wrap{height:260px;}
+  .chart-wrap.sm{height:170px;}
+
+  /* ── Dashboard: charts side-by-side ── */
+  .dash-charts-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;
+  }
+
+  /* ── Invest 2-col ── */
+  .invest-cols{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    align-items:start;
+  }
+  .invest-right{position:sticky;top:80px;}
+
+  /* ── Portfolio 2-col cards ── */
+  .port-grid{grid-template-columns:1fr 1fr;gap:16px;}
+
+  /* ── Modals ── */
   .modal-bg{align-items:center;}
-  .modal-box{border-radius:0;border:1px solid var(--border);border-top:2px solid var(--g);}
+  .modal-box{
+    max-width:500px;
+    border:1px solid var(--border);
+    border-top:2px solid var(--g);
+  }
 }
 </style>
 </head>
@@ -319,19 +815,25 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 <div id="login-screen">
   <div class="login-logo">VAULT</div>
   <div class="login-sub">LF Capital Management</div>
-  <!-- Stato: spinner -->
-  <div id="vault-spinner" class="login-box" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-    <div style="width:32px;height:32px;border:3px solid #222;border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite;"></div>
+
+  <!-- Spinner state -->
+  <div id="vault-spinner" class="login-box" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+    <div class="spinner"></div>
     <div class="login-label">Verifica autorizzazione...</div>
   </div>
-  <!-- Stato: form login -->
-  <div id="vault-login-form" class="login-box" style="display:none;flex-direction:column;gap:12px;">
+
+  <!-- Login form state -->
+  <div id="vault-login-form" class="login-box" style="display:none;flex-direction:column;">
     <div class="login-label">Accesso riservato</div>
-    <input type="email" class="login-input" id="vault-email" placeholder="Email" autocomplete="email" style="font-size:14px;text-align:left;padding:0 14px;letter-spacing:.5px;"/>
-    <input type="password" class="login-input" id="vault-pass" placeholder="Password" autocomplete="current-password" style="font-size:14px;text-align:left;padding:0 14px;letter-spacing:.5px;" onkeydown="if(event.key==='Enter')vaultLogin()"/>
+    <input type="email" class="login-input" id="vault-email"
+      placeholder="Email" autocomplete="email"/>
+    <input type="password" class="login-input" id="vault-pass"
+      placeholder="Password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')vaultLogin()"/>
     <button class="login-btn" onclick="vaultLogin()">ACCEDI →</button>
     <div class="login-err" id="login-err"></div>
   </div>
+
   <div class="login-back">← <a onclick="window.location.href='index.html'">Torna a LILLOFIND</a></div>
 </div>
 
@@ -343,7 +845,7 @@ textarea.lf-in{resize:vertical;min-height:80px;}
   <!-- HEADER -->
   <header id="mob-hdr">
     <div class="hdr-logo">⬡ VAULT</div>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div class="hdr-right">
       <div class="hdr-badge" id="hdr-total">€ 0.00</div>
       <button class="hdr-logout" onclick="doLogout()" title="Esci">⏏</button>
     </div>
@@ -357,16 +859,56 @@ textarea.lf-in{resize:vertical;min-height:80px;}
     </div>
   </div>
 
-  <!-- ─── DASHBOARD ─── -->
+  <!-- ════ DASHBOARD ════ -->
   <div id="pg-dash" class="pg on fadein">
+
     <div class="sec-hdr">
       <div>
-        <div class="sec-label">Panoramica</div>
+        <div class="sec-eyebrow">Panoramica</div>
         <div class="sec-title">Dashboard</div>
       </div>
-      <div style="font-size:9px;color:var(--w3);" id="dash-date"></div>
+      <div class="sec-date" id="dash-date"></div>
+    </div>
+    <div class="sec-divider"></div>
+
+    <!-- Greeting -->
+    <div class="greeting-row">
+      <div class="greeting-avatar" id="greeting-avatar">V</div>
+      <div class="greeting-text">
+        <div class="greeting-hello">Benvenuto</div>
+        <div class="greeting-name" id="greeting-name">Investor</div>
+      </div>
+      <div class="greeting-notif">🔔</div>
     </div>
 
+    <!-- Balance hero -->
+    <div class="balance-hero">
+      <div class="balance-label">Portafoglio Totale</div>
+      <div class="balance-value" id="balance-hero-val">€ 0,00</div>
+      <div class="balance-change" id="balance-hero-change">+0,0%</div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions">
+      <button class="qa-btn" onclick="showPg('invest')">
+        <div class="qa-icon">📈</div>
+        <span class="qa-label">Investi</span>
+      </button>
+      <button class="qa-btn" onclick="showPg('portfolio')">
+        <div class="qa-icon">💼</div>
+        <span class="qa-label">Portfolio</span>
+      </button>
+      <button class="qa-btn" onclick="showPg('requests')">
+        <div class="qa-icon">📋</div>
+        <span class="qa-label">Richieste</span>
+      </button>
+      <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="qa-btn">
+        <div class="qa-icon">💬</div>
+        <span class="qa-label">WhatsApp</span>
+      </a>
+    </div>
+
+    <!-- Stat cards -->
     <div class="stats-grid">
       <div class="stat-card green">
         <div class="sc-label">Portafoglio</div>
@@ -385,84 +927,123 @@ textarea.lf-in{resize:vertical;min-height:80px;}
       </div>
       <div class="stat-card red">
         <div class="sc-label">Maturati</div>
-        <div class="sc-val" style="color:var(--g);" id="ds-mature">€ 0</div>
+        <div class="sc-val green" id="ds-mature">€ 0</div>
         <div class="sc-sub" id="ds-mature-n">da riscattare</div>
       </div>
     </div>
 
-    <!-- Portfolio Growth Chart -->
+    <!-- Growth chart -->
     <div class="chart-card">
-      <div class="chart-title">Andamento Portafoglio</div>
+      <div class="chart-head">
+        <div class="chart-title">Andamento Portafoglio</div>
+        <div class="chart-badge" id="hdr-total-badge">—</div>
+      </div>
       <div class="chart-wrap"><canvas id="chartGrowth"></canvas></div>
     </div>
 
-    <!-- Allocation Chart -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+    <!-- Allocation charts -->
+    <div class="dash-charts-row" style="gap:10px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;">
       <div class="chart-card" style="margin-bottom:0;">
-        <div class="chart-title">Tipologia</div>
-        <div class="chart-wrap" style="height:130px;"><canvas id="chartType"></canvas></div>
+        <div class="chart-head">
+          <div class="chart-title">Tipologia</div>
+        </div>
+        <div class="chart-wrap sm"><canvas id="chartType"></canvas></div>
       </div>
       <div class="chart-card" style="margin-bottom:0;">
-        <div class="chart-title">Durata</div>
-        <div class="chart-wrap" style="height:130px;"><canvas id="chartDuration"></canvas></div>
+        <div class="chart-head">
+          <div class="chart-title">Durata</div>
+        </div>
+        <div class="chart-wrap sm"><canvas id="chartDuration"></canvas></div>
       </div>
     </div>
 
-    <!-- Rate Table -->
-    <div class="rate-highlight">
-      <div style="font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w3);margin-bottom:6px;">Tassi di Rendimento</div>
-      <div class="rate-grid">
-        <div class="rate-cell header">Durata</div>
-        <div class="rate-cell header">Standard</div>
-        <div class="rate-cell header">Bloccato</div>
-        <div class="rate-cell header">Annuo</div>
-        <div class="rate-cell"><div class="big">3M</div></div>
-        <div class="rate-cell"><div class="big">3%</div><div class="small">flessibile</div></div>
-        <div class="rate-cell"><div class="big">4%</div><div class="small">bloccato</div></div>
-        <div class="rate-cell"><div class="big">16%</div><div class="small">ann.</div></div>
-        <div class="rate-cell"><div class="big">6M</div></div>
-        <div class="rate-cell"><div class="big">7%</div><div class="small">flessibile</div></div>
-        <div class="rate-cell"><div class="big">9%</div><div class="small">bloccato</div></div>
-        <div class="rate-cell"><div class="big">18%</div><div class="small">ann.</div></div>
-        <div class="rate-cell"><div class="big">9M</div></div>
-        <div class="rate-cell"><div class="big">12%</div><div class="small">flessibile</div></div>
-        <div class="rate-cell"><div class="big">14%</div><div class="small">bloccato</div></div>
-        <div class="rate-cell"><div class="big">18.7%</div><div class="small">ann.</div></div>
-        <div class="rate-cell"><div class="big">12M</div></div>
-        <div class="rate-cell"><div class="big">18%</div><div class="small">flessibile</div></div>
-        <div class="rate-cell"><div class="big">20%</div><div class="small">bloccato</div></div>
-        <div class="rate-cell"><div class="big">20%</div><div class="small">ann.</div></div>
-      </div>
+    <!-- Rate table -->
+    <div class="chart-card rate-section">
+      <div class="rate-section-label">Tassi di Rendimento</div>
+      <table class="rate-table">
+        <thead>
+          <tr>
+            <th>Durata</th>
+            <th>Standard</th>
+            <th>Bloccato</th>
+            <th>Ann.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>3 mesi</td>
+            <td><span class="lime">3%</span></td>
+            <td><span class="lime">4%</span></td>
+            <td class="ann">16%</td>
+          </tr>
+          <tr>
+            <td>6 mesi</td>
+            <td><span class="lime">7%</span></td>
+            <td><span class="lime">9%</span></td>
+            <td class="ann">18%</td>
+          </tr>
+          <tr>
+            <td>9 mesi</td>
+            <td><span class="lime">12%</span></td>
+            <td><span class="lime">14%</span></td>
+            <td class="ann">18.7%</td>
+          </tr>
+          <tr>
+            <td>12 mesi</td>
+            <td><span class="lime">18%</span></td>
+            <td><span class="lime">20%</span></td>
+            <td class="ann">20%</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <button class="btn-primary" onclick="showPg('invest')">+ NUOVO INVESTIMENTO</button>
   </div>
 
-  <!-- ─── INVEST ─── -->
+  <!-- ════ INVEST ════ -->
   <div id="pg-invest" class="pg">
     <div class="sec-hdr">
       <div>
-        <div class="sec-label">Crea Piano</div>
+        <div class="sec-eyebrow">Crea Piano</div>
         <div class="sec-title">Investi</div>
       </div>
     </div>
+    <div class="sec-divider"></div>
 
+    <div class="invest-cols">
+    <div class="invest-left">
     <!-- Amount -->
     <div class="form-card">
       <div class="form-label">Importo da Investire</div>
-      <div class="amount-display" id="inv-amount-disp">€ 1.000</div>
+      <div class="keypad-display" id="inv-amount-disp">€ 1.000</div>
       <div class="range-wrap">
-        <input type="range" id="inv-range" min="100" max="15000" step="100" value="1000" oninput="onRange(this.value)"/>
+        <input type="range" id="inv-range" min="100" max="15000" step="100" value="1000"
+          oninput="onRange(this.value)"/>
       </div>
       <div class="range-labels">
         <span>€ 100</span><span>€ 15.000</span>
       </div>
-      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(500)">€500</button>
-        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(1000)">€1K</button>
-        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(2500)">€2.5K</button>
-        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(5000)">€5K</button>
-        <button class="btn-secondary" style="flex:1;margin-top:0;padding:10px;font-size:8px;" onclick="setAmount(10000)">€10K</button>
+      <div class="keypad-grid">
+        <button class="kp-btn" onclick="kpPress('1')">1</button>
+        <button class="kp-btn" onclick="kpPress('2')">2</button>
+        <button class="kp-btn" onclick="kpPress('3')">3</button>
+        <button class="kp-btn" onclick="kpPress('4')">4</button>
+        <button class="kp-btn" onclick="kpPress('5')">5</button>
+        <button class="kp-btn" onclick="kpPress('6')">6</button>
+        <button class="kp-btn" onclick="kpPress('7')">7</button>
+        <button class="kp-btn" onclick="kpPress('8')">8</button>
+        <button class="kp-btn" onclick="kpPress('9')">9</button>
+        <button class="kp-btn" onclick="kpPress('00')">00</button>
+        <button class="kp-btn" onclick="kpPress('0')">0</button>
+        <button class="kp-btn kp-del" onclick="kpPress('del')">⌫</button>
+      </div>
+      <div class="quick-amounts">
+        <button class="quick-btn" onclick="setAmount(500)">€ 500</button>
+        <button class="quick-btn" onclick="setAmount(1000)">€ 1K</button>
+        <button class="quick-btn" onclick="setAmount(2500)">€ 2.5K</button>
+        <button class="quick-btn" onclick="setAmount(5000)">€ 5K</button>
+        <button class="quick-btn" onclick="setAmount(10000)">€ 10K</button>
       </div>
     </div>
 
@@ -472,22 +1053,22 @@ textarea.lf-in{resize:vertical;min-height:80px;}
       <div class="duration-grid">
         <div class="dur-btn on" onclick="selDur(3,this)">
           <span class="dur-month">3</span>
-          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <span class="dur-sublabel">mesi</span>
           <div class="dur-return" id="dr-3">+3%</div>
         </div>
         <div class="dur-btn" onclick="selDur(6,this)">
           <span class="dur-month">6</span>
-          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <span class="dur-sublabel">mesi</span>
           <div class="dur-return" id="dr-6">+7%</div>
         </div>
         <div class="dur-btn" onclick="selDur(9,this)">
           <span class="dur-month">9</span>
-          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <span class="dur-sublabel">mesi</span>
           <div class="dur-return" id="dr-9">+12%</div>
         </div>
         <div class="dur-btn" onclick="selDur(12,this)">
           <span class="dur-month">12</span>
-          <span style="font-size:7px;color:var(--w3);">mesi</span>
+          <span class="dur-sublabel">mesi</span>
           <div class="dur-return" id="dr-12">+18%</div>
         </div>
       </div>
@@ -510,6 +1091,8 @@ textarea.lf-in{resize:vertical;min-height:80px;}
       </div>
     </div>
 
+    </div><!-- .invest-left -->
+    <div class="invest-right">
     <!-- Preview -->
     <div class="preview" id="inv-preview">
       <div class="prev-row">
@@ -532,7 +1115,7 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <span class="prev-key">Profitto Netto</span>
         <span class="prev-val green" id="pv-profit">+€ 40</span>
       </div>
-      <div class="prev-row" style="border-bottom:none;padding-top:12px;">
+      <div class="prev-row">
         <span class="prev-key">Totale a Scadenza</span>
         <span class="prev-val gold" id="pv-total">€ 1.040</span>
       </div>
@@ -540,41 +1123,46 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
     <button class="btn-primary" id="inv-btn" onclick="confirmInvest()">CONFERMA INVESTIMENTO →</button>
     <button class="btn-secondary" onclick="showPg('dash')">Annulla</button>
+    </div><!-- .invest-right -->
+    </div><!-- .invest-cols -->
   </div>
 
-  <!-- ─── PORTFOLIO ─── -->
+  <!-- ════ PORTFOLIO ════ -->
   <div id="pg-portfolio" class="pg">
     <div class="sec-hdr">
       <div>
-        <div class="sec-label">I tuoi piani</div>
+        <div class="sec-eyebrow">I tuoi piani</div>
         <div class="sec-title">Portfolio</div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="tab-btn on" id="pt-active" onclick="switchPortTab('active')" style="flex:none;padding:8px 12px;border:1px solid var(--border);font-size:8px;border-bottom:none;">Attivi</button>
-        <button class="tab-btn" id="pt-history" onclick="switchPortTab('history')" style="flex:none;padding:8px 12px;border:1px solid var(--border);font-size:8px;border-bottom:none;">Storico</button>
+      <div style="display:flex;gap:6px;">
+        <button class="port-tab-btn tab-btn on" id="pt-active" onclick="switchPortTab('active')">Attivi</button>
+        <button class="port-tab-btn tab-btn" id="pt-history" onclick="switchPortTab('history')">Storico</button>
       </div>
     </div>
-    <div id="port-active"></div>
-    <div id="port-history" style="display:none;"></div>
+    <div class="sec-divider"></div>
+    <div class="port-grid" id="port-active"></div>
+    <div class="port-grid" id="port-history" style="display:none;"></div>
   </div>
 
-  <!-- ─── RICHIESTE ─── -->
+  <!-- ════ RICHIESTE ════ -->
   <div id="pg-requests" class="pg">
     <div class="sec-hdr">
       <div>
-        <div class="sec-label">Gestione</div>
+        <div class="sec-eyebrow">Gestione</div>
         <div class="sec-title">Richieste</div>
       </div>
     </div>
+    <div class="sec-divider"></div>
 
     <div class="tab-row">
       <button class="tab-btn on" onclick="switchReqTab('new',this)">Nuova</button>
       <button class="tab-btn" onclick="switchReqTab('history',this)">Storico</button>
     </div>
+
     <div class="tabp on" id="req-new">
       <div class="form-card">
         <div class="form-label">Tipo Richiesta</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div class="type-grid" style="margin-bottom:18px;">
           <div class="type-btn standard on" id="rq-withdraw-btn" onclick="selReqType('withdraw',this)">
             <div class="type-icon">💸</div>
             <div class="type-name">Prelievo</div>
@@ -599,6 +1187,7 @@ textarea.lf-in{resize:vertical;min-height:80px;}
             <input class="lf-in" type="text" id="rq-iban" placeholder="IT00 X000 0000 0000 0000 0000 000"/>
           </div>
         </div>
+
         <div id="rq-info-form" style="display:none;">
           <div class="input-group">
             <label class="input-label">Oggetto</label>
@@ -609,9 +1198,11 @@ textarea.lf-in{resize:vertical;min-height:80px;}
             <textarea class="lf-in" id="rq-msg" placeholder="Descrivi la tua richiesta..."></textarea>
           </div>
         </div>
+
         <button class="btn-primary" onclick="submitRequest()">INVIA RICHIESTA →</button>
       </div>
     </div>
+
     <div class="tabp" id="req-history">
       <div id="req-list"></div>
     </div>
@@ -621,42 +1212,55 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
 <!-- ═══ MODAL: Early Exit ═══ -->
 <div class="modal-bg" id="modal-early">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('modal-early')">✕</button>
-    <div class="modal-title" style="color:#FF4757;">⚠️ Disdici Investimento</div>
-    <div id="modal-early-body"></div>
-    <button class="btn-primary" style="background:#FF4757;box-shadow:none;" onclick="doEarlyExit()">CONFERMA DISDETTA E RITIRA →</button>
-    <button class="btn-secondary" onclick="closeModal('modal-early')">Annulla — Mantieni Investimento</button>
-    <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding:14px;border:1.5px solid rgba(200,255,0,.25);color:var(--g);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;background:rgba(200,255,0,.04);">
-      💬 Parla con l'Assistenza WhatsApp
-    </a>
+  <div class="modal-box" style="border-top-color:var(--red);">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--red);">⚠️ Disdici Investimento</div>
+      <button class="modal-close" onclick="closeModal('modal-early')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-early-body"></div>
+      <button class="btn-primary" style="background:var(--red);box-shadow:none;" onclick="doEarlyExit()">CONFERMA DISDETTA E RITIRA →</button>
+      <button class="btn-secondary" onclick="closeModal('modal-early')">Annulla — Mantieni Investimento</button>
+      <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="wa-link" style="margin-top:10px;">
+        💬 Parla con l'Assistenza WhatsApp
+      </a>
+    </div>
   </div>
 </div>
 
 <!-- ═══ MODAL: Confirm Invest ═══ -->
 <div class="modal-bg" id="modal-confirm">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('modal-confirm')">✕</button>
-    <div class="modal-title">Conferma Piano</div>
-    <div id="modal-confirm-body"></div>
-    <button class="btn-primary" id="modal-confirm-btn" onclick="doInvest()">AVVIA INVESTIMENTO ⬡</button>
-    <button class="btn-secondary" onclick="closeModal('modal-confirm')">Annulla</button>
+    <div class="modal-header">
+      <div class="modal-title">Conferma Piano</div>
+      <button class="modal-close" onclick="closeModal('modal-confirm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-confirm-body"></div>
+      <button class="btn-primary" id="modal-confirm-btn" onclick="doInvest()">AVVIA INVESTIMENTO ⬡</button>
+      <button class="btn-secondary" onclick="closeModal('modal-confirm')">Annulla</button>
+    </div>
   </div>
 </div>
 
 <!-- ═══ MODAL: Redeem ═══ -->
 <div class="modal-bg" id="modal-redeem">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('modal-redeem')">✕</button>
-    <div class="modal-title">Riscatta Investimento</div>
-    <div id="modal-redeem-body"></div>
-    <button class="btn-primary" onclick="doRedeem()">RISCATTA FONDI →</button>
-    <button class="btn-secondary" onclick="closeModal('modal-redeem')">Chiudi</button>
+    <div class="modal-header">
+      <div class="modal-title">Riscatta Investimento</div>
+      <button class="modal-close" onclick="closeModal('modal-redeem')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-redeem-body"></div>
+      <button class="btn-primary" onclick="doRedeem()">RISCATTA FONDI →</button>
+      <button class="btn-secondary" onclick="closeModal('modal-redeem')">Chiudi</button>
+    </div>
   </div>
 </div>
 
 <!-- ═══ BOTTOM NAV ═══ -->
 <nav id="bnav">
+  <div class="sidebar-brand">⬡ VAULT</div>
   <button class="bn active" id="bn-dash" onclick="showPg('dash')">
     <span class="bn-icon">⬡</span><span>Home</span>
   </button>
@@ -766,6 +1370,14 @@ function initApp() {
   renderRequests();
   updateRangeStyle(document.getElementById('inv-range'));
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+  waitFB(()=>{
+    const user = window.__fb.auth.currentUser;
+    if(user){
+      const name = user.displayName || user.email.split('@')[0];
+      setEl('greeting-name', name);
+      setEl('greeting-avatar', name.charAt(0).toUpperCase());
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════
@@ -791,6 +1403,7 @@ function showPg(id) {
 // ══════════════════════════════════════════════════
 function onRange(val) {
   invAmount = parseInt(val);
+  _kpStr = String(invAmount);
   document.getElementById('inv-amount-disp').textContent = '€ '+fmtNum(invAmount);
   updateRangeStyle(document.getElementById('inv-range'));
   updatePreview();
@@ -801,6 +1414,7 @@ function updateRangeStyle(el) {
 }
 function setAmount(v) {
   invAmount = v;
+  _kpStr = String(v);
   document.getElementById('inv-range').value = v;
   document.getElementById('inv-amount-disp').textContent = '€ '+fmtNum(v);
   updateRangeStyle(document.getElementById('inv-range'));
@@ -934,6 +1548,9 @@ function renderDash() {
   setEl('ds-mature','€ '+fmtNum(matureVal));
   setEl('ds-mature-n',matured.length+' da riscattare');
   setEl('hdr-total','€ '+fmtNum(totalCapital));
+  setEl('balance-hero-val','€ '+fmtNum(totalCapital+totalProfit));
+  setEl('balance-hero-change','+'+pct.toFixed(1)+'%');
+  setEl('hdr-total-badge','€ '+fmtNum(totalCapital+totalProfit));
 
   drawGrowthChart(invs);
   drawTypeChart(active);
@@ -1082,32 +1699,45 @@ function renderInvList(containerId, invs, isHistory=false) {
         <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;">💬 Assistenza</a>
       </div>`
     : !isRedeemed && !isMatured && inv.type==='standard' ? `
-      <div class="inv-actions" style="flex-direction:column;gap:8px;">
-        <button class="inv-act-btn" style="width:100%;background:rgba(255,71,87,.08);border-color:rgba(255,71,87,.35);color:#FF4757;" onclick="openEarlyExit('${inv.id}')">⚠️ Disdici e Ritira Maturato</button>
-        <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;color:var(--g);border-color:rgba(200,255,0,.25);background:rgba(200,255,0,.04);">💬 Contatta Assistenza WhatsApp</a>
+      <div class="inv-actions" style="flex-direction:column;gap:0;">
+        <button class="inv-act-btn danger" style="width:100%;" onclick="openEarlyExit('${inv.id}')">⚠️ Disdici e Ritira Maturato</button>
+        <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;color:var(--g);border-top:1px solid var(--border);">💬 Contatta Assistenza WhatsApp</a>
       </div>`
     : !isRedeemed && !isMatured && inv.type==='locked' ? `
       <div class="inv-actions">
         <button class="inv-act-btn" onclick="openRedeem('${inv.id}',true)">ℹ️ Dettagli</button>
-        <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;color:var(--g);border-color:rgba(200,255,0,.25);">💬 Assistenza</a>
+        <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="inv-act-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;color:var(--g);">💬 Assistenza</a>
       </div>` : '';
 
     return `<div class="inv-card ${typeBadge}">
-      <div class="inv-head">
-        <div>
-          <div class="inv-amount">€ ${fmtNum(inv.capital)}</div>
-          <div style="font-size:9px;color:var(--w3);margin-top:2px;">${inv.id}</div>
+      <div class="inv-card-inner">
+        <div class="inv-head">
+          <div>
+            <div class="inv-amount">€ ${fmtNum(inv.capital)}</div>
+            <div class="inv-id">${inv.id}</div>
+          </div>
+          <div class="inv-type-badge ${typeBadge}">${typeLbl}</div>
         </div>
-        <div class="inv-type-badge ${typeBadge}">${typeLbl}</div>
+        <div class="inv-rows">
+          <div class="inv-row"><span class="inv-lbl">Rendimento</span><span class="inv-val green">+${inv.rate}% (+€${fmtNum(inv.profit)})</span></div>
+          <div class="inv-row"><span class="inv-lbl">Durata</span><span class="inv-val">${inv.months} mesi</span></div>
+          <div class="inv-row"><span class="inv-lbl">Inizio</span><span class="inv-val">${new Date(inv.startDate).toLocaleDateString('it-IT')}</span></div>
+          <div class="inv-row"><span class="inv-lbl">Scadenza</span><span class="inv-val">${new Date(inv.endDate).toLocaleDateString('it-IT')}</span></div>
+        </div>
+        ${!isRedeemed?`<div class="prog-section">
+          <div class="prog-label-row">
+            <span class="prog-lbl">${isMatured?'✅ Maturato':'Progresso'}</span>
+            <span class="prog-pct">${pct.toFixed(0)}%</span>
+          </div>
+          <div class="prog-bg"><div class="prog-fill ${inv.type==='locked'?'gold':''}" style="width:${pct.toFixed(1)}%;"></div></div>
+          ${!isMatured?`<div class="days-chip">⏱ ${daysLeft} giorni rimanenti</div>`:''}
+        </div>`:'<div style="height:8px;"></div>'}
       </div>
-      <div class="inv-row"><span class="inv-lbl">Rendimento</span><span class="inv-val green">+${inv.rate}% (+€${fmtNum(inv.profit)})</span></div>
-      <div class="inv-row"><span class="inv-lbl">Durata</span><span class="inv-val">${inv.months} mesi</span></div>
-      <div class="inv-row"><span class="inv-lbl">Inizio</span><span class="inv-val">${new Date(inv.startDate).toLocaleDateString('it-IT')}</span></div>
-      <div class="inv-row"><span class="inv-lbl">Scadenza</span><span class="inv-val">${new Date(inv.endDate).toLocaleDateString('it-IT')}</span></div>
-      ${!isRedeemed?`<div class="prog-bg"><div class="prog-fill ${inv.type}" style="width:${pct.toFixed(1)}%;${inv.type==='locked'?'background:var(--gold);box-shadow:0 0 6px rgba(255,209,102,.4);':''}"></div></div>
-      <div class="inv-row" style="margin-bottom:0;"><span class="inv-lbl">${isMatured?'✅ Maturato':'Progresso'}</span><span class="inv-val">${pct.toFixed(0)}%${!isMatured?' — '+daysLeft+'gg':''}</span></div>`:'<div style="height:4px;"></div>'}
-      <div class="inv-row"><span class="inv-lbl">Totale a Scadenza</span><span class="inv-val" style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:18px;">€ ${fmtNum(inv.capital+inv.profit)}</span></div>
-      ${!isRedeemed && !isMatured && inv.type==='standard' ? `<div class="inv-row" style="margin-bottom:0;background:rgba(255,71,87,.05);padding:8px 0;border-top:1px solid rgba(255,71,87,.15);margin-top:4px;"><span class="inv-lbl" style="color:#FF4757;">Maturato ora (uscita anticipata)</span><span class="inv-val" style="color:#FF4757;">€ ${fmtNum(earlyTotal)}</span></div>` : ''}
+      <div class="inv-total-row">
+        <span class="inv-total-lbl">Totale a Scadenza</span>
+        <span class="inv-total-val">€ ${fmtNum(inv.capital+inv.profit)}</span>
+      </div>
+      ${!isRedeemed && !isMatured && inv.type==='standard' ? `<div class="early-row"><span class="early-lbl">Maturato ora</span><span class="early-val">€ ${fmtNum(earlyTotal)}</span></div>` : ''}
       ${actions}
     </div>`;
   }).join('');
@@ -1282,6 +1912,24 @@ function submitRequest() {
   renderDash();
   renderRequests();
   switchReqTab('history');
+}
+
+// ══════════════════════════════════════════════════
+// KEYPAD
+// ══════════════════════════════════════════════════
+let _kpStr = '1000';
+function kpPress(key) {
+  if(key === 'del') {
+    _kpStr = _kpStr.slice(0, -1) || '0';
+  } else if(key === '00') {
+    if(_kpStr === '0') return;
+    _kpStr = (_kpStr + '00').replace(/^0+/, '') || '0';
+  } else {
+    _kpStr = (_kpStr === '0' ? key : _kpStr + key).replace(/^0+/, '') || '0';
+  }
+  let val = parseInt(_kpStr) || 0;
+  if(val > 15000){ val = 15000; _kpStr = '15000'; }
+  setAmount(val);
 }
 
 // ══════════════════════════════════════════════════
