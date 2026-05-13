@@ -587,6 +587,7 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
 
     // Estrai cover URL per album ID — 4 strategie in cascata
     const albumCovers = {};
+    const albumPrices = {}; // albumId → { value, currency }
 
     // Helper: normalizza URL
     const norm = u => (!u ? null : u.startsWith('//') ? 'https:' + u : u);
@@ -605,6 +606,12 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
         const co = obj.cover ?? obj.covers?.[0] ?? obj.coverImage ?? obj.thumbnail ?? obj.thumb ?? obj.image ?? obj.img;
         const cu = typeof co === 'string' ? co : (co?.url ?? co?.imageUrl ?? co?.src ?? co?.path ?? null);
         if (cu) { const u = norm(cu); if (u && isImg(u)) albumCovers[id] = u; }
+        // Estrai prezzo se presente nel JSON
+        const rawPrice = obj.price ?? obj.priceYuan ?? obj.sellingPrice ?? obj.salePrice ?? obj.originalPrice ?? null;
+        const priceNum = typeof rawPrice === 'number' ? rawPrice : (typeof rawPrice === 'string' ? parseFloat(rawPrice) : null);
+        if (priceNum && priceNum > 0 && priceNum < 50000 && !albumPrices[id]) {
+          albumPrices[id] = { value: priceNum, currency: 'CNY' };
+        }
       }
       Object.values(obj).forEach(v => { if (v && typeof v === 'object') crawlJson(v, depth + 1); });
     }
@@ -753,6 +760,30 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
       tail:  html.slice(-400).replace(/\s+/g, ' '),
     };
 
+    // ── Estrazione prezzi CNY dalla pagina categoria (listing album) ──
+    // Formato Yupoo: "¥128 / NO.2002964-302BN" vicino a href="/albums/ID"
+    if (!Object.keys(albumPrices).length) {
+      // forward: album link → poi prezzo
+      const fwdRe = /\/albums\/(\w+)[^<]{0,400}?[¥￥￥]\s*(\d{1,5})/g;
+      let fwd;
+      while ((fwd = fwdRe.exec(html)) !== null) {
+        if (!albumPrices[fwd[1]]) albumPrices[fwd[1]] = { value: parseInt(fwd[2], 10), currency: 'CNY' };
+      }
+      // reverse: prezzo → poi album link (entro 400 char)
+      const revRe = /[¥￥￥]\s*(\d{1,5})[^<]{0,400}?\/albums\/(\w+)/g;
+      let rev;
+      while ((rev = revRe.exec(html)) !== null) {
+        if (!albumPrices[rev[2]]) albumPrices[rev[2]] = { value: parseInt(rev[1], 10), currency: 'CNY' };
+      }
+      // plain text stripped version
+      const stripped = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      const stripRe = /\/albums\/(\w+)[^¥￥￥]{0,200}?[¥￥￥]\s*(\d{1,5})/g;
+      let sp;
+      while ((sp = stripRe.exec(stripped)) !== null) {
+        if (!albumPrices[sp[1]]) albumPrices[sp[1]] = { value: parseInt(sp[2], 10), currency: 'CNY' };
+      }
+    }
+
     // ── Estrazione dati album (quando URL è una pagina /albums/ID) ──
     let albumInfo = null;
     const isAlbumPage = /\/albums\/\w+/.test(parsedUrl.pathname);
@@ -777,9 +808,11 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
         ? clothM[1].split(/\s+/).filter(s => ['XS','S','M','L','XL','XXL','XXXL'].includes(s))
         : [];
 
-      // Prezzo fornitore in dollari
-      const priceM = bodyText.match(/(\d{1,4})\s*\$/) || bodyText.match(/\$\s*(\d{1,4})/);
-      const supplierPriceUSD = priceM ? parseInt(priceM[1], 10) : null;
+      // Prezzo fornitore — CNY (¥) o USD ($)
+      const cnyM = bodyText.match(/[¥￥￥]\s*(\d{1,5})/) || bodyText.match(/(\d{1,5})\s*(?:元|CNY|cny)/);
+      const usdM = bodyText.match(/(\d{1,4})\s*\$/) || bodyText.match(/\$\s*(\d{1,4})/);
+      const supplierPriceCNY = cnyM ? parseInt(cnyM[1], 10) : null;
+      const supplierPriceUSD = usdM ? parseInt(usdM[1], 10) : null;
 
       // Prime immagini dell'album (max 8)
       const photos = [];
@@ -790,10 +823,10 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
         if (u && isImg(u) && !photos.includes(u)) photos.push(u);
       }
 
-      albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceUSD, photos };
+      albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos };
     }
 
-    return { html, status: resp.status, albumCovers, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null, authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
+    return { html, status: resp.status, albumCovers, albumPrices, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null, authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
@@ -866,10 +899,10 @@ exports.yupooAnalyze = onCall({ secrets: [ANTHROPIC_API_KEY], cors: true, timeou
             {
               type: 'text',
               text: `Sei un esperto di moda, streetwear e sneaker. Analizza questa immagine prodotto e rispondi SOLO con JSON valido (nessun markdown, nessun testo extra prima o dopo):
-{"name":"Brand Modello Colorway dettagliato (es. Nike Dunk Low Panda Bianco Nero)","brand":"Nike","model":"Dunk Low","category":"scarpe","colors":["Bianco","Nero"],"description":"Sneaker Nike Dunk Low colorway Panda, tomaia in pelle bianca e dettagli neri.","supplierPrice":null}
+{"name":"Brand Modello Colorway dettagliato (es. Nike Dunk Low Panda Bianco Nero)","brand":"Nike","model":"Dunk Low","category":"scarpe","colors":["Bianco","Nero"],"description":"Sneaker Nike Dunk Low colorway Panda, tomaia in pelle bianca e dettagli neri.","supplierPrice":null,"supplierCurrency":null}
 
 Categorie disponibili (scegli la più adatta): tshirt, tshirt_branded, felpa, scarpe, scarpe_box, pantaloni, shorts, cappello, giacchetto, borsa, accessori
-PREZZO: Se nell'immagine è visibile un prezzo (cartellino, etichetta, testo sovrapposto, numero con simbolo $ ¥ €), estrai il valore numerico e inseriscilo in "supplierPrice" come numero (es. 45 per "45$" o "¥320"). Se non visibile, lascia null.
+PREZZO: Se nell'immagine è visibile un prezzo (cartellino, etichetta, testo sovrapposto con ¥ $ €), inserisci il valore numerico in "supplierPrice" e la valuta in "supplierCurrency" (CNY, USD o EUR). Esempio: prezzo "¥128" → "supplierPrice":128,"supplierCurrency":"CNY". Se non visibile lascia null.
 ${brandHint || modelHint ? `\nL'utente indica che questo prodotto è probabilmente: ${[brandHint, modelHint].filter(Boolean).join(' — ')}. Usa questo come riferimento forte e identifica il modello e colorway specifici dall'immagine.` : 'Se non identificabile con certezza, usa valori plausibili in base a ciò che vedi.'}`,
             },
           ],
