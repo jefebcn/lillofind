@@ -2335,9 +2335,49 @@ img{ -webkit-user-drag:none; user-select:none; }
 </div>
 
 <!-- ════════════════════════════════════════════════════════
+     PRODUCT REQUEST SECTION
+════════════════════════════════════════════════════════ -->
+<section style="background:#0d0d0d;padding:64px 24px;text-align:center;position:relative;overflow:hidden;">
+  <div class="led-strip"></div>
+  <div style="max-width:500px;margin:0 auto;position:relative;z-index:1;">
+    <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid #222;padding:6px 14px;margin-bottom:28px;">
+      <span style="width:6px;height:6px;background:var(--led);border-radius:50%;display:inline-block;animation:blink 1.4s infinite;"></span>
+      <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#888;">Product Request</span>
+    </div>
+    <p class="bb" style="font-size:clamp(22px,6vw,32px);letter-spacing:1px;color:var(--w);margin-bottom:10px;line-height:1.2;">Non trovi il prodotto che stai cercando?</p>
+    <p style="font-size:11px;color:#888;letter-spacing:.5px;margin-bottom:36px;line-height:1.8;">Inviaci una foto e ti faremo sapere in <span style="color:var(--led);font-weight:700;">48 ore</span> la disponibilità di questo articolo.</p>
+
+    <!-- Drop zone -->
+    <div id="pr-drop-zone" onclick="document.getElementById('pr-file-input').click()"
+      style="border:1px dashed #2a2a2a;padding:44px 24px;margin-bottom:16px;cursor:pointer;transition:border-color .2s,background .2s;border-radius:2px;"
+      onmouseover="this.style.borderColor='var(--led)';this.style.background='rgba(200,255,0,.03)'"
+      onmouseout="this.style.borderColor='#2a2a2a';this.style.background='transparent'">
+      <div id="pr-placeholder">
+        <p style="font-size:36px;margin-bottom:10px;">📷</p>
+        <p style="font-size:11px;color:#888;letter-spacing:1px;">Tocca per caricare una foto</p>
+        <p style="font-size:9px;color:#555;margin-top:6px;letter-spacing:.5px;">JPG · PNG · WEBP &nbsp;·&nbsp; Max 10MB</p>
+      </div>
+      <img id="pr-preview" style="display:none;max-width:100%;max-height:220px;object-fit:contain;" alt="preview"/>
+    </div>
+    <input type="file" id="pr-file-input" accept="image/*" style="display:none;" onchange="prHandleFile(this)"/>
+
+    <div id="pr-actions" style="display:none;margin-bottom:14px;">
+      <button onclick="prRemoveFile()" style="background:none;border:1px solid #2a2a2a;color:#666;padding:7px 16px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✕ Rimuovi foto</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <input id="pr-note" class="lf-in" placeholder="Descrivi il prodotto: brand, colore, taglia..." style="width:100%;box-sizing:border-box;background:#111;border-color:#222;color:var(--w);"/>
+      <button onclick="sendProductRequest()" class="btn-led" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px;">Invia richiesta →</button>
+    </div>
+    <p style="font-size:9px;color:#444;margin-top:18px;letter-spacing:1px;">⏱ Risposta in 48 ore &nbsp;·&nbsp; Solo prodotti autentici</p>
+  </div>
+  <div class="led-strip" style="position:absolute;bottom:0;left:0;right:0;"></div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
      FOOTER
 ════════════════════════════════════════════════════════ -->
-<footer style="background:var(--k);color:var(--w);margin-top:60px;">
+<footer style="background:var(--k);color:var(--w);margin-top:0;">
   <div class="led-strip"></div>
 
   <!-- Newsletter -->
@@ -3833,6 +3873,47 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Save to Firestore if available
     const fb=window.__fb;
     if(fb){ try{ await fb.addDoc(fb.collection(fb.db,'newsletter'),{email:e,ts:fb.serverTimestamp()}); }catch(err){} }
+  };
+
+  // ── Product Request ────────────────────────────────────
+  window.prHandleFile=function(input){
+    const file=input.files[0]; if(!file) return;
+    if(file.size>10*1024*1024) return showToast('Immagine troppo grande. Max 10MB.');
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const img=new Image();
+      img.onload=function(){
+        const canvas=document.createElement('canvas');
+        const max=700; let w=img.width,h=img.height;
+        if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} }
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        window._prImageData=canvas.toDataURL('image/jpeg',0.72);
+        const prev=document.getElementById('pr-preview');
+        prev.src=window._prImageData; prev.style.display='block';
+        document.getElementById('pr-placeholder').style.display='none';
+        document.getElementById('pr-actions').style.display='block';
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  window.prRemoveFile=function(){
+    window._prImageData=null;
+    const inp=document.getElementById('pr-file-input'); if(inp) inp.value='';
+    document.getElementById('pr-preview').style.display='none';
+    document.getElementById('pr-placeholder').style.display='block';
+    document.getElementById('pr-actions').style.display='none';
+  };
+  window.sendProductRequest=async function(){
+    const note=(document.getElementById('pr-note')?.value||'').trim();
+    const img=window._prImageData||null;
+    if(!img&&!note) return showToast('Aggiungi una foto o descrivi il prodotto.');
+    showToast('✅ Richiesta inviata! Ti risponderemo entro 48 ore.');
+    const fb=window.__fb;
+    if(fb){try{await fb.addDoc(fb.collection(fb.db,'product_requests'),{note,image:img,userId:user?.uid||null,userEmail:user?.email||null,ts:fb.serverTimestamp()});}catch(_){}}
+    prRemoveFile();
+    const noteEl=document.getElementById('pr-note'); if(noteEl) noteEl.value='';
   };
 
   // ── Size guide ─────────────────────────────────────────
