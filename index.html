@@ -1136,6 +1136,21 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div id="home-prods" class="pgrid"></div>
   </section>
 
+  <!-- COMING SOON BANNER -->
+  <section style="background:var(--k);padding:40px 24px;border-bottom:2px solid #111;overflow:hidden;position:relative;">
+    <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(200,255,0,.025) 60px,rgba(200,255,0,.025) 61px);pointer-events:none;"></div>
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;position:relative;z-index:1;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="width:8px;height:8px;background:var(--led);border-radius:50%;display:inline-block;animation:blink 1.2s infinite;box-shadow:0 0 8px var(--led);"></span>
+          <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--led);">In arrivo</span>
+        </div>
+        <p class="bb" style="font-size:clamp(20px,5vw,32px);color:var(--w);letter-spacing:2px;line-height:1;">Molti altri prodotti in arrivo prossimamente.</p>
+      </div>
+      <button onclick="document.getElementById('nl-mail').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('nl-mail').focus()" style="background:none;border:1.5px solid #2a2a2a;color:#888;padding:11px 20px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .2s;" onmouseover="this.style.borderColor='var(--led)';this.style.color='var(--led)'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#888'">Ricevi notifica →</button>
+    </div>
+  </section>
+
   <!-- BRAND SHOWCASE -->
   <section id="brand-showcase" style="padding:56px 24px;border-bottom:2px solid var(--k);background:#fafafa;">
     <div style="max-width:1100px;margin:0 auto;">
