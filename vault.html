@@ -7,22 +7,28 @@
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>LF VAULT — Gestionale Investimenti</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script type="module" src="firebase.js"></script>
 <style>
 :root{
-  --k:#080808;--k2:#0f0f0f;--k3:#141414;--k4:#1c1c1c;
-  --w:#f0f0f0;--w2:#aaa;--w3:#555;
+  --k:#0A0A0A;--k2:#111111;--k3:#171717;--k4:#1F1F1F;
+  --surface:#1A1A1A;--surface-2:#222222;
+  --w:#FAFAFA;--w2:#A3A3A3;--w3:#666666;
   --g:#C8FF00;--g2:rgba(200,255,0,.12);--g3:rgba(200,255,0,.05);
+  --g-dim:rgba(200,255,0,.10);--g-glow:rgba(200,255,0,.25);
   --gold:#FFD166;--red:#FF4757;--blue:#00C4FF;
-  --border:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.06);
   --border2:rgba(200,255,0,.22);
-  --r:16px;
+  --r:20px;
+  --radius-card:20px;--radius-btn:14px;--radius-pill:999px;
+  --shadow-card:0 1px 0 rgba(255,255,255,.04) inset, 0 12px 32px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospace;overflow-x:hidden;}
-body{padding-bottom:88px;}
+html,body{height:100%;background:var(--k);color:var(--w);font-family:'Inter',system-ui,-apple-system,sans-serif;overflow-x:hidden;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased;}
+body{padding-bottom:100px;}
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:2px;height:2px;}
@@ -44,13 +50,13 @@ body{padding-bottom:88px;}
   padding:24px;
 }
 .login-logo{
-  font-family:'Bebas Neue',sans-serif;font-size:80px;letter-spacing:10px;
+  font-family:'Inter',sans-serif;font-weight:800;font-size:64px;letter-spacing:-0.04em;
   color:var(--g);text-shadow:0 0 60px rgba(200,255,0,.35),0 0 120px rgba(200,255,0,.1);
-  line-height:1;margin-bottom:6px;
+  line-height:1;margin-bottom:8px;
 }
 .login-sub{
-  font-size:8px;letter-spacing:8px;color:var(--w3);text-transform:uppercase;
-  margin-bottom:48px;
+  font-size:11px;letter-spacing:0.3em;color:var(--w3);text-transform:uppercase;
+  margin-bottom:48px;font-weight:500;
 }
 .login-box{
   background:var(--k2);
@@ -60,29 +66,30 @@ body{padding-bottom:88px;}
   border-radius:var(--r);
 }
 .login-label{
-  font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--w3);
-  margin-bottom:8px;display:block;
+  font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--w2);
+  margin-bottom:12px;display:block;font-weight:500;
 }
 .login-input{
   width:100%;background:var(--k3);border:1.5px solid var(--border);color:var(--w);
-  font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.5px;
-  padding:14px 16px;outline:none;transition:border-color .2s,box-shadow .2s;
-  margin-bottom:12px;border-radius:12px;
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:500;
+  padding:15px 16px;outline:none;transition:border-color .2s,box-shadow .2s;
+  margin-bottom:12px;border-radius:var(--radius-btn);
 }
 .login-input:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(200,255,0,.08);}
 .login-input::placeholder{color:var(--w3);}
 .login-btn{
-  width:100%;margin-top:4px;background:var(--g);color:var(--k);border:none;
-  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:5px;
-  padding:16px;cursor:pointer;transition:opacity .2s,box-shadow .2s;
-  display:block;text-align:center;border-radius:12px;
+  width:100%;margin-top:8px;background:var(--g);color:var(--k);border:none;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.02em;
+  padding:16px;cursor:pointer;transition:opacity .2s,box-shadow .2s,transform .1s;
+  display:block;text-align:center;border-radius:var(--radius-btn);
 }
+.login-btn:active{transform:scale(.98);}
 .login-btn:hover{opacity:.88;box-shadow:0 0 32px rgba(200,255,0,.35);}
 .login-err{
-  font-size:9px;letter-spacing:2px;color:var(--red);text-transform:uppercase;
-  margin-top:10px;text-align:center;min-height:16px;
+  font-size:12px;color:var(--red);
+  margin-top:12px;text-align:center;min-height:16px;font-weight:500;
 }
-.login-back{margin-top:32px;font-size:8px;color:var(--w3);letter-spacing:3px;text-align:center;text-transform:uppercase;}
+.login-back{margin-top:32px;font-size:11px;color:var(--w3);text-align:center;letter-spacing:0.05em;}
 .login-back a{color:var(--g);text-decoration:none;cursor:pointer;}
 
 /* ════════════════════════════
@@ -106,22 +113,22 @@ body{padding-bottom:88px;}
   opacity:.25;
 }
 .hdr-logo{
-  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:5px;color:var(--g);
-  display:flex;align-items:center;gap:6px;
+  font-family:'Inter',sans-serif;font-weight:800;font-size:18px;letter-spacing:-0.02em;color:var(--g);
+  display:flex;align-items:center;gap:8px;
 }
 .hdr-right{display:flex;align-items:center;gap:10px;}
 .hdr-badge{
   background:var(--g2);
   border:1px solid var(--border2);
   color:var(--g);
-  font-family:'Bebas Neue',sans-serif;
-  font-size:15px;letter-spacing:1px;
-  padding:5px 12px;
+  font-family:'Inter',sans-serif;font-weight:700;
+  font-size:13px;letter-spacing:-0.01em;
+  padding:6px 14px;
   line-height:1;
-  border-radius:20px;
+  border-radius:var(--radius-pill);
 }
 .hdr-logout{
-  background:none;border:none;color:var(--w3);font-size:16px;
+  background:none;border:none;color:var(--w3);font-size:18px;
   cursor:pointer;padding:8px;transition:color .2s;
 }
 .hdr-logout:hover{color:var(--w);}
@@ -130,32 +137,37 @@ body{padding-bottom:88px;}
    BOTTOM NAV
 ════════════════════════════ */
 #bnav{
-  position:fixed;bottom:0;left:0;width:100%;z-index:100;
-  background:var(--k2);
-  border-top:1px solid var(--border);
+  position:fixed;bottom:12px;left:12px;right:12px;z-index:100;
+  background:rgba(20,20,20,.85);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--border);
   display:flex;
-  height:70px;
-  padding-bottom:env(safe-area-inset-bottom);
+  height:64px;padding:0 8px;
+  border-radius:var(--radius-pill);
+  box-shadow:0 10px 40px rgba(0,0,0,.5);
 }
 .bn{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:none;border:none;cursor:pointer;
-  color:var(--w3);font-family:'IBM Plex Mono',monospace;
-  font-size:7px;letter-spacing:1.5px;text-transform:uppercase;
-  gap:4px;transition:color .2s;position:relative;
-  padding-top:0;
+  color:var(--w3);font-family:'Inter',sans-serif;
+  font-size:10px;letter-spacing:0.02em;
+  gap:2px;transition:all .2s;position:relative;
+  padding-top:0;font-weight:500;
 }
-.bn.active{color:var(--g);}
+.bn.active{color:var(--k);}
 .bn:hover:not(.active){color:var(--w2);}
 .bn-icon{
-  font-size:20px;line-height:1;
-  width:44px;height:36px;display:flex;align-items:center;justify-content:center;
-  border-radius:20px;transition:background .2s;
+  font-size:18px;line-height:1;
+  width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-pill);transition:all .2s;
 }
 .bn.active .bn-icon{
-  background:var(--g2);
-  box-shadow:0 0 12px rgba(200,255,0,.15);
+  background:var(--g);
+  color:var(--k);
+  box-shadow:0 4px 16px rgba(200,255,0,.35);
 }
+.bn.active .bn-label{font-weight:600;color:var(--g);}
+.bn-icon svg{width:20px;height:20px;}
 
 /* ════════════════════════════
    PAGES
@@ -169,34 +181,36 @@ body{padding-bottom:88px;}
 ════════════════════════════ */
 .sec-hdr{
   display:flex;align-items:flex-end;justify-content:space-between;
-  margin-bottom:22px;flex-wrap:wrap;gap:8px;
+  margin-bottom:20px;flex-wrap:wrap;gap:8px;
 }
-.sec-eyebrow{font-size:7px;letter-spacing:4px;text-transform:uppercase;color:var(--w3);margin-bottom:4px;}
+.sec-eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--w3);margin-bottom:4px;font-weight:500;}
 .sec-title{
-  font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;
-  color:var(--w);line-height:1;
+  font-family:'Inter',sans-serif;font-weight:800;font-size:30px;letter-spacing:-0.03em;
+  color:var(--w);line-height:1.1;
 }
 .sec-date{
-  font-size:8px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;
-  background:var(--k4);padding:5px 10px;border:1px solid var(--border);
-  white-space:nowrap;
+  font-size:11px;letter-spacing:0.05em;color:var(--w2);
+  background:var(--k4);padding:7px 12px;border:1px solid var(--border);
+  white-space:nowrap;border-radius:var(--radius-pill);font-weight:500;
 }
 .sec-divider{
-  width:100%;height:1px;margin-bottom:20px;
-  background:linear-gradient(90deg,var(--g),transparent);
-  opacity:.35;
+  width:100%;height:1px;margin-bottom:24px;
+  background:linear-gradient(90deg,var(--border),transparent);
 }
 
 /* ════════════════════════════
    STAT CARDS
 ════════════════════════════ */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
 .stat-card{
   position:relative;overflow:hidden;
   padding:18px 16px;
   background:var(--k3);
-  border-radius:var(--r);
+  border:1px solid var(--border);
+  border-radius:var(--radius-card);
+  transition:transform .2s,border-color .2s;
 }
+.stat-card:hover{border-color:rgba(255,255,255,.1);transform:translateY(-2px);}
 /* Glow border via box-shadow instead of top bar */
 .stat-card.green{box-shadow:0 0 0 1px rgba(200,255,0,.2),inset 0 1px 0 rgba(200,255,0,.3);}
 .stat-card.gold{box-shadow:0 0 0 1px rgba(255,209,102,.2),inset 0 1px 0 rgba(255,209,102,.3);}
@@ -210,78 +224,79 @@ body{padding-bottom:88px;}
 .stat-card.red::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at top left,rgba(200,255,0,.04) 0%,transparent 70%);pointer-events:none;}
 
 .sc-label{
-  font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);
-  margin-bottom:10px;position:relative;z-index:1;
+  font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--w3);
+  margin-bottom:10px;position:relative;z-index:1;font-weight:500;
+  display:flex;align-items:center;gap:6px;
 }
 .sc-val{
-  font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:1px;
-  line-height:1;position:relative;z-index:1;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:24px;letter-spacing:-0.03em;
+  line-height:1.1;position:relative;z-index:1;
 }
-.sc-val.green{color:var(--g);text-shadow:0 0 20px rgba(200,255,0,.2);}
+.sc-val.green{color:var(--g);}
 .sc-val.gold{color:var(--gold);}
 .sc-val.blue{color:var(--blue);}
-.sc-sub{font-size:8px;color:var(--w3);margin-top:5px;letter-spacing:1px;position:relative;z-index:1;}
+.sc-sub{font-size:11px;color:var(--w3);margin-top:6px;font-weight:500;position:relative;z-index:1;}
 
 /* ════════════════════════════
    CHART CARDS
 ════════════════════════════ */
 .chart-card{
   background:var(--k3);border:1px solid var(--border);
-  padding:18px;margin-bottom:14px;position:relative;
-  border-radius:var(--r);
+  padding:20px;margin-bottom:14px;position:relative;
+  border-radius:var(--radius-card);
 }
-.chart-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
-.chart-title{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;}
+.chart-title{font-size:13px;color:var(--w);font-weight:600;letter-spacing:-0.01em;display:flex;align-items:center;gap:6px;}
 .chart-badge{
   background:var(--g2);border:1px solid var(--border2);
-  color:var(--g);font-family:'Bebas Neue',sans-serif;
-  font-size:14px;letter-spacing:1px;padding:2px 8px;
+  color:var(--g);font-family:'Inter',sans-serif;font-weight:700;
+  font-size:13px;letter-spacing:-0.01em;padding:4px 12px;border-radius:var(--radius-pill);
 }
 .chart-wrap{position:relative;height:220px;}
-.chart-wrap.sm{height:130px;}
+.chart-wrap.sm{height:140px;}
 
 /* ════════════════════════════
    RATE TABLE
 ════════════════════════════ */
 .rate-section{margin-bottom:16px;}
-.rate-section-label{font-size:7px;letter-spacing:3.5px;text-transform:uppercase;color:var(--w3);margin-bottom:10px;}
+.rate-section-label{font-size:13px;color:var(--w);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
 .rate-table{width:100%;border-collapse:collapse;}
 .rate-table thead th{
   background:var(--k4);
-  font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--w3);
-  padding:10px 10px;text-align:center;border-bottom:1px solid var(--border);
+  font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--w3);
+  padding:10px;text-align:center;border-bottom:1px solid var(--border);font-weight:500;
 }
 .rate-table thead th:first-child{text-align:left;}
 .rate-table tbody tr{border-bottom:1px solid rgba(255,255,255,.04);}
 .rate-table tbody tr:last-child{border-bottom:none;}
-.rate-table tbody tr:nth-child(even){background:rgba(255,255,255,.02);}
 .rate-table tbody td{
-  padding:11px 10px;font-size:10px;color:var(--w2);text-align:center;
+  padding:12px 10px;font-size:13px;color:var(--w2);text-align:center;font-weight:500;
 }
 .rate-table tbody td:first-child{
-  font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--w);
-  text-align:left;letter-spacing:1px;
+  font-family:'Inter',sans-serif;font-weight:600;font-size:14px;color:var(--w);
+  text-align:left;letter-spacing:-0.01em;
 }
 .rate-table .lime{
-  font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--g);
+  font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:var(--g);
 }
-.rate-table .ann{color:var(--w3);font-size:9px;}
+.rate-table .ann{color:var(--w3);font-size:12px;}
 
 /* ════════════════════════════
    INVEST FORM
 ════════════════════════════ */
 .form-card{
   background:var(--k3);border:1px solid var(--border);
-  padding:22px 18px;margin-bottom:12px;
-  border-radius:var(--r);
+  padding:22px 20px;margin-bottom:14px;
+  border-radius:var(--radius-card);
 }
-.form-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:12px;}
+.form-label{font-size:13px;color:var(--w);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.form-sublabel{font-size:11px;color:var(--w3);margin-top:-8px;margin-bottom:12px;font-weight:500;}
 
 /* Amount display */
 .amount-display{
-  font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:2px;color:var(--g);
-  text-shadow:0 0 40px rgba(200,255,0,.25);text-align:center;
-  padding:8px 0;line-height:1;
+  font-family:'Inter',sans-serif;font-weight:800;font-size:48px;letter-spacing:-0.04em;color:var(--g);
+  text-shadow:0 0 40px rgba(200,255,0,.2);text-align:center;
+  padding:12px 0;line-height:1;
 }
 
 /* Range */
@@ -302,49 +317,52 @@ input[type=range]::-webkit-slider-runnable-track{
 .range-labels{display:flex;justify-content:space-between;font-size:7px;color:var(--w3);letter-spacing:1px;}
 
 /* Quick amount pills */
-.quick-amounts{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;}
+.quick-amounts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 .quick-btn{
-  flex:1;min-width:0;padding:9px 4px;background:var(--k4);
-  border:1px solid var(--border);color:var(--w3);
-  font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;
-  cursor:pointer;text-align:center;transition:all .2s;white-space:nowrap;
-  border-radius:8px;
+  flex:1;min-width:0;padding:10px 6px;background:var(--k4);
+  border:1px solid var(--border);color:var(--w2);
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:500;
+  cursor:pointer;text-align:center;transition:all .15s;white-space:nowrap;
+  border-radius:var(--radius-btn);letter-spacing:-0.01em;
 }
-.quick-btn:hover{border-color:rgba(200,255,0,.35);color:var(--g);}
+.quick-btn:hover{border-color:rgba(200,255,0,.35);color:var(--g);background:var(--g3);}
+.quick-btn:active{transform:scale(.96);}
 
 /* Duration buttons */
-.duration-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;}
+.duration-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
 .dur-btn{
   background:var(--k4);border:1.5px solid var(--border);
-  padding:16px 6px;cursor:pointer;transition:all .2s;color:var(--w2);
-  text-align:center;border-radius:12px;
+  padding:14px 6px;cursor:pointer;transition:all .15s;color:var(--w2);
+  text-align:center;border-radius:var(--radius-btn);
 }
 .dur-btn:hover{border-color:rgba(200,255,0,.35);}
 .dur-btn.on{background:var(--g2);border-color:var(--g);}
+.dur-btn:active{transform:scale(.97);}
 .dur-month{
-  font-family:'Bebas Neue',sans-serif;font-size:32px;color:inherit;
-  line-height:1;display:block;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:inherit;
+  line-height:1;display:block;letter-spacing:-0.03em;
 }
-.dur-sublabel{font-size:6px;letter-spacing:1px;color:var(--w3);text-transform:uppercase;margin-top:1px;}
+.dur-sublabel{font-size:10px;color:var(--w3);font-weight:500;margin-top:2px;}
 .dur-return{
-  font-family:'Bebas Neue',sans-serif;font-size:15px;
-  color:var(--g);margin-top:5px;letter-spacing:.5px;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:12px;
+  color:var(--g);margin-top:6px;letter-spacing:-0.01em;
 }
-.dur-btn:not(.on) .dur-return{opacity:.5;}
+.dur-btn:not(.on) .dur-return{opacity:.55;}
 
 /* Type buttons */
-.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
 .type-btn{
   background:var(--k4);border:1.5px solid var(--border);
-  padding:20px 10px;cursor:pointer;transition:all .2s;text-align:center;
-  border-radius:12px;
+  padding:18px 12px;cursor:pointer;transition:all .15s;text-align:center;
+  border-radius:var(--radius-btn);
 }
 .type-btn:hover{border-color:rgba(255,255,255,.15);}
-.type-btn.on.standard{background:rgba(0,196,255,.06);border-color:var(--blue);box-shadow:inset 0 0 20px rgba(0,196,255,.05);}
-.type-btn.on.locked{background:rgba(255,209,102,.06);border-color:var(--gold);box-shadow:inset 0 0 20px rgba(255,209,102,.05);}
-.type-icon{font-size:24px;margin-bottom:8px;}
-.type-name{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--w2);}
-.type-badge{font-size:7px;color:var(--w3);margin-top:4px;letter-spacing:1px;}
+.type-btn.on.standard{background:rgba(0,196,255,.06);border-color:var(--blue);}
+.type-btn.on.locked{background:rgba(255,209,102,.06);border-color:var(--gold);}
+.type-btn:active{transform:scale(.97);}
+.type-icon{font-size:22px;margin-bottom:8px;}
+.type-name{font-size:13px;font-weight:600;color:var(--w);letter-spacing:-0.01em;}
+.type-badge{font-size:11px;color:var(--w3);margin-top:4px;font-weight:500;}
 
 /* ════════════════════════════
    PREVIEW BOX
@@ -352,36 +370,37 @@ input[type=range]::-webkit-slider-runnable-track{
 .preview{
   background:var(--k);border:1px solid var(--border2);
   padding:0;margin-bottom:14px;overflow:hidden;
-  border-radius:var(--r);
+  border-radius:var(--radius-card);
 }
 .prev-row{
   display:flex;justify-content:space-between;align-items:center;
-  padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.05);
+  padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.05);
 }
-.prev-row:last-child{border-bottom:none;background:rgba(255,209,102,.04);padding:14px 18px;}
-.prev-key{font-size:8px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
-.prev-val{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.5px;}
+.prev-row:last-child{border-bottom:none;background:rgba(255,209,102,.04);padding:16px 18px;}
+.prev-key{font-size:12px;color:var(--w2);font-weight:500;letter-spacing:-0.01em;}
+.prev-val{font-family:'Inter',sans-serif;font-weight:700;font-size:15px;letter-spacing:-0.02em;color:var(--w);}
 .prev-val.green{color:var(--g);}
-.prev-val.gold{color:var(--gold);font-size:26px;}
+.prev-val.gold{color:var(--gold);font-size:18px;font-weight:800;}
 
 /* ════════════════════════════
    BUTTONS
 ════════════════════════════ */
 .btn-primary{
   width:100%;background:var(--g);color:var(--k);border:none;
-  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:5px;
-  padding:18px;cursor:pointer;transition:opacity .2s,box-shadow .2s;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:15px;letter-spacing:-0.01em;
+  padding:17px;cursor:pointer;transition:opacity .2s,box-shadow .2s,transform .1s;
   display:flex;align-items:center;justify-content:center;gap:10px;
-  border-radius:12px;
+  border-radius:var(--radius-pill);
 }
-.btn-primary:hover{opacity:.88;box-shadow:0 0 28px rgba(200,255,0,.3);}
+.btn-primary:hover{opacity:.92;box-shadow:0 8px 28px rgba(200,255,0,.3);}
+.btn-primary:active{transform:scale(.98);}
 .btn-primary:disabled{opacity:.25;cursor:not-allowed;}
 .btn-secondary{
   width:100%;background:transparent;color:var(--w2);
   border:1px solid var(--border);
-  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;
-  text-transform:uppercase;padding:14px;cursor:pointer;transition:all .2s;margin-top:8px;
-  border-radius:12px;
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;letter-spacing:-0.01em;
+  padding:15px;cursor:pointer;transition:all .2s;margin-top:10px;
+  border-radius:var(--radius-pill);
 }
 .btn-secondary:hover{border-color:var(--w3);color:var(--w);}
 
@@ -392,73 +411,76 @@ input[type=range]::-webkit-slider-runnable-track{
   background:var(--k3);border:1px solid var(--border);
   margin-bottom:0;position:relative;overflow:hidden;
   border-left:3px solid var(--border);
-  border-radius:var(--r);
+  border-radius:var(--radius-card);
+  transition:transform .2s,border-color .2s;
 }
+.inv-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.1);}
 .inv-card.locked{border-left-color:var(--gold);}
 .inv-card.standard{border-left-color:var(--blue);}
 .inv-card.matured{border-left-color:var(--g);}
-.inv-card-inner{padding:16px 16px 0;}
-.inv-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.inv-card-inner{padding:18px 18px 0;}
+.inv-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px;}
 .inv-amount{
-  font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--w);line-height:1;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:var(--w);line-height:1;letter-spacing:-0.03em;
 }
-.inv-id{font-size:7px;color:var(--w3);letter-spacing:2px;margin-top:3px;text-transform:uppercase;}
+.inv-id{font-size:11px;color:var(--w3);margin-top:4px;font-weight:500;}
 .inv-type-badge{
-  font-size:7px;letter-spacing:2px;padding:4px 10px;text-transform:uppercase;
-  border:1px solid currentColor;line-height:1;margin-top:2px;
+  font-size:11px;padding:5px 11px;font-weight:600;
+  border:1px solid currentColor;line-height:1;margin-top:2px;border-radius:var(--radius-pill);
+  letter-spacing:-0.01em;
 }
-.inv-type-badge.locked{color:var(--gold);}
-.inv-type-badge.standard{color:var(--blue);}
-.inv-type-badge.matured{color:var(--g);}
-.inv-rows{margin-bottom:10px;}
-.inv-row{display:flex;justify-content:space-between;align-items:center;font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.inv-type-badge.locked{color:var(--gold);background:rgba(255,209,102,.08);}
+.inv-type-badge.standard{color:var(--blue);background:rgba(0,196,255,.08);}
+.inv-type-badge.matured{color:var(--g);background:var(--g3);}
+.inv-rows{margin-bottom:12px;}
+.inv-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
 .inv-row:last-child{border-bottom:none;}
-.inv-lbl{color:var(--w3);letter-spacing:1px;}
-.inv-val{color:var(--w);}
-.inv-val.green{color:var(--g);}
+.inv-lbl{color:var(--w3);font-weight:500;}
+.inv-val{color:var(--w);font-weight:500;}
+.inv-val.green{color:var(--g);font-weight:600;}
 
 /* Progress */
-.prog-section{padding:10px 0 6px;}
-.prog-label-row{display:flex;justify-content:space-between;font-size:8px;margin-bottom:6px;}
+.prog-section{padding:10px 0 8px;}
+.prog-label-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;font-weight:500;}
 .prog-lbl{color:var(--w3);}
-.prog-pct{color:var(--w2);}
-.prog-bg{background:var(--k4);height:3px;border-radius:1px;}
-.prog-fill{height:3px;border-radius:1px;background:var(--g);transition:width .6s ease;box-shadow:0 0 8px rgba(200,255,0,.3);}
-.prog-fill.gold{background:var(--gold);box-shadow:0 0 8px rgba(255,209,102,.35);}
+.prog-pct{color:var(--w);font-weight:600;}
+.prog-bg{background:var(--k4);height:6px;border-radius:var(--radius-pill);overflow:hidden;}
+.prog-fill{height:6px;border-radius:var(--radius-pill);background:var(--g);transition:width .6s ease;}
+.prog-fill.gold{background:var(--gold);}
 .days-chip{
   display:inline-flex;align-items:center;gap:5px;
   background:var(--k4);border:1px solid var(--border);
-  font-size:7px;letter-spacing:1.5px;padding:4px 9px;
-  color:var(--w3);margin-top:8px;text-transform:uppercase;
+  font-size:11px;padding:5px 11px;font-weight:500;
+  color:var(--w2);margin-top:10px;border-radius:var(--radius-pill);
 }
 
 /* Totale row */
 .inv-total-row{
   display:flex;justify-content:space-between;align-items:center;
-  padding:10px 16px;background:rgba(255,209,102,.04);
+  padding:14px 18px;background:rgba(255,209,102,.05);
   border-top:1px solid rgba(255,209,102,.1);
 }
-.inv-total-lbl{font-size:7px;letter-spacing:2px;color:var(--w3);text-transform:uppercase;}
-.inv-total-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);}
+.inv-total-lbl{font-size:12px;color:var(--w2);font-weight:500;}
+.inv-total-val{font-family:'Inter',sans-serif;font-weight:800;font-size:18px;color:var(--gold);letter-spacing:-0.02em;}
 
 /* Early exit row */
 .early-row{
   display:flex;justify-content:space-between;align-items:center;
-  padding:8px 16px;background:rgba(255,71,87,.05);
+  padding:10px 18px;background:rgba(255,71,87,.05);
   border-top:1px solid rgba(255,71,87,.12);
 }
-.early-lbl{font-size:7px;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;}
-.early-val{font-size:11px;color:var(--red);}
+.early-lbl{font-size:11px;color:var(--red);font-weight:500;}
+.early-val{font-size:13px;color:var(--red);font-weight:600;}
 
 /* Actions */
 .inv-actions{
   display:flex;gap:0;border-top:1px solid var(--border);
 }
 .inv-act-btn{
-  flex:1;padding:12px 8px;font-family:'IBM Plex Mono',monospace;
-  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
+  flex:1;padding:14px 8px;font-family:'Inter',sans-serif;
+  font-size:12px;font-weight:500;letter-spacing:-0.01em;
   cursor:pointer;border:none;border-right:1px solid var(--border);
-  background:none;color:var(--w3);transition:all .15s;text-align:center;
+  background:none;color:var(--w2);transition:all .15s;text-align:center;
 }
 .inv-act-btn:last-child{border-right:none;}
 .inv-act-btn:hover{background:rgba(255,255,255,.03);color:var(--w);}
@@ -475,57 +497,55 @@ input[type=range]::-webkit-slider-runnable-track{
 ════════════════════════════ */
 .req-card{
   background:var(--k3);border:1px solid var(--border);
-  padding:16px;margin-bottom:10px;border-radius:var(--r);
+  padding:18px;margin-bottom:12px;border-radius:var(--radius-card);
 }
-.req-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.req-id{font-size:7px;color:var(--w3);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
-.req-type-label{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;}
+.req-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;}
+.req-id{font-size:11px;color:var(--w3);margin-bottom:4px;font-weight:500;}
+.req-type-label{font-family:'Inter',sans-serif;font-weight:700;font-size:16px;letter-spacing:-0.02em;}
 .req-status{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:7px;letter-spacing:2px;padding:4px 10px;
-  border:1px solid currentColor;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;padding:5px 11px;font-weight:600;
+  border:1px solid currentColor;border-radius:var(--radius-pill);
 }
-.req-status.pending{color:var(--gold);}
-.req-status.approved{color:var(--g);}
-.req-status.rejected{color:var(--red);}
-.status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
-.req-meta{font-size:8px;color:var(--w3);margin-top:4px;letter-spacing:1px;}
+.req-status.pending{color:var(--gold);background:rgba(255,209,102,.08);}
+.req-status.approved{color:var(--g);background:var(--g3);}
+.req-status.rejected{color:var(--red);background:rgba(255,71,87,.08);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.req-meta{font-size:12px;color:var(--w3);margin-top:6px;font-weight:500;}
 
 /* ════════════════════════════
    TABS
 ════════════════════════════ */
-.tab-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab-row{display:flex;gap:6px;margin-bottom:20px;padding:4px;background:var(--k3);border-radius:var(--radius-pill);border:1px solid var(--border);}
 .tab-btn{
-  flex:1;padding:12px 8px;background:none;border:none;
-  border-bottom:2px solid transparent;
-  color:var(--w3);font-family:'IBM Plex Mono',monospace;font-size:8px;
-  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
-  transition:all .2s;margin-bottom:-1px;
+  flex:1;padding:10px 14px;background:none;border:none;
+  color:var(--w2);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .2s;border-radius:var(--radius-pill);letter-spacing:-0.01em;
 }
-.tab-btn.on{color:var(--g);border-bottom-color:var(--g);}
+.tab-btn.on{color:var(--k);background:var(--g);font-weight:600;}
 .tabp{display:none;}
 .tabp.on{display:block;}
 
 /* Portfolio tab buttons (in sec-hdr) */
 .port-tab-btn{
-  padding:7px 14px;background:none;border:1px solid var(--border);
-  color:var(--w3);font-family:'IBM Plex Mono',monospace;
-  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
-  cursor:pointer;transition:all .2s;
+  padding:8px 16px;background:var(--k3);border:1px solid var(--border);
+  color:var(--w2);font-family:'Inter',sans-serif;
+  font-size:13px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;transition:all .2s;border-radius:var(--radius-pill);
 }
-.port-tab-btn.on{border-color:var(--g);color:var(--g);}
+.port-tab-btn.on{background:var(--g);color:var(--k);border-color:var(--g);font-weight:600;}
 
 /* ════════════════════════════
    TICKER
 ════════════════════════════ */
 .ticker-wrap{
   overflow:hidden;background:var(--g);
-  padding:6px 0;margin-bottom:16px;
+  padding:8px 0;margin-bottom:16px;
 }
 .ticker{display:inline-flex;animation:tick 28s linear infinite;white-space:nowrap;}
 .ticker span{
-  padding:0 28px;font-size:9px;letter-spacing:3px;
-  text-transform:uppercase;color:var(--k);font-weight:700;
+  padding:0 28px;font-size:11px;letter-spacing:0.05em;
+  color:var(--k);font-weight:700;
 }
 
 /* ════════════════════════════
@@ -543,16 +563,16 @@ input[type=range]::-webkit-slider-runnable-track{
   width:100%;max-width:480px;max-height:90vh;overflow-y:auto;
   padding:0;
   animation:fadeup .25s ease;
-  border-radius:var(--r) var(--r) 0 0;
+  border-radius:24px 24px 0 0;
 }
 .modal-header{
   display:flex;justify-content:space-between;align-items:center;
-  padding:20px 20px 16px;border-bottom:1px solid var(--border);
+  padding:22px 22px 18px;border-bottom:1px solid var(--border);
 }
-.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;}
+.modal-title{font-family:'Inter',sans-serif;font-weight:700;font-size:20px;letter-spacing:-0.02em;color:var(--w);}
 .modal-close{
   background:var(--k4);border:1px solid var(--border);
-  color:var(--w3);width:32px;height:32px;cursor:pointer;
+  color:var(--w2);width:36px;height:36px;cursor:pointer;border-radius:50%;
   font-size:14px;display:flex;align-items:center;justify-content:center;
   transition:all .2s;
 }
@@ -561,11 +581,11 @@ input[type=range]::-webkit-slider-runnable-track{
 
 /* Form inputs (modal) */
 .input-group{margin-bottom:14px;}
-.input-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:7px;display:block;}
+.input-label{font-size:13px;color:var(--w);font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:6px;letter-spacing:-0.01em;}
 .lf-in{
   width:100%;background:var(--k4);border:1.5px solid var(--border);color:var(--w);
-  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:12px 14px;outline:none;
-  transition:border-color .2s;border-radius:12px;
+  font-family:'Inter',sans-serif;font-size:14px;padding:13px 15px;outline:none;
+  transition:border-color .2s;border-radius:var(--radius-btn);font-weight:500;
 }
 .lf-in:focus{border-color:var(--g);}
 textarea.lf-in{resize:vertical;min-height:80px;}
@@ -574,32 +594,33 @@ textarea.lf-in{resize:vertical;min-height:80px;}
    TOAST
 ════════════════════════════ */
 #toast{
-  position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:9998;
-  background:var(--k2);color:var(--w);padding:11px 20px;
-  font-size:8px;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;
-  border-bottom:2px solid var(--g);
-  box-shadow:0 4px 24px rgba(0,0,0,.5);
-  opacity:0;transition:opacity .3s;pointer-events:none;
+  position:fixed;bottom:96px;left:50%;transform:translateX(-50%);z-index:9998;
+  background:var(--k2);color:var(--w);padding:14px 22px;
+  font-size:13px;font-weight:500;white-space:nowrap;
+  border:1px solid var(--border2);border-radius:var(--radius-pill);
+  box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 24px rgba(200,255,0,.15);
+  opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;letter-spacing:-0.01em;
 }
-#toast.show{opacity:1;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
 
 /* ════════════════════════════
    EMPTY STATES
 ════════════════════════════ */
-.empty-state{text-align:center;padding:52px 20px;color:var(--w3);}
-.empty-icon{font-size:36px;margin-bottom:12px;opacity:.25;}
-.empty-text{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);}
+.empty-state{text-align:center;padding:60px 20px;color:var(--w3);background:var(--k3);border:1px solid var(--border);border-radius:var(--radius-card);}
+.empty-icon{font-size:42px;margin-bottom:16px;opacity:.3;}
+.empty-text{font-size:14px;color:var(--w2);font-weight:500;letter-spacing:-0.01em;}
+.empty-sub{font-size:12px;color:var(--w3);margin-top:8px;font-weight:400;}
 
 /* ════════════════════════════
    WHATSAPP LINK
 ════════════════════════════ */
 .wa-link{
   display:flex;align-items:center;justify-content:center;gap:8px;
-  margin-top:10px;padding:13px;
+  margin-top:10px;padding:14px;
   border:1px solid rgba(200,255,0,.2);color:var(--g);
-  font-family:'IBM Plex Mono',monospace;font-size:9px;
-  letter-spacing:2px;text-transform:uppercase;text-decoration:none;
-  background:rgba(200,255,0,.03);transition:background .2s;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+  text-decoration:none;letter-spacing:-0.01em;
+  background:rgba(200,255,0,.03);transition:background .2s;border-radius:var(--radius-pill);
 }
 .wa-link:hover{background:rgba(200,255,0,.07);}
 
@@ -617,93 +638,300 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 ════════════════════════════ */
 .greeting-row{
   display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:20px;
+  margin-bottom:22px;gap:12px;
 }
 .greeting-avatar{
-  width:44px;height:44px;border-radius:50%;
-  background:var(--g2);border:2px solid var(--border2);
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g2),var(--g3));border:2px solid var(--border2);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g);
-  flex-shrink:0;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:var(--g);
+  flex-shrink:0;letter-spacing:-0.02em;
 }
-.greeting-text{flex:1;padding:0 12px;}
+.greeting-text{flex:1;min-width:0;}
 .greeting-hello{
-  font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:3px;
+  font-size:13px;color:var(--w);margin-bottom:2px;font-weight:600;letter-spacing:-0.01em;
 }
 .greeting-name{
-  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--w);
+  font-family:'Inter',sans-serif;font-weight:400;font-size:12px;color:var(--w3);
 }
 .greeting-notif{
-  width:36px;height:36px;border-radius:50%;
+  width:42px;height:42px;border-radius:50%;
   background:var(--k3);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
-  font-size:16px;cursor:pointer;
+  font-size:16px;cursor:pointer;position:relative;transition:all .15s;
 }
+.greeting-notif:hover{background:var(--k4);}
+.greeting-notif:active{transform:scale(.95);}
+.notif-dot{position:absolute;top:9px;right:11px;width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 0 2px var(--k3);}
 
 /* ════════════════════════════
    BALANCE HERO CARD
 ════════════════════════════ */
 .balance-hero{
-  background:var(--k3);border:1px solid var(--border);
-  border-radius:var(--r);padding:24px 20px;margin-bottom:16px;
+  background:linear-gradient(135deg,var(--k3) 0%,var(--surface) 100%);
+  border:1px solid var(--border);
+  border-radius:var(--radius-card);padding:26px 22px;margin-bottom:18px;
   position:relative;overflow:hidden;
+  box-shadow:var(--shadow-card);
 }
 .balance-hero::before{
-  content:'';position:absolute;top:-60px;right:-60px;
-  width:200px;height:200px;border-radius:50%;
-  background:radial-gradient(circle,rgba(200,255,0,.08) 0%,transparent 70%);
+  content:'';position:absolute;top:-80px;right:-80px;
+  width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,255,0,.10) 0%,transparent 70%);
   pointer-events:none;
 }
-.balance-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--w3);margin-bottom:8px;}
-.balance-value{
-  font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:2px;
-  color:var(--g);text-shadow:0 0 40px rgba(200,255,0,.2);line-height:1;margin-bottom:4px;
+.balance-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;position:relative;z-index:1;}
+.balance-label{font-size:12px;color:var(--w2);font-weight:500;letter-spacing:-0.01em;display:flex;align-items:center;gap:6px;}
+.balance-add{
+  background:var(--g2);border:1px solid var(--border2);color:var(--g);
+  font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--radius-pill);
+  cursor:pointer;transition:all .15s;letter-spacing:-0.01em;
+  display:inline-flex;align-items:center;gap:4px;text-decoration:none;
 }
-.balance-change{font-size:11px;color:var(--g);letter-spacing:1px;}
+.balance-add:hover{background:var(--g-dim);}
+.balance-add:active{transform:scale(.96);}
+.balance-value{
+  font-family:'Inter',sans-serif;font-weight:800;font-size:40px;letter-spacing:-0.04em;
+  color:var(--w);line-height:1;margin-bottom:10px;position:relative;z-index:1;
+}
+.balance-change{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;color:var(--g);font-weight:600;
+  background:var(--g-dim);padding:5px 11px;border-radius:var(--radius-pill);
+  position:relative;z-index:1;letter-spacing:-0.01em;
+}
 
 /* ════════════════════════════
    QUICK ACTIONS
 ════════════════════════════ */
 .quick-actions{
   display:grid;grid-template-columns:repeat(4,1fr);
-  gap:10px;margin-bottom:20px;
+  gap:12px;margin-bottom:22px;
 }
 .qa-btn{
-  display:flex;flex-direction:column;align-items:center;gap:8px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
   background:none;border:none;cursor:pointer;padding:0;
+  text-decoration:none;
 }
 .qa-icon{
-  width:52px;height:52px;border-radius:16px;
+  width:60px;height:60px;border-radius:18px;
   background:var(--k3);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;transition:all .2s;
+  transition:all .15s;color:var(--g);
 }
-.qa-btn:hover .qa-icon{border-color:rgba(200,255,0,.3);background:var(--g2);}
-.qa-label{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--w3);}
+.qa-icon svg{width:24px;height:24px;}
+.qa-btn:hover .qa-icon{border-color:rgba(200,255,0,.3);background:var(--g2);transform:translateY(-2px);}
+.qa-btn:active .qa-icon{transform:scale(.95);}
+.qa-label{font-size:12px;color:var(--w2);font-weight:500;letter-spacing:-0.01em;}
 
 /* ════════════════════════════
    NUMERIC KEYPAD
 ════════════════════════════ */
 .keypad-display{
-  font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:2px;color:var(--g);
-  text-shadow:0 0 40px rgba(200,255,0,.25);text-align:center;
-  padding:8px 0 4px;line-height:1;min-height:72px;
+  font-family:'Inter',sans-serif;font-weight:800;font-size:42px;letter-spacing:-0.04em;color:var(--g);
+  text-align:center;
+  padding:12px 0 6px;line-height:1;min-height:62px;
 }
-.keypad-display .kd-hint{font-size:10px;letter-spacing:2px;color:var(--w3);display:block;margin-top:4px;}
+.keypad-display .kd-hint{font-size:12px;color:var(--w3);display:block;margin-top:6px;font-weight:500;}
 .keypad-grid{
   display:grid;grid-template-columns:repeat(3,1fr);
-  gap:8px;margin-top:16px;
+  gap:10px;margin-top:16px;
 }
 .kp-btn{
   background:var(--k4);border:1px solid var(--border);
-  padding:16px 8px;font-family:'Bebas Neue',sans-serif;font-size:24px;
-  color:var(--w);cursor:pointer;text-align:center;
-  border-radius:12px;transition:all .15s;
+  padding:16px 8px;font-family:'Inter',sans-serif;font-weight:600;font-size:22px;
+  color:var(--w);cursor:pointer;text-align:center;letter-spacing:-0.02em;
+  border-radius:var(--radius-btn);transition:all .15s;
 }
 .kp-btn:hover{background:var(--g2);border-color:rgba(200,255,0,.3);color:var(--g);}
-.kp-btn:active{transform:scale(.95);}
-.kp-btn.kp-del{font-size:18px;color:var(--w3);}
+.kp-btn:active{transform:scale(.94);background:var(--g);color:var(--k);}
+.kp-btn.kp-del{font-size:18px;color:var(--w2);}
 .kp-btn.kp-zero{grid-column:span 1;}
+
+/* ════════════════════════════
+   TOOLTIP SYSTEM
+════════════════════════════ */
+.tip{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--g-dim);color:var(--g);
+  font-size:10px;font-weight:600;cursor:help;
+  font-family:'Inter',sans-serif;letter-spacing:0;
+  user-select:none;flex-shrink:0;transition:background .15s;
+  position:relative;
+}
+.tip:hover{background:var(--g2);}
+.tip::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:var(--k4);color:var(--w);
+  padding:10px 14px;border-radius:10px;font-size:11px;font-weight:400;
+  width:max-content;max-width:240px;text-align:left;line-height:1.5;
+  opacity:0;pointer-events:none;transition:opacity .15s;z-index:200;
+  border:1px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,.6);
+  white-space:normal;
+}
+.tip::before{
+  content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--border2);
+  opacity:0;pointer-events:none;transition:opacity .15s;z-index:201;
+}
+.tip:hover::after,.tip:hover::before,.tip.open::after,.tip.open::before{opacity:1;}
+@media(max-width:899px){
+  .tip::after{left:auto;right:0;transform:none;}
+  .tip::before{left:auto;right:5px;transform:none;}
+}
+
+/* ════════════════════════════
+   CAPITAL ACTIVE CARD (progress)
+════════════════════════════ */
+.cap-card{
+  background:var(--k3);border:1px solid var(--border);
+  border-radius:var(--radius-card);padding:18px 20px;margin-bottom:18px;
+}
+.cap-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px;}
+.cap-side{flex:1;min-width:0;}
+.cap-side.right{text-align:right;}
+.cap-lbl{font-size:11px;color:var(--w3);font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:5px;}
+.cap-side.right .cap-lbl{justify-content:flex-end;}
+.cap-val{font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:var(--w);letter-spacing:-0.02em;}
+.cap-val.green{color:var(--g);}
+.cap-prog{background:var(--k4);height:6px;border-radius:var(--radius-pill);overflow:hidden;}
+.cap-prog-fill{height:100%;background:linear-gradient(90deg,var(--g),#a8d800);border-radius:var(--radius-pill);transition:width .6s ease;}
+
+/* ════════════════════════════
+   ACTIVITY ROW (recent investments)
+════════════════════════════ */
+.activity-block{margin-bottom:20px;}
+.activity-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.activity-title{font-size:14px;color:var(--w);font-weight:600;letter-spacing:-0.01em;display:flex;align-items:center;gap:6px;}
+.activity-see{font-size:12px;color:var(--g);font-weight:500;cursor:pointer;text-decoration:none;}
+.activity-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.activity-row::-webkit-scrollbar{display:none;}
+.act-avatar{
+  flex-shrink:0;width:56px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;
+}
+.act-circle{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g2),var(--surface-2));
+  border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:var(--g);
+  transition:all .15s;letter-spacing:-0.02em;
+}
+.act-avatar:hover .act-circle{transform:scale(1.05);border-color:var(--g);}
+.act-avatar:active .act-circle{transform:scale(.95);}
+.act-name{font-size:10px;color:var(--w3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56px;font-weight:500;}
+
+/* Empty activity placeholder */
+.act-avatar.placeholder .act-circle{
+  background:var(--k4);border-color:var(--border);color:var(--w3);
+  font-size:18px;font-weight:400;
+}
+
+/* ════════════════════════════
+   HOW IT WORKS PANEL
+════════════════════════════ */
+.hiw-card{
+  background:linear-gradient(135deg,var(--k3),var(--surface));
+  border:1px solid var(--border2);
+  border-radius:var(--radius-card);padding:22px 20px;margin-bottom:18px;
+  position:relative;overflow:hidden;
+}
+.hiw-card::before{
+  content:'';position:absolute;top:-50%;right:-30%;
+  width:60%;height:200%;
+  background:radial-gradient(circle,rgba(200,255,0,.05) 0%,transparent 60%);
+  pointer-events:none;
+}
+.hiw-title{font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:var(--w);margin-bottom:6px;letter-spacing:-0.02em;position:relative;}
+.hiw-sub{font-size:13px;color:var(--w2);margin-bottom:18px;font-weight:400;position:relative;}
+.hiw-steps{display:flex;flex-direction:column;gap:14px;margin-bottom:18px;position:relative;}
+.hiw-step{display:flex;gap:14px;align-items:flex-start;}
+.hiw-num{
+  flex-shrink:0;width:32px;height:32px;border-radius:50%;
+  background:var(--g);color:var(--k);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;letter-spacing:-0.02em;
+}
+.hiw-step-text{flex:1;}
+.hiw-step-title{font-size:13px;font-weight:600;color:var(--w);margin-bottom:2px;letter-spacing:-0.01em;}
+.hiw-step-desc{font-size:12px;color:var(--w3);line-height:1.5;font-weight:400;}
+.hiw-cta{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--g);color:var(--k);
+  padding:11px 18px;border-radius:var(--radius-pill);
+  font-size:13px;font-weight:600;text-decoration:none;letter-spacing:-0.01em;
+  transition:all .15s;cursor:pointer;border:none;
+  position:relative;
+}
+.hiw-cta:hover{box-shadow:0 6px 20px rgba(200,255,0,.3);}
+.hiw-cta:active{transform:scale(.97);}
+
+/* ════════════════════════════
+   TRANSACTION LIST
+════════════════════════════ */
+.tx-list{display:flex;flex-direction:column;gap:8px;}
+.tx-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px;background:var(--k3);border:1px solid var(--border);
+  border-radius:var(--radius-card);cursor:pointer;transition:all .15s;
+}
+.tx-item:hover{border-color:rgba(255,255,255,.1);transform:translateX(2px);}
+.tx-icon{
+  width:42px;height:42px;border-radius:50%;
+  background:var(--g-dim);color:var(--g);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.tx-icon.out{background:rgba(255,71,87,.1);color:var(--red);}
+.tx-info{flex:1;min-width:0;}
+.tx-title{font-size:13px;color:var(--w);font-weight:600;letter-spacing:-0.01em;}
+.tx-meta{font-size:11px;color:var(--w3);margin-top:2px;font-weight:500;}
+.tx-amount{font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:var(--g);letter-spacing:-0.02em;}
+.tx-amount.out{color:var(--red);}
+
+/* ════════════════════════════
+   INFO MINI CARDS
+════════════════════════════ */
+.info-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.info-mini{
+  background:var(--k3);border:1px solid var(--border);
+  border-radius:var(--radius-btn);padding:12px 10px;text-align:center;
+}
+.info-mini-icon{font-size:18px;margin-bottom:6px;color:var(--g);}
+.info-mini-icon svg{width:18px;height:18px;display:inline-block;}
+.info-mini-title{font-size:11px;color:var(--w);font-weight:600;margin-bottom:3px;letter-spacing:-0.01em;}
+.info-mini-desc{font-size:10px;color:var(--w3);line-height:1.4;font-weight:400;}
+
+/* ════════════════════════════
+   DRAWER (detail panel)
+════════════════════════════ */
+#drawer-bg{
+  display:none;position:fixed;inset:0;z-index:600;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+  opacity:0;transition:opacity .2s;
+}
+#drawer-bg.open{display:block;opacity:1;}
+#drawer{
+  position:fixed;bottom:0;left:0;right:0;z-index:601;
+  background:var(--k2);border-top:1px solid var(--border2);
+  max-height:88vh;overflow-y:auto;
+  border-radius:24px 24px 0 0;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  padding:0;
+}
+#drawer.open{transform:translateY(0);}
+.drawer-handle{
+  width:42px;height:4px;background:var(--w3);border-radius:2px;
+  margin:12px auto 0;opacity:.4;
+}
+.drawer-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 22px 14px;
+}
+.drawer-title{font-family:'Inter',sans-serif;font-weight:700;font-size:18px;letter-spacing:-0.02em;color:var(--w);}
+.drawer-body{padding:0 22px 28px;}
 
 /* ════════════════════════════
    SIDEBAR BRAND (hidden mobile)
@@ -725,48 +953,66 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 ════════════════════════════ */
 @media(min-width:900px){
   /* ── Layout shell ── */
-  body{padding-bottom:0;padding-left:220px;}
+  body{padding-bottom:0;padding-left:240px;}
 
   /* ── Sidebar nav ── */
   #bnav{
-    width:220px;height:100vh;
-    top:0;bottom:auto;left:0;
+    width:220px;height:calc(100vh - 24px);
+    top:12px;bottom:12px;left:12px;right:auto;
     flex-direction:column;
-    padding:0;
-    border-top:none;
-    border-right:1px solid var(--border);
+    padding:18px 12px;
+    border-radius:24px;
     justify-content:flex-start;
     align-items:stretch;
-    gap:0;
+    gap:4px;
     overflow:hidden;
+    backdrop-filter:none;
+    background:var(--k2);
   }
   .sidebar-brand{
     display:flex;align-items:center;gap:10px;
-    padding:22px 22px 18px;
-    font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--g);
-    border-bottom:1px solid var(--border);margin-bottom:12px;
-    text-shadow:0 0 16px rgba(200,255,0,.35);
+    padding:8px 14px 18px;
+    font-family:'Inter',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.02em;color:var(--g);
+    border-bottom:1px solid var(--border);margin-bottom:14px;
   }
   .bn{
     flex:none;flex-direction:row;
-    gap:12px;padding:13px 22px;
+    gap:12px;padding:11px 14px;
     justify-content:flex-start;
-    font-size:9px;letter-spacing:1.5px;
-    min-height:auto;border-top:none !important;
-    border-left:2px solid transparent;
-    transition:all .15s;
+    font-size:13px;
+    min-height:auto;
+    border-radius:var(--radius-btn);
+    transition:all .15s;color:var(--w2);
   }
   .bn.active{
-    color:var(--g);border-left-color:var(--g);
-    background:rgba(200,255,0,.05);
+    color:var(--k);
+    background:var(--g);
   }
-  .bn-icon{font-size:16px;}
+  .bn.active .bn-icon{
+    background:transparent;box-shadow:none;color:var(--k);width:auto;height:auto;
+  }
+  .bn.active .bn-label{color:var(--k);font-weight:600;}
+  .bn-icon{width:auto;height:auto;background:none;}
+  .bn-icon svg{width:18px;height:18px;}
+  .sidebar-footer{
+    margin-top:auto;padding:16px 12px 4px;border-top:1px solid var(--border);
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .sidebar-cta{
+    background:var(--g);color:var(--k);font-family:'Inter',sans-serif;font-weight:700;
+    border:none;padding:12px;border-radius:var(--radius-btn);font-size:13px;cursor:pointer;
+    transition:all .15s;letter-spacing:-0.01em;
+  }
+  .sidebar-cta:hover{box-shadow:0 6px 20px rgba(200,255,0,.3);}
+  .sidebar-cta:active{transform:scale(.98);}
 
   /* ── Top header ── */
   #mob-hdr{
-    left:220px;width:calc(100% - 220px);
+    left:240px;width:calc(100% - 240px);
     max-width:none;transform:none;
+    background:transparent;
   }
+  #mob-hdr::after{display:none;}
 
   /* ── Pages ── */
   .pg{max-width:1160px;padding:36px 44px;}
@@ -801,7 +1047,30 @@ textarea.lf-in{resize:vertical;min-height:80px;}
     max-width:500px;
     border:1px solid var(--border);
     border-top:2px solid var(--g);
+    border-radius:24px;
   }
+
+  /* ── Drawer: become right side ── */
+  #drawer{
+    top:12px;bottom:12px;right:12px;left:auto;width:480px;max-height:none;
+    border-radius:24px;border:1px solid var(--border);border-top:1px solid var(--border);
+    transform:translateX(110%);
+  }
+  #drawer.open{transform:translateX(0);}
+  .drawer-handle{display:none;}
+
+  /* ── Info mini grid ── */
+  .info-mini-grid{grid-template-columns:repeat(3,1fr);}
+
+  /* ── Quick actions: bigger ── */
+  .qa-icon{width:64px;height:64px;}
+  .qa-icon svg{width:26px;height:26px;}
+
+  /* ── Balance value: bigger ── */
+  .balance-value{font-size:48px;}
+
+  /* ── Section title ── */
+  .sec-title{font-size:34px;}
 }
 </style>
 </head>
@@ -844,10 +1113,15 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
   <!-- HEADER -->
   <header id="mob-hdr">
-    <div class="hdr-logo">⬡ VAULT</div>
+    <div class="hdr-logo">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      LF VAULT
+    </div>
     <div class="hdr-right">
-      <div class="hdr-badge" id="hdr-total">€ 0.00</div>
-      <button class="hdr-logout" onclick="doLogout()" title="Esci">⏏</button>
+      <div class="hdr-badge" id="hdr-total">€ 0,00</div>
+      <button class="hdr-logout" onclick="doLogout()" title="Esci" aria-label="Logout">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
   </header>
 
@@ -862,96 +1136,169 @@ textarea.lf-in{resize:vertical;min-height:80px;}
   <!-- ════ DASHBOARD ════ -->
   <div id="pg-dash" class="pg on fadein">
 
-    <div class="sec-hdr">
-      <div>
-        <div class="sec-eyebrow">Panoramica</div>
-        <div class="sec-title">Dashboard</div>
-      </div>
-      <div class="sec-date" id="dash-date"></div>
-    </div>
-    <div class="sec-divider"></div>
-
     <!-- Greeting -->
     <div class="greeting-row">
       <div class="greeting-avatar" id="greeting-avatar">V</div>
       <div class="greeting-text">
-        <div class="greeting-hello">Benvenuto</div>
-        <div class="greeting-name" id="greeting-name">Investor</div>
+        <div class="greeting-hello"><span id="greeting-name">Bentornato</span> 👋</div>
+        <div class="greeting-name" id="dash-date">Welcome back</div>
       </div>
-      <div class="greeting-notif">🔔</div>
+      <div class="greeting-notif" onclick="showPg('requests')" title="Notifiche">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot" id="notif-dot" style="display:none;"></span>
+      </div>
     </div>
 
     <!-- Balance hero -->
     <div class="balance-hero">
-      <div class="balance-label">Portafoglio Totale</div>
+      <div class="balance-top">
+        <div class="balance-label">
+          Portafoglio Totale
+          <span class="tip" data-tip="Comprende il capitale attivo + i guadagni accumulati + i bonus non ancora riscattati. Si aggiorna in tempo reale.">?</span>
+        </div>
+        <a class="balance-add" onclick="showPg('invest')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Aggiungi Fondi
+        </a>
+      </div>
       <div class="balance-value" id="balance-hero-val">€ 0,00</div>
-      <div class="balance-change" id="balance-hero-change">+0,0%</div>
+      <div class="balance-change" id="balance-hero-change">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span>+0,0%</span>
+      </div>
     </div>
 
     <!-- Quick actions -->
     <div class="quick-actions">
       <button class="qa-btn" onclick="showPg('invest')">
-        <div class="qa-icon">📈</div>
+        <div class="qa-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
         <span class="qa-label">Investi</span>
       </button>
       <button class="qa-btn" onclick="showPg('portfolio')">
-        <div class="qa-icon">💼</div>
+        <div class="qa-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
         <span class="qa-label">Portfolio</span>
       </button>
       <button class="qa-btn" onclick="showPg('requests')">
-        <div class="qa-icon">📋</div>
+        <div class="qa-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
         <span class="qa-label">Richieste</span>
       </button>
       <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="qa-btn">
-        <div class="qa-icon">💬</div>
+        <div class="qa-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </div>
         <span class="qa-label">WhatsApp</span>
       </a>
+    </div>
+
+    <!-- Capital active progress -->
+    <div class="cap-card">
+      <div class="cap-row">
+        <div class="cap-side">
+          <div class="cap-lbl">
+            Capitale Attivo
+            <span class="tip" data-tip="L'importo che sta lavorando per te in questo momento, generando rendimento giorno per giorno.">?</span>
+          </div>
+          <div class="cap-val green" id="cap-active">€ 0</div>
+        </div>
+        <div class="cap-side right">
+          <div class="cap-lbl">
+            Totale Investito
+            <span class="tip" data-tip="La somma totale che hai investito a oggi, inclusi importi maturati o già riscattati.">?</span>
+          </div>
+          <div class="cap-val" id="cap-total">€ 0</div>
+        </div>
+      </div>
+      <div class="cap-prog"><div class="cap-prog-fill" id="cap-prog-fill" style="width:0%;"></div></div>
     </div>
 
     <!-- Stat cards -->
     <div class="stats-grid">
       <div class="stat-card green">
-        <div class="sc-label">Portafoglio</div>
+        <div class="sc-label">
+          Investimenti
+          <span class="tip" data-tip="Numero totale di piani di investimento attivati nel tuo account.">?</span>
+        </div>
         <div class="sc-val green" id="ds-total">€ 0</div>
         <div class="sc-sub" id="ds-count">0 investimenti</div>
       </div>
       <div class="stat-card gold">
-        <div class="sc-label">Guadagni Tot.</div>
+        <div class="sc-label">
+          Guadagni Tot.
+          <span class="tip" data-tip="Il profitto netto accumulato dai tuoi investimenti (attivi + maturati + riscattati).">?</span>
+        </div>
         <div class="sc-val gold" id="ds-gains">€ 0</div>
         <div class="sc-sub" id="ds-pct">+0.0%</div>
       </div>
       <div class="stat-card blue">
-        <div class="sc-label">Capitale Attivo</div>
+        <div class="sc-label">
+          Capitale Attivo
+          <span class="tip" data-tip="Capitale attualmente in lavorazione che produce rendimento secondo il piano scelto.">?</span>
+        </div>
         <div class="sc-val blue" id="ds-active">€ 0</div>
         <div class="sc-sub" id="ds-active-n">0 attivi</div>
       </div>
       <div class="stat-card red">
-        <div class="sc-label">Maturati</div>
+        <div class="sc-label">
+          Maturati
+          <span class="tip" data-tip="Importi pronti da riscattare. Puoi richiedere il prelievo o reinvestirli in pochi tap.">?</span>
+        </div>
         <div class="sc-val green" id="ds-mature">€ 0</div>
         <div class="sc-sub" id="ds-mature-n">da riscattare</div>
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="activity-block">
+      <div class="activity-head">
+        <div class="activity-title">
+          Investimenti Recenti
+          <span class="tip" data-tip="Tap su un avatar per vedere tutti i dettagli del piano.">?</span>
+        </div>
+        <a class="activity-see" onclick="showPg('portfolio')">Vedi tutti →</a>
+      </div>
+      <div class="activity-row" id="activity-row">
+        <div class="act-avatar placeholder">
+          <div class="act-circle">+</div>
+          <div class="act-name">Nuovo</div>
+        </div>
       </div>
     </div>
 
     <!-- Growth chart -->
     <div class="chart-card">
       <div class="chart-head">
-        <div class="chart-title">Andamento Portafoglio</div>
-        <div class="chart-badge" id="hdr-total-badge">—</div>
+        <div class="chart-title">
+          Andamento Portafoglio
+          <span class="tip" data-tip="Evoluzione del valore complessivo dei tuoi investimenti negli ultimi 6 mesi.">?</span>
+        </div>
+        <div class="chart-badge" id="hdr-total-badge">€ 0,00</div>
       </div>
       <div class="chart-wrap"><canvas id="chartGrowth"></canvas></div>
     </div>
 
     <!-- Allocation charts -->
-    <div class="dash-charts-row" style="gap:10px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;">
+    <div class="dash-charts-row" style="gap:12px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;">
       <div class="chart-card" style="margin-bottom:0;">
         <div class="chart-head">
-          <div class="chart-title">Tipologia</div>
+          <div class="chart-title">
+            Tipologia
+            <span class="tip" data-tip="Ripartizione fra investimenti Standard (flessibili) e Bloccati (rendimento massimo).">?</span>
+          </div>
         </div>
         <div class="chart-wrap sm"><canvas id="chartType"></canvas></div>
       </div>
       <div class="chart-card" style="margin-bottom:0;">
         <div class="chart-head">
-          <div class="chart-title">Durata</div>
+          <div class="chart-title">
+            Durata
+            <span class="tip" data-tip="Distribuzione del capitale per durata (3/6/9/12 mesi).">?</span>
+          </div>
         </div>
         <div class="chart-wrap sm"><canvas id="chartDuration"></canvas></div>
       </div>
@@ -959,7 +1306,10 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
     <!-- Rate table -->
     <div class="chart-card rate-section">
-      <div class="rate-section-label">Tassi di Rendimento</div>
+      <div class="rate-section-label">
+        Tassi di Rendimento
+        <span class="tip" data-tip="Tassi % alla scadenza. L'opzione Bloccata garantisce il rendimento massimo: non è ritirabile prima della scadenza.">?</span>
+      </div>
       <table class="rate-table">
         <thead>
           <tr>
@@ -970,35 +1320,46 @@ textarea.lf-in{resize:vertical;min-height:80px;}
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>3 mesi</td>
-            <td><span class="lime">3%</span></td>
-            <td><span class="lime">4%</span></td>
-            <td class="ann">16%</td>
-          </tr>
-          <tr>
-            <td>6 mesi</td>
-            <td><span class="lime">7%</span></td>
-            <td><span class="lime">9%</span></td>
-            <td class="ann">18%</td>
-          </tr>
-          <tr>
-            <td>9 mesi</td>
-            <td><span class="lime">12%</span></td>
-            <td><span class="lime">14%</span></td>
-            <td class="ann">18.7%</td>
-          </tr>
-          <tr>
-            <td>12 mesi</td>
-            <td><span class="lime">18%</span></td>
-            <td><span class="lime">20%</span></td>
-            <td class="ann">20%</td>
-          </tr>
+          <tr><td>3 mesi</td><td><span class="lime">+3%</span></td><td><span class="lime">+4%</span></td><td class="ann">16%</td></tr>
+          <tr><td>6 mesi</td><td><span class="lime">+7%</span></td><td><span class="lime">+9%</span></td><td class="ann">18%</td></tr>
+          <tr><td>9 mesi</td><td><span class="lime">+12%</span></td><td><span class="lime">+14%</span></td><td class="ann">18.7%</td></tr>
+          <tr><td>12 mesi</td><td><span class="lime">+18%</span></td><td><span class="lime">+20%</span></td><td class="ann">20%</td></tr>
         </tbody>
       </table>
     </div>
 
-    <button class="btn-primary" onclick="showPg('invest')">+ NUOVO INVESTIMENTO</button>
+    <!-- How it works -->
+    <div class="hiw-card">
+      <div class="hiw-title">Come funziona LF Vault</div>
+      <div class="hiw-sub">3 passi semplici per far lavorare il tuo capitale.</div>
+      <div class="hiw-steps">
+        <div class="hiw-step">
+          <div class="hiw-num">1</div>
+          <div class="hiw-step-text">
+            <div class="hiw-step-title">Scegli importo e durata</div>
+            <div class="hiw-step-desc">Da €100 a €15.000, da 3 a 12 mesi. Capitale segregato e sempre tracciabile.</div>
+          </div>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-num">2</div>
+          <div class="hiw-step-text">
+            <div class="hiw-step-title">Guadagna fino al +20%</div>
+            <div class="hiw-step-desc">Rendimenti competitivi su ogni piano. Più la durata è lunga, più cresce il tasso.</div>
+          </div>
+        </div>
+        <div class="hiw-step">
+          <div class="hiw-num">3</div>
+          <div class="hiw-step-text">
+            <div class="hiw-step-title">Riscatta in 3-5 giorni</div>
+            <div class="hiw-step-desc">A scadenza richiedi il prelievo: accredito direttamente sul tuo IBAN.</div>
+          </div>
+        </div>
+      </div>
+      <button class="hiw-cta" onclick="showPg('invest')">
+        Inizia a investire
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- ════ INVEST ════ -->
@@ -1015,7 +1376,10 @@ textarea.lf-in{resize:vertical;min-height:80px;}
     <div class="invest-left">
     <!-- Amount -->
     <div class="form-card">
-      <div class="form-label">Importo da Investire</div>
+      <div class="form-label">
+        Importo da Investire
+        <span class="tip" data-tip="Da €100 fino a €15.000. Puoi digitare l'importo col tastierino o usare gli importi rapidi.">?</span>
+      </div>
       <div class="keypad-display" id="inv-amount-disp">€ 1.000</div>
       <div class="range-wrap">
         <input type="range" id="inv-range" min="100" max="15000" step="100" value="1000"
@@ -1036,12 +1400,12 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <button class="kp-btn" onclick="kpPress('9')">9</button>
         <button class="kp-btn" onclick="kpPress('00')">00</button>
         <button class="kp-btn" onclick="kpPress('0')">0</button>
-        <button class="kp-btn kp-del" onclick="kpPress('del')">⌫</button>
+        <button class="kp-btn kp-del" onclick="kpPress('del')" aria-label="Cancella">⌫</button>
       </div>
       <div class="quick-amounts">
         <button class="quick-btn" onclick="setAmount(500)">€ 500</button>
         <button class="quick-btn" onclick="setAmount(1000)">€ 1K</button>
-        <button class="quick-btn" onclick="setAmount(2500)">€ 2.5K</button>
+        <button class="quick-btn" onclick="setAmount(2500)">€ 2,5K</button>
         <button class="quick-btn" onclick="setAmount(5000)">€ 5K</button>
         <button class="quick-btn" onclick="setAmount(10000)">€ 10K</button>
       </div>
@@ -1049,7 +1413,10 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
     <!-- Duration -->
     <div class="form-card">
-      <div class="form-label">Durata Investimento</div>
+      <div class="form-label">
+        Durata Investimento
+        <span class="tip" data-tip="Periodo durante il quale il capitale rimane investito. Durate più lunghe = rendimento più alto.">?</span>
+      </div>
       <div class="duration-grid">
         <div class="dur-btn on" onclick="selDur(3,this)">
           <span class="dur-month">3</span>
@@ -1076,15 +1443,22 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
     <!-- Type -->
     <div class="form-card">
-      <div class="form-label">Tipologia</div>
+      <div class="form-label">
+        Tipologia Piano
+        <span class="tip" data-tip="Standard = riscatto anticipato possibile con rendimento prorata. Bloccato = rendimento massimo, capitale non ritirabile prima della scadenza.">?</span>
+      </div>
       <div class="type-grid">
         <div class="type-btn standard on" onclick="selType('standard',this)">
-          <div class="type-icon">📈</div>
+          <div class="type-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue);"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
           <div class="type-name">Standard</div>
           <div class="type-badge">Flessibile</div>
         </div>
         <div class="type-btn locked" onclick="selType('locked',this)">
-          <div class="type-icon">🔒</div>
+          <div class="type-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
           <div class="type-name">Bloccato</div>
           <div class="type-badge" id="locked-badge">Rendimento massimo</div>
         </div>
@@ -1121,7 +1495,35 @@ textarea.lf-in{resize:vertical;min-height:80px;}
       </div>
     </div>
 
-    <button class="btn-primary" id="inv-btn" onclick="confirmInvest()">CONFERMA INVESTIMENTO →</button>
+    <!-- Info mini cards -->
+    <div class="info-mini-grid">
+      <div class="info-mini">
+        <div class="info-mini-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="info-mini-title">Sicurezza</div>
+        <div class="info-mini-desc">Capitale segregato e tracciato</div>
+      </div>
+      <div class="info-mini">
+        <div class="info-mini-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </div>
+        <div class="info-mini-title">Flessibilità</div>
+        <div class="info-mini-desc">Standard ritirabile su richiesta</div>
+      </div>
+      <div class="info-mini">
+        <div class="info-mini-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="info-mini-title">Trasparenza</div>
+        <div class="info-mini-desc">Zero commissioni nascoste</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="inv-btn" onclick="confirmInvest()">
+      Conferma Investimento
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
     <button class="btn-secondary" onclick="showPg('dash')">Annulla</button>
     </div><!-- .invest-right -->
     </div><!-- .invest-cols -->
@@ -1134,9 +1536,9 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <div class="sec-eyebrow">I tuoi piani</div>
         <div class="sec-title">Portfolio</div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <button class="port-tab-btn tab-btn on" id="pt-active" onclick="switchPortTab('active')">Attivi</button>
-        <button class="port-tab-btn tab-btn" id="pt-history" onclick="switchPortTab('history')">Storico</button>
+      <div style="display:flex;gap:8px;">
+        <button class="port-tab-btn on" id="pt-active" onclick="switchPortTab('active')">Attivi</button>
+        <button class="port-tab-btn" id="pt-history" onclick="switchPortTab('history')">Storico</button>
       </div>
     </div>
     <div class="sec-divider"></div>
@@ -1161,15 +1563,22 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
     <div class="tabp on" id="req-new">
       <div class="form-card">
-        <div class="form-label">Tipo Richiesta</div>
+        <div class="form-label">
+          Tipo Richiesta
+          <span class="tip" data-tip="Prelievo: ritira fondi maturati sul tuo IBAN. Informazioni: contatta l'assistenza per dubbi sui tuoi piani.">?</span>
+        </div>
         <div class="type-grid" style="margin-bottom:18px;">
           <div class="type-btn standard on" id="rq-withdraw-btn" onclick="selReqType('withdraw',this)">
-            <div class="type-icon">💸</div>
+            <div class="type-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue);"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            </div>
             <div class="type-name">Prelievo</div>
             <div class="type-badge">Fondi maturati</div>
           </div>
           <div class="type-btn locked" id="rq-info-btn" onclick="selReqType('info',this)">
-            <div class="type-icon">💬</div>
+            <div class="type-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold);"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
             <div class="type-name">Informazioni</div>
             <div class="type-badge">Assistenza</div>
           </div>
@@ -1177,13 +1586,19 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
         <div id="rq-withdraw-form">
           <div class="input-group">
-            <label class="input-label">Seleziona Investimento Maturato</label>
+            <label class="input-label">
+              Investimento Maturato
+              <span class="tip" data-tip="Sono visibili solo gli investimenti che hanno raggiunto la scadenza e sono pronti per il riscatto.">?</span>
+            </label>
             <select class="lf-in" id="rq-inv-select">
               <option value="">— Seleziona —</option>
             </select>
           </div>
           <div class="input-group">
-            <label class="input-label">IBAN / Metodo di Pagamento</label>
+            <label class="input-label">
+              IBAN per accredito
+              <span class="tip" data-tip="Per ragioni antiriciclaggio (AML) deve essere lo stesso IBAN del primo deposito. Tempi accredito: 3-5 giorni lavorativi.">?</span>
+            </label>
             <input class="lf-in" type="text" id="rq-iban" placeholder="IT00 X000 0000 0000 0000 0000 000"/>
           </div>
         </div>
@@ -1199,7 +1614,39 @@ textarea.lf-in{resize:vertical;min-height:80px;}
           </div>
         </div>
 
-        <button class="btn-primary" onclick="submitRequest()">INVIA RICHIESTA →</button>
+        <button class="btn-primary" onclick="submitRequest()">
+          Invia Richiesta
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+
+      <!-- Info panel: quando posso prelevare -->
+      <div class="hiw-card" style="margin-top:16px;">
+        <div class="hiw-title">Quando posso prelevare?</div>
+        <div class="hiw-sub">Regole sui tempi di lockup e prelievo.</div>
+        <div class="hiw-steps">
+          <div class="hiw-step">
+            <div class="hiw-num">✓</div>
+            <div class="hiw-step-text">
+              <div class="hiw-step-title">Piano Standard (Flessibile)</div>
+              <div class="hiw-step-desc">Puoi richiedere il riscatto anche prima della scadenza. Riceverai il rendimento maturato fino a oggi.</div>
+            </div>
+          </div>
+          <div class="hiw-step">
+            <div class="hiw-num">🔒</div>
+            <div class="hiw-step-text">
+              <div class="hiw-step-title">Piano Bloccato</div>
+              <div class="hiw-step-desc">Il capitale è disponibile solo a scadenza, ma in cambio ottieni il rendimento massimo (fino al +20%).</div>
+            </div>
+          </div>
+          <div class="hiw-step">
+            <div class="hiw-num">⏱</div>
+            <div class="hiw-step-text">
+              <div class="hiw-step-title">Tempi di accredito</div>
+              <div class="hiw-step-desc">Dopo l'approvazione della richiesta, l'accredito sul tuo IBAN avviene in 3-5 giorni lavorativi.</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1258,22 +1705,47 @@ textarea.lf-in{resize:vertical;min-height:80px;}
   </div>
 </div>
 
-<!-- ═══ BOTTOM NAV ═══ -->
+<!-- ═══ BOTTOM NAV / SIDEBAR ═══ -->
 <nav id="bnav">
-  <div class="sidebar-brand">⬡ VAULT</div>
+  <div class="sidebar-brand">
+    <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    LF VAULT
+  </div>
   <button class="bn active" id="bn-dash" onclick="showPg('dash')">
-    <span class="bn-icon">⬡</span><span>Home</span>
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </span><span class="bn-label">Home</span>
   </button>
   <button class="bn" id="bn-invest" onclick="showPg('invest')">
-    <span class="bn-icon">📈</span><span>Investi</span>
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    </span><span class="bn-label">Investi</span>
   </button>
   <button class="bn" id="bn-portfolio" onclick="showPg('portfolio')">
-    <span class="bn-icon">💼</span><span>Portfolio</span>
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+    </span><span class="bn-label">Portfolio</span>
   </button>
   <button class="bn" id="bn-requests" onclick="showPg('requests')">
-    <span class="bn-icon">📋</span><span>Richieste</span>
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </span><span class="bn-label">Richieste</span>
   </button>
+  <div class="sidebar-footer">
+    <button class="sidebar-cta" onclick="showPg('invest')">+ Investi Ora</button>
+  </div>
 </nav>
+
+<!-- ═══ DETAIL DRAWER ═══ -->
+<div id="drawer-bg" onclick="closeDrawer()"></div>
+<aside id="drawer" role="dialog" aria-label="Dettaglio">
+  <div class="drawer-handle"></div>
+  <div class="drawer-head">
+    <div class="drawer-title" id="drawer-title">Dettagli</div>
+    <button class="modal-close" onclick="closeDrawer()" aria-label="Chiudi">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
 
 <script>
 // ══════════════════════════════════════════════════
@@ -1369,12 +1841,13 @@ function initApp() {
   renderPortfolio();
   renderRequests();
   updateRangeStyle(document.getElementById('inv-range'));
-  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+  const dt = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+  setEl('dash-date', dt);
   waitFB(()=>{
     const user = window.__fb.auth.currentUser;
     if(user){
       const name = user.displayName || user.email.split('@')[0];
-      setEl('greeting-name', name);
+      setEl('greeting-name', 'Bentornato, '+name.charAt(0).toUpperCase()+name.slice(1));
       setEl('greeting-avatar', name.charAt(0).toUpperCase());
     }
   });
@@ -1549,13 +2022,116 @@ function renderDash() {
   setEl('ds-mature-n',matured.length+' da riscattare');
   setEl('hdr-total','€ '+fmtNum(totalCapital));
   setEl('balance-hero-val','€ '+fmtNum(totalCapital+totalProfit));
-  setEl('balance-hero-change','+'+pct.toFixed(1)+'%');
   setEl('hdr-total-badge','€ '+fmtNum(totalCapital+totalProfit));
+
+  // Balance change badge (with inner span for icon preservation)
+  const changeEl = document.getElementById('balance-hero-change');
+  if(changeEl){
+    const span = changeEl.querySelector('span');
+    if(span) span.textContent = (pct>=0?'+':'')+pct.toFixed(1)+'%';
+  }
+
+  // Capital active card
+  setEl('cap-active','€ '+fmtNum(activeCapital));
+  setEl('cap-total','€ '+fmtNum(totalInvested));
+  const capPct = totalInvested>0 ? (activeCapital/totalInvested*100) : 0;
+  const fill = document.getElementById('cap-prog-fill');
+  if(fill) fill.style.width = capPct.toFixed(1)+'%';
+
+  // Notification dot: show if matured > 0
+  const dot = document.getElementById('notif-dot');
+  if(dot) dot.style.display = matured.length>0 ? 'block' : 'none';
+
+  // Activity row
+  renderActivityRow(active.concat(matured).slice(-6).reverse());
 
   drawGrowthChart(invs);
   drawTypeChart(active);
   drawDurChart(active);
 }
+
+function renderActivityRow(invs){
+  const el = document.getElementById('activity-row');
+  if(!el) return;
+  if(!invs.length){
+    el.innerHTML = `<div class="act-avatar placeholder" onclick="showPg('invest')">
+      <div class="act-circle">+</div>
+      <div class="act-name">Nuovo</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = invs.map(inv => {
+    const initial = inv.months+'M';
+    return `<div class="act-avatar" onclick="openInvDrawer('${inv.id}')">
+      <div class="act-circle">${initial}</div>
+      <div class="act-name">€${fmtK(inv.capital)}</div>
+    </div>`;
+  }).join('') + `<div class="act-avatar placeholder" onclick="showPg('invest')">
+    <div class="act-circle">+</div>
+    <div class="act-name">Nuovo</div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════
+// DRAWER (detail panel)
+// ══════════════════════════════════════════════════
+function openInvDrawer(id){
+  const inv = state.investments.find(i=>i.id===id);
+  if(!inv) return;
+  const now = new Date();
+  const start = new Date(inv.startDate);
+  const end = new Date(inv.endDate);
+  const pct = Math.min(100, Math.max(0, (now-start)/(end-start)*100));
+  const daysLeft = Math.max(0,Math.ceil((end-now)/(1000*60*60*24)));
+  const isMatured = inv.status==='matured';
+  const isRedeemed = inv.status==='redeemed';
+  const typeBadge = isRedeemed?'matured':inv.type;
+  const typeLbl = isRedeemed?'Riscattato':isMatured?'Maturato':inv.type==='locked'?'Bloccato':'Standard';
+  const proratedProfit = parseFloat((inv.profit * Math.min(pct/100, 1)).toFixed(2));
+
+  setEl('drawer-title', 'Piano '+inv.id);
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div class="act-circle" style="width:54px;height:54px;font-size:15px;">${inv.months}M</div>
+      <div style="flex:1;">
+        <div style="font-size:22px;font-weight:700;letter-spacing:-0.03em;color:var(--w);">€ ${fmtNum(inv.capital)}</div>
+        <div style="font-size:12px;color:var(--w3);font-weight:500;margin-top:2px;">${inv.id}</div>
+      </div>
+      <div class="inv-type-badge ${typeBadge}">${typeLbl}</div>
+    </div>
+    <div class="preview" style="margin-bottom:16px;">
+      <div class="prev-row"><span class="prev-key">Durata</span><span class="prev-val">${inv.months} mesi</span></div>
+      <div class="prev-row"><span class="prev-key">Rendimento</span><span class="prev-val green">+${inv.rate}%</span></div>
+      <div class="prev-row"><span class="prev-key">Inizio</span><span class="prev-val">${start.toLocaleDateString('it-IT')}</span></div>
+      <div class="prev-row"><span class="prev-key">Scadenza</span><span class="prev-val">${end.toLocaleDateString('it-IT')}</span></div>
+      <div class="prev-row"><span class="prev-key">Profitto maturato</span><span class="prev-val green">+€ ${fmtNum(proratedProfit)}</span></div>
+      <div class="prev-row"><span class="prev-key">Totale a scadenza</span><span class="prev-val gold">€ ${fmtNum(inv.capital+inv.profit)}</span></div>
+    </div>
+    ${!isRedeemed?`<div class="prog-section" style="margin-bottom:18px;">
+      <div class="prog-label-row">
+        <span class="prog-lbl">${isMatured?'Maturato':'Progresso'}</span>
+        <span class="prog-pct">${pct.toFixed(0)}% ${!isMatured?'· '+daysLeft+'gg rimanenti':''}</span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill ${inv.type==='locked'?'gold':''}" style="width:${pct.toFixed(1)}%;"></div></div>
+    </div>`:''}
+    ${isMatured?`<button class="btn-primary" onclick="closeDrawer();openRedeem('${inv.id}')">Riscatta Fondi</button>`:''}
+    ${!isMatured&&!isRedeemed?`<button class="btn-secondary" onclick="closeDrawer();showPg('portfolio')">Vai al Portfolio</button>`:''}
+    <a href="https://wa.me/message/OIVE35ZKBZ7AN1" target="_blank" class="wa-link">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      Parla con l'Assistenza
+    </a>
+  `;
+  document.getElementById('drawer-bg').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.getElementById('drawer-bg').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.body.style.overflow='';
+}
+window.openInvDrawer = openInvDrawer;
+window.closeDrawer = closeDrawer;
 
 function drawGrowthChart(invs) {
   const ctx = document.getElementById('chartGrowth').getContext('2d');
@@ -1584,6 +2160,11 @@ function drawGrowthChart(invs) {
     vals.push(parseFloat(total.toFixed(2)));
   }
 
+  // Gradient fill for area under line
+  const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+  gradient.addColorStop(0, 'rgba(200,255,0,0.25)');
+  gradient.addColorStop(1, 'rgba(200,255,0,0)');
+
   window._cgChart = new Chart(ctx, {
     type:'line',
     data:{
@@ -1591,10 +2172,13 @@ function drawGrowthChart(invs) {
       datasets:[{
         data: vals,
         borderColor:'#C8FF00',
-        backgroundColor:'rgba(200,255,0,.06)',
-        borderWidth:2,
+        backgroundColor:gradient,
+        borderWidth:2.5,
         pointBackgroundColor:'#C8FF00',
-        pointRadius:3,
+        pointBorderColor:'#0A0A0A',
+        pointBorderWidth:2,
+        pointRadius:4,
+        pointHoverRadius:6,
         tension:.4,
         fill:true
       }]
@@ -1602,13 +2186,16 @@ function drawGrowthChart(invs) {
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{
-        backgroundColor:'#161616',borderColor:'rgba(200,255,0,.3)',borderWidth:1,
-        titleColor:'#aaa',bodyColor:'#C8FF00',
+        backgroundColor:'#1F1F1F',borderColor:'rgba(200,255,0,.3)',borderWidth:1,
+        titleColor:'#A3A3A3',bodyColor:'#C8FF00',
+        padding:10,cornerRadius:10,
+        titleFont:{family:'Inter',size:11,weight:'500'},
+        bodyFont:{family:'Inter',size:13,weight:'700'},
         callbacks:{label:ctx=>'€ '+fmtNum(ctx.parsed.y)}
       }},
       scales:{
-        x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#555',font:{size:8}}},
-        y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#555',font:{size:8},callback:v=>'€'+fmtK(v)}}
+        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#666',font:{family:'Inter',size:11}}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#666',font:{family:'Inter',size:11},callback:v=>'€'+fmtK(v)}}
       }
     }
   });
@@ -1622,7 +2209,7 @@ function drawTypeChart(active) {
   if(std===0&&lck===0){
     window._ctChart=null;
     ctx.clearRect(0,0,300,300);
-    ctx.fillStyle='#333';ctx.font='10px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillStyle='#555';ctx.font='12px Inter';ctx.textAlign='center';
     ctx.fillText('Nessun dato',75,65);
     return;
   }
@@ -1632,8 +2219,9 @@ function drawTypeChart(active) {
       backgroundColor:['rgba(0,196,255,.7)','rgba(255,209,102,.7)'],
       borderColor:['#00C4FF','#FFD166'],borderWidth:1.5}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
-      plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:8},boxWidth:10,padding:6}},
-      tooltip:{backgroundColor:'#161616',titleColor:'#aaa',bodyColor:'#fff',
+      plugins:{legend:{position:'bottom',labels:{color:'#A3A3A3',font:{family:'Inter',size:11,weight:'500'},boxWidth:10,padding:8}},
+      tooltip:{backgroundColor:'#1F1F1F',titleColor:'#A3A3A3',bodyColor:'#FAFAFA',padding:10,cornerRadius:10,
+        titleFont:{family:'Inter',size:11},bodyFont:{family:'Inter',size:13,weight:'600'},
         callbacks:{label:ctx=>'€ '+fmtNum(ctx.parsed)}}}}
   });
 }
@@ -1646,7 +2234,7 @@ function drawDurChart(active) {
   const vals = Object.values(byDur);
   if(vals.every(v=>v===0)){
     ctx.clearRect(0,0,300,300);
-    ctx.fillStyle='#333';ctx.font='10px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillStyle='#555';ctx.font='12px Inter';ctx.textAlign='center';
     ctx.fillText('Nessun dato',75,65);
     return;
   }
@@ -1656,8 +2244,9 @@ function drawDurChart(active) {
       backgroundColor:['rgba(200,255,0,.4)','rgba(200,255,0,.6)','rgba(200,255,0,.8)','rgba(200,255,0,1)'],
       borderColor:'#080808',borderWidth:2}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
-      plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:8},boxWidth:10,padding:6}},
-      tooltip:{backgroundColor:'#161616',titleColor:'#aaa',bodyColor:'#fff',
+      plugins:{legend:{position:'bottom',labels:{color:'#A3A3A3',font:{family:'Inter',size:11,weight:'500'},boxWidth:10,padding:8}},
+      tooltip:{backgroundColor:'#1F1F1F',titleColor:'#A3A3A3',bodyColor:'#FAFAFA',padding:10,cornerRadius:10,
+        titleFont:{family:'Inter',size:11},bodyFont:{family:'Inter',size:13,weight:'600'},
         callbacks:{label:ctx=>'€ '+fmtNum(ctx.parsed)}}}}
   });
 }
@@ -1710,7 +2299,7 @@ function renderInvList(containerId, invs, isHistory=false) {
       </div>` : '';
 
     return `<div class="inv-card ${typeBadge}">
-      <div class="inv-card-inner">
+      <div class="inv-card-inner" style="cursor:pointer;" onclick="openInvDrawer('${inv.id}')">
         <div class="inv-head">
           <div>
             <div class="inv-amount">€ ${fmtNum(inv.capital)}</div>
@@ -1870,7 +2459,7 @@ function renderRequests() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
         <div>
           <div style="font-size:10px;color:var(--w2);margin-bottom:4px;">${r.id}</div>
-          <div style="font-family:Bebas Neue,sans-serif;font-size:20px;">${r.type==='withdraw'?'💸 Prelievo':'💬 Informazioni'}</div>
+          <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:20px;">${r.type==='withdraw'?'💸 Prelievo':'💬 Informazioni'}</div>
         </div>
         <div class="req-status ${r.status}"><div class="status-dot"></div>${r.status==='pending'?'In attesa':r.status==='approved'?'Approvato':'Rifiutato'}</div>
       </div>
@@ -1955,6 +2544,24 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2800);
 }
+
+// ESC closes drawer/modals
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('drawer').classList.contains('open')) closeDrawer();
+    ['modal-early','modal-confirm','modal-redeem'].forEach(id=>{
+      const m = document.getElementById(id);
+      if(m && m.classList.contains('open')) closeModal(id);
+    });
+  }
+});
+
+// Tap-to-toggle tooltips on mobile (since CSS :hover doesn't apply)
+document.addEventListener('click', e=>{
+  const tip = e.target.closest('.tip');
+  document.querySelectorAll('.tip.open').forEach(t=>{ if(t!==tip) t.classList.remove('open'); });
+  if(tip){ tip.classList.toggle('open'); e.stopPropagation(); }
+});
 </script>
 </body>
 </html>
