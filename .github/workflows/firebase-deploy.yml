@@ -31,7 +31,10 @@ jobs:
         run: npm ci
         working-directory: functions
 
+      - name: Setup Google credentials
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > /tmp/gcloud-key.json
+
       - name: Deploy Functions, Hosting & Storage Rules
-        run: npx firebase-tools deploy --only functions,hosting,storage --token "$FIREBASE_TOKEN" --project lillofind-c455c --non-interactive --force
+        run: npx firebase-tools deploy --only functions,hosting,storage --project lillofind-c455c --non-interactive --force
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcloud-key.json
