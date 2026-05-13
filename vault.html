@@ -5,7 +5,7 @@
 <meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>LF VAULT — Gestionale Investimenti</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -594,14 +594,102 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 }
 
 /* ════════════════════════════
-   DESKTOP CENTERING
+   SIDEBAR BRAND (hidden mobile)
 ════════════════════════════ */
-@media(min-width:769px){
-  body{max-width:480px;margin:0 auto;}
-  #mob-hdr{max-width:480px;left:50%;transform:translateX(-50%);}
-  #bnav{max-width:480px;left:50%;transform:translateX(-50%);}
+.sidebar-brand{display:none;}
+
+/* ════════════════════════════
+   INVEST LAYOUT WRAPPER
+════════════════════════════ */
+.invest-cols{display:contents;}
+
+/* ════════════════════════════
+   PORT GRID (mobile: single col)
+════════════════════════════ */
+.port-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+
+/* ════════════════════════════
+   DESKTOP — ≥ 900px
+════════════════════════════ */
+@media(min-width:900px){
+  /* ── Layout shell ── */
+  body{padding-bottom:0;padding-left:220px;}
+
+  /* ── Sidebar nav ── */
+  #bnav{
+    width:220px;height:100vh;
+    top:0;bottom:auto;left:0;
+    flex-direction:column;
+    padding:0;
+    border-top:none;
+    border-right:1px solid var(--border);
+    justify-content:flex-start;
+    align-items:stretch;
+    gap:0;
+    overflow:hidden;
+  }
+  .sidebar-brand{
+    display:flex;align-items:center;gap:10px;
+    padding:22px 22px 18px;
+    font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--g);
+    border-bottom:1px solid var(--border);margin-bottom:12px;
+    text-shadow:0 0 16px rgba(200,255,0,.35);
+  }
+  .bn{
+    flex:none;flex-direction:row;
+    gap:12px;padding:13px 22px;
+    justify-content:flex-start;
+    font-size:9px;letter-spacing:1.5px;
+    min-height:auto;border-top:none !important;
+    border-left:2px solid transparent;
+    transition:all .15s;
+  }
+  .bn.active{
+    color:var(--g);border-left-color:var(--g);
+    background:rgba(200,255,0,.05);
+  }
+  .bn-icon{font-size:16px;}
+
+  /* ── Top header ── */
+  #mob-hdr{
+    left:220px;width:calc(100% - 220px);
+    max-width:none;transform:none;
+  }
+
+  /* ── Pages ── */
+  .pg{max-width:1160px;padding:36px 44px;}
+
+  /* ── Stats: 4 col ── */
+  .stats-grid{grid-template-columns:repeat(4,1fr);gap:14px;}
+
+  /* ── Charts ── */
+  .chart-wrap{height:260px;}
+  .chart-wrap.sm{height:170px;}
+
+  /* ── Dashboard: charts side-by-side ── */
+  .dash-charts-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;
+  }
+
+  /* ── Invest 2-col ── */
+  .invest-cols{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    align-items:start;
+  }
+  .invest-right{position:sticky;top:80px;}
+
+  /* ── Portfolio 2-col cards ── */
+  .port-grid{grid-template-columns:1fr 1fr;gap:16px;}
+
+  /* ── Modals ── */
   .modal-bg{align-items:center;}
-  .modal-box{border:1px solid var(--border);border-top:2px solid var(--g);}
+  .modal-box{
+    max-width:500px;
+    border:1px solid var(--border);
+    border-top:2px solid var(--g);
+  }
 }
 </style>
 </head>
@@ -705,7 +793,7 @@ textarea.lf-in{resize:vertical;min-height:80px;}
     </div>
 
     <!-- Allocation charts -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    <div class="dash-charts-row" style="gap:10px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;">
       <div class="chart-card" style="margin-bottom:0;">
         <div class="chart-head">
           <div class="chart-title">Tipologia</div>
@@ -774,6 +862,8 @@ textarea.lf-in{resize:vertical;min-height:80px;}
     </div>
     <div class="sec-divider"></div>
 
+    <div class="invest-cols">
+    <div class="invest-left">
     <!-- Amount -->
     <div class="form-card">
       <div class="form-label">Importo da Investire</div>
@@ -838,6 +928,8 @@ textarea.lf-in{resize:vertical;min-height:80px;}
       </div>
     </div>
 
+    </div><!-- .invest-left -->
+    <div class="invest-right">
     <!-- Preview -->
     <div class="preview" id="inv-preview">
       <div class="prev-row">
@@ -868,6 +960,8 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
     <button class="btn-primary" id="inv-btn" onclick="confirmInvest()">CONFERMA INVESTIMENTO →</button>
     <button class="btn-secondary" onclick="showPg('dash')">Annulla</button>
+    </div><!-- .invest-right -->
+    </div><!-- .invest-cols -->
   </div>
 
   <!-- ════ PORTFOLIO ════ -->
@@ -883,8 +977,8 @@ textarea.lf-in{resize:vertical;min-height:80px;}
       </div>
     </div>
     <div class="sec-divider"></div>
-    <div id="port-active"></div>
-    <div id="port-history" style="display:none;"></div>
+    <div class="port-grid" id="port-active"></div>
+    <div class="port-grid" id="port-history" style="display:none;"></div>
   </div>
 
   <!-- ════ RICHIESTE ════ -->
@@ -1003,6 +1097,7 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
 <!-- ═══ BOTTOM NAV ═══ -->
 <nav id="bnav">
+  <div class="sidebar-brand">⬡ VAULT</div>
   <button class="bn active" id="bn-dash" onclick="showPg('dash')">
     <span class="bn-icon">⬡</span><span>Home</span>
   </button>
