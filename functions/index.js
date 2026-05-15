@@ -1362,6 +1362,17 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
 //   { orderId, subtotal, shipping, discount, total }
 // ══════════════════════════════════════════════════════════════════
 exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  // Subscription catalog (server-side price list — single source of truth)
+  const SUBSCRIPTION_CATALOG = {
+    'sub-netflix':     { name: 'Netflix Premium UHD',       price: 5.90, isDigital: true },
+    'sub-youtube':     { name: 'YouTube Premium',           price: 4.50, isDigital: true },
+    'sub-spotify':     { name: 'Spotify Premium',           price: 3.99, isDigital: true },
+    'sub-disney':      { name: 'Disney+',                   price: 3.90, isDigital: true },
+    'sub-paramount':   { name: 'Paramount+',                price: 3.50, isDigital: true },
+    'sub-canva':       { name: 'Canva Pro',                 price: 4.00, isDigital: true },
+    'sub-crunchyroll': { name: 'Crunchyroll Mega Fan',      price: 3.50, isDigital: true },
+  };
+
   // 1 — Autenticazione obbligatoria
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Devi essere autenticato per completare un ordine.');
@@ -1379,7 +1390,10 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   }
 
   // 3 — Leggi i prezzi REALI da Firestore (server-side, non dal client)
-  const productFetches = items.map(item => {
+  //     Gli abbonamenti (sub-*) vengono validati dal catalogo server-side
+  const subItems = [];
+  const prodItems = [];
+  items.forEach(item => {
     if (!item.id || typeof item.id !== 'string') {
       throw new HttpsError('invalid-argument', 'ID prodotto non valido.');
     }
@@ -1387,39 +1401,69 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
     if (!qty || qty < 1 || qty > 50) {
       throw new HttpsError('invalid-argument', `Quantità non valida per il prodotto ${item.id}.`);
     }
-    return db.collection('products').doc(item.id).get();
+    if (item.id.startsWith('sub-')) {
+      subItems.push({ ...item, qty });
+    } else {
+      prodItems.push({ ...item, qty });
+    }
   });
 
-  let productDocs;
-  try {
-    productDocs = await Promise.all(productFetches);
-  } catch (e) {
-    console.error('Errore lettura prodotti:', e);
-    throw new HttpsError('internal', 'Errore nel caricamento dei prodotti.');
+  // Valida abbonamenti
+  const verifiedSubs = subItems.map(item => {
+    const sub = SUBSCRIPTION_CATALOG[item.id];
+    if (!sub) throw new HttpsError('not-found', `Abbonamento non trovato: ${item.id}`);
+    return {
+      id: item.id,
+      name: sub.name,
+      price: sub.price,
+      brand: 'Lillo-Life',
+      category: 'Subscriptions',
+      weightKg: 0,
+      boxOption: '',
+      qty: item.qty,
+      size: '',
+      color: '',
+      img: '',
+      isDigital: true,
+    };
+  });
+
+  // Valida prodotti fisici/digitali da Firestore
+  let productDocs = [];
+  if (prodItems.length > 0) {
+    const productFetches = prodItems.map(item => db.collection('products').doc(item.id).get());
+    try {
+      productDocs = await Promise.all(productFetches);
+    } catch (e) {
+      console.error('Errore lettura prodotti:', e);
+      throw new HttpsError('internal', 'Errore nel caricamento dei prodotti.');
+    }
   }
 
   // 4 — Costruisci gli item verificati con prezzi da Firestore
-  const verifiedItems = productDocs.map((snap, idx) => {
+  const verifiedProds = productDocs.map((snap, idx) => {
     if (!snap.exists) {
-      throw new HttpsError('not-found', `Prodotto non trovato: ${items[idx].id}`);
+      throw new HttpsError('not-found', `Prodotto non trovato: ${prodItems[idx].id}`);
     }
     const prod = snap.data();
-    const qty = parseInt(items[idx].qty, 10);
+    const qty = prodItems[idx].qty;
     return {
       id: snap.id,
       name: prod.name || '',
-      price: prod.price || 0,        // prezzo REALE da Firestore
+      price: prod.price || 0,
       brand: prod.brand || '',
       category: prod.category || '',
       weightKg: prod.weightKg || prod.weight_kg || 0,
-      boxOption: items[idx].boxOption || '',
+      boxOption: prodItems[idx].boxOption || '',
       qty,
-      size: items[idx].size || '',
-      color: items[idx].color || '',
+      size: prodItems[idx].size || '',
+      color: prodItems[idx].color || '',
       img: prod.imageUrl || '',
       isDigital: prod.isDigital || false,
     };
   });
+
+  const verifiedItems = [...verifiedProds, ...verifiedSubs];
 
   // 5 — Calcola totali (stessa logica di index.html ma server-side)
   const allDigital = verifiedItems.every(i => i.isDigital);
