@@ -1055,6 +1055,9 @@ exports.saveProduct = onCall({ cors: true }, async (request) => {
     throw new HttpsError('invalid-argument', 'Dati prodotto non validi.');
   }
 
+  const gender = String(p.gender || 'unisex').toLowerCase();
+  if (!['uomo','donna','unisex'].includes(gender)) throw new HttpsError('invalid-argument', 'gender non valido');
+
   const docData = {
     name:        String(p.name).slice(0, 200),
     price:       p.price,
@@ -1062,6 +1065,7 @@ exports.saveProduct = onCall({ cors: true }, async (request) => {
     model:       String(p.model || '').slice(0, 100),
     style:       String(p.model || '').slice(0, 100),
     category:    String(p.category || '').slice(0, 50),
+    gender:      gender,
     sizes:       Array.isArray(p.sizes) ? p.sizes.slice(0, 50) : ['S','M','L','XL'],
     size:        String(p.size || '').slice(0, 200),
     colors:      Array.isArray(p.colors) ? p.colors.slice(0, 20) : [],
