@@ -1570,8 +1570,8 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="display:flex;flex-direction:column;gap:0;border:1.5px solid #e0e0e0;">
             
             <!-- Card -->
-            <label style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid #e0e0e0;cursor:pointer;" onclick="selectPayment('card')">
-              <span id="pay-radio-card" style="width:20px;height:20px;border:2px solid var(--led);border-radius:50%;background:var(--led);flex-shrink:0;transition:all .2s;"></span>
+            <label style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid #e0e0e0;cursor:pointer;opacity:.5;pointer-events:none;" onclick="selectPayment('card')">
+              <span id="pay-radio-card" style="width:20px;height:20px;border:2px solid #ccc;border-radius:50%;background:#ccc;flex-shrink:0;transition:all .2s;"></span>
               <div>
                 <p style="font-size:12px;font-weight:500;">💳 Carta di Credito / Debito</p>
                 <p style="font-size:10px;color:var(--dim);">Visa · Mastercard · American Express</p>
@@ -1581,6 +1581,11 @@ img{ -webkit-user-drag:none; user-select:none; }
                 <span style="border:1px solid #e0e0e0;padding:2px 6px;font-size:9px;">MC</span>
               </div>
             </label>
+            <!-- Card disabled banner -->
+            <div style="padding:10px 18px;border-bottom:1px solid #ffe0a0;background:#fffbea;display:flex;align-items:center;gap:10px;">
+              <span style="font-size:14px;">⚠️</span>
+              <p style="font-size:10px;color:#a0700a;line-height:1.5;"><strong>Pagamento con carta momentaneamente non disponibile.</strong> Utilizza il bonifico bancario per completare l'ordine.</p>
+            </div>
             <!-- Card fields -->
             <div id="pay-card-fields" style="padding:16px 18px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
               <div style="display:flex;align-items:center;gap:14px;">
