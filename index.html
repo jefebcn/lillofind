@@ -533,6 +533,10 @@ img{ -webkit-user-drag:none; user-select:none; }
 .swatch.on{border:2.5px solid var(--led);box-shadow:0 0 8px rgba(200,255,0,.4);}
 .swatch-label{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:3px;text-align:center;}
 .swatch-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;}
+/* ── GENDER TABS ─────────────────────────────────── */
+.g-tab{padding:6px 20px;border-radius:999px;border:1.5px solid var(--k);background:transparent;font-size:12px;cursor:pointer;font-weight:600;letter-spacing:.5px;transition:all .15s;color:var(--mid);}
+.g-tab:hover{border-color:var(--led);color:var(--led);}
+.g-tab.active{background:var(--led);border-color:var(--led);color:#000;font-weight:700;}
 /* ── SKELETON LOADING ────────────────────────────── */
 .skel{background:#e8e8e8;border-radius:0;animation:skel-pulse 1.5s ease-in-out infinite;}
 @keyframes skel-pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
@@ -1358,6 +1362,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     <!-- Filter sidebar (desktop) -->
     <aside class="hide-mob" style="width:200px;min-width:200px;border-right:2px solid var(--k);padding:28px 16px;position:sticky;top:120px;height:fit-content;">
       <p style="font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:22px;">Filter</p>
+      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Genere</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <span class="chip" data-key="gender" data-val="uomo" onclick="setGender(filters.gender==='uomo'?'':'uomo')">Uomo</span>
+          <span class="chip" data-key="gender" data-val="donna" onclick="setGender(filters.gender==='donna'?'':'donna')">Donna</span>
+        </div>
+      </div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Modello</p><div id="ch-model"></div></div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Marchio</p><div id="ch-brand"></div></div>
       <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Taglia</p><div id="ch-size"></div></div>
@@ -1382,6 +1392,12 @@ img{ -webkit-user-drag:none; user-select:none; }
           <!-- Mobile filter button -->
           <button onclick="toggleMobFilter()" class="btn-g mob-only" style="padding:8px 14px;font-size:10px;">⚙ Filtri</button>
         </div>
+      </div>
+      <!-- Gender tabs -->
+      <div id="gender-tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="g-tab active" onclick="setGender('')">Tutti</button>
+        <button class="g-tab" onclick="setGender('uomo')">Uomo</button>
+        <button class="g-tab" onclick="setGender('donna')">Donna</button>
       </div>
       <!-- Jakob's Law: universal search pattern users expect -->
       <div style="display:flex;gap:0;margin-bottom:20px;">
@@ -2554,7 +2570,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function waitFB(cb){ window.__fb ? cb() : setTimeout(()=>waitFB(cb), 80); }
 
   // ── State ──────────────────────────────────────────────
-  let products=[], filters={model:'',brand:'',size:'',style:'',color:''};
+  let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:''};
   let user=null, udata=null, authTab='li';
   let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
 
@@ -2862,9 +2878,18 @@ img{ -webkit-user-drag:none; user-select:none; }
     renderShop();
   };
 
+  window.setGender=function(v){
+    filters.gender=v;
+    document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===(v||'tutti')));
+    document.querySelectorAll('.chip[data-key="gender"]').forEach(c=>c.classList.toggle('on',c.dataset.val===v));
+    renderShop();
+  };
+
   window.resetFilters=function(){
-    filters={model:'',brand:'',size:'',style:'',color:''};
+    filters={model:'',brand:'',size:'',style:'',color:'',gender:''};
     document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
+    document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()==='tutti'));
+    document.querySelectorAll('.chip[data-key="gender"]').forEach(c=>c.classList.remove('on'));
     const rb=document.getElementById('rst-btn'); if(rb) rb.style.display='none';
     const rbm=document.getElementById('rst-btn-m'); if(rbm) rbm.style.display='none';
     renderShop();
@@ -3087,6 +3112,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       (!filters.brand||p.brand===filters.brand)&&
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>c.toLowerCase()===filters.color.toLowerCase()))||''+(p.color||'').toLowerCase()===filters.color.toLowerCase())&&
+      (!filters.gender||!p.gender||p.gender==='unisex'||p.gender===filters.gender)&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
     if(_sLoad) _sLoad.style.display='none';
