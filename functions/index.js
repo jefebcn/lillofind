@@ -1364,13 +1364,13 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
 exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
   // Subscription catalog (server-side price list — single source of truth)
   const SUBSCRIPTION_CATALOG = {
-    'sub-netflix':     { name: 'Netflix Premium UHD',       price: 5.90, isDigital: true },
-    'sub-youtube':     { name: 'YouTube Premium',           price: 4.50, isDigital: true },
-    'sub-spotify':     { name: 'Spotify Premium',           price: 3.99, isDigital: true },
-    'sub-disney':      { name: 'Disney+',                   price: 3.90, isDigital: true },
-    'sub-paramount':   { name: 'Paramount+',                price: 3.50, isDigital: true },
-    'sub-canva':       { name: 'Canva Pro',                 price: 4.00, isDigital: true },
-    'sub-crunchyroll': { name: 'Crunchyroll Mega Fan',      price: 3.50, isDigital: true },
+    'sub-netflix':     { name: 'Netflix Premium UHD',       price: 3.90, isDigital: true },
+    'sub-youtube':     { name: 'YouTube Premium',           price: 2.50, isDigital: true },
+    'sub-spotify':     { name: 'Spotify Premium',           price: 1.99, isDigital: true },
+    'sub-disney':      { name: 'Disney+',                   price: 1.90, isDigital: true },
+    'sub-paramount':   { name: 'Paramount+',                price: 1.50, isDigital: true },
+    'sub-canva':       { name: 'Canva Pro',                 price: 2.00, isDigital: true },
+    'sub-crunchyroll': { name: 'Crunchyroll Mega Fan',      price: 1.50, isDigital: true },
   };
 
   // 1 — Autenticazione obbligatoria
