@@ -3112,7 +3112,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       (!filters.brand||p.brand===filters.brand)&&
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>c.toLowerCase()===filters.color.toLowerCase()))||''+(p.color||'').toLowerCase()===filters.color.toLowerCase())&&
-      (!filters.gender||!p.gender||p.gender==='unisex'||p.gender===filters.gender)&&
+      (!filters.gender||p.gender===filters.gender)&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
     if(_sLoad) _sLoad.style.display='none';
