@@ -207,6 +207,39 @@ button{touch-action:manipulation;}
       <button class="btn-g" onclick="showPg('shop')">Vedi Shop</button>
     </div>
 
+    <!-- ── AUTO-CATEGORIZZAZIONE GENERE ── -->
+    <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;" id="gender-tool-section">
+      <p class="slbl" style="margin-bottom:6px;">Strumento AI</p>
+      <h3 class="bb" style="font-size:36px;margin-bottom:8px;">Auto-Categorizzazione Genere</h3>
+      <p style="font-size:11px;color:var(--mid);margin-bottom:20px;line-height:1.7;">Analizza automaticamente tutti i prodotti e assegna il genere (Uomo/Donna/Unisex) basandosi su nome, categoria e brand. Puoi modificare i suggerimenti prima di applicarli.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="btn-led" id="gc-analyze-btn" onclick="gcAnalyze()">Analizza Prodotti →</button>
+        <button class="btn-g" id="gc-apply-btn" onclick="gcApply()" style="display:none;">Applica Classificazione ✓</button>
+        <button class="btn-g" id="gc-only-new-btn" onclick="gcApplyOnlyNew()" style="display:none;">Applica Solo Non Classificati</button>
+      </div>
+      <div id="gc-stats" style="display:none;margin-bottom:16px;padding:14px;background:var(--k3);border:1px solid var(--k2);font-size:11px;line-height:1.9;"></div>
+      <div id="gc-table-wrap" style="display:none;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('all')">Tutti</button>
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('donna')">Solo Donna</button>
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('uomo')">Solo Uomo</button>
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('unisex')">Solo Unisex</button>
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('manual')">Modificati</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="gc-table" style="width:100%;border-collapse:collapse;font-size:11px;">
+            <thead><tr style="border-bottom:2px solid var(--k);text-align:left;">
+              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:32px;"><input type="checkbox" id="gc-check-all" onchange="gcToggleAll(this.checked)" title="Seleziona tutti"/></th>
+              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prodotto</th>
+              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:80px;">Categoria</th>
+              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:120px;">Genere suggerito</th>
+            </tr></thead>
+            <tbody id="gc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ── TRACKING ASSIGNMENT ── -->
     <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;">
       <p class="slbl" style="margin-bottom:6px;">Gestione Spedizioni</p>
@@ -1192,6 +1225,125 @@ waitFB(()=>{
     } catch(e){ showToast('⚠️ Si è verificato un errore. Riprova.'); }
     btn.textContent = '💾 SALVA MODIFICHE →'; btn.disabled = false;
   };
+
+// ══════════════════════════════════════════════════════════════════════
+// AUTO-CATEGORIZZAZIONE GENERE
+// ══════════════════════════════════════════════════════════════════════
+  let _gcData = [];
+
+  function inferGender(p) {
+    const text = ((p.name||'') + ' ' + (p.model||'') + ' ' + (p.brand||'')).toLowerCase();
+    const cat  = (p.category||'').toLowerCase();
+    if (/\bdonna\b|femmin|girl|woman|women|femme|mujer/.test(text)) return 'donna';
+    if (/\buomo\b|maschi|\bman\b|\bmen\b|homme|hombre/.test(text)) return 'uomo';
+    if (/borsa|bag|pochette|clutch|tote|shoulder bag|hobo|speedy|baguette|satchel/.test(text)) return 'donna';
+    if (cat === 'borsa') return 'donna';
+    if (/collana|bracciale|orecchini/.test(text)) return 'donna';
+    return 'unisex';
+  }
+
+  window.gcAnalyze = async function() {
+    const fb = window.__fb;
+    const btn = document.getElementById('gc-analyze-btn');
+    btn.textContent = 'Analisi in corso...'; btn.disabled = true;
+    try {
+      const snap = await fb.getDocs(fb.query(fb.collection(fb.db, 'products'), fb.orderBy('createdAt','desc')));
+      _gcData = snap.docs.map(d => {
+        const p = { id: d.id, ...d.data() };
+        return { id: p.id, name: p.name||'', brand: p.brand||'', category: p.category||'',
+                 currentGender: p.gender||'', inferredGender: inferGender(p), overrideGender: null };
+      });
+      const counts = { donna:0, uomo:0, unisex:0 };
+      _gcData.forEach(r => counts[r.inferredGender]++);
+      const alreadySet = _gcData.filter(r => r.currentGender).length;
+      document.getElementById('gc-stats').style.display = 'block';
+      document.getElementById('gc-stats').innerHTML =
+        `<strong>${_gcData.length}</strong> prodotti analizzati &nbsp;·&nbsp; ` +
+        `<span style="color:#e05c8a">Donna: <strong>${counts.donna}</strong></span> &nbsp;·&nbsp; ` +
+        `<span style="color:#5c9ee0">Uomo: <strong>${counts.uomo}</strong></span> &nbsp;·&nbsp; ` +
+        `Unisex: <strong>${counts.unisex}</strong> &nbsp;·&nbsp; ` +
+        `Gia classificati: <strong>${alreadySet}</strong><br>` +
+        `<span style="font-size:10px;color:var(--dim);">Puoi correggere singoli prodotti prima di applicare.</span>`;
+      gcRenderTable('all');
+      document.getElementById('gc-table-wrap').style.display = 'block';
+      document.getElementById('gc-apply-btn').style.display = 'inline-block';
+      document.getElementById('gc-only-new-btn').style.display = 'inline-block';
+    } catch(e) { showToast('Errore analisi: ' + e.message); }
+    btn.textContent = 'Rianalizza'; btn.disabled = false;
+  };
+
+  let _gcViewFilter = 'all';
+  window.gcFilterView = function(f) { _gcViewFilter = f; gcRenderTable(f); };
+
+  function gcRenderTable(filter) {
+    const COLORS = { donna:'#e05c8a', uomo:'#5c9ee0', unisex:'#888' };
+    const rows = _gcData.filter(r => {
+      if (filter === 'all') return true;
+      if (filter === 'manual') return r.overrideGender !== null;
+      return (r.overrideGender || r.inferredGender) === filter;
+    });
+    document.getElementById('gc-tbody').innerHTML = rows.map(r => {
+      const eff = r.overrideGender || r.inferredGender;
+      const changed = r.overrideGender && r.overrideGender !== r.inferredGender;
+      const wasSet = r.currentGender ? `<span style="font-size:9px;color:#888;margin-left:4px;">(era: ${r.currentGender})</span>` : '';
+      return `<tr style="border-bottom:1px solid var(--k2);${changed?'background:rgba(200,255,0,.04)':''}">
+        <td style="padding:7px 6px;"><input type="checkbox" class="gc-row-chk" data-id="${r.id}" checked/></td>
+        <td style="padding:7px 6px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name}">
+          <strong style="font-size:11px;">${r.name}</strong>
+          <span style="font-size:9px;color:#888;display:block;">${r.brand}</span>
+        </td>
+        <td style="padding:7px 6px;font-size:9px;color:#888;">${r.category||'—'}</td>
+        <td style="padding:7px 6px;">
+          <select data-id="${r.id}" onchange="gcOverride('${r.id}',this.value)"
+            style="font-size:10px;padding:4px 6px;border:1px solid var(--k2);background:var(--k3);color:${COLORS[eff]};font-weight:700;cursor:pointer;border-radius:4px;">
+            <option value="donna" ${eff==='donna'?'selected':''}>Donna</option>
+            <option value="uomo"  ${eff==='uomo' ?'selected':''}>Uomo</option>
+            <option value="unisex"${eff==='unisex'?'selected':''}>Unisex</option>
+          </select>${wasSet}
+        </td>
+      </tr>`;
+    }).join('');
+    document.getElementById('gc-check-all').checked = true;
+  }
+
+  window.gcOverride = function(id, val) {
+    const row = _gcData.find(r => r.id === id);
+    if (row) row.overrideGender = val;
+    const sel = document.querySelector(`select[data-id="${id}"]`);
+    const C = { donna:'#e05c8a', uomo:'#5c9ee0', unisex:'#888' };
+    if (sel) sel.style.color = C[val] || '#888';
+  };
+
+  window.gcToggleAll = function(checked) {
+    document.querySelectorAll('.gc-row-chk').forEach(c => c.checked = checked);
+  };
+
+  async function gcDoApply(onlyNew) {
+    const fb = window.__fb;
+    const checkedIds = new Set([...document.querySelectorAll('.gc-row-chk:checked')].map(c => c.dataset.id));
+    let updates = _gcData
+      .filter(r => checkedIds.has(r.id))
+      .filter(r => !onlyNew || !r.currentGender)
+      .map(r => ({ id: r.id, gender: r.overrideGender || r.inferredGender }));
+    if (!updates.length) { showToast('Nessun prodotto da aggiornare.'); return; }
+    const btn  = document.getElementById('gc-apply-btn');
+    const btn2 = document.getElementById('gc-only-new-btn');
+    btn.disabled = true; btn2.disabled = true;
+    try {
+      const fn = fb.httpsCallable(fb.functions, 'batchSetGender');
+      for (let i = 0; i < updates.length; i += 500) {
+        btn.textContent = `Applicazione... ${Math.min(i+500,updates.length)}/${updates.length}`;
+        await fn({ updates: updates.slice(i, i + 500) });
+      }
+      showToast('✅ ' + updates.length + ' prodotti aggiornati!');
+      updates.forEach(u => { const r = _gcData.find(x => x.id === u.id); if(r){ r.currentGender = u.gender; r.overrideGender = null; } });
+      gcRenderTable(_gcViewFilter);
+    } catch(e) { showToast('Errore: ' + e.message); }
+    btn.textContent = 'Applica Classificazione'; btn.disabled = false; btn2.disabled = false;
+  }
+
+  window.gcApply        = () => gcDoApply(false);
+  window.gcApplyOnlyNew = () => gcDoApply(true);
 
 </script>
 </body>

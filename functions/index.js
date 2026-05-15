@@ -1088,6 +1088,31 @@ async function checkAdmin(request) {
   if (snap.data()?.isAdmin !== true) throw new HttpsError('permission-denied', 'Solo admin.');
 }
 
+exports.batchSetGender = onCall({ cors: true }, async (request) => {
+  await checkAdmin(request);
+  const updates = request.data.updates;
+  if (!Array.isArray(updates) || updates.length === 0) throw new HttpsError('invalid-argument', 'Array updates vuoto.');
+  if (updates.length > 6000) throw new HttpsError('invalid-argument', 'Massimo 6000 prodotti per chiamata.');
+
+  const db = admin.firestore();
+  let batch = db.batch();
+  let count = 0;
+  const commits = [];
+
+  for (const { id, gender } of updates) {
+    if (!id || !['uomo', 'donna', 'unisex'].includes(gender)) continue;
+    batch.update(db.collection('products').doc(id), { gender });
+    count++;
+    if (count % 500 === 0) {
+      commits.push(batch.commit());
+      batch = db.batch();
+    }
+  }
+  if (count % 500 !== 0) commits.push(batch.commit());
+  await Promise.all(commits);
+  return { updated: count };
+});
+
 exports.getAdminStats = onCall({ cors: true }, async (request) => {
   await checkAdmin(request);
 
