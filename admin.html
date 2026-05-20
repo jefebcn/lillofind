@@ -943,7 +943,7 @@ waitFB(()=>{
       const payEmoji = {card:'💳',paypal:'🅿',bonifico:'🏦'}[o.payment]||'💳';
       const itemsHtml = (o.items||[]).map(i=>{
         const box = i.boxOption==='con_scatola'?' · 📦 Con Scatola':i.boxOption==='senza_scatola'?' · Senza Scatola':'';
-        const imgSrc = i.img || '';
+        const imgSrc = i.img || i.imageUrl || '';
         const lbDetails = [
           i.brand ? `<span style='color:#aaa'>Brand</span> &nbsp;${i.brand}` : '',
           i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${i.size}` : '',
@@ -955,9 +955,9 @@ waitFB(()=>{
         ].filter(Boolean).join('<br>');
         const lbName = (i.name||'').replace(/'/g,"\\'").replace(/"/g,"&quot;");
         const lbDetailsSafe = lbDetails.replace(/'/g,"\\'");
-        const clickable = imgSrc ? `onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')" style="cursor:zoom-in;"` : '';
+        const onclickAttr = imgSrc ? `onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"` : '';
         return `<div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:#fff;border:1px solid #eee;border-radius:4px;transition:border-color .15s;" onmouseover="this.style.borderColor='#bbb'" onmouseout="this.style.borderColor='#eee'">
-          <div ${clickable} style="width:48px;height:48px;background:#f0f0f0;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:3px;${imgSrc?'cursor:zoom-in;':''}">
+          <div ${onclickAttr} style="width:48px;height:48px;background:#f0f0f0;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:3px;${imgSrc?'cursor:zoom-in;':''}">
             ${imgSrc?`<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:'<span style="font-size:18px;">📦</span>'}
           </div>
           <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${imgSrc?`onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"`:''}>
