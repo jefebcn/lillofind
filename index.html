@@ -2683,10 +2683,37 @@ img{ -webkit-user-drag:none; user-select:none; }
     const el=document.getElementById('home-pts'); if(el) el.textContent=String(pts).padStart(3,'0');
     const tEl=document.getElementById('home-tier'); if(tEl) tEl.textContent=udata?getTier(pts):'—';
     const sEl=document.getElementById('home-spent'); if(sEl) sEl.textContent=udata?'€'+(udata.totalSpent||0).toFixed(0):'€0';
-    // Sync LFPoints CTA section if page is visible
     if(document.getElementById('pg-lfpoints')?.classList.contains('on')) renderRewardsTable();
     renderRecentlyViewed();
+    // Mostra banner vault se primo ordine completato
+    if(localStorage.getItem('lf_show_vault_banner')==='1'){
+      localStorage.removeItem('lf_show_vault_banner');
+      setTimeout(showVaultUnlockBanner, 400);
+    }
   }
+
+  function showVaultUnlockBanner(){
+    const el=document.getElementById('vault-unlock-banner');
+    if(!el) return;
+    el.style.display='flex';
+    let s=5;
+    const cd=document.getElementById('vault-banner-cd');
+    if(cd) cd.textContent=s;
+    const iv=setInterval(()=>{
+      s--;
+      if(cd) cd.textContent=s;
+      if(s<=0){ clearInterval(iv); closeVaultBanner(); }
+    },1000);
+    el._iv=iv;
+  }
+
+  window.closeVaultBanner=function(){
+    const el=document.getElementById('vault-unlock-banner');
+    if(!el) return;
+    if(el._iv) clearInterval(el._iv);
+    el.style.opacity='0';
+    setTimeout(()=>{ el.style.display='none'; el.style.opacity='1'; },350);
+  };
 
   function renderRecentlyViewed(){
     const rv = JSON.parse(localStorage.getItem('lf_rv')||'[]');
@@ -3611,6 +3638,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     // LFPoints: accreditati subito solo se pagamento verificato (carta)
     const newPts=prevPts+(pts||0);
     udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null};
+    if(!localStorage.getItem('lf_orders_placed')){
+      localStorage.setItem('lf_show_vault_banner','1');
+    }
+    localStorage.setItem('lf_orders_placed','1');
     updateNav(user,udata); updateHomeDisplay();
     const newReward=pts>0?REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts):null;
     cart=[];saveCart();updateCartBadge();
@@ -4942,6 +4973,22 @@ img{ -webkit-user-drag:none; user-select:none; }
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox(); });
 
 </script>
+
+<!-- ── Vault Unlock Banner ────────────────────────────────────── -->
+<div id="vault-unlock-banner" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#0a0a0a;border:2px solid var(--led);max-width:420px;width:100%;padding:36px 28px;text-align:center;box-shadow:0 0 60px rgba(200,255,0,.25);position:relative;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:4px;color:var(--led);margin-bottom:12px;">LF VAULT</div>
+    <div style="font-size:40px;margin-bottom:16px;">🔓</div>
+    <p style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;margin-bottom:8px;line-height:1.2;">COMPLIMENTI!</p>
+    <p style="font-size:13px;color:#bbb;margin-bottom:20px;line-height:1.5;">Hai sbloccato l'accesso a <strong style="color:var(--led);">LF Vault</strong></p>
+    <div style="background:#0d0d00;border:1px solid var(--led);padding:14px 20px;margin-bottom:24px;display:inline-block;">
+      <span style="font-size:10px;letter-spacing:3px;color:#888;text-transform:uppercase;display:block;margin-bottom:4px;">Password di accesso</span>
+      <span style="font-family:monospace;font-size:32px;color:var(--led);font-weight:700;letter-spacing:6px;">2809</span>
+    </div>
+    <p style="font-size:11px;color:#555;margin-bottom:20px;">Questo banner si chiude automaticamente in <span id="vault-banner-cd" style="color:var(--led);font-weight:700;">5</span>s</p>
+    <button onclick="closeVaultBanner();window.location.href='vault.html'" style="background:var(--led);color:#000;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;padding:12px 32px;width:100%;">ACCEDI AL VAULT</button>
+  </div>
+</div>
 
 <!-- ── Lightbox ──────────────────────────────────────────────── -->
 <div id="lf-lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);cursor:zoom-out;align-items:center;justify-content:center;">
