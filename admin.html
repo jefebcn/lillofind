@@ -910,6 +910,16 @@ waitFB(()=>{
   };
 
   let adminOrders = [];
+  const _PROXY='https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
+  function pImg(url){
+    if(!url) return '';
+    const u=url.startsWith('//')?'https:'+url:url;
+    const inner=u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
+    if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
+      return _PROXY+'?url='+encodeURIComponent(inner);
+    return u;
+  }
+
 
   window.loadAdminOrders = async function(){
     const fb = window.__fb;
@@ -955,7 +965,8 @@ waitFB(()=>{
       const payEmoji = {card:'💳',paypal:'🅿',bonifico:'🏦'}[o.payment]||'💳';
       const itemsHtml = (o.items||[]).map(i=>{
         const box = i.boxOption==='con_scatola'?' · 📦 Con Scatola':i.boxOption==='senza_scatola'?' · Senza Scatola':'';
-        const imgSrc = i.img || i.imageUrl || '';
+        const imgRaw = i.img || i.imageUrl || '';
+        const imgSrc = pImg(imgRaw);
         const lbDetails = [
           i.brand ? `<span style='color:#aaa'>Brand</span> &nbsp;${i.brand}` : '',
           i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${i.size}` : '',
@@ -1155,7 +1166,7 @@ waitFB(()=>{
         ? '<input type="checkbox" id="chk-' + p.id + '" ' + (sel?'checked':'') + ' onclick="event.stopPropagation();toggleBulkItem(\'' + p.id + '\',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;flex-shrink:0;">'
         : '';
       const imgHtml = p.imageUrl
-        ? '<img src="' + p.imageUrl + '" style="width:48px;height:48px;object-fit:cover;border:1px solid #eee;" onerror="this.style.display=\'none\'">'
+        ? '<img src="' + pImg(p.imageUrl) + '" style="width:48px;height:48px;object-fit:cover;border:1px solid #eee;" onerror="this.style.display=\'none\'">'
         : '<div style="width:48px;height:48px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>';
       const sizeStr = (p.sizes&&p.sizes.length) ? '· '+p.sizes.join(' ') : (p.size ? '· '+p.size : '');
       const actionsHtml = bulkMode ? '' : '<div style="display:flex;gap:6px;">'
