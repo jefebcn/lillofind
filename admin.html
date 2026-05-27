@@ -921,6 +921,18 @@ waitFB(()=>{
       const fn = fb.httpsCallable(fb.functions,'getAdminOrders');
       const res = await fn();
       adminOrders = res.data;
+      // Arricchisci item senza immagine con imageUrl attuale dal catalogo
+      const missingIds = new Set();
+      adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(!i.img && i.id && !i.isDigital) missingIds.add(i.id); }));
+      if(missingIds.size){
+        try{
+          const fetches = [...missingIds].map(id=>fb.getDoc(fb.doc(fb.db,'products',id)));
+          const snaps = await Promise.all(fetches);
+          const imgMap = {};
+          snaps.forEach(s=>{ if(s.exists()) imgMap[s.id]=s.data().imageUrl||''; });
+          adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(!i.img && imgMap[i.id]) i.img=imgMap[i.id]; }));
+        }catch(e){ console.warn('Enrichimento immagini ordini fallito',e); }
+      }
       renderAdminOrders();
     } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
   };
