@@ -441,8 +441,19 @@ img{ -webkit-user-drag:none; user-select:none; }
 /* ── HOME LATEST DROPS — grid for 8 products ────── */
 @media(min-width:900px){#home-prods{grid-template-columns:repeat(4,1fr);gap:20px;}}
 
+/* ── HOME CATEGORY CIRCLES ──────────────────────────── */
+#home-cat-circles{display:flex;gap:20px;overflow-x:auto;padding:0 24px 8px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}
+#home-cat-circles::-webkit-scrollbar{display:none;}
+.hcc{display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;min-width:88px;-webkit-tap-highlight-color:transparent;}
+.hcc-ring{width:90px;height:90px;border-radius:50%;border:3px solid rgba(255,255,255,.18);overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;transition:border-color .25s,transform .25s;box-shadow:0 2px 16px rgba(0,0,0,.4);}
+@media(min-width:900px){.hcc-ring{width:110px;height:110px;} .hcc{min-width:108px;}}
+.hcc:hover .hcc-ring{border-color:var(--led);transform:scale(1.07);}
+.hcc-ring img{width:100%;height:100%;object-fit:cover;display:block;}
+.hcc-emo{font-size:32px;line-height:1;}
+.hcc-label{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:#ccc;transition:color .2s;text-align:center;}
+.hcc:hover .hcc-label{color:var(--led);}
 
-/* ── CAROUSEL ───────────────────────────────────────── */
+
 .hide-scrollbar::-webkit-scrollbar{display:none;}
 .hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}
 .carousel-card{
@@ -1129,6 +1140,14 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <button onclick="location.href='subscriptions.html'" style="background:linear-gradient(135deg,var(--dg1),var(--dg2));color:var(--w);border:none;padding:14px 32px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 20px rgba(142,121,99,.3);" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Esplora Digital Gear →</button>
       </div>
+    </div>
+  </section>
+
+  <!-- CATEGORY CIRCLES -->
+  <section style="padding:36px 0 28px;border-bottom:1px solid #1a1a1a;overflow:hidden;">
+    <div style="max-width:1100px;margin:0 auto;">
+      <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--led);padding:0 24px;margin-bottom:20px;">Sfoglia per Categoria</p>
+      <div id="home-cat-circles"></div>
     </div>
   </section>
 
@@ -3168,9 +3187,42 @@ img{ -webkit-user-drag:none; user-select:none; }
     _renderTimer = requestAnimationFrame(_doRenderShop);
   }
 
+  function renderHomeCatCircles(){
+    const el=document.getElementById('home-cat-circles');
+    if(!el) return;
+    const CATS=[
+      {label:'Sneakers', model:'Sneakers',  emoji:'👟'},
+      {label:'T-Shirt',  model:'T-Shirt',   emoji:'👕'},
+      {label:'Felpe',    model:'Felpa',      emoji:'🧥'},
+      {label:'Giacche',  model:'Giacchetto', emoji:'🫱'},
+      {label:'Piumini',  model:'Piumino',    emoji:'🧤'},
+      {label:'Pantaloni',model:'Pantaloni',  emoji:'👖'},
+      {label:'Cardigan', model:'Cardigan',   emoji:'🧶'},
+      {label:'Cappelli', model:'Cappello',   emoji:'🧢'},
+    ];
+    const imgMap={};
+    if(products&&products.length){
+      products.forEach(p=>{
+        if(!p.imageUrl) return;
+        CATS.forEach(c=>{
+          if(!imgMap[c.model]&&p.model&&p.model.toLowerCase()===c.model.toLowerCase())
+            imgMap[c.model]=pImg(p.imageUrl);
+        });
+      });
+    }
+    el.innerHTML=CATS.map(c=>{
+      const img=imgMap[c.model]||'';
+      return `<div class="hcc" onclick="showPg('shop');resetFilters();setTimeout(()=>setFilter('model','${c.model}'),80)">
+        <div class="hcc-ring">${img?`<img src="${img}" alt="${c.label}" loading="lazy" onerror="this.parentNode.innerHTML='<span class=hcc-emo>${c.emoji}</span>'">`:`<span class="hcc-emo">${c.emoji}</span>`}</div>
+        <span class="hcc-label">${c.label}</span>
+      </div>`;
+    }).join('');
+  }
+
   function renderHomeProds(){
     const h=document.getElementById('home-prods');
     if(!h)return;
+    renderHomeCatCircles();
     requestAnimationFrame(()=>{
       const latest=products.slice(0,8);
       h.textContent='';
