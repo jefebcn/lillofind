@@ -93,11 +93,13 @@ app.get('/proxyImage', async (c) => {
     || parsed.hostname === 'yupoo.com' || parsed.hostname === 'yunjifen.com';
   if (!ok) return c.text('Host not allowed', 403);
 
-  // Cache edge di Cloudflare
+  // Cache v2 — versioned key invalidates all previously cached error responses
   const cache = caches.default;
-  const cacheKey = new Request(c.req.url, { method: 'GET' });
+  const cacheUrl = new URL(c.req.url);
+  cacheUrl.searchParams.set('_cv', '2');
+  const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   const hit = await cache.match(cacheKey);
-  if (hit) return hit;
+  if (hit && hit.ok) return hit;
 
   try {
     const upstream = await fetch(url, {
@@ -106,9 +108,14 @@ app.get('/proxyImage', async (c) => {
         'Referer': `https://${parsed.hostname}/`,
         'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
       },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(15000),
     });
-    if (!upstream.ok) return c.text('Upstream error', upstream.status);
+    if (!upstream.ok) {
+      return new Response('Upstream error', {
+        status: upstream.status,
+        headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
     const ct = (upstream.headers.get('content-type') || 'image/jpeg').split(';')[0];
     const buf = await upstream.arrayBuffer();
     const resp = new Response(buf, {
@@ -121,7 +128,10 @@ app.get('/proxyImage', async (c) => {
     c.executionCtx.waitUntil(cache.put(cacheKey, resp.clone()));
     return resp;
   } catch (e) {
-    return c.text('Fetch failed: ' + e.message, 502);
+    return new Response('Fetch error', {
+      status: 502,
+      headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+    });
   }
 });
 
