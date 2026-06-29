@@ -209,6 +209,15 @@ export class Firestore {
     return out;
   }
 
+  // Diagnostica: verifica token service account + raggiungibilità Firestore.
+  // Non espone dati sensibili (solo un conteggio approssimativo).
+  async ping() {
+    const resp = await fetch(`${this.base}/products?pageSize=1`, { headers: await this._headers() });
+    if (!resp.ok) throw new Error(`Firestore ping: ${resp.status} ${await resp.text()}`);
+    const data = await resp.json();
+    return { reachable: true, sampleReturned: (data.documents || []).length };
+  }
+
   // Commit batch di update (max 500 per chiamata, come Firestore).
   // writes = [{ collection, id, fields: {campo: valore} }]
   async commitUpdates(writes) {

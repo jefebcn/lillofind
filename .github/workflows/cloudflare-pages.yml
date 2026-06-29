@@ -1,0 +1,52 @@
+name: Deploy site to Cloudflare Pages (opzionale)
+
+# Opzione per servire ANCHE il sito statico da Cloudflare (lasciando Firebase
+# del tutto). NON si attiva da solo: lo lanci a mano da GitHub → Actions →
+# "Deploy site to Cloudflare Pages" → Run workflow.
+#
+# Prerequisiti (una volta):
+#   1. Crea un API token Cloudflare (permesso: Cloudflare Pages: Edit)
+#   2. Aggiungi 2 secret al repo GitHub:
+#        CLOUDFLARE_API_TOKEN   = il token
+#        CLOUDFLARE_ACCOUNT_ID  = l'account id (dashboard Cloudflare, a destra)
+#   3. Dopo il primo deploy, aggiungi il dominio Pages (es. lillofind.pages.dev)
+#      in Firebase Console → Authentication → Settings → Domini autorizzati
+#      (serve per il login Google).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assembla la cartella pubblica (solo file del sito)
+        run: |
+          mkdir -p dist
+          cp *.html firebase.js style.css manifest.json dist/ 2>/dev/null || true
+          cp *.png *.jpeg *.jpg *.ico dist/ 2>/dev/null || true
+          # Header sicurezza/cache per Cloudflare Pages
+          cat > dist/_headers <<'EOF'
+          /*.html
+            Cache-Control: no-cache, must-revalidate
+            X-Content-Type-Options: nosniff
+            Referrer-Policy: strict-origin-when-cross-origin
+          /*.png
+            Cache-Control: public, max-age=2592000, immutable
+          /*.jpeg
+            Cache-Control: public, max-age=2592000, immutable
+          /*.css
+            Cache-Control: public, max-age=86400
+          /*.js
+            Cache-Control: public, max-age=86400
+          EOF
+
+      - name: Deploy su Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=lillofind
