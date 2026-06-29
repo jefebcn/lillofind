@@ -910,6 +910,13 @@ waitFB(()=>{
   };
 
   let adminOrders = [];
+  // Escape HTML — i campi cliente (nome, indirizzo, note) e i nomi prodotto
+  // sono dati esterni: vanno sempre passati qui prima di finire in innerHTML.
+  function escH(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
   const _PROXY='https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
   function pImg(url){
     if(!url) return '';
@@ -968,9 +975,9 @@ waitFB(()=>{
         const imgRaw = i.img || i.imageUrl || '';
         const imgSrc = pImg(imgRaw);
         const lbDetails = [
-          i.brand ? `<span style='color:#aaa'>Brand</span> &nbsp;${i.brand}` : '',
-          i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${i.size}` : '',
-          i.color ? `<span style='color:#aaa'>Colore</span> &nbsp;${i.color}` : '',
+          i.brand ? `<span style='color:#aaa'>Brand</span> &nbsp;${escH(i.brand)}` : '',
+          i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${escH(i.size)}` : '',
+          i.color ? `<span style='color:#aaa'>Colore</span> &nbsp;${escH(i.color)}` : '',
           i.boxOption==='con_scatola' ? `<span style='color:#aaa'>Scatola</span> &nbsp;📦 Inclusa` : i.boxOption==='senza_scatola' ? `<span style='color:#aaa'>Scatola</span> &nbsp;Non inclusa` : '',
           `<span style='color:#aaa'>Qtà</span> &nbsp;x${i.qty}`,
           `<span style='color:#aaa'>Prezzo unit.</span> &nbsp;€${(i.price||0).toFixed(2)}`,
@@ -984,8 +991,8 @@ waitFB(()=>{
             ${imgSrc?`<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:'<span style="font-size:18px;">📦</span>'}
           </div>
           <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${imgSrc?`onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"`:''}>
-            <p style="font-size:12px;font-weight:600;line-height:1.3;margin-bottom:2px;">${i.name||'—'}</p>
-            <p style="font-size:10px;color:#888;">${i.brand?i.brand+' · ':''}${i.size?'Sz '+i.size:''}${box}</p>
+            <p style="font-size:12px;font-weight:600;line-height:1.3;margin-bottom:2px;">${escH(i.name||'—')}</p>
+            <p style="font-size:10px;color:#888;">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p style="font-size:13px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
@@ -1012,22 +1019,22 @@ waitFB(()=>{
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;padding:12px;background:#f8f8f8;border-left:3px solid #e0e0e0;">
           <div>
             <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:2px;">Cliente</p>
-            <p style="font-size:12px;font-weight:500;">${o.name||'—'}</p>
-            <p style="font-size:10px;color:var(--mid);">${o.email||'—'}</p>
-            <p style="font-size:10px;color:var(--mid);">${o.phone||'—'}</p>
+            <p style="font-size:12px;font-weight:500;">${escH(o.name||'—')}</p>
+            <p style="font-size:10px;color:var(--mid);">${escH(o.email||'—')}</p>
+            <p style="font-size:10px;color:var(--mid);">${escH(o.phone||'—')}</p>
           </div>
           <div>
             <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:2px;">Spedizione</p>
-            <p style="font-size:11px;">${(o.address?.street)||'—'}</p>
-            <p style="font-size:11px;color:var(--mid);">${(o.address?.zip)||''} ${(o.address?.city)||''}</p>
-            <p style="font-size:11px;color:var(--mid);">${(o.address?.country)||''}</p>
+            <p style="font-size:11px;">${escH((o.address?.street)||'—')}</p>
+            <p style="font-size:11px;color:var(--mid);">${escH((o.address?.zip)||'')} ${escH((o.address?.city)||'')}</p>
+            <p style="font-size:11px;color:var(--mid);">${escH((o.address?.country)||'')}</p>
           </div>
         </div>
         <div style="margin-bottom:10px;">
           <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Articoli (${(o.items||[]).reduce((s,i)=>s+i.qty,0)} pezzi)</p>
           <div style="display:flex;flex-direction:column;gap:6px;">${itemsHtml||'<p style="font-size:11px;color:#aaa;">—</p>'}</div>
         </div>
-        ${o.notes?`<div style="font-size:10px;color:var(--mid);font-style:italic;margin-bottom:10px;">📝 ${o.notes}</div>`:''}
+        ${o.notes?`<div style="font-size:10px;color:var(--mid);font-style:italic;margin-bottom:10px;">📝 ${escH(o.notes)}</div>`:''}
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           ${isPending?`<button onclick="confirmAdminOrder('${o._docId}',this)" class="btn-led" style="padding:9px 18px;font-size:10px;">✅ Conferma Ordine</button>`:''}
           <button onclick="sendTrackingFromOrder('${(o.email||'').replace(/'/g,"\\'")}','${(o.name||'').replace(/'/g,"\\'")}')" class="btn-k" style="padding:9px 18px;font-size:10px;">📦 Assegna Tracking</button>

@@ -87,7 +87,9 @@ exports.proxyImage = onRequest({ cors: true, maxInstances: 20, timeoutSeconds: 1
     const ct = (upstream.headers.get('content-type') || 'image/jpeg').split(';')[0];
     const buf = Buffer.from(await upstream.arrayBuffer());
     res.set('Content-Type', ct);
-    res.set('Cache-Control', 'public, max-age=86400');
+    // Immagini Yupoo immutabili (l'URL cambia se cambia l'immagine):
+    // cache aggressiva browser + edge CDN per 1 anno.
+    res.set('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, immutable');
     res.set('Access-Control-Allow-Origin', '*');
     res.send(buf);
   } catch(e) {
