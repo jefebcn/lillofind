@@ -2967,7 +2967,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       :(p.style?`<span style="position:absolute;top:8px;left:8px;background:var(--k);color:var(--w);font-size:9px;letter-spacing:2px;padding:3px 8px;z-index:3;">${p.style.toUpperCase()}</span>`:'');
     return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" onclick="openProduct('${p.id}')">
       <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
-        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
+        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="this.style.opacity='1';this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
         ${stockBadge}
         ${delBtn}
         <button class="wish-btn ${inWish?'active':''}" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">${inWish?'❤️':'♡'}</button>
