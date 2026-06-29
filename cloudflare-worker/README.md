@@ -22,7 +22,7 @@ Spark** — nessuna migrazione dei dati.
 | `/createPaymentIntent` | POST | utente | createPaymentIntent |
 | `/validateOrder` | POST | utente | validateOrder |
 | `/yupooAnalyze` | POST | admin | yupooAnalyze |
-| `/yupooFetch` | POST | admin | ⚠️ da migrare (ultima fase) |
+| `/yupooFetch` | POST | admin | yupooFetch (Yupoo + Taobao/AliExpress) |
 
 ## Deploy passo-passo
 
@@ -87,3 +87,6 @@ npx wrangler dev        # avvia in locale su http://localhost:8787
 - **Verifica login**: i token Firebase sono verificati con `jose` contro i certificati
   pubblici di Google (vedi `src/lib/auth.js`).
 - **Stripe**: usa il fetch HTTP client compatibile con Workers.
+- **yupooFetch**: fa molte richieste sequenziali a Yupoo/Taobao. Su pagine molto
+  grandi il parsing regex può avvicinarsi al limite CPU del piano free Cloudflare;
+  è uno strumento admin a uso occasionale — in caso di timeout, riprova.

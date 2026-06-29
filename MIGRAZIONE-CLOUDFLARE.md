@@ -75,15 +75,18 @@ Hosting continuano a funzionare gratis.
 
 ## Cosa è già fatto nel codice
 - ✅ Worker completo in `cloudflare-worker/` (build verificata)
+- ✅ **Tutte** le 13 funzioni portate, incluso lo scraper `yupooFetch`
+  (Yupoo + Taobao/AliExpress) e `yupooAnalyze` (analisi AI immagini)
 - ✅ Shim `lfCallable` nel frontend: le chiamate funzionano identiche a prima
 - ✅ `proxyImage` reindirizzato al Worker (con fallback)
 - ✅ Workflow di deploy semplificato a solo-Hosting
 - ✅ Chiave RESEND rimossa dal codice (ora è un secret)
 
-## Cosa NON è ancora migrato
-- ⚠️ **yupooFetch** (scraper import Yupoo/Taobao, 570 righe): chiamarlo dà un
-  messaggio chiaro. È admin-only; nel frattempo puoi aggiungere prodotti a mano.
-  Sarà la fase finale.
+## Note
+- ⚠️ `yupooFetch` fa molte richieste sequenziali: su pagine enormi può sfiorare il
+  limite CPU del piano free Cloudflare. È admin-only e occasionale — in caso di
+  timeout, riprova. Se diventasse un problema, l'upgrade Workers Paid ($5/mese)
+  alza i limiti, ma per l'uso normale il free basta.
 
 ## Rollback
 Se qualcosa non va, le Cloud Functions originali sono ancora in
