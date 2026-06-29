@@ -590,7 +590,7 @@ waitFB(()=>{
     const btn=document.getElementById('ad-btn');
     btn.textContent='...'; btn.disabled=true;
     try{
-      const saveFn=fb.httpsCallable(fb.functions,'saveProduct');
+      const saveFn=lfCallable('saveProduct');
       await saveFn({
         name,price,
         description:document.getElementById('ad-desc').value.trim(),
@@ -622,7 +622,7 @@ waitFB(()=>{
     if(!confirm('Eliminare '+name+'?'))return;
     const fb=window.__fb;
     try{
-      const fn=fb.httpsCallable(fb.functions,'deleteAdminProduct');
+      const fn=lfCallable('deleteAdminProduct');
       await fn({id:pid});
       showToast('🗑 Prodotto eliminato.');
       loadAdminCatalog();
@@ -789,7 +789,7 @@ waitFB(()=>{
       const imgUrl=imgInput?.dataset.b64||'';
       if(!name||isNaN(price)){errors++;continue;}
       try{
-        const saveFn=fb.httpsCallable(fb.functions,'saveProduct');
+        const saveFn=lfCallable('saveProduct');
         await saveFn({
           name,price,
           brand:bulkSelectedCat.brand||'',
@@ -821,7 +821,7 @@ waitFB(()=>{
     if(!wrap) return;
     wrap.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const fn = fb.httpsCallable(fb.functions, 'getAdminStats');
+      const fn = lfCallable('getAdminStats');
       const res = await fn();
       const s = res.data;
       const u = s.users, o = s.orders, r = s.revenue;
@@ -910,13 +910,20 @@ waitFB(()=>{
   };
 
   let adminOrders = [];
+  // Escape HTML — i campi cliente (nome, indirizzo, note) e i nomi prodotto
+  // sono dati esterni: vanno sempre passati qui prima di finire in innerHTML.
+  function escH(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
   const _PROXY='https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
   function pImg(url){
     if(!url) return '';
     const u=url.startsWith('//')?'https:'+url:url;
     const inner=u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
     if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
-      return _PROXY+'?url='+encodeURIComponent(inner);
+      return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner);
     return u;
   }
 
@@ -928,7 +935,7 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento ordini...</p>';
     try{
-      const fn = fb.httpsCallable(fb.functions,'getAdminOrders');
+      const fn = lfCallable('getAdminOrders');
       const res = await fn();
       adminOrders = res.data;
       // Arricchisci item senza immagine con imageUrl attuale dal catalogo
@@ -968,9 +975,9 @@ waitFB(()=>{
         const imgRaw = i.img || i.imageUrl || '';
         const imgSrc = pImg(imgRaw);
         const lbDetails = [
-          i.brand ? `<span style='color:#aaa'>Brand</span> &nbsp;${i.brand}` : '',
-          i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${i.size}` : '',
-          i.color ? `<span style='color:#aaa'>Colore</span> &nbsp;${i.color}` : '',
+          i.brand ? `<span style='color:#aaa'>Brand</span> &nbsp;${escH(i.brand)}` : '',
+          i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${escH(i.size)}` : '',
+          i.color ? `<span style='color:#aaa'>Colore</span> &nbsp;${escH(i.color)}` : '',
           i.boxOption==='con_scatola' ? `<span style='color:#aaa'>Scatola</span> &nbsp;📦 Inclusa` : i.boxOption==='senza_scatola' ? `<span style='color:#aaa'>Scatola</span> &nbsp;Non inclusa` : '',
           `<span style='color:#aaa'>Qtà</span> &nbsp;x${i.qty}`,
           `<span style='color:#aaa'>Prezzo unit.</span> &nbsp;€${(i.price||0).toFixed(2)}`,
@@ -984,8 +991,8 @@ waitFB(()=>{
             ${imgSrc?`<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:'<span style="font-size:18px;">📦</span>'}
           </div>
           <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${imgSrc?`onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"`:''}>
-            <p style="font-size:12px;font-weight:600;line-height:1.3;margin-bottom:2px;">${i.name||'—'}</p>
-            <p style="font-size:10px;color:#888;">${i.brand?i.brand+' · ':''}${i.size?'Sz '+i.size:''}${box}</p>
+            <p style="font-size:12px;font-weight:600;line-height:1.3;margin-bottom:2px;">${escH(i.name||'—')}</p>
+            <p style="font-size:10px;color:#888;">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p style="font-size:13px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
@@ -1012,22 +1019,22 @@ waitFB(()=>{
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;padding:12px;background:#f8f8f8;border-left:3px solid #e0e0e0;">
           <div>
             <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:2px;">Cliente</p>
-            <p style="font-size:12px;font-weight:500;">${o.name||'—'}</p>
-            <p style="font-size:10px;color:var(--mid);">${o.email||'—'}</p>
-            <p style="font-size:10px;color:var(--mid);">${o.phone||'—'}</p>
+            <p style="font-size:12px;font-weight:500;">${escH(o.name||'—')}</p>
+            <p style="font-size:10px;color:var(--mid);">${escH(o.email||'—')}</p>
+            <p style="font-size:10px;color:var(--mid);">${escH(o.phone||'—')}</p>
           </div>
           <div>
             <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:2px;">Spedizione</p>
-            <p style="font-size:11px;">${(o.address?.street)||'—'}</p>
-            <p style="font-size:11px;color:var(--mid);">${(o.address?.zip)||''} ${(o.address?.city)||''}</p>
-            <p style="font-size:11px;color:var(--mid);">${(o.address?.country)||''}</p>
+            <p style="font-size:11px;">${escH((o.address?.street)||'—')}</p>
+            <p style="font-size:11px;color:var(--mid);">${escH((o.address?.zip)||'')} ${escH((o.address?.city)||'')}</p>
+            <p style="font-size:11px;color:var(--mid);">${escH((o.address?.country)||'')}</p>
           </div>
         </div>
         <div style="margin-bottom:10px;">
           <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Articoli (${(o.items||[]).reduce((s,i)=>s+i.qty,0)} pezzi)</p>
           <div style="display:flex;flex-direction:column;gap:6px;">${itemsHtml||'<p style="font-size:11px;color:#aaa;">—</p>'}</div>
         </div>
-        ${o.notes?`<div style="font-size:10px;color:var(--mid);font-style:italic;margin-bottom:10px;">📝 ${o.notes}</div>`:''}
+        ${o.notes?`<div style="font-size:10px;color:var(--mid);font-style:italic;margin-bottom:10px;">📝 ${escH(o.notes)}</div>`:''}
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           ${isPending?`<button onclick="confirmAdminOrder('${o._docId}',this)" class="btn-led" style="padding:9px 18px;font-size:10px;">✅ Conferma Ordine</button>`:''}
           <button onclick="sendTrackingFromOrder('${(o.email||'').replace(/'/g,"\\'")}','${(o.name||'').replace(/'/g,"\\'")}')" class="btn-k" style="padding:9px 18px;font-size:10px;">📦 Assegna Tracking</button>
@@ -1041,7 +1048,7 @@ waitFB(()=>{
     if(!docId) return;
     if(btn){ btn.textContent='...'; btn.disabled=true; }
     try{
-      const fn=fb.httpsCallable(fb.functions,'updateAdminOrder');
+      const fn=lfCallable('updateAdminOrder');
       await fn({id:docId, status:'confirmed'});
       const idx = adminOrders.findIndex(o=>o._docId===docId);
       if(idx>=0) adminOrders[idx].status='confirmed';
@@ -1070,7 +1077,7 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const fn=fb.httpsCallable(fb.functions,'getAdminProducts');
+      const fn=lfCallable('getAdminProducts');
       const res=await fn();
       adminCatalogProducts=res.data;
       renderAdminCatalog();
@@ -1135,7 +1142,7 @@ waitFB(()=>{
     if(btn){ btn.textContent = 'Eliminazione...'; btn.style.pointerEvents='none'; }
     let deleted = 0;
     const ids = [...bulkSelected];
-    const delFn=fb.httpsCallable(fb.functions,'deleteAdminProduct');
+    const delFn=lfCallable('deleteAdminProduct');
     for(const pid of ids){
       try{ await delFn({id:pid}); deleted++; }
       catch(e){ console.error('Errore eliminando',pid,e); }
@@ -1145,48 +1152,75 @@ waitFB(()=>{
     loadAdminCatalog();
   };
 
+  // Rendering catalogo a batch (con ~5000 prodotti, renderizzare tutte le
+  // righe in una volta bloccava il thread; ora carica man mano che si scrolla).
+  function _catRowHtml(p){
+    const sel = bulkSelected.has(p.id);
+    const rowStyle = bulkMode && sel
+      ? 'background:#fff5f5;border-color:#ff4757;'
+      : 'background:#fff;';
+    const cols = bulkMode ? '38px 48px 1fr auto' : '48px 1fr auto auto';
+    const chkHtml = bulkMode
+      ? '<input type="checkbox" id="chk-' + p.id + '" ' + (sel?'checked':'') + ' onclick="event.stopPropagation();toggleBulkItem(\'' + p.id + '\',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;flex-shrink:0;">'
+      : '';
+    const imgHtml = p.imageUrl
+      ? '<img src="' + pImg(p.imageUrl) + '" loading="lazy" style="width:48px;height:48px;object-fit:cover;border:1px solid #eee;" onerror="this.style.display=\'none\'">'
+      : '<div style="width:48px;height:48px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>';
+    const sizeStr = (p.sizes&&p.sizes.length) ? '· '+p.sizes.join(' ') : (p.size ? '· '+p.size : '');
+    const actionsHtml = bulkMode ? '' : '<div style="display:flex;gap:6px;">'
+      + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:8px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">✏️ MODIFICA</button>'
+      + '<button onclick="deleteProd(\'' + p.id + '\',\'' + (p.name||'').replace(/'/g,"\\'") + '\');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:8px 10px;cursor:pointer;font-size:12px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor=\'#ff4757\';this.style.color=\'#ff4757\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#ccc\'">🗑</button>'
+      + '</div>';
+    const rowClick = bulkMode
+      ? 'onclick="var cb=document.getElementById(\'chk-' + p.id + '\');cb.checked=!cb.checked;toggleBulkItem(\'' + p.id + '\',cb.checked);"'
+      : 'onmouseover="this.style.borderColor=\'#ccc\'" onmouseout="this.style.borderColor=\'#e8e8e8\'"';
+    return '<div style="display:grid;grid-template-columns:' + cols + ';gap:12px;align-items:center;padding:12px 14px;border:1.5px solid #e8e8e8;' + rowStyle + 'transition:border-color .15s;' + (bulkMode?'cursor:pointer;':'') + '" ' + rowClick + '>'
+      + chkHtml
+      + imgHtml
+      + '<div>'
+        + '<p style="font-size:12px;font-family:\'IBM Plex Mono\',monospace;font-weight:500;">' + escH(p.name||'—') + '</p>'
+        + '<p style="font-size:10px;color:#777;margin-top:2px;">' + escH(p.brand||'') + ' ' + (p.model?'· '+escH(p.model):'') + ' ' + escH(sizeStr) + '</p>'
+      + '</div>'
+      + '<p style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">€' + (p.price||0).toFixed(2) + '</p>'
+      + actionsHtml
+      + '</div>';
+  }
+
+  const _CAT_BATCH = 60;
+  let _catFiltered = [], _catShown = 0, _catObs = null, _catSentinel = null;
+  function _appendCatBatch(){
+    const list = document.getElementById('admin-catalog-list');
+    if(!list || _catShown >= _catFiltered.length) return;
+    const next = _catFiltered.slice(_catShown, _catShown + _CAT_BATCH);
+    const html = next.map(_catRowHtml).join('');
+    if(_catSentinel) _catSentinel.insertAdjacentHTML('beforebegin', html);
+    else list.insertAdjacentHTML('beforeend', html);
+    _catShown += next.length;
+  }
   window.renderAdminCatalog = function(){
     const list = document.getElementById('admin-catalog-list');
     if(!list) return;
     const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
-    const filtered = adminCatalogProducts.filter(p=>
+    _catFiltered = adminCatalogProducts.filter(p=>
       !q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q)
     );
-    if(!filtered.length){
+    if(!_catFiltered.length){
       list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:12px 0;">Nessun prodotto trovato.</p>';
+      _catShown = 0; _catSentinel = null;
       return;
     }
-    list.innerHTML = filtered.map(function(p){
-      const sel = bulkSelected.has(p.id);
-      const rowStyle = bulkMode && sel
-        ? 'background:#fff5f5;border-color:#ff4757;'
-        : 'background:#fff;';
-      const cols = bulkMode ? '38px 48px 1fr auto' : '48px 1fr auto auto';
-      const chkHtml = bulkMode
-        ? '<input type="checkbox" id="chk-' + p.id + '" ' + (sel?'checked':'') + ' onclick="event.stopPropagation();toggleBulkItem(\'' + p.id + '\',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;flex-shrink:0;">'
-        : '';
-      const imgHtml = p.imageUrl
-        ? '<img src="' + pImg(p.imageUrl) + '" style="width:48px;height:48px;object-fit:cover;border:1px solid #eee;" onerror="this.style.display=\'none\'">'
-        : '<div style="width:48px;height:48px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>';
-      const sizeStr = (p.sizes&&p.sizes.length) ? '· '+p.sizes.join(' ') : (p.size ? '· '+p.size : '');
-      const actionsHtml = bulkMode ? '' : '<div style="display:flex;gap:6px;">'
-        + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:8px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">✏️ MODIFICA</button>'
-        + '<button onclick="deleteProd(\'' + p.id + '\',\'' + (p.name||'').replace(/'/g,"\\'") + '\');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:8px 10px;cursor:pointer;font-size:12px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor=\'#ff4757\';this.style.color=\'#ff4757\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#ccc\'">🗑</button>'
-        + '</div>';
-      const rowClick = bulkMode
-        ? 'onclick="var cb=document.getElementById(\'chk-' + p.id + '\');cb.checked=!cb.checked;toggleBulkItem(\'' + p.id + '\',cb.checked);"'
-        : 'onmouseover="this.style.borderColor=\'#ccc\'" onmouseout="this.style.borderColor=\'#e8e8e8\'"';
-      return '<div style="display:grid;grid-template-columns:' + cols + ';gap:12px;align-items:center;padding:12px 14px;border:1.5px solid #e8e8e8;' + rowStyle + 'transition:border-color .15s;' + (bulkMode?'cursor:pointer;':'') + '" ' + rowClick + '>'
-        + chkHtml
-        + imgHtml
-        + '<div>'
-          + '<p style="font-size:12px;font-family:\'IBM Plex Mono\',monospace;font-weight:500;">' + (p.name||'—') + '</p>'
-          + '<p style="font-size:10px;color:#777;margin-top:2px;">' + (p.brand||'') + ' ' + (p.model?'· '+p.model:'') + ' ' + sizeStr + '</p>'
-        + '</div>'
-        + '<p style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">€' + (p.price||0).toFixed(2) + '</p>'
-        + actionsHtml
-        + '</div>';
-    }).join('');
+    list.innerHTML = '';
+    _catShown = 0;
+    _catSentinel = document.createElement('div');
+    _catSentinel.style.height = '1px';
+    list.appendChild(_catSentinel);
+    _appendCatBatch();
+    if(!_catObs && ('IntersectionObserver' in window)){
+      _catObs = new IntersectionObserver((entries)=>{
+        if(entries.some(e=>e.isIntersecting)) _appendCatBatch();
+      }, { root: list, rootMargin: '600px 0px' });
+    }
+    if(_catObs){ _catObs.disconnect(); _catObs.observe(_catSentinel); }
   };
 
   window.openEditModal = function(pid){
@@ -1259,7 +1293,7 @@ waitFB(()=>{
     const btn = document.getElementById('edit-save-btn');
     btn.textContent = 'Salvando...'; btn.disabled = true;
     try{
-      const fn=fb.httpsCallable(fb.functions,'updateAdminProduct');
+      const fn=lfCallable('updateAdminProduct');
       await fn({id:pid, data:{name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')}});
       // Update local cache
       const idx = adminCatalogProducts.findIndex(p=>p.id===pid);
@@ -1378,7 +1412,7 @@ waitFB(()=>{
     const btn2 = document.getElementById('gc-only-new-btn');
     btn.disabled = true; btn2.disabled = true;
     try {
-      const fn = fb.httpsCallable(fb.functions, 'batchSetGender');
+      const fn = lfCallable('batchSetGender');
       for (let i = 0; i < updates.length; i += 500) {
         btn.textContent = `Applicazione... ${Math.min(i+500,updates.length)}/${updates.length}`;
         await fn({ updates: updates.slice(i, i + 500) });

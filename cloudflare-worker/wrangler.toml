@@ -1,0 +1,18 @@
+name = "lillofind-worker"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Variabili pubbliche (non segrete). Sovrascrivibili in dashboard.
+[vars]
+FIREBASE_PROJECT_ID = "lillofind-c455c"
+# Origini ammesse per CORS (frontend). Separare con virgola.
+ALLOWED_ORIGINS = "https://lillofind-c455c.web.app,https://lillofind-c455c.firebaseapp.com,http://localhost:8000,http://localhost:5000"
+
+# ───────────────────────────────────────────────────────────────
+# SECRET da impostare con `wrangler secret put <NOME>` (NON qui):
+#   STRIPE_SECRET_KEY        → chiave segreta Stripe (sk_live_... / sk_test_...)
+#   RESEND_API_KEY           → chiave Resend per email ordini
+#   ANTHROPIC_API_KEY        → chiave Anthropic per yupooAnalyze
+#   FIREBASE_SERVICE_ACCOUNT → JSON completo del service account (una riga)
+# ───────────────────────────────────────────────────────────────

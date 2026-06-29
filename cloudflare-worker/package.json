@@ -1,0 +1,21 @@
+{
+  "name": "lillofind-worker",
+  "version": "1.0.0",
+  "description": "LilloFind backend su Cloudflare Workers (sostituisce le Firebase Cloud Functions)",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "jose": "^5.9.0",
+    "stripe": "^17.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
