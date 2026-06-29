@@ -1,0 +1,55 @@
+name: Deploy Cloudflare Worker (API backend)
+
+# Deploy automatico quando cambiano file del Worker (push su main).
+# Avviabile anche a mano: GitHub → Actions → "Deploy Cloudflare Worker" → Run workflow.
+#
+# Prerequisiti (una-tantum):
+#   1. Crea un API token Cloudflare:
+#        Dashboard → My Profile → API Tokens → Create Token
+#        Template: "Edit Cloudflare Workers"  (oppure custom con permesso Workers:Edit)
+#   2. Aggiungi 2 secret al repo GitHub (Settings → Secrets → Actions):
+#        CLOUDFLARE_API_TOKEN   = il token creato sopra
+#        CLOUDFLARE_ACCOUNT_ID  = il tuo Account ID (Cloudflare dashboard, colonna destra)
+#   3. Imposta i 4 secret del Worker (solo una volta, in Cloudflare Dashboard):
+#        Workers → lillofind-worker → Settings → Variables → Encrypt
+#          FIREBASE_SERVICE_ACCOUNT   (JSON su una riga)
+#          STRIPE_SECRET_KEY
+#          RESEND_API_KEY
+#          ANTHROPIC_API_KEY
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cloudflare-worker/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloudflare-worker
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cloudflare-worker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare-worker
+          command: deploy
