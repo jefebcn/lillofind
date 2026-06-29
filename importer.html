@@ -657,7 +657,7 @@ function pImg(url){
   const u = url.startsWith('//') ? 'https:' + url : url;
   const inner = u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
   if(inner.includes('yupoo.com') || inner.includes('yunjifen.com'))
-    return _PROXY + '?url=' + encodeURIComponent(inner);
+    return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY) + '?url=' + encodeURIComponent(inner);
   return u;
 }
 let currentBrand='', rowId=0, savedCount=0, user=null;
