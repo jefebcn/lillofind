@@ -302,6 +302,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
 /* ── RESPONSIVE UTILS ─────────────────────────── */
 @media(max-width:768px){
   .hide-mob{display:none !important;}
+  #filter-aside{display:none !important;}
   .show-mob{display:block !important;}
   .full-mob{width:100% !important;}
   .grid-1-mob{grid-template-columns:1fr !important;}
@@ -657,8 +658,8 @@ img{ -webkit-user-drag:none; user-select:none; }
 ══════════════════════════════════════════════════ */
 #filter-aside{
   width:230px;min-width:230px;
-  background:rgba(255,255,255,.018);
-  border-right:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.04);
+  border-right:1px solid rgba(255,255,255,.12);
   padding:22px 18px;
   position:sticky;top:110px;
   height:calc(100vh - 130px);
@@ -1523,7 +1524,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-shop" class="pg">
   <div style="display:flex;">
     <!-- Filter sidebar (desktop) -->
-    <aside id="filter-aside" class="hide-mob">
+    <aside id="filter-aside">
       <!-- Header -->
       <div class="fs-hdr">
         <span class="fs-hdr-title">Filtri</span>
@@ -3171,7 +3172,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       :(p.style?`<span style="position:absolute;top:8px;left:8px;background:var(--k);color:var(--w);font-size:9px;letter-spacing:2px;padding:3px 8px;z-index:3;">${p.style.toUpperCase()}</span>`:'');
     return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" onclick="openProduct('${p.id}')">
       <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
-        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="this.style.opacity='1';this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
+        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="this.closest('.pcard').style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
         ${stockBadge}
         ${delBtn}
         <button class="wish-btn ${inWish?'active':''}" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">${inWish?'❤️':'♡'}</button>
