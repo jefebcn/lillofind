@@ -128,6 +128,29 @@ app.get('/proxyImage', async (c) => {
 // ── Health check ────────────────────────────────────────────────
 app.get('/', (c) => c.json({ ok: true, service: 'lillofind-worker' }));
 
+// ── Diagnostica (pubblica, nessun dato sensibile) ───────────────
+// Verifica che i secret e l'accesso a Firestore siano configurati bene.
+// Utile subito dopo il deploy: GET /diag
+app.get('/diag', async (c) => {
+  const env = c.env;
+  const out = {
+    projectId: env.FIREBASE_PROJECT_ID || null,
+    secrets: {
+      FIREBASE_SERVICE_ACCOUNT: !!env.FIREBASE_SERVICE_ACCOUNT,
+      STRIPE_SECRET_KEY: !!env.STRIPE_SECRET_KEY,
+      RESEND_API_KEY: !!env.RESEND_API_KEY,
+      ANTHROPIC_API_KEY: !!env.ANTHROPIC_API_KEY,
+    },
+    firestore: { reachable: false },
+  };
+  try {
+    out.firestore = await new Firestore(env).ping();
+  } catch (e) {
+    out.firestore = { reachable: false, error: e.message };
+  }
+  return c.json(out);
+});
+
 // ════════════════════════════════════════════════════════════════
 // Endpoint callable (POST /<nomeFunzione>)
 // ════════════════════════════════════════════════════════════════
@@ -147,5 +170,6 @@ app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 
 // Scraper (admin)
 app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'admin' }));
 app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'admin' }));
+app.post('/uploadImage',  callable(scrapers.uploadImage,  { auth: 'admin' }));
 
 export default app;

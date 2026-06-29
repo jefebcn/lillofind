@@ -88,6 +88,29 @@ Hosting continuano a funzionare gratis.
   timeout, riprova. Se diventasse un problema, l'upgrade Workers Paid ($5/mese)
   alza i limiti, ma per l'uso normale il free basta.
 
+## Firebase Storage — non più necessario ✅
+Prima `yupoo-scraper.html` caricava le immagini su Firebase Storage (che richiede
+Blaze). Ora carica tramite il Worker (endpoint `/uploadImage` → imgbb), quindi
+**nessun componente usa più Firebase Storage**: puoi tornare a Spark senza rompere
+nulla. (Gli import `getStorage` rimasti nel file sono inerti.)
+
+## Opzionale: spostare ANCHE il sito su Cloudflare Pages
+Se vuoi lasciare Firebase del tutto (tranne Firestore/Auth che restano gratis):
+1. Crea un API token Cloudflare (permesso *Cloudflare Pages: Edit*)
+2. Aggiungi i secret GitHub `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`
+3. GitHub → Actions → **"Deploy site to Cloudflare Pages"** → Run workflow
+4. Aggiungi il dominio `*.pages.dev` ai **Domini autorizzati** in Firebase
+   Console → Authentication (necessario per il login Google)
+
+Non è obbligatorio: Firebase Hosting resta gratis su Spark.
+
+## Verifica rapida dopo il deploy del Worker
+```bash
+cd cloudflare-worker
+npm run smoke https://IL-TUO-WORKER.workers.dev
+```
+Mostra ✅/⚠️ per ogni secret e per la connessione a Firestore.
+
 ## Rollback
 Se qualcosa non va, le Cloud Functions originali sono ancora in
 `functions/index.js` (intatte). Basterebbe riattivare Blaze e ripristinare il

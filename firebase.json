@@ -9,7 +9,30 @@
   ],
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "functions/**", ".git/**", "*.rules"]
+    "ignore": ["firebase.json", "functions/**", "cloudflare-worker/**", ".git/**", "*.rules", "*.md"],
+    "headers": [
+      {
+        "source": "**/*.@(html)",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        ]
+      },
+      {
+        "source": "**/*.@(png|jpg|jpeg|webp|gif|svg|ico|woff2|woff)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" }
+        ]
+      }
+    ]
   },
   "storage": {
     "rules": "storage.rules"

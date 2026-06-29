@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "test": "node test/logic.test.mjs",
+    "smoke": "bash smoke-test.sh"
   },
   "dependencies": {
     "hono": "^4.6.0",

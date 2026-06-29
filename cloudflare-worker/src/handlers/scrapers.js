@@ -160,6 +160,37 @@ async function yupooPasswordAuth(baseUrl, password) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// uploadImage — carica un'immagine (base64) su imgbb e ritorna l'URL.
+// Sostituisce Firebase Storage (che richiede Blaze) per yupoo-scraper.html.
+// Input:  { imageBase64: string }  (base64 puro, senza prefisso data:)
+// Output: { url: string }
+// ════════════════════════════════════════════════════════════════
+export async function uploadImage(data, { env }) {
+  let b64 = (data && data.imageBase64) || '';
+  if (!b64) throw new HttpsError('invalid-argument', 'Immagine mancante.');
+  // togli eventuale prefisso data:...;base64,
+  const comma = b64.indexOf('base64,');
+  if (comma >= 0) b64 = b64.slice(comma + 7);
+  if (b64.length > 40 * 1024 * 1024) throw new HttpsError('invalid-argument', 'Immagine troppo grande.');
+
+  const form = new URLSearchParams();
+  form.append('key', env.IMGBB_KEY || IMGBB_KEY);
+  form.append('image', b64);
+  try {
+    const res = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST', body: form.toString(),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      signal: AbortSignal.timeout(20000),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json?.error?.message || 'imgbb error');
+    return { url: json.data.url };
+  } catch (e) {
+    throw new HttpsError('internal', 'Upload immagine fallito: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
 // yupooFetch — proxy/scraper Yupoo + Taobao/Tmall/AliExpress
 // ════════════════════════════════════════════════════════════════
 export async function yupooFetch(data, _ctx) {
