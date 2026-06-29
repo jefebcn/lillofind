@@ -651,6 +651,150 @@ img{ -webkit-user-drag:none; user-select:none; }
   font-size:11px;line-height:1.7;color:var(--mid);
 }
 .digital-delivery-box strong{color:var(--k);}
+
+/* ══════════════════════════════════════════════════
+   FILTER SIDEBAR REDESIGN
+══════════════════════════════════════════════════ */
+#filter-aside{
+  width:230px;min-width:230px;
+  background:rgba(255,255,255,.018);
+  border-right:1px solid rgba(255,255,255,.07);
+  padding:22px 18px;
+  position:sticky;top:110px;
+  height:calc(100vh - 130px);
+  overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;
+}
+#filter-aside::-webkit-scrollbar{width:3px;}
+#filter-aside::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);}
+
+/* header */
+.fs-hdr{display:flex;align-items:center;gap:8px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07);}
+.fs-hdr-title{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:700;flex:1;color:rgba(255,255,255,.9);}
+.fs-active-badge{
+  background:var(--led);color:#000;font-size:9px;font-weight:700;
+  min-width:18px;height:18px;border-radius:9px;display:none;
+  align-items:center;justify-content:center;padding:0 5px;
+}
+.fs-reset-btn{
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  color:rgba(255,255,255,.3);background:none;border:none;cursor:pointer;
+  padding:0;display:none;transition:color .15s;
+}
+.fs-reset-btn:hover{color:var(--led);}
+
+/* active filter tags */
+#fs-active-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px;}
+.af-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 7px 3px 9px;
+  background:rgba(200,255,0,.07);
+  border:1px solid rgba(200,255,0,.22);
+  font-size:8px;letter-spacing:1px;color:var(--led);
+  cursor:pointer;text-transform:uppercase;transition:background .15s;
+}
+.af-tag:hover{background:rgba(200,255,0,.15);}
+.af-tag-x{font-size:12px;line-height:1;opacity:.55;}
+
+/* gender selector */
+.gender-trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:8px 0 18px;}
+.gtrio-btn{
+  padding:8px 4px;font-size:9px;letter-spacing:.8px;
+  border:1px solid rgba(255,255,255,.12);background:none;
+  color:rgba(255,255,255,.38);cursor:pointer;
+  transition:all .15s;text-transform:uppercase;
+  font-family:'IBM Plex Mono',monospace;text-align:center;
+}
+.gtrio-btn:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.8);}
+.gtrio-btn.active{border-color:var(--led);color:var(--led);background:rgba(200,255,0,.06);}
+
+/* accordion sections */
+.fsec{border-bottom:1px solid rgba(255,255,255,.06);}
+.fsec-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;background:none;border:none;padding:13px 0;cursor:pointer;
+  color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2.5px;
+  text-transform:uppercase;font-weight:600;
+  font-family:'IBM Plex Mono',monospace;transition:color .15s;
+}
+.fsec-hd:hover{color:rgba(255,255,255,.75);}
+.fsec-hd.has-active{color:var(--led);}
+.fsec-arr{font-size:10px;transition:transform .2s;opacity:.4;}
+.fsec-hd.collapsed .fsec-arr{transform:rotate(-90deg);}
+.fsec-bd{padding-bottom:12px;}
+.fsec-bd.hidden{display:none;}
+
+/* chips inside sidebar: override for dark bg */
+#filter-aside .chip{
+  border-color:rgba(255,255,255,.13);
+  color:rgba(255,255,255,.55);
+  background:rgba(255,255,255,.03);
+  margin:2px;padding:4px 9px;font-size:9px;
+}
+#filter-aside .chip:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.3);box-shadow:none;}
+#filter-aside .chip.on{background:rgba(200,255,0,.08);color:var(--led);border-color:rgba(200,255,0,.35);box-shadow:0 0 6px rgba(200,255,0,.15);}
+
+/* group labels inside sidebar */
+#filter-aside .fs-grp{font-size:8px;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin:10px 0 5px;font-family:'IBM Plex Mono',monospace;}
+
+/* size boxes inside sidebar */
+#filter-aside .size-box{
+  border-color:rgba(255,255,255,.13);background:rgba(255,255,255,.03);
+  color:rgba(255,255,255,.55);min-width:34px;min-height:34px;font-size:10px;
+}
+#filter-aside .size-box:hover{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.9);background:rgba(255,255,255,.06);}
+#filter-aside .size-box.on{border-color:var(--led);color:var(--led);background:rgba(200,255,0,.06);box-shadow:0 0 6px rgba(200,255,0,.15);}
+
+/* swatches in sidebar */
+#filter-aside .swatch-label{color:rgba(255,255,255,.3);}
+
+/* brand chips — scrollable if many */
+#filter-aside #ch-brand{max-height:160px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
+
+/* ── MOBILE FILTER DRAWER ─────────────────────────── */
+#mob-filter-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;
+  backdrop-filter:blur(2px);
+}
+#mob-filter-overlay.open{display:block;}
+#mob-filter-drawer{
+  position:fixed;bottom:0;left:0;right:0;z-index:801;
+  background:#111;border-top:2px solid rgba(255,255,255,.1);
+  border-radius:16px 16px 0 0;padding:0;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
+  max-height:85vh;overflow:hidden;display:flex;flex-direction:column;
+}
+#mob-filter-drawer.open{transform:translateY(0);}
+.mfd-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;
+}
+.mfd-title{font-size:11px;letter-spacing:3px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,.9);}
+.mfd-close{background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.mfd-body{overflow-y:auto;padding:0 20px;flex:1;scrollbar-width:thin;}
+.mfd-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;display:flex;gap:10px;}
+.mfd-body .fsec{border-bottom:1px solid rgba(255,255,255,.06);}
+.mfd-body .fsec-hd{padding:12px 0;font-size:9px;}
+.mfd-body .chip{border-color:rgba(255,255,255,.13);color:rgba(255,255,255,.55);background:rgba(255,255,255,.03);margin:2px;padding:4px 9px;font-size:9px;}
+.mfd-body .chip:hover,.mfd-body .chip.on{background:rgba(200,255,0,.08);color:var(--led);border-color:rgba(200,255,0,.35);}
+.mfd-body .size-box{border-color:rgba(255,255,255,.13);background:rgba(255,255,255,.03);color:rgba(255,255,255,.55);min-width:38px;min-height:38px;}
+.mfd-body .size-box.on{border-color:var(--led);color:var(--led);background:rgba(200,255,0,.06);}
+.mfd-body .fs-grp{font-size:8px;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin:10px 0 5px;font-family:'IBM Plex Mono',monospace;}
+#mob-filter-btn{
+  position:fixed;bottom:80px;right:16px;z-index:700;
+  background:var(--k);color:var(--w);border:2px solid rgba(255,255,255,.2);
+  padding:10px 16px;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+  display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.4);
+  transition:border-color .15s;
+}
+@media(max-width:768px){#mob-filter-btn{display:flex;}}
+#mob-filter-btn:hover{border-color:var(--led);}
+#mob-f-badge{
+  background:var(--led);color:#000;font-size:9px;font-weight:700;
+  min-width:18px;height:18px;border-radius:9px;
+  display:none;align-items:center;justify-content:center;padding:0 4px;
+}
 </style>
 </head>
 <body>
@@ -1379,19 +1523,44 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-shop" class="pg">
   <div style="display:flex;">
     <!-- Filter sidebar (desktop) -->
-    <aside class="hide-mob" style="width:200px;min-width:200px;border-right:2px solid var(--k);padding:28px 16px;position:sticky;top:120px;height:fit-content;">
-      <p style="font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:22px;">Filter</p>
-      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Genere</p>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <span class="chip" data-key="gender" data-val="uomo" onclick="setGender(filters.gender==='uomo'?'':'uomo')">Uomo</span>
-          <span class="chip" data-key="gender" data-val="donna" onclick="setGender(filters.gender==='donna'?'':'donna')">Donna</span>
+    <aside id="filter-aside" class="hide-mob">
+      <!-- Header -->
+      <div class="fs-hdr">
+        <span class="fs-hdr-title">Filtri</span>
+        <span class="fs-active-badge" id="fs-badge"></span>
+        <button class="fs-reset-btn" id="rst-btn" onclick="resetFilters()">Azzera</button>
+      </div>
+      <!-- Active filter tags -->
+      <div id="fs-active-tags"></div>
+      <!-- Genere -->
+      <div style="margin-bottom:4px;">
+        <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:'IBM Plex Mono',monospace;font-weight:600;">Genere</div>
+        <div class="gender-trio">
+          <button class="gtrio-btn active" data-g="" onclick="setGender('')">Tutti</button>
+          <button class="gtrio-btn" data-g="uomo" onclick="setGender('uomo')">♂ Uomo</button>
+          <button class="gtrio-btn" data-g="donna" onclick="setGender('donna')">♀ Donna</button>
         </div>
       </div>
-      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Modello</p><div id="ch-model"></div></div>
-      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Marchio</p><div id="ch-brand"></div></div>
-      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Taglia</p><div id="ch-size"></div></div>
-      <div style="margin-bottom:18px;"><p class="slbl" style="margin-bottom:8px;">Colore</p><div id="ch-color"></div></div>
-      <button id="rst-btn" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset</button>
+      <!-- Categoria -->
+      <div class="fsec">
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Categoria</span><span class="fsec-arr">▾</span></button>
+        <div class="fsec-bd" id="ch-model"></div>
+      </div>
+      <!-- Marchio -->
+      <div class="fsec">
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Marchio</span><span class="fsec-arr">▾</span></button>
+        <div class="fsec-bd" id="ch-brand"></div>
+      </div>
+      <!-- Taglia -->
+      <div class="fsec">
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Taglia</span><span class="fsec-arr">▾</span></button>
+        <div class="fsec-bd" id="ch-size"></div>
+      </div>
+      <!-- Colore -->
+      <div class="fsec">
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Colore</span><span class="fsec-arr">▾</span></button>
+        <div class="fsec-bd" id="ch-color"></div>
+      </div>
     </aside>
     <!-- Main -->
     <main style="flex:1;padding:24px 16px;min-width:0;">
@@ -1408,15 +1577,15 @@ img{ -webkit-user-drag:none; user-select:none; }
               <option value="alpha">A → Z</option>
             </select>
           </div>
-          <!-- Mobile filter button -->
-          <button onclick="toggleMobFilter()" class="btn-g mob-only" style="padding:8px 14px;font-size:10px;">⚙ Filtri</button>
+          <!-- Mobile filter button (inline, in header row) -->
+          <button onclick="openMobFilter()" class="btn-g mob-only" style="padding:8px 14px;font-size:10px;">⚙ Filtri</button>
         </div>
       </div>
-      <!-- Gender tabs -->
-      <div id="gender-tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <!-- Gender tabs (mobile only — desktop uses sidebar pills) -->
+      <div id="gender-tabs" class="mob-only" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
         <button class="g-tab active" onclick="setGender('')">Tutti</button>
-        <button class="g-tab" onclick="setGender('uomo')">Uomo</button>
-        <button class="g-tab" onclick="setGender('donna')">Donna</button>
+        <button class="g-tab" onclick="setGender('uomo')">♂ Uomo</button>
+        <button class="g-tab" onclick="setGender('donna')">♀ Donna</button>
       </div>
       <!-- Jakob's Law: universal search pattern users expect -->
       <div style="display:flex;gap:0;margin-bottom:20px;">
@@ -1427,14 +1596,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <button onclick="document.getElementById('shop-search').value='';searchShop('');" class="btn-k" style="padding:0 14px;font-size:18px;flex-shrink:0;" title="Cancella ricerca">✕</button>
       </div>
-      <!-- Mobile filter row -->
-      <div id="mob-filters" style="display:none;margin-bottom:20px;border:1.5px solid var(--k);padding:16px;">
-        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Modello</p><div id="ch-model-m"></div></div>
-        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Marchio</p><div id="ch-brand-m"></div></div>
-        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Taglia</p><div id="ch-size-m"></div></div>
-        <div style="margin-bottom:12px;"><p class="slbl" style="margin-bottom:6px;">Colore</p><div id="ch-color-m"></div></div>
-        <button id="rst-btn-m" class="btn-g" style="width:100%;padding:8px;font-size:10px;display:none;" onclick="resetFilters()">Reset Filtri</button>
-      </div>
+      <!-- Mobile filter drawer (portal, appended to body) -->
       <div id="s-load"><div class="pgrid" id="skel-grid"></div></div>
       <div id="s-grid" class="pgrid" style="display:none;"></div>
       <div id="s-sentinel" style="height:1px;"></div>
@@ -2623,11 +2785,54 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.openDrawer=function(){document.getElementById('drawer').classList.add('open');document.body.style.overflow='hidden';}
   window.closeDrawer=function(){document.getElementById('drawer').classList.remove('open');document.body.style.overflow='';}
 
-  // ── Mobile filter toggle ───────────────────────────────
-  window.toggleMobFilter=function(){
-    const el=document.getElementById('mob-filters');
-    el.style.display=el.style.display==='none'?'block':'none';
+  // ── Mobile filter drawer ───────────────────────────────
+  window.openMobFilter=function(){
+    document.getElementById('mob-filter-overlay').classList.add('open');
+    document.getElementById('mob-filter-drawer').classList.add('open');
+    document.body.style.overflow='hidden';
   };
+  window.closeMobFilter=function(){
+    document.getElementById('mob-filter-overlay').classList.remove('open');
+    document.getElementById('mob-filter-drawer').classList.remove('open');
+    document.body.style.overflow='';
+  };
+  window.syncMobGender=function(btn){
+    document.querySelectorAll('[data-gm]').forEach(b=>b.classList.toggle('active',b===btn));
+  };
+
+  // ── Filter accordion ───────────────────────────────────
+  window.toggleFsec=function(btn){
+    const bd=btn.nextElementSibling;
+    btn.classList.toggle('collapsed');
+    bd.classList.toggle('hidden');
+  };
+
+  // ── Update active filter UI (tags + badge) ─────────────
+  function updateFilterUI(){
+    const labelMap={model:'Categoria',brand:'Marchio',size:'Taglia',color:'Colore',gender:'Genere'};
+    const tags=Object.entries(filters).filter(([k,v])=>v&&k!=='style');
+    // Tags
+    const tc=document.getElementById('fs-active-tags');
+    if(tc) tc.innerHTML=tags.map(([k,v])=>
+      `<span class="af-tag" onclick="toggleF('${k}','${v}');updateFilterUI();">
+        ${v} <span class="af-tag-x">×</span>
+      </span>`
+    ).join('');
+    // Badge
+    const badge=document.getElementById('fs-badge');
+    const rstBtn=document.getElementById('rst-btn');
+    const rstBtnM=document.getElementById('rst-btn-m');
+    if(badge){badge.style.display=tags.length?'flex':'none';badge.textContent=tags.length;}
+    if(rstBtn){rstBtn.style.display=tags.length?'':'none';}
+    if(rstBtnM){rstBtnM.style.display=tags.length?'':'none';}
+    // Section headers glow when active
+    document.querySelectorAll('.fsec-hd').forEach(hd=>{
+      const bd=hd.nextElementSibling;
+      if(!bd) return;
+      const hasActive=bd.querySelector('.chip.on,.size-box.on,.swatch.on');
+      hd.classList.toggle('has-active',!!hasActive);
+    });
+  }
 
   // ── Back to top ────────────────────────────────────────
   window.addEventListener('scroll',()=>{
@@ -2818,7 +3023,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const s=await fb.getDocs(q);
       products=s.docs.map(d=>({id:d.id,...d.data()}));
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-      try{buildChips();}catch(_){}
+      try{buildChips();updateFilterUI();}catch(_){}
       renderShop(); renderHomeProds();
       localStorage.setItem('lf_wishlist', JSON.stringify(wishlist));
       updateWishBadge();
@@ -2882,9 +3087,9 @@ img{ -webkit-user-drag:none; user-select:none; }
           groups[mf.group].push(mf.label);
         });
         html=Object.entries(groups).map(([g,labels])=>
-          `<div style="margin-bottom:10px;">
-            <div style="font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:5px;">${g}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:3px;">
+          `<div style="margin-bottom:8px;">
+            <div class="fs-grp">${g}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:2px;">
               ${labels.map(lbl=>`<span class="chip" data-key="model" data-val="${lbl}" onclick="toggleF('model','${lbl}')">${lbl}</span>`).join('')}
             </div>
           </div>`
@@ -2920,20 +3125,19 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   window.toggleF=function(k,v){
     filters[k]=filters[k]===v?'':v;
-    // Update chip, size-box and swatch active states
     document.querySelectorAll(`.chip[data-key="${k}"],.size-box[data-key="${k}"],.swatch[data-key="${k}"]`).forEach(c=>{
       c.classList.toggle('on',c.dataset.val===filters[k]);
     });
-    const any=Object.values(filters).some(Boolean);
-    const rb=document.getElementById('rst-btn'); if(rb) rb.style.display=any?'':'none';
-    const rbm=document.getElementById('rst-btn-m'); if(rbm) rbm.style.display=any?'':'none';
+    updateFilterUI();
     renderShop();
   };
 
   window.setGender=function(v){
     filters.gender=v;
     document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===(v||'tutti')));
+    document.querySelectorAll('.gtrio-btn[data-g]').forEach(b=>b.classList.toggle('active',b.dataset.g===v));
     document.querySelectorAll('.chip[data-key="gender"]').forEach(c=>c.classList.toggle('on',c.dataset.val===v));
+    updateFilterUI();
     renderShop();
   };
 
@@ -2941,9 +3145,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     filters={model:'',brand:'',size:'',style:'',color:'',gender:''};
     document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()==='tutti'));
-    document.querySelectorAll('.chip[data-key="gender"]').forEach(c=>c.classList.remove('on'));
-    const rb=document.getElementById('rst-btn'); if(rb) rb.style.display='none';
-    const rbm=document.getElementById('rst-btn-m'); if(rbm) rbm.style.display='none';
+    document.querySelectorAll('.gtrio-btn[data-g]').forEach(b=>b.classList.toggle('active',b.dataset.g===''));
+    document.querySelectorAll('.gtrio-btn[data-gm]').forEach(b=>b.classList.toggle('active',b.dataset.gm===''));
+    updateFilterUI();
     renderShop();
   };
 
@@ -5070,6 +5274,50 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="lf-lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);cursor:zoom-out;align-items:center;justify-content:center;">
   <img id="lf-lb-img" src="" alt="" style="max-width:96vw;max-height:96vh;object-fit:contain;display:block;box-shadow:0 0 60px rgba(0,0,0,.8);user-select:none;">
   <button onclick="closeLightbox()" style="position:fixed;top:18px;right:24px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;line-height:1;opacity:.7;padding:0;">&times;</button>
+</div>
+
+<!-- ══ MOBILE FILTER OVERLAY + DRAWER ══ -->
+<div id="mob-filter-overlay" onclick="closeMobFilter()"></div>
+<div id="mob-filter-drawer">
+  <div class="mfd-header">
+    <span class="mfd-title">Filtri</span>
+    <button class="mfd-close" onclick="closeMobFilter()">✕</button>
+  </div>
+  <div class="mfd-body">
+    <!-- Gender -->
+    <div style="padding:14px 0 10px;border-bottom:1px solid rgba(255,255,255,.06);">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;">Genere</div>
+      <div style="display:flex;gap:6px;">
+        <button class="gtrio-btn active" data-gm="" onclick="setGender('');syncMobGender(this);" style="flex:1;">Tutti</button>
+        <button class="gtrio-btn" data-gm="uomo" onclick="setGender('uomo');syncMobGender(this);" style="flex:1;">♂ Uomo</button>
+        <button class="gtrio-btn" data-gm="donna" onclick="setGender('donna');syncMobGender(this);" style="flex:1;">♀ Donna</button>
+      </div>
+    </div>
+    <!-- Categoria -->
+    <div class="fsec">
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Categoria</span><span class="fsec-arr">▾</span></button>
+      <div class="fsec-bd" id="ch-model-m"></div>
+    </div>
+    <!-- Marchio -->
+    <div class="fsec">
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Marchio</span><span class="fsec-arr">▾</span></button>
+      <div class="fsec-bd" id="ch-brand-m"></div>
+    </div>
+    <!-- Taglia -->
+    <div class="fsec">
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Taglia</span><span class="fsec-arr">▾</span></button>
+      <div class="fsec-bd" id="ch-size-m"></div>
+    </div>
+    <!-- Colore -->
+    <div class="fsec">
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Colore</span><span class="fsec-arr">▾</span></button>
+      <div class="fsec-bd" id="ch-color-m"></div>
+    </div>
+  </div>
+  <div class="mfd-footer">
+    <button id="rst-btn-m" class="btn-k" style="flex:1;padding:12px;font-size:10px;letter-spacing:2px;display:none;" onclick="resetFilters()">Azzera Filtri</button>
+    <button class="btn-g" style="flex:1;padding:12px;font-size:10px;letter-spacing:2px;" onclick="closeMobFilter()">Mostra Risultati</button>
+  </div>
 </div>
 
 </body>
