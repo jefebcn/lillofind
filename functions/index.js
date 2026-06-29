@@ -13,17 +13,22 @@ setGlobalOptions({ region: 'europe-west1' });
 
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
-// Email notification key (non-payment, low risk)
-const RESEND_API_KEY_VAL = 're_N8LAPF8P_2Qbq8HuN7F3xdDdXLfxGgwQP';
+const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
 
 const NOTIFY_EMAIL = 'yishionvt@gmail.com';
+
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 async function sendOrderNotification(order, resendKey) {
   try {
     const itemsHtml = (order.items || []).map(i => {
       const box = i.boxOption==='con_scatola'?'📦 Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'—';
       const sizeBox = [i.size||'—', ['scarpe','scarpe_box'].includes(i.category||'')?box:''].filter(s=>s&&s!=='—').join(' / ') || '—';
-      return `<tr><td>${i.name}</td><td>${i.brand||'—'}</td><td>${sizeBox}</td><td>x${i.qty}</td><td>€${(i.price*i.qty).toFixed(2)}</td></tr>`;
+      return `<tr><td>${escHtml(i.name)}</td><td>${escHtml(i.brand||'—')}</td><td>${escHtml(sizeBox)}</td><td>x${escHtml(i.qty)}</td><td>€${(i.price*i.qty).toFixed(2)}</td></tr>`;
     }).join('');
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -31,12 +36,12 @@ async function sendOrderNotification(order, resendKey) {
       body: JSON.stringify({
         from: 'LilloFind Orders <onboarding@resend.dev>',
         to: [NOTIFY_EMAIL],
-        subject: `🛍 Nuovo Ordine ${order.orderId} — €${order.total}`,
-        html: `<h2>Nuovo Ordine: ${order.orderId}</h2>
-<p><b>Cliente:</b> ${order.name} — ${order.email}</p>
-<p><b>Telefono:</b> ${order.phone||'—'}</p>
-<p><b>Indirizzo:</b> ${order.address?.street}, ${order.address?.city} ${order.address?.zip}</p>
-<p><b>Pagamento:</b> ${order.payment}</p>
+        subject: `🛍 Nuovo Ordine ${escHtml(order.orderId)} — €${order.total}`,
+        html: `<h2>Nuovo Ordine: ${escHtml(order.orderId)}</h2>
+<p><b>Cliente:</b> ${escHtml(order.name)} — ${escHtml(order.email)}</p>
+<p><b>Telefono:</b> ${escHtml(order.phone||'—')}</p>
+<p><b>Indirizzo:</b> ${escHtml(order.address?.street)}, ${escHtml(order.address?.city)} ${escHtml(order.address?.zip)}</p>
+<p><b>Pagamento:</b> ${escHtml(order.payment)}</p>
 <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
 <tr><th>Prodotto</th><th>Brand</th><th>Taglia</th><th>Qtà</th><th>Prezzo</th></tr>
 ${itemsHtml}
@@ -45,7 +50,7 @@ ${itemsHtml}
 <b>Spedizione:</b> €${order.shipping?.toFixed(2)}<br>
 <b>Sconto:</b> -€${(order.discount||0).toFixed(2)}<br>
 <b>TOTALE:</b> €${order.total?.toFixed(2)}</p>
-<p><b>Note:</b> ${order.notes||'—'}</p>`,
+<p><b>Note:</b> ${escHtml(order.notes||'—')}</p>`,
       }),
     });
     if (!resp.ok) console.error('Resend error:', await resp.text());
@@ -1361,7 +1366,7 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
 // Output:
 //   { orderId, subtotal, shipping, discount, total }
 // ══════════════════════════════════════════════════════════════════
-exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, RESEND_API_KEY] }, async (request) => {
   // Subscription catalog (server-side price list — single source of truth)
   const SUBSCRIPTION_CATALOG = {
     'sub-netflix':     { name: 'Netflix Premium UHD',       price: 3.90, isDigital: true },
@@ -1585,7 +1590,7 @@ exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   }
 
   // 10 — Invia notifica email (fire-and-forget)
-  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, RESEND_API_KEY_VAL);
+  try { sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, RESEND_API_KEY.value()); } catch(_) {}
 
   // 11 — Ritorna al client i dati verificati
   //      Per pagamenti non verificati: lfpoints=0 (verranno accreditati alla conferma admin)
