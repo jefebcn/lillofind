@@ -18,7 +18,7 @@ window.__imp={db:getFirestore(app),auth:_impAuth,storage:_storage,storageRef:ref
 
 /* Backend Cloudflare Worker — stesso URL di firebase.js. Upload immagini via
    Worker→imgbb (così non serve Firebase Storage / Blaze). */
-const WORKER_BASE="https://lillofind-worker.CHANGEME.workers.dev";
+const WORKER_BASE="https://lillofind.conti9708.workers.dev";
 window.LF_WORKER_BASE=WORKER_BASE;
 window.lfCallable=function(name){
   return async function(data){

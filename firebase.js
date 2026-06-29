@@ -21,7 +21,7 @@ window.__fb={db:getFirestore(app),auth:_auth,functions:_functions,httpsCallable,
        cloudflare-worker/README.md). Esempio:
        const WORKER_BASE = "https://lillofind-worker.tuonome.workers.dev";
    ══════════════════════════════════════════════ */
-const WORKER_BASE = "https://lillofind-worker.CHANGEME.workers.dev";
+const WORKER_BASE = "https://lillofind.conti9708.workers.dev";
 window.LF_WORKER_BASE = WORKER_BASE;
 
 // Shim compatibile con httpsCallable: lfCallable('nome')(data) → {data: result}
