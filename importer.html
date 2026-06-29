@@ -21,7 +21,7 @@ window.__imp={db:getFirestore(app),auth:_impAuth,functions:getFunctions(app,'eur
 
 /* Backend Cloudflare Worker — vedi cloudflare-worker/README.md.
    ⚠️ Stesso URL impostato in firebase.js */
-const WORKER_BASE="https://lillofind-worker.CHANGEME.workers.dev";
+const WORKER_BASE="https://lillofind.conti9708.workers.dev";
 window.LF_WORKER_BASE=WORKER_BASE;
 window.lfCallable=function(name){
   return async function(data){
