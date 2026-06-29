@@ -88,13 +88,11 @@ Hosting continuano a funzionare gratis.
   timeout, riprova. Se diventasse un problema, l'upgrade Workers Paid ($5/mese)
   alza i limiti, ma per l'uso normale il free basta.
 
-## Attenzione: Firebase Storage (solo `yupoo-scraper.html`)
-Lo strumento admin `yupoo-scraper.html` carica immagini su **Firebase Storage**,
-che richiede Blaze. Lo shop, `admin.html` e `importer.html` **non** lo usano
-(le immagini vengono da Yupoo/imgbb). Quindi:
-- Se torni a **Spark**, l'upload in `yupoo-scraper.html` potrebbe smettere di
-  funzionare. Usa `importer.html` (che carica su imgbb) per importare prodotti.
-- In alternativa posso migrare quell'upload su imgbb/Cloudflare R2 (chiedimelo).
+## Firebase Storage — non più necessario ✅
+Prima `yupoo-scraper.html` caricava le immagini su Firebase Storage (che richiede
+Blaze). Ora carica tramite il Worker (endpoint `/uploadImage` → imgbb), quindi
+**nessun componente usa più Firebase Storage**: puoi tornare a Spark senza rompere
+nulla. (Gli import `getStorage` rimasti nel file sono inerti.)
 
 ## Opzionale: spostare ANCHE il sito su Cloudflare Pages
 Se vuoi lasciare Firebase del tutto (tranne Firestore/Auth che restano gratis):

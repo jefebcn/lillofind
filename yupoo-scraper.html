@@ -13,7 +13,41 @@ import{getStorage,ref,uploadBytes,getDownloadURL}from"https://www.gstatic.com/fi
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
 const _storage=getStorage(app);
-window.__imp={db:getFirestore(app),auth:getAuth(app),storage:_storage,storageRef:ref,uploadBytes,getDownloadURL,collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
+const _impAuth=getAuth(app);
+window.__imp={db:getFirestore(app),auth:_impAuth,storage:_storage,storageRef:ref,uploadBytes,getDownloadURL,collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
+
+/* Backend Cloudflare Worker — stesso URL di firebase.js. Upload immagini via
+   Worker→imgbb (così non serve Firebase Storage / Blaze). */
+const WORKER_BASE="https://lillofind-worker.CHANGEME.workers.dev";
+window.LF_WORKER_BASE=WORKER_BASE;
+window.lfCallable=function(name){
+  return async function(data){
+    let token='';
+    try{ if(_impAuth.currentUser) token=await _impAuth.currentUser.getIdToken(); }catch(_){}
+    const resp=await fetch(WORKER_BASE+'/'+name,{
+      method:'POST',
+      headers:Object.assign({'Content-Type':'application/json'},token?{'Authorization':'Bearer '+token}:{}),
+      body:JSON.stringify({data:data||{}}),
+    });
+    let json={};
+    try{ json=await resp.json(); }catch(_){}
+    if(!resp.ok||(json&&json.error)){
+      const err=new Error((json&&json.error&&json.error.message)||('Errore HTTP '+resp.status));
+      if(json&&json.error&&json.error.status) err.code=json.error.status;
+      throw err;
+    }
+    return {data:json.result};
+  };
+};
+// Helper: File → base64 puro
+window.lfFileToBase64=function(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{ const s=String(r.result||''); const i=s.indexOf('base64,'); resolve(i>=0?s.slice(i+7):s); };
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+};
 </script>
 </head>
 <style>
@@ -501,15 +535,13 @@ window.importSelected=async function(){
 
     const stEl=document.getElementById('st-'+a.id);
     try{
-      // Carica immagine su Firebase Storage
+      // Carica immagine via Worker → imgbb (niente Firebase Storage/Blaze)
       let imageUrl='';
       if(a.file){
         if(stEl){stEl.style.display='block';stEl.style.color='#888';stEl.textContent='⬆ Upload...';}
-        const ext=a.file.name.split('.').pop().toLowerCase()||'jpg';
-        const path=`products/${Date.now()}-${a.id}.${ext}`;
-        const fileRef=imp.storageRef(imp.storage,path);
-        await imp.uploadBytes(fileRef,a.file);
-        imageUrl=await imp.getDownloadURL(fileRef);
+        const b64=await window.lfFileToBase64(a.file);
+        const res=await window.lfCallable('uploadImage')({imageBase64:b64});
+        imageUrl=res.data.url;
       }
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand:a.brand,

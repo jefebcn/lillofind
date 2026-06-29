@@ -170,5 +170,6 @@ app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 
 // Scraper (admin)
 app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'admin' }));
 app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'admin' }));
+app.post('/uploadImage',  callable(scrapers.uploadImage,  { auth: 'admin' }));
 
 export default app;
