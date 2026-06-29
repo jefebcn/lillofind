@@ -16,43 +16,138 @@
 <script type="module" src="firebase.js"></script>
 
 <style>
-/* ── ADMIN-SPECIFIC ──────────────────────────── */
-body{font-family:'IBM Plex Mono',monospace;}
+/* ── ADMIN BASE ───────────────────────────────── */
+body{font-family:'IBM Plex Mono',monospace;background:#0d0d0d;color:#f0f0f0;margin:0;}
 .bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
-.admin-order-card{border:1.5px solid #e0e0e0;background:#fff;padding:16px 18px;transition:border-color .2s;}
-.admin-order-card:hover{border-color:var(--k);}
-.admin-order-card.pending{border-left:4px solid var(--led);background:rgba(200,255,0,.02);}
-.admin-order-card.confirmed{border-left:4px solid #2ecc71;opacity:.65;}
-#admin-orders-count{display:inline-flex;align-items:center;justify-content:center;background:var(--led);color:var(--k);min-width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:bold;padding:0 4px;box-shadow:0 0 8px rgba(200,255,0,.5);margin-left:6px;}
-.edit-sz-btn{display:inline-flex;align-items:center;justify-content:center;}
-@media(max-width:768px){.grid-1-mob{grid-template-columns:1fr !important;}.stats-grid{grid-template-columns:1fr 1fr !important;}}
 input,textarea,select{font-size:16px !important;}
 button{touch-action:manipulation;}
+@media(max-width:768px){.grid-1-mob{grid-template-columns:1fr !important;}}
 
-/* ── AUTH GUARD OVERLAY ───────────────────────── */
-#auth-guard{
-  position:fixed;inset:0;background:var(--k);z-index:9999;
-  display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:16px;
-}
+/* ── AUTH GUARD ───────────────────────────────── */
+#auth-guard{position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
 #auth-guard p{color:var(--led);font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;}
-#auth-guard small{color:var(--dim);font-size:10px;letter-spacing:2px;}
-.guard-spinner{
-  width:36px;height:36px;border:3px solid #222;
-  border-top-color:var(--led);border-radius:50%;
-  animation:spin .7s linear infinite;
-}
+#auth-guard small{color:#555;font-size:10px;letter-spacing:2px;}
+.guard-spinner{width:36px;height:36px;border:3px solid #222;border-top-color:var(--led);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* ── TOAST ───────────────────────────────────── */
-#toast{
-  position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:9999;
-  background:var(--k);color:var(--w);padding:13px 22px;
-  font-size:11px;letter-spacing:2px;text-transform:uppercase;
-  white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none;
-  border-bottom:2px solid var(--led);
-}
+/* ── TOAST ────────────────────────────────────── */
+#toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a1a;color:#fff;padding:13px 22px;font-size:11px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none;border-bottom:2px solid var(--led);}
 #toast.show{opacity:1;}
+
+/* ══════════════════════════════════════════════
+   ADMIN LAYOUT — sidebar + main
+══════════════════════════════════════════════ */
+#admin-wrap{display:flex;min-height:100vh;}
+
+/* Sidebar nav */
+#anav{
+  width:210px;min-width:210px;background:#0a0a0a;
+  border-right:1px solid rgba(255,255,255,.07);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:200;
+  overflow-y:auto;
+}
+.anav-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.07);}
+.anav-brand{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--led);}
+.anav-tag{font-size:8px;letter-spacing:3px;color:#444;border:1px solid #222;padding:2px 6px;margin-left:8px;vertical-align:middle;}
+.anav-items{flex:1;padding:12px 0;}
+.anav-btn{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:12px 18px;background:none;border:none;color:rgba(255,255,255,.4);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;
+  cursor:pointer;transition:all .15s;text-align:left;position:relative;
+}
+.anav-btn:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.8);}
+.anav-btn.active{background:rgba(200,255,0,.05);color:var(--led);border-left:2px solid var(--led);}
+.anav-btn.active .anav-icon{filter:none;}
+.anav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+.anav-badge{
+  margin-left:auto;background:var(--led);color:#000;
+  font-size:9px;font-weight:700;min-width:18px;height:18px;
+  border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;
+}
+.anav-footer{
+  padding:14px 18px;border-top:1px solid rgba(255,255,255,.07);
+}
+.anav-email{display:block;font-size:9px;color:#555;letter-spacing:.5px;margin-bottom:10px;word-break:break-all;}
+.anav-footer-btns{display:flex;gap:6px;}
+.anav-fbtn{
+  flex:1;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace;font-size:9px;
+  letter-spacing:1px;cursor:pointer;transition:all .15s;text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;text-align:center;
+}
+.anav-fbtn:hover{background:rgba(255,255,255,.1);color:#fff;}
+
+/* Main content */
+#admin-main{flex:1;margin-left:210px;min-height:100vh;}
+
+/* Admin pages */
+.apg{padding:32px;max-width:1100px;}
+.apg.hidden{display:none;}
+
+/* Page header */
+.apg-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.07);}
+.apg-title{font-size:36px;color:#fff;}
+
+/* Admin cards */
+.admin-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:24px;margin-bottom:20px;}
+
+/* Stat cards */
+.astat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+.astat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:20px 18px;transition:border-color .15s;}
+.astat-card:hover{border-color:rgba(255,255,255,.2);}
+.astat-icon{font-size:22px;margin-bottom:10px;}
+.astat-val{font-family:'Bebas Neue',sans-serif;font-size:32px;line-height:1;color:#fff;margin-bottom:4px;}
+.astat-val.green{color:var(--led);}
+.astat-val.yellow{color:#f0c030;}
+.astat-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);}
+.astat-sub{font-size:9px;color:rgba(255,255,255,.25);margin-top:3px;}
+.astat-skeleton{animation:sk-p 1.5s ease-in-out infinite;height:100px;}
+@keyframes sk-p{0%,100%{opacity:.3;}50%{opacity:.6;}}
+
+/* Override for existing stat cards rendered by loadAdminStats */
+#admin-stats-wrap>div>div{
+  background:rgba(255,255,255,.04)!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+}
+#admin-stats-wrap *{color:inherit!important;}
+
+/* Orders */
+.admin-order-card{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);padding:16px 18px;transition:border-color .2s;}
+.admin-order-card:hover{border-color:rgba(255,255,255,.25);}
+.admin-order-card.pending{border-left:3px solid var(--led);}
+.admin-order-card.confirmed{border-left:3px solid #2ecc71;opacity:.7;}
+#admin-orders-count{display:inline-flex;align-items:center;justify-content:center;background:var(--led);color:#000;min-width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:bold;padding:0 4px;margin-left:6px;}
+
+/* Users table */
+#users-table th{border-bottom:1px solid rgba(255,255,255,.1);}
+#users-table td{padding:12px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;}
+#users-table tr:hover td{background:rgba(255,255,255,.03);}
+.user-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;font-size:9px;letter-spacing:1px;font-weight:600;}
+.user-badge.vip{background:rgba(200,255,0,.1);color:var(--led);border:1px solid rgba(200,255,0,.3);}
+.user-badge.new{background:rgba(100,180,255,.1);color:#64b4ff;border:1px solid rgba(100,180,255,.3);}
+
+/* Edit sz */
+.edit-sz-btn{display:inline-flex;align-items:center;justify-content:center;}
+
+/* Forms inside admin - dark style */
+.lf-in{background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.15)!important;color:#fff!important;}
+.lf-in:focus{border-color:var(--led)!important;outline:none;}
+.lf-in option{background:#1a1a1a;color:#fff;}
+select.lf-in{appearance:none;-webkit-appearance:none;}
+
+/* Responsive mobile nav */
+#anav-mob-btn{display:none;position:fixed;top:14px;left:16px;z-index:300;background:#111;border:1px solid rgba(255,255,255,.15);color:#fff;width:38px;height:38px;cursor:pointer;font-size:18px;align-items:center;justify-content:center;}
+@media(max-width:768px){
+  #anav{transform:translateX(-100%);transition:transform .3s;z-index:250;}
+  #anav.mob-open{transform:translateX(0);}
+  #admin-main{margin-left:0;padding-top:56px;}
+  .apg{padding:16px;}
+  #anav-mob-btn{display:flex;}
+  #anav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:240;}
+  #anav-overlay.open{display:block;}
+}
 </style>
 </head>
 <body>
@@ -90,47 +185,72 @@ button{touch-action:manipulation;}
 <!-- ══ ADMIN PANEL (hidden until auth confirmed) ══ -->
 <div id="admin-wrap" style="display:none;">
 
-  <!-- Header -->
-  <div style="position:sticky;top:0;z-index:100;background:var(--k);border-bottom:2px solid var(--led);padding:0 24px;">
-    <div style="max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;">
-      <div style="display:flex;align-items:center;gap:16px;">
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--led);letter-spacing:3px;">LILLOFIND</span>
-        <span style="font-size:9px;letter-spacing:3px;color:#444;text-transform:uppercase;border:1px solid #333;padding:3px 8px;">ADMIN</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <span id="admin-user-email" style="font-size:10px;color:var(--dim);letter-spacing:1px;"></span>
-        <button class="btn-g" onclick="doAdminLogout()" style="padding:8px 16px;font-size:10px;color:var(--w);border-color:#444;">Esci</button>
-        <a href="index.html" class="btn-k" style="padding:8px 16px;font-size:10px;text-decoration:none;">← Shop</a>
+  <!-- Mobile nav toggle (position:fixed, visible only on mobile) -->
+  <button id="anav-mob-btn" onclick="toggleAdminNav()">☰</button>
+  <div id="anav-overlay" onclick="toggleAdminNav()"></div>
+
+  <!-- ══ SIDEBAR NAV ══ -->
+  <nav id="anav">
+    <div class="anav-logo">
+      <span class="anav-brand">LILLOFIND</span>
+      <span class="anav-tag">ADMIN</span>
+    </div>
+    <div class="anav-items">
+      <button class="anav-btn active" data-pg="dashboard" onclick="showAdminPg('dashboard')">
+        <span class="anav-icon">📊</span>Dashboard
+      </button>
+      <button class="anav-btn" data-pg="ordini" onclick="showAdminPg('ordini')">
+        <span class="anav-icon">📋</span>Ordini
+        <span class="anav-badge" id="orders-nav-badge" style="display:none;">0</span>
+      </button>
+      <button class="anav-btn" data-pg="prodotti" onclick="showAdminPg('prodotti')">
+        <span class="anav-icon">👗</span>Prodotti
+      </button>
+      <button class="anav-btn" data-pg="clienti" onclick="showAdminPg('clienti')">
+        <span class="anav-icon">👥</span>Clienti
+      </button>
+      <button class="anav-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')">
+        <span class="anav-icon">🚚</span>Spedizioni
+      </button>
+      <button class="anav-btn" data-pg="ai" onclick="showAdminPg('ai')">
+        <span class="anav-icon">🤖</span>Strumenti AI
+      </button>
+    </div>
+    <div class="anav-footer">
+      <span class="anav-email" id="admin-user-email"></span>
+      <div class="anav-footer-btns">
+        <a href="index.html" class="anav-fbtn">← Shop</a>
+        <button class="anav-fbtn" onclick="doAdminLogout()">Esci</button>
       </div>
     </div>
-  </div>
+  </nav>
 
-  <!-- Admin Page Content -->
-  <!-- ════════════════════════════════════════════════════════
-     ADMIN PAGE
-════════════════════════════════════════════════════════ -->
-<div id="pg-admin" class="pg on">
-  <div class="led-strip"></div>
-  <div style="max-width:700px;margin:48px auto;padding:0 20px;">
-    <p class="slbl" style="margin-bottom:6px;">Pannello Admin</p>
-    <h2 class="bb" style="font-size:48px;margin-bottom:24px;">Admin Panel</h2>
+  <!-- ══ MAIN CONTENT ══ -->
+  <main id="admin-main">
 
-    <!-- ══ STATISTICHE ══ -->
-    <div style="margin-bottom:40px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-        <p class="bb" style="font-size:32px;">📊 Statistiche</p>
-        <button class="btn-k" onclick="loadAdminStats()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna</button>
+    <!-- ─── PAGE: DASHBOARD ─── -->
+    <div class="apg" id="apg-dashboard">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Dashboard</h1>
+        <button class="btn-k" onclick="loadAdminStats()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna Statistiche</button>
       </div>
       <div id="admin-stats-wrap">
-        <p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Clicca "Aggiorna" per caricare le statistiche.</p>
+        <p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Clicca "Aggiorna Statistiche" per caricare i dati.</p>
+      </div>
+      <div class="admin-card" style="margin-top:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <p class="bb" style="font-size:20px;letter-spacing:1px;">Ordini Recenti</p>
+          <button onclick="showAdminPg('ordini')" class="btn-k" style="padding:7px 14px;font-size:10px;">Vedi Tutti →</button>
+        </div>
+        <div id="dash-recent-orders"><p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Carica gli ordini per visualizzare qui l'anteprima.</p></div>
       </div>
     </div>
 
-    <!-- ══ ORDINI RICEVUTI ══ -->
-    <div style="border:2px solid var(--led);padding:24px;margin-bottom:40px;background:rgba(200,255,0,.03);">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+    <!-- ─── PAGE: ORDINI ─── -->
+    <div class="apg hidden" id="apg-ordini">
+      <div class="apg-hdr">
         <div style="display:flex;align-items:center;gap:10px;">
-          <p class="bb" style="font-size:32px;">📋 Ordini Ricevuti</p>
+          <h1 class="apg-title bb">Ordini</h1>
           <span id="admin-orders-count" style="display:none;">0</span>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -147,276 +267,294 @@ button{touch-action:manipulation;}
       </div>
     </div>
 
-    <h2 class="bb" style="font-size:36px;margin-bottom:16px;">➕ Aggiungi Prodotto</h2>
-    <!-- Importer shortcut -->
-    <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:12px;background:#080808;border:2px solid var(--led);padding:14px 22px;text-decoration:none;margin-bottom:32px;transition:opacity .15s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
-      <span style="font-size:22px;">🚀</span>
-      <div>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--led);">IMPORTA IN BULK DA YUPOO</p>
-        <p style="font-size:9px;color:#777;letter-spacing:1px;margin-top:2px;">Apre lo strumento veloce — carica decine di prodotti in pochi minuti</p>
+    <!-- ─── PAGE: PRODOTTI ─── -->
+    <div class="apg hidden" id="apg-prodotti">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Prodotti</h1>
+        <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,255,0,.08);border:1px solid var(--led);padding:9px 16px;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--led);">🚀 Bulk Import →</a>
       </div>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:18px;color:var(--led);margin-left:8px;">→</span>
-    </a>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ad-name" placeholder="es. Cargo Pants"/></div>
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="ad-price" type="number" step="0.01" placeholder="129.99"/></div>
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="ad-model" placeholder="es. Oversized"/></div>
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Marchio</label><input class="lf-in" id="ad-brand" placeholder="es. Carhartt"/></div>
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile</label>
-        <select class="lf-in" id="ad-style"><option value="">—</option><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Genere</label>
-        <select class="lf-in" id="ad-gender"><option value="unisex">Unisex</option><option value="uomo">Uomo</option><option value="donna">Donna</option></select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Colori Disponibili</label><input class="lf-in" id="ad-colors" placeholder="es. Nero, Bianco, Verde"/><p style="font-size:8px;color:var(--dim);margin-top:3px;">Separati da virgola</p></div>
-    </div>
-    <!-- TAGLIE DISPONIBILI -->
-    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
-      <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglie Disponibili</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ad-sizes-wrap">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XS"><input type="checkbox" value="XS" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XS')"/>XS</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-S"><input type="checkbox" value="S" class="sz-chk" style="display:none;" onchange="toggleSzLabel('S')"/>S</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-M"><input type="checkbox" value="M" class="sz-chk" style="display:none;" onchange="toggleSzLabel('M')"/>M</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-L"><input type="checkbox" value="L" class="sz-chk" style="display:none;" onchange="toggleSzLabel('L')"/>L</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XL"><input type="checkbox" value="XL" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XL')"/>XL</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XXL"><input type="checkbox" value="XXL" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XXL')"/>XXL</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid var(--k);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-Unica"><input type="checkbox" value="Unica" class="sz-chk" style="display:none;" onchange="toggleSzLabel('Unica')"/>UNICA</label>
-      </div>
-      <p style="font-size:8px;color:var(--dim);">Clicca per selezionare/deselezionare le taglie disponibili</p>
-    </div>
-    <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><textarea class="lf-in" id="ad-desc" placeholder="Descrizione breve..."></textarea></div>
-    <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
-      <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Immagine Prodotto</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div style="display:flex;flex-direction:column;gap:5px;">
-          <label style="font-size:8px;color:var(--dim);letter-spacing:1px;">📁 Carica file da PC</label>
-          <input type="file" accept="image/*" id="ad-img-file" class="lf-in" style="padding:8px;font-size:11px;cursor:pointer;" onchange="previewImgFile(this)"/>
+
+      <!-- Add product -->
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Aggiungi Singolo Prodotto</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ad-name" placeholder="es. Cargo Pants"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="ad-price" type="number" step="0.01" placeholder="129.99"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="ad-model" placeholder="es. Oversized"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Marchio</label><input class="lf-in" id="ad-brand" placeholder="es. Carhartt"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile</label>
+            <select class="lf-in" id="ad-style"><option value="">—</option><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Genere</label>
+            <select class="lf-in" id="ad-gender"><option value="unisex">Unisex</option><option value="uomo">Uomo</option><option value="donna">Donna</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Colori Disponibili</label><input class="lf-in" id="ad-colors" placeholder="es. Nero, Bianco, Verde"/><p style="font-size:8px;color:var(--dim);margin-top:3px;">Separati da virgola</p></div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:5px;">
-          <label style="font-size:8px;color:var(--dim);letter-spacing:1px;">🔗 oppure URL esterno</label>
-          <input class="lf-in" id="ad-img" placeholder="https://..." oninput="previewImg()"/>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglie Disponibili</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ad-sizes-wrap">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XS"><input type="checkbox" value="XS" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XS')"/>XS</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-S"><input type="checkbox" value="S" class="sz-chk" style="display:none;" onchange="toggleSzLabel('S')"/>S</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-M"><input type="checkbox" value="M" class="sz-chk" style="display:none;" onchange="toggleSzLabel('M')"/>M</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-L"><input type="checkbox" value="L" class="sz-chk" style="display:none;" onchange="toggleSzLabel('L')"/>L</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XL"><input type="checkbox" value="XL" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XL')"/>XL</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-XXL"><input type="checkbox" value="XXL" class="sz-chk" style="display:none;" onchange="toggleSzLabel('XXL')"/>XXL</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);padding:8px 14px;font-size:11px;letter-spacing:1px;transition:all .15s;" id="sz-lbl-Unica"><input type="checkbox" value="Unica" class="sz-chk" style="display:none;" onchange="toggleSzLabel('Unica')"/>UNICA</label>
+          </div>
+          <p style="font-size:8px;color:var(--dim);">Clicca per selezionare/deselezionare le taglie disponibili</p>
+        </div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><textarea class="lf-in" id="ad-desc" placeholder="Descrizione breve..."></textarea></div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Immagine Prodotto</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:8px;color:var(--dim);letter-spacing:1px;">📁 Carica file da PC</label>
+              <input type="file" accept="image/*" id="ad-img-file" class="lf-in" style="padding:8px;font-size:11px;cursor:pointer;" onchange="previewImgFile(this)"/>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:8px;color:var(--dim);letter-spacing:1px;">🔗 oppure URL esterno</label>
+              <input class="lf-in" id="ad-img" placeholder="https://..." oninput="previewImg()"/>
+            </div>
+          </div>
+        </div>
+        <div id="img-prev" style="display:none;margin-top:10px;border:1px solid rgba(255,255,255,.15);padding:8px;display:inline-flex;flex-direction:column;gap:4px;">
+          <img id="prev-img" style="max-height:130px;max-width:170px;object-fit:cover;"/>
+          <p style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">Anteprima</p>
+        </div>
+        <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn-led" id="ad-btn" onclick="adminSave()">Salva Prodotto →</button>
         </div>
       </div>
-    </div>
-    <div id="img-prev" style="display:none;margin-top:10px;border:1px solid #ddd;padding:8px;display:inline-flex;flex-direction:column;gap:4px;">
-      <img id="prev-img" style="max-height:130px;max-width:170px;object-fit:cover;"/>
-      <p style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">Anteprima</p>
-    </div>
-    <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;">
-      <button class="btn-led" id="ad-btn" onclick="adminSave()">Salva Prodotto →</button>
-      <button class="btn-g" onclick="showPg('shop')">Vedi Shop</button>
+
+      <!-- Catalog manager -->
+      <div class="admin-card" style="margin-top:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Catalogo Prodotti</p>
+          <button class="btn-k" onclick="loadAdminCatalog()" style="padding:8px 16px;font-size:10px;">🔄 Aggiorna</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <input class="lf-in" id="cat-search" placeholder="Cerca per nome o brand..." style="flex:1;min-width:200px;padding:10px 14px;" oninput="renderAdminCatalog()"/>
+        </div>
+        <div id="bulk-toolbar" style="display:none;align-items:center;justify-content:space-between;background:rgba(255,71,87,.1);border:1.5px solid #ff4757;padding:10px 16px;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;letter-spacing:1px;text-transform:uppercase;user-select:none;">
+              <input type="checkbox" id="bulk-select-all" onchange="toggleSelectAll(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;"/>
+              Seleziona tutti
+            </label>
+            <span id="bulk-count-label" style="font-size:11px;letter-spacing:1px;color:#ff4757;font-weight:500;"></span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-g" onclick="exitBulkMode()" style="padding:8px 16px;font-size:10px;border-color:#999;color:#999;">Annulla</button>
+            <button id="bulk-delete-btn" onclick="bulkDeleteSelected()" style="display:inline-flex;align-items:center;justify-content:center;background:#ff4757;color:#fff;border:none;padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:.5;pointer-events:none;">🗑 ELIMINA</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <button id="bulk-mode-btn" onclick="enterBulkMode()" class="btn-g" style="padding:8px 16px;font-size:10px;letter-spacing:1px;border-color:#ff4757;color:#ff4757;">🗑 ELIMINA IN BLOCCO</button>
+        </div>
+        <div id="admin-catalog-list" style="display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto;padding-right:4px;"></div>
+      </div>
+
+      <!-- Bulk import -->
+      <div class="admin-card" style="margin-top:20px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Import Veloce da Yupoo</p>
+        <div style="margin-bottom:20px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;color:rgba(255,255,255,.4);">1. Scegli Categoria</p>
+          <div id="bulk-cat-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;color:rgba(255,255,255,.4);">2. Aggiungi Prodotti</p>
+          <div id="bulk-rows" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
+          <button onclick="addBulkRow()" class="btn-g" style="padding:8px 16px;font-size:10px;">+ Aggiungi Riga</button>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);padding:16px;margin-bottom:20px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Campi Comuni (applicati a tutti)</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="grid-1-mob">
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="bk-model" placeholder="es. Hoodie"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile</label>
+              <select class="lf-in" id="bk-style"><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia Default</label>
+              <select class="lf-in" id="bk-size"><option value="">—</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>Unica</option></select>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-led" id="bk-btn" onclick="saveBulkProducts()">💾 Salva Tutti →</button>
+          <p id="bk-status" style="font-size:10px;color:var(--dim);letter-spacing:1px;"></p>
+        </div>
+      </div>
     </div>
 
-    <!-- ── AUTO-CATEGORIZZAZIONE GENERE ── -->
-    <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;" id="gender-tool-section">
-      <p class="slbl" style="margin-bottom:6px;">Strumento AI</p>
-      <h3 class="bb" style="font-size:36px;margin-bottom:8px;">Auto-Categorizzazione Genere</h3>
-      <p style="font-size:11px;color:var(--mid);margin-bottom:20px;line-height:1.7;">Analizza automaticamente tutti i prodotti e assegna il genere (Uomo/Donna/Unisex) basandosi su nome, categoria e brand. Puoi modificare i suggerimenti prima di applicarli.</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-        <button class="btn-led" id="gc-analyze-btn" onclick="gcAnalyze()">Analizza Prodotti →</button>
-        <button class="btn-g" id="gc-apply-btn" onclick="gcApply()" style="display:none;">Applica Classificazione ✓</button>
-        <button class="btn-g" id="gc-only-new-btn" onclick="gcApplyOnlyNew()" style="display:none;">Applica Solo Non Classificati</button>
+    <!-- ─── PAGE: CLIENTI ─── -->
+    <div class="apg hidden" id="apg-clienti">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Clienti</h1>
+        <button class="btn-k" onclick="loadUsersPage()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna</button>
       </div>
-      <div id="gc-stats" style="display:none;margin-bottom:16px;padding:14px;background:var(--k3);border:1px solid var(--k2);font-size:11px;line-height:1.9;"></div>
-      <div id="gc-table-wrap" style="display:none;">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('all')">Tutti</button>
-          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('donna')">Solo Donna</button>
-          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('uomo')">Solo Uomo</button>
-          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('unisex')">Solo Unisex</button>
-          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('manual')">Modificati</button>
+      <div class="astat-grid" id="users-stat-grid">
+        <div class="astat-card astat-skeleton"></div>
+        <div class="astat-card astat-skeleton"></div>
+        <div class="astat-card astat-skeleton"></div>
+        <div class="astat-card astat-skeleton"></div>
+      </div>
+      <div class="admin-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Lista Clienti</p>
+          <input id="users-search" class="lf-in" placeholder="Cerca email o nome..." style="width:220px;padding:8px 12px;" oninput="filterUsersTable()"/>
         </div>
         <div style="overflow-x:auto;">
-          <table id="gc-table" style="width:100%;border-collapse:collapse;font-size:11px;">
-            <thead><tr style="border-bottom:2px solid var(--k);text-align:left;">
-              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:32px;"><input type="checkbox" id="gc-check-all" onchange="gcToggleAll(this.checked)" title="Seleziona tutti"/></th>
-              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prodotto</th>
-              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:80px;">Categoria</th>
-              <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:120px;">Genere suggerito</th>
-            </tr></thead>
-            <tbody id="gc-tbody"></tbody>
+          <table id="users-table" style="width:100%;border-collapse:collapse;font-size:11px;">
+            <thead>
+              <tr style="text-align:left;">
+                <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Cliente</th>
+                <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Ordini</th>
+                <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Totale Speso</th>
+                <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Ultimo Ordine</th>
+                <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Status</th>
+                <th style="padding:10px 12px;"></th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;">Clicca Aggiorna per caricare i clienti.</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ── TRACKING ASSIGNMENT ── -->
-    <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;">
-      <p class="slbl" style="margin-bottom:6px;">Gestione Spedizioni</p>
-      <h3 class="bb" style="font-size:36px;margin-bottom:8px;">Assegna Tracking Utente</h3>
-      <p style="font-size:11px;color:var(--mid);margin-bottom:28px;line-height:1.7;">Inserisci l'email dell'utente e il codice di tracking DHL. Il cliente lo vedrà nella sezione "Traccia Pacco" del suo profilo.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Email Utente *</label>
-          <input class="lf-in" id="tr-email" type="email" placeholder="cliente@esempio.it"/>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Codice Tracking DHL *</label>
-          <input class="lf-in" id="tr-code" placeholder="es. 1234567890"/>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prodotto Ordinato</label>
-          <input class="lf-in" id="tr-product" placeholder="es. Cargo Pants M — Nero"/>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stato Ordine</label>
-          <select class="lf-in" id="tr-status">
-            <option value="confermato">✅ Confermato</option>
-            <option value="preparazione">📦 In Preparazione</option>
-            <option value="spedito">🚀 Spedito</option>
-            <option value="in_transito">✈️ In Transito</option>
-            <option value="in_consegna">🚚 In Consegna</option>
-            <option value="consegnato">🎉 Consegnato</option>
-          </select>
-        </div>
+    <!-- ─── PAGE: SPEDIZIONI ─── -->
+    <div class="apg hidden" id="apg-spedizioni">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Spedizioni</h1>
       </div>
-      <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
-        <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Note per il Cliente (opzionale)</label>
-        <input class="lf-in" id="tr-note" placeholder="es. Consegna prevista Lunedì 10 Marzo"/>
-      </div>
-      <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-        <button class="btn-led" id="tr-btn" onclick="adminAssignTracking()">Assegna Tracking →</button>
-        <div id="tr-result" style="display:none;font-size:11px;color:var(--mid);letter-spacing:1px;"></div>
-      </div>
-
-      <!-- Recent assignments -->
-      <div style="margin-top:32px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Ultime Assegnazioni</p>
-        <div id="tr-history" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Assegna Tracking Utente</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:24px;line-height:1.7;">Inserisci l'email del cliente e il codice di tracking DHL. Sarà visibile nella sezione "Traccia Pacco" del profilo cliente.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Email Utente *</label>
+            <input class="lf-in" id="tr-email" type="email" placeholder="cliente@esempio.it"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Codice Tracking DHL *</label>
+            <input class="lf-in" id="tr-code" placeholder="es. 1234567890"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prodotto Ordinato</label>
+            <input class="lf-in" id="tr-product" placeholder="es. Cargo Pants M — Nero"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stato Ordine</label>
+            <select class="lf-in" id="tr-status">
+              <option value="confermato">✅ Confermato</option>
+              <option value="preparazione">📦 In Preparazione</option>
+              <option value="spedito">🚀 Spedito</option>
+              <option value="in_transito">✈️ In Transito</option>
+              <option value="in_consegna">🚚 In Consegna</option>
+              <option value="consegnato">🎉 Consegnato</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Note per il Cliente (opzionale)</label>
+          <input class="lf-in" id="tr-note" placeholder="es. Consegna prevista Lunedì 10 Marzo"/>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-led" id="tr-btn" onclick="adminAssignTracking()">Assegna Tracking →</button>
+          <div id="tr-result" style="display:none;font-size:11px;color:var(--dim);letter-spacing:1px;"></div>
+        </div>
+        <div style="margin-top:32px;">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Ultime Assegnazioni</p>
+          <div id="tr-history" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
       </div>
     </div>
 
-    <!-- ── IMPORT RAPIDO PRODOTTI ── -->
-    <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;">
-      <p class="slbl" style="margin-bottom:6px;">Gestione Catalogo</p>
-      <h3 class="bb" style="font-size:36px;margin-bottom:8px;">✏️ Modifica / Elimina Prodotti</h3>
-      <p style="font-size:11px;color:var(--mid);margin-bottom:20px;line-height:1.8;">Tutti i prodotti nel catalogo. Clicca su un prodotto per modificare nome, prezzo, taglie e colori.</p>
-      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-        <input class="lf-in" id="cat-search" placeholder="Cerca per nome o brand..." style="flex:1;min-width:200px;padding:10px 14px;" oninput="renderAdminCatalog()"/>
-        <button class="btn-g" onclick="loadAdminCatalog()" style="padding:10px 18px;font-size:10px;">🔄 Aggiorna</button>
+    <!-- ─── PAGE: STRUMENTI AI ─── -->
+    <div class="apg hidden" id="apg-ai">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Strumenti AI</h1>
       </div>
-
-      <!-- ── BULK DELETE TOOLBAR ── -->
-      <div id="bulk-toolbar" style="display:none;align-items:center;justify-content:space-between;background:#fff0f0;border:1.5px solid #ff4757;padding:10px 16px;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;letter-spacing:1px;text-transform:uppercase;user-select:none;">
-            <input type="checkbox" id="bulk-select-all" onchange="toggleSelectAll(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;"/>
-            Seleziona tutti
-          </label>
-          <span id="bulk-count-label" style="font-size:11px;letter-spacing:1px;color:#ff4757;font-weight:500;"></span>
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Auto-Categorizzazione Genere</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:20px;line-height:1.7;">Analizza automaticamente tutti i prodotti e assegna il genere (Uomo/Donna/Unisex) basandosi su nome, categoria e brand. Puoi modificare i suggerimenti prima di applicarli.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+          <button class="btn-led" id="gc-analyze-btn" onclick="gcAnalyze()">Analizza Prodotti →</button>
+          <button class="btn-g" id="gc-apply-btn" onclick="gcApply()" style="display:none;">Applica Classificazione ✓</button>
+          <button class="btn-g" id="gc-only-new-btn" onclick="gcApplyOnlyNew()" style="display:none;">Applica Solo Non Classificati</button>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-g" onclick="exitBulkMode()" style="padding:8px 16px;font-size:10px;border-color:#999;color:#999;">Annulla</button>
-          <button id="bulk-delete-btn" onclick="bulkDeleteSelected()" style="display:inline-flex;align-items:center;justify-content:center;background:#ff4757;color:#fff;border:none;padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:.5;pointer-events:none;">🗑 ELIMINA SELEZIONATI</button>
+        <div id="gc-stats" style="display:none;margin-bottom:16px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:11px;line-height:1.9;"></div>
+        <div id="gc-table-wrap" style="display:none;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('all')">Tutti</button>
+            <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('donna')">Solo Donna</button>
+            <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('uomo')">Solo Uomo</button>
+            <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('unisex')">Solo Unisex</button>
+            <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="gcFilterView('manual')">Modificati</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="gc-table" style="width:100%;border-collapse:collapse;font-size:11px;">
+              <thead><tr style="border-bottom:2px solid rgba(255,255,255,.1);text-align:left;">
+                <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:32px;"><input type="checkbox" id="gc-check-all" onchange="gcToggleAll(this.checked)" title="Seleziona tutti"/></th>
+                <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prodotto</th>
+                <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:80px;">Categoria</th>
+                <th style="padding:8px 6px;font-size:9px;letter-spacing:2px;text-transform:uppercase;width:120px;">Genere suggerito</th>
+              </tr></thead>
+              <tbody id="gc-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
-
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <button id="bulk-mode-btn" onclick="enterBulkMode()" class="btn-g" style="padding:8px 16px;font-size:10px;letter-spacing:1px;border-color:#ff4757;color:#ff4757;">🗑 ELIMINA IN BLOCCO</button>
-      </div>
-
-      <div id="admin-catalog-list" style="display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto;padding-right:4px;"></div>
     </div>
 
-    <!-- ── EDIT PRODUCT MODAL ── -->
-    <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;">
-      <div style="background:#fff;width:min(560px,94vw);max-height:90vh;overflow-y:auto;padding:32px 28px;position:relative;">
-        <button onclick="closeEditModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;">✕</button>
-        <p style="font-size:9px;letter-spacing:3px;color:#aaa;margin-bottom:4px;">MODIFICA PRODOTTO</p>
-        <h3 class="bb" style="font-size:32px;margin-bottom:20px;" id="edit-modal-title">—</h3>
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="grid-1-mob">
-            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="edit-name" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
-            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="edit-price" type="number" step="0.01" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
-            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Brand</label><input class="lf-in" id="edit-brand" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
-            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="edit-model" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/></div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Colori (separati da virgola)</label>
-            <input class="lf-in" id="edit-colors" placeholder="es. Nero, Bianco, Verde" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;"/>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglie disponibili</label>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-sizes-row">
-              <span class="edit-sz-btn" id="esz-XS"   onclick="toggleEditSz('XS',this)"   style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">XS</span>
-              <span class="edit-sz-btn" id="esz-S"    onclick="toggleEditSz('S',this)"    style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">S</span>
-              <span class="edit-sz-btn" id="esz-M"    onclick="toggleEditSz('M',this)"    style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">M</span>
-              <span class="edit-sz-btn" id="esz-L"    onclick="toggleEditSz('L',this)"    style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">L</span>
-              <span class="edit-sz-btn" id="esz-XL"   onclick="toggleEditSz('XL',this)"   style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">XL</span>
-              <span class="edit-sz-btn" id="esz-XXL"  onclick="toggleEditSz('XXL',this)"  style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">XXL</span>
-              <span class="edit-sz-btn" id="esz-Unica" onclick="toggleEditSz('Unica',this)" style="padding:8px 14px;border:1.5px solid #ccc;font-size:11px;cursor:pointer;transition:all .15s;">Unica</span>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">URL Immagine</label>
-            <input class="lf-in" id="edit-img" placeholder="https://..." style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;" oninput="updateEditPreview()"/>
-            <img id="edit-img-prev" style="max-height:100px;max-width:120px;object-fit:cover;margin-top:6px;display:none;border:1px solid #eee;"/>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label>
-            <textarea class="lf-in" id="edit-desc" rows="2" style="background:#f8f8f8;color:#000;border:1.5px solid #ddd;resize:vertical;"></textarea>
+  </main>
+
+  <!-- Edit product modal (fixed overlay, lives inside admin-wrap) -->
+  <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;">
+    <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.15);width:min(560px,94vw);max-height:90vh;overflow-y:auto;padding:32px 28px;position:relative;">
+      <button onclick="closeEditModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#fff;">✕</button>
+      <p style="font-size:9px;letter-spacing:3px;color:#aaa;margin-bottom:4px;">MODIFICA PRODOTTO</p>
+      <h3 class="bb" style="font-size:32px;margin-bottom:20px;" id="edit-modal-title">—</h3>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="edit-name"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Prezzo € *</label><input class="lf-in" id="edit-price" type="number" step="0.01"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Brand</label><input class="lf-in" id="edit-brand"/></div>
+          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="edit-model"/></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Colori (separati da virgola)</label>
+          <input class="lf-in" id="edit-colors" placeholder="es. Nero, Bianco, Verde"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglie disponibili</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-sizes-row">
+            <span class="edit-sz-btn" id="esz-XS"    onclick="toggleEditSz('XS',this)"    style="padding:8px 14px;border:1.5px solid rgba(255,255,255,.2);font-size:11px;cursor:pointer;transition:all .15s;">XS</span>
+            <span class="edit-sz-btn" id="esz-S"     onclick="toggleEditSz('S',this)"     style="padding:8px 14px;border:1.5px solid rgba(255,255,255,.2);font-size:11px;cursor:pointer;transition:all .15s;">S</span>
+            <span class="edit-sz-btn" id="esz-M"     onclick="toggleEditSz('M',this)"     style="padding:8px 14px;border:1.5px solid rgba(255,255,255,.2);font-size:11px;cursor:pointer;transition:all .15s;">M</span>
+            <span class="edit-sz-btn" id="esz-L"     onclick="toggleEditSz('L',this)"     style="padding:8px 14px;border:1.5px solid rgba(255,255,255,.2);font-size:11px;cursor:pointer;transition:all .15s;">L</span>
+            <span class="edit-sz-btn" id="esz-XL"    onclick="toggleEditSz('XL',this)"    style="padding:8px 14px;border:1.5px solid rgba(255,255,255,.2);font-size:11px;cursor:pointer;transition:all .15s;">XL</span>
+            <span class="edit-sz-btn" id="esz-XXL"   onclick="toggleEditSz('XXL',this)"   style="padding:8px 14px;border:1.5px solid rgba(255,255,255,.2);font-size:11px;cursor:pointer;transition:all .15s;">XXL</span>
+            <span class="edit-sz-btn" id="esz-Unica"  onclick="toggleEditSz('Unica',this)"  style="padding:8px 14px;border:1.5px solid rgba(255,255,255,.2);font-size:11px;cursor:pointer;transition:all .15s;">Unica</span>
           </div>
         </div>
-        <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
-          <button class="btn-led" id="edit-save-btn" onclick="saveEditProduct()" style="flex:1;">💾 SALVA MODIFICHE →</button>
-          <button onclick="closeEditModal()" style="padding:12px 20px;border:1.5px solid #ddd;background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;">Annulla</button>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">URL Immagine</label>
+          <input class="lf-in" id="edit-img" placeholder="https://..." oninput="updateEditPreview()"/>
+          <img id="edit-img-prev" style="max-height:100px;max-width:120px;object-fit:cover;margin-top:6px;display:none;border:1px solid rgba(255,255,255,.15);"/>
         </div>
-        <input type="hidden" id="edit-pid"/>
-      </div>
-    </div>
-    <div style="margin-top:56px;border-top:2px solid var(--k);padding-top:36px;">
-      <p class="slbl" style="margin-bottom:6px;">Import Veloce</p>
-      <h3 class="bb" style="font-size:36px;margin-bottom:8px;">🚀 Carica Prodotti in Bulk</h3>
-      <p style="font-size:11px;color:var(--mid);margin-bottom:24px;line-height:1.8;">Seleziona una categoria di Yupoo e compila solo i campi variabili (prezzo, URL immagine). Il sistema salverà automaticamente tutti i prodotti nel DB.</p>
-
-      <!-- Category quick-select -->
-      <div style="margin-bottom:20px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">1. Scegli Categoria (da Huskyreps)</p>
-        <div id="bulk-cat-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-      </div>
-
-      <!-- Bulk product rows -->
-      <div style="margin-bottom:20px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">2. Aggiungi Prodotti</p>
-        <div id="bulk-rows" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
-          <!-- JS will render rows here -->
-        </div>
-        <button onclick="addBulkRow()" class="btn-g" style="padding:8px 16px;font-size:10px;">+ Aggiungi Riga</button>
-      </div>
-
-      <!-- Common fields for all rows -->
-      <div style="border:1.5px solid #e0e0e0;padding:16px;margin-bottom:20px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Campi Comuni (applicati a tutti)</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="grid-1-mob">
-          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Modello</label><input class="lf-in" id="bk-model" placeholder="es. Hoodie"/></div>
-          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Stile</label>
-            <select class="lf-in" id="bk-style"><option>Streetwear</option><option>Casual</option><option>Sport</option><option>Formal</option><option>Outdoor</option><option>Workwear</option></select>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Taglia Default</label>
-            <select class="lf-in" id="bk-size"><option value="">—</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>Unica</option></select>
-          </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label>
+          <textarea class="lf-in" id="edit-desc" rows="2" style="resize:vertical;"></textarea>
         </div>
       </div>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-        <button class="btn-led" id="bk-btn" onclick="saveBulkProducts()">💾 Salva Tutti →</button>
-        <p id="bk-status" style="font-size:10px;color:var(--mid);letter-spacing:1px;"></p>
+      <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
+        <button class="btn-led" id="edit-save-btn" onclick="saveEditProduct()" style="flex:1;">💾 SALVA MODIFICHE →</button>
+        <button onclick="closeEditModal()" style="padding:12px 20px;border:1.5px solid rgba(255,255,255,.2);background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:#fff;">Annulla</button>
       </div>
-
-      <!-- CSV Guide -->
-      <div style="margin-top:32px;border:1.5px solid var(--led);padding:20px;background:rgba(200,255,0,.03);">
-        <p class="bb" style="font-size:20px;margin-bottom:10px;color:var(--k);">💡 Guida per Yupoo (huskyreps)</p>
-        <ol style="font-size:11px;color:var(--mid);line-height:2.1;padding-left:18px;">
-          <li>Vai su <strong>huskyreps.x.yupoo.com/albums</strong> → scegli un album (es. Nike Dunk)</li>
-          <li>Clicca su un prodotto → copia il link della foto (<strong>tasto destro → "Copia indirizzo immagine"</strong>)</li>
-          <li>Torna qui, seleziona il brand dalla lista sopra, incolla l'URL nel campo immagine della riga</li>
-          <li>Imposta nome e prezzo → clicca <strong>Salva Tutti</strong></li>
-        </ol>
-        <p style="font-size:10px;color:var(--dim);margin-top:12px;">💡 Per aggiungere molti prodotti velocemente: apri Yupoo in un'altra scheda e lavora in parallelo su questa finestra.</p>
-      </div>
+      <input type="hidden" id="edit-pid"/>
     </div>
   </div>
-</div>
 
 </div><!-- /admin-wrap -->
 
@@ -515,13 +653,14 @@ waitFB(()=>{
       // ✅ Accesso confermato
       if (emailEl) emailEl.textContent = user.email || '';
       if (guard)   guard.style.display = 'none';
-      if (wrap)    wrap.style.display  = 'block';
+      if (wrap)    wrap.style.display  = 'flex';
 
       // Auto-init admin panels
       setTimeout(() => {
         initBulkImport();
         if(typeof loadAdminCatalog === 'function') loadAdminCatalog();
         if(typeof loadAdminOrders  === 'function') loadAdminOrders();
+        if(typeof loadAdminStats   === 'function') loadAdminStats();
       }, 150);
 
     } catch(e) {
@@ -530,11 +669,12 @@ waitFB(()=>{
       if (ADMIN_EMAILS.includes(user.email)) {
         if (emailEl) emailEl.textContent = user.email || '';
         if (guard)   guard.style.display = 'none';
-        if (wrap)    wrap.style.display  = 'block';
+        if (wrap)    wrap.style.display  = 'flex';
         setTimeout(() => {
           initBulkImport();
           if(typeof loadAdminCatalog === 'function') loadAdminCatalog();
           if(typeof loadAdminOrders  === 'function') loadAdminOrders();
+          if(typeof loadAdminStats   === 'function') loadAdminStats();
         }, 150);
         return;
       }
@@ -572,8 +712,8 @@ waitFB(()=>{
   window.toggleSzLabel=function(sz){
     const lbl=document.getElementById('sz-lbl-'+sz);
     const chk=lbl.querySelector('input');
-    if(chk.checked){lbl.style.background='var(--k)';lbl.style.color='var(--w)';}
-    else{lbl.style.background='';lbl.style.color='';}
+    if(chk.checked){lbl.style.background='var(--led)';lbl.style.color='#000';lbl.style.borderColor='var(--led)';}
+    else{lbl.style.background='';lbl.style.color='';lbl.style.borderColor='';}
   };
 
     window.adminSave=async function(){
@@ -962,6 +1102,24 @@ waitFB(()=>{
     const pending = adminOrders.filter(o=>o.status==='pending').length;
     const badge = document.getElementById('admin-orders-count');
     if(badge){ badge.textContent = pending; badge.style.display = pending>0?'inline-flex':'none'; }
+    const navBadge = document.getElementById('orders-nav-badge');
+    if(navBadge){ navBadge.textContent = pending; navBadge.style.display = pending>0?'flex':'none'; }
+    // Dashboard recent orders preview
+    const dashEl = document.getElementById('dash-recent-orders');
+    if(dashEl){
+      const recent = adminOrders.slice(0,5);
+      dashEl.innerHTML = recent.length ? recent.map(o=>{
+        const ip=o.status==='pending';
+        const ts=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT'):'—';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid rgba(255,255,255,.07);gap:12px;flex-wrap:wrap;">
+          <div><p style="font-size:12px;font-weight:500;">${escH(o.name||'—')}</p><p style="font-size:10px;color:var(--dim);">${escH(o.email||'—')} · ${ts}</p></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;">€${(o.total||0).toFixed(2)}</span>
+            <span style="font-size:9px;padding:2px 8px;letter-spacing:1px;${ip?'background:var(--led);color:#000':'background:rgba(46,204,113,.15);color:#2ecc71;'}">${ip?'IN ATTESA':'CONFERMATO'}</span>
+          </div>
+        </div>`;
+      }).join('') : '<p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Nessun ordine.</p>';
+    }
     if(!filtered.length){
       list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:16px 0;">Nessun ordine trovato.</p>';
       return;
@@ -986,17 +1144,17 @@ waitFB(()=>{
         const lbName = (i.name||'').replace(/'/g,"\\'").replace(/"/g,"&quot;");
         const lbDetailsSafe = lbDetails.replace(/'/g,"\\'");
         const onclickAttr = imgSrc ? `onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"` : '';
-        return `<div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:#fff;border:1px solid #eee;border-radius:4px;transition:border-color .15s;" onmouseover="this.style.borderColor='#bbb'" onmouseout="this.style.borderColor='#eee'">
-          <div ${onclickAttr} style="width:48px;height:48px;background:#f0f0f0;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:3px;${imgSrc?'cursor:zoom-in;':''}">
+        return `<div style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:4px;transition:border-color .15s;" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
+          <div ${onclickAttr} style="width:48px;height:48px;background:rgba(255,255,255,.08);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:3px;${imgSrc?'cursor:zoom-in;':''}">
             ${imgSrc?`<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:'<span style="font-size:18px;">📦</span>'}
           </div>
           <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${imgSrc?`onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"`:''}>
             <p style="font-size:12px;font-weight:600;line-height:1.3;margin-bottom:2px;">${escH(i.name||'—')}</p>
-            <p style="font-size:10px;color:#888;">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
+            <p style="font-size:10px;color:rgba(255,255,255,.5);">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p style="font-size:13px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
-            <p style="font-size:10px;color:#888;">x${i.qty}</p>
+            <p style="font-size:10px;color:rgba(255,255,255,.5);">x${i.qty}</p>
           </div>
         </div>`;
       }).join('');
@@ -1016,7 +1174,7 @@ waitFB(()=>{
             <p style="font-size:10px;color:var(--dim);">${payEmoji} ${o.payment||'—'}</p>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;padding:12px;background:#f8f8f8;border-left:3px solid #e0e0e0;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;padding:12px;background:rgba(255,255,255,.04);border-left:3px solid rgba(255,255,255,.15);">
           <div>
             <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:2px;">Cliente</p>
             <p style="font-size:12px;font-weight:500;">${escH(o.name||'—')}</p>
@@ -1059,9 +1217,12 @@ waitFB(()=>{
   };
 
   window.sendTrackingFromOrder = function(email, name){
-    const el = document.getElementById('tr-email');
-    if(el){ el.value=email; el.scrollIntoView({behavior:'smooth',block:'center'}); el.focus(); }
-    showToast('📦 Email pre-compilata per '+name);
+    showAdminPg('spedizioni');
+    setTimeout(()=>{
+      const el = document.getElementById('tr-email');
+      if(el){ el.value=email; el.focus(); }
+      showToast('📦 Email pre-compilata per '+name);
+    }, 80);
   };
 
   // ══════════════════════════════════════════════════
@@ -1157,8 +1318,8 @@ waitFB(()=>{
   function _catRowHtml(p){
     const sel = bulkSelected.has(p.id);
     const rowStyle = bulkMode && sel
-      ? 'background:#fff5f5;border-color:#ff4757;'
-      : 'background:#fff;';
+      ? 'background:rgba(255,71,87,.1);border-color:#ff4757;'
+      : 'background:rgba(255,255,255,.03);';
     const cols = bulkMode ? '38px 48px 1fr auto' : '48px 1fr auto auto';
     const chkHtml = bulkMode
       ? '<input type="checkbox" id="chk-' + p.id + '" ' + (sel?'checked':'') + ' onclick="event.stopPropagation();toggleBulkItem(\'' + p.id + '\',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#ff4757;flex-shrink:0;">'
@@ -1173,13 +1334,13 @@ waitFB(()=>{
       + '</div>';
     const rowClick = bulkMode
       ? 'onclick="var cb=document.getElementById(\'chk-' + p.id + '\');cb.checked=!cb.checked;toggleBulkItem(\'' + p.id + '\',cb.checked);"'
-      : 'onmouseover="this.style.borderColor=\'#ccc\'" onmouseout="this.style.borderColor=\'#e8e8e8\'"';
-    return '<div style="display:grid;grid-template-columns:' + cols + ';gap:12px;align-items:center;padding:12px 14px;border:1.5px solid #e8e8e8;' + rowStyle + 'transition:border-color .15s;' + (bulkMode?'cursor:pointer;':'') + '" ' + rowClick + '>'
+      : 'onmouseover="this.style.borderColor=\'rgba(255,255,255,.25)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,.08)\'"';
+    return '<div style="display:grid;grid-template-columns:' + cols + ';gap:12px;align-items:center;padding:12px 14px;border:1px solid rgba(255,255,255,.08);' + rowStyle + 'transition:border-color .15s;' + (bulkMode?'cursor:pointer;':'') + '" ' + rowClick + '>'
       + chkHtml
       + imgHtml
       + '<div>'
-        + '<p style="font-size:12px;font-family:\'IBM Plex Mono\',monospace;font-weight:500;">' + escH(p.name||'—') + '</p>'
-        + '<p style="font-size:10px;color:#777;margin-top:2px;">' + escH(p.brand||'') + ' ' + (p.model?'· '+escH(p.model):'') + ' ' + escH(sizeStr) + '</p>'
+        + '<p style="font-size:12px;font-family:\'IBM Plex Mono\',monospace;font-weight:500;color:#fff;">' + escH(p.name||'—') + '</p>'
+        + '<p style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;">' + escH(p.brand||'') + ' ' + (p.model?'· '+escH(p.model):'') + ' ' + escH(sizeStr) + '</p>'
       + '</div>'
       + '<p style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">€' + (p.price||0).toFixed(2) + '</p>'
       + actionsHtml
@@ -1426,6 +1587,110 @@ waitFB(()=>{
 
   window.gcApply        = () => gcDoApply(false);
   window.gcApplyOnlyNew = () => gcDoApply(true);
+
+// ══════════════════════════════════════════════════════════════════════
+// ADMIN NAVIGATION
+// ══════════════════════════════════════════════════════════════════════
+  window.showAdminPg = function(name){
+    document.querySelectorAll('.apg').forEach(p=>p.classList.add('hidden'));
+    const target=document.getElementById('apg-'+name);
+    if(target) target.classList.remove('hidden');
+    document.querySelectorAll('.anav-btn[data-pg]').forEach(b=>{
+      b.classList.toggle('active', b.dataset.pg===name);
+    });
+    if(window.innerWidth<=768){
+      document.getElementById('anav')?.classList.remove('mob-open');
+      document.getElementById('anav-overlay')?.classList.remove('open');
+      document.body.style.overflow='';
+    }
+    if(name==='clienti' && !_usersLoaded) loadUsersPage();
+  };
+
+  window.toggleAdminNav = function(){
+    const nav=document.getElementById('anav');
+    const overlay=document.getElementById('anav-overlay');
+    const isOpen=nav?.classList.contains('mob-open');
+    nav?.classList.toggle('mob-open');
+    overlay?.classList.toggle('open');
+    document.body.style.overflow=isOpen?'':'hidden';
+  };
+
+// ══════════════════════════════════════════════════════════════════════
+// USERS / CLIENTI PAGE
+// ══════════════════════════════════════════════════════════════════════
+  let _usersLoaded=false;
+  let _allUsersData=[];
+
+  window.loadUsersPage=async function(){
+    _usersLoaded=true;
+    const tbody=document.getElementById('users-tbody');
+    const statGrid=document.getElementById('users-stat-grid');
+    if(!tbody) return;
+    tbody.innerHTML='<tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;letter-spacing:1px;">Caricamento...</td></tr>';
+    try{
+      if(!adminOrders.length){
+        const fn=lfCallable('getAdminOrders');
+        const res=await fn();
+        adminOrders=res.data;
+      }
+      const userMap={};
+      adminOrders.forEach(o=>{
+        const email=(o.email||'').toLowerCase();
+        if(!email) return;
+        if(!userMap[email]) userMap[email]={email,name:o.name||'',orders:0,total:0,lastTs:0,lastDate:'—'};
+        userMap[email].orders++;
+        userMap[email].total+=(o.total||0);
+        const ts=o.createdAt?.seconds||0;
+        if(ts>userMap[email].lastTs){
+          userMap[email].lastTs=ts;
+          userMap[email].lastDate=ts?new Date(ts*1000).toLocaleDateString('it-IT'):'—';
+        }
+      });
+      _allUsersData=Object.values(userMap).sort((a,b)=>b.total-a.total);
+      const totalSpent=_allUsersData.reduce((s,u)=>s+u.total,0);
+      const vipCount=_allUsersData.filter(u=>u.total>=200).length;
+      if(statGrid) statGrid.innerHTML=[
+        {icon:'👥',label:'Clienti Totali',val:_allUsersData.length,cls:''},
+        {icon:'💶',label:'Revenue Totale',val:'€'+totalSpent.toFixed(2),cls:'green'},
+        {icon:'💎',label:'VIP (€200+)',val:vipCount,cls:'yellow'},
+        {icon:'🛒',label:'Ordini Totali',val:adminOrders.length,cls:''},
+      ].map(s=>`<div class="astat-card"><div class="astat-icon">${s.icon}</div><div class="astat-val ${s.cls}">${s.val}</div><div class="astat-lbl">${s.label}</div></div>`).join('');
+      renderUsersTable(_allUsersData);
+    }catch(e){
+      if(tbody) tbody.innerHTML=`<tr><td colspan="6" style="padding:20px 12px;color:#ff4444;font-size:10px;">Errore: ${escH(e.message)}</td></tr>`;
+    }
+  };
+
+  function renderUsersTable(users){
+    const tbody=document.getElementById('users-tbody');
+    if(!tbody) return;
+    if(!users.length){
+      tbody.innerHTML='<tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;letter-spacing:1px;">Nessun cliente trovato.</td></tr>';
+      return;
+    }
+    tbody.innerHTML=users.map(u=>{
+      const badge=u.total>=200
+        ?'<span class="user-badge vip">VIP</span>'
+        :u.orders===1?'<span class="user-badge new">NUOVO</span>':'';
+      const safeEmail=u.email.replace(/'/g,"\\'");
+      return `<tr>
+        <td>
+          <div style="font-size:12px;font-weight:500;">${escH(u.email)}</div>
+          ${u.name?`<div style="font-size:10px;color:var(--dim);">${escH(u.name)}</div>`:''}
+        </td>
+        <td style="font-family:'Bebas Neue',sans-serif;font-size:20px;">${u.orders}</td>
+        <td style="color:var(--led);font-family:'Bebas Neue',sans-serif;font-size:20px;">€${u.total.toFixed(2)}</td>
+        <td style="font-size:10px;color:var(--dim);">${u.lastDate}</td>
+        <td>${badge}</td>
+        <td><button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.filterUsersTable=function(){
+    const q=(document.getElementById('users-search')?.value||'').toLowerCase();
+    renderUsersTable(q?_allUsersData.filter(u=>u.email.includes(q)||(u.name||'').toLowerCase().includes(q)):_allUsersData);
+  };
 
 // ══════════════════════════════════════════════════════════════════════
 // ADMIN LIGHTBOX
