@@ -590,7 +590,7 @@ waitFB(()=>{
     const btn=document.getElementById('ad-btn');
     btn.textContent='...'; btn.disabled=true;
     try{
-      const saveFn=fb.httpsCallable(fb.functions,'saveProduct');
+      const saveFn=lfCallable('saveProduct');
       await saveFn({
         name,price,
         description:document.getElementById('ad-desc').value.trim(),
@@ -622,7 +622,7 @@ waitFB(()=>{
     if(!confirm('Eliminare '+name+'?'))return;
     const fb=window.__fb;
     try{
-      const fn=fb.httpsCallable(fb.functions,'deleteAdminProduct');
+      const fn=lfCallable('deleteAdminProduct');
       await fn({id:pid});
       showToast('🗑 Prodotto eliminato.');
       loadAdminCatalog();
@@ -789,7 +789,7 @@ waitFB(()=>{
       const imgUrl=imgInput?.dataset.b64||'';
       if(!name||isNaN(price)){errors++;continue;}
       try{
-        const saveFn=fb.httpsCallable(fb.functions,'saveProduct');
+        const saveFn=lfCallable('saveProduct');
         await saveFn({
           name,price,
           brand:bulkSelectedCat.brand||'',
@@ -821,7 +821,7 @@ waitFB(()=>{
     if(!wrap) return;
     wrap.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const fn = fb.httpsCallable(fb.functions, 'getAdminStats');
+      const fn = lfCallable('getAdminStats');
       const res = await fn();
       const s = res.data;
       const u = s.users, o = s.orders, r = s.revenue;
@@ -923,7 +923,7 @@ waitFB(()=>{
     const u=url.startsWith('//')?'https:'+url:url;
     const inner=u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
     if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
-      return _PROXY+'?url='+encodeURIComponent(inner);
+      return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner);
     return u;
   }
 
@@ -935,7 +935,7 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento ordini...</p>';
     try{
-      const fn = fb.httpsCallable(fb.functions,'getAdminOrders');
+      const fn = lfCallable('getAdminOrders');
       const res = await fn();
       adminOrders = res.data;
       // Arricchisci item senza immagine con imageUrl attuale dal catalogo
@@ -1048,7 +1048,7 @@ waitFB(()=>{
     if(!docId) return;
     if(btn){ btn.textContent='...'; btn.disabled=true; }
     try{
-      const fn=fb.httpsCallable(fb.functions,'updateAdminOrder');
+      const fn=lfCallable('updateAdminOrder');
       await fn({id:docId, status:'confirmed'});
       const idx = adminOrders.findIndex(o=>o._docId===docId);
       if(idx>=0) adminOrders[idx].status='confirmed';
@@ -1077,7 +1077,7 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const fn=fb.httpsCallable(fb.functions,'getAdminProducts');
+      const fn=lfCallable('getAdminProducts');
       const res=await fn();
       adminCatalogProducts=res.data;
       renderAdminCatalog();
@@ -1142,7 +1142,7 @@ waitFB(()=>{
     if(btn){ btn.textContent = 'Eliminazione...'; btn.style.pointerEvents='none'; }
     let deleted = 0;
     const ids = [...bulkSelected];
-    const delFn=fb.httpsCallable(fb.functions,'deleteAdminProduct');
+    const delFn=lfCallable('deleteAdminProduct');
     for(const pid of ids){
       try{ await delFn({id:pid}); deleted++; }
       catch(e){ console.error('Errore eliminando',pid,e); }
@@ -1293,7 +1293,7 @@ waitFB(()=>{
     const btn = document.getElementById('edit-save-btn');
     btn.textContent = 'Salvando...'; btn.disabled = true;
     try{
-      const fn=fb.httpsCallable(fb.functions,'updateAdminProduct');
+      const fn=lfCallable('updateAdminProduct');
       await fn({id:pid, data:{name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')}});
       // Update local cache
       const idx = adminCatalogProducts.findIndex(p=>p.id===pid);
@@ -1412,7 +1412,7 @@ waitFB(()=>{
     const btn2 = document.getElementById('gc-only-new-btn');
     btn.disabled = true; btn2.disabled = true;
     try {
-      const fn = fb.httpsCallable(fb.functions, 'batchSetGender');
+      const fn = lfCallable('batchSetGender');
       for (let i = 0; i < updates.length; i += 500) {
         btn.textContent = `Applicazione... ${Math.min(i+500,updates.length)}/${updates.length}`;
         await fn({ updates: updates.slice(i, i + 500) });

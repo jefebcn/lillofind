@@ -3350,7 +3350,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Estrai l'URL originale se già passato attraverso un proxy
     const inner=u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
     if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
-      return _PROXY+'?url='+encodeURIComponent(inner);
+      return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner);
     return u;
   }
 
@@ -3695,7 +3695,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     closeStripeModal();
     const fb=window.__fb;
     try{
-      const validateOrder=fb.httpsCallable(fb.functions,'validateOrder');
+      const validateOrder=lfCallable('validateOrder');
       const result=await validateOrder({..._pendingOrderData,stripePaymentIntentId:paymentIntent.id});
       _handleOrderSuccess(result.data,_pendingOrderData);
     }catch(e){
@@ -3820,7 +3820,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(!_stripe){showToast('⚠️ Errore. Ricarica la pagina.');return;}
       if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Apertura pagamento...';}
       try{
-        const createPI=fb.httpsCallable(fb.functions,'createPaymentIntent');
+        const createPI=lfCallable('createPaymentIntent');
         const piResult=await createPI({items:_orderItems.map(i=>({id:i.id,qty:i.qty}))});
         const {clientSecret}=piResult.data;
         // Calcola totale per display modale
@@ -3854,7 +3854,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
     if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Elaborazione...';}
     try{
-      const validateOrder=fb.httpsCallable(fb.functions,'validateOrder');
+      const validateOrder=lfCallable('validateOrder');
       const result=await validateOrder(_orderPayload);
       _handleOrderSuccess(result.data,_orderPayload);
     }catch(e){

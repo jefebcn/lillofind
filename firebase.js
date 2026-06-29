@@ -12,4 +12,36 @@ const app=initializeApp(cfg);
 const _googleProvider=new GoogleAuthProvider();
 _googleProvider.setCustomParameters({prompt:'select_account'});
 const _functions=getFunctions(app,'europe-west1');
-window.__fb={db:getFirestore(app),auth:getAuth(app),functions:_functions,httpsCallable,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,updatePassword,EmailAuthProvider,reauthenticateWithCredential,_googleProvider};
+const _auth=getAuth(app);
+window.__fb={db:getFirestore(app),auth:_auth,functions:_functions,httpsCallable,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,updatePassword,EmailAuthProvider,reauthenticateWithCredential,_googleProvider};
+
+/* ══════════════════════════════════════════════
+   BACKEND su Cloudflare Workers (sostituisce le Cloud Functions)
+   ⚠️  IMPOSTA QUI l'URL del tuo Worker dopo il deploy (vedi
+       cloudflare-worker/README.md). Esempio:
+       const WORKER_BASE = "https://lillofind-worker.tuonome.workers.dev";
+   ══════════════════════════════════════════════ */
+const WORKER_BASE = "https://lillofind-worker.CHANGEME.workers.dev";
+window.LF_WORKER_BASE = WORKER_BASE;
+
+// Shim compatibile con httpsCallable: lfCallable('nome')(data) → {data: result}
+// Replica il protocollo Firebase callable ma punta al Worker Cloudflare.
+window.lfCallable = function(name){
+  return async function(data){
+    let token = '';
+    try { if(_auth.currentUser) token = await _auth.currentUser.getIdToken(); } catch(_){}
+    const resp = await fetch(WORKER_BASE + '/' + name, {
+      method:'POST',
+      headers: Object.assign({'Content-Type':'application/json'}, token?{'Authorization':'Bearer '+token}:{}),
+      body: JSON.stringify({ data: data || {} }),
+    });
+    let json = {};
+    try { json = await resp.json(); } catch(_){}
+    if(!resp.ok || (json && json.error)){
+      const err = new Error((json && json.error && json.error.message) || ('Errore HTTP '+resp.status));
+      if(json && json.error && json.error.status) err.code = json.error.status;
+      throw err;
+    }
+    return { data: json.result };
+  };
+};
