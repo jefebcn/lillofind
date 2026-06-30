@@ -1,8 +1,9 @@
 name: Deploy Firebase Hosting
 
 # Il backend (ex Cloud Functions) è migrato su Cloudflare Workers — vedi
-# cloudflare-worker/. Qui pubblichiamo SOLO l'Hosting, che è gratuito sul
-# piano Spark (nessun Blaze, nessuna carta).
+# cloudflare-worker/. Qui pubblichiamo l'Hosting (gratuito sul piano Spark)
+# e le regole di sicurezza Firestore + Storage. Tutto in automatico ad ogni
+# push su main che tocca i file del sito o le regole.
 
 on:
   push:
@@ -10,12 +11,17 @@ on:
       - main
     paths:
       - 'firebase.json'
+      - 'firestore.rules'
+      - 'storage.rules'
       - '*.html'
       - '*.js'
+      - '*.css'
+      - 'manifest.json'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy to Firebase Hosting
+    name: Deploy to Firebase
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +36,7 @@ jobs:
       - name: Setup Google credentials
         run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > /tmp/gcloud-key.json
 
-      - name: Deploy Hosting
-        run: npx firebase-tools deploy --only hosting --project lillofind-c455c --non-interactive --force
+      - name: Deploy Hosting + Firestore/Storage rules
+        run: npx firebase-tools deploy --only hosting,firestore:rules,storage --project lillofind-c455c --non-interactive --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcloud-key.json
