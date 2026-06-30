@@ -2,6 +2,7 @@
 // LilloFind — Backend su Cloudflare Workers
 // Sostituisce le Firebase Cloud Functions mantenendo lo stesso
 // "contratto" col frontend (protocollo callable: body {data}, resp {result}).
+// Deploy automatico via GitHub Actions (cloudflare-worker-deploy.yml).
 // ════════════════════════════════════════════════════════════════
 
 import { Hono } from 'hono';
