@@ -961,9 +961,49 @@ waitFB(()=>{
     if(!wrap) return;
     wrap.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const fn = lfCallable('getAdminStats');
-      const res = await fn();
-      const s = res.data;
+      // Lettura diretta Firestore — non richiede FIREBASE_SERVICE_ACCOUNT sul Worker
+      const [usersSnap, ordersSnap] = await Promise.all([
+        fb.getDocs(fb.collection(fb.db, 'users')),
+        fb.getDocs(fb.collection(fb.db, 'orders')),
+      ]);
+      const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const now = Date.now(), ms30d = 30*24*60*60*1000, cutoff30d = now - ms30d;
+      const d0 = new Date(), startOfMonth = new Date(d0.getFullYear(), d0.getMonth(), 1).getTime();
+
+      let totalUsers=0, newUsers30d=0; const usersWithOrders=new Set();
+      const tierCount={none:0,bronze:0,silver:0,gold:0,platinum:0}; const topSpenders=[];
+      for(const u of users){
+        totalUsers++;
+        const cMs=u.createdAt?.seconds?u.createdAt.seconds*1000:0;
+        if(cMs&&cMs>=cutoff30d) newUsers30d++;
+        const pts=u.lfpoints||0;
+        if(pts>=500)tierCount.platinum++; else if(pts>=200)tierCount.gold++;
+        else if(pts>=80)tierCount.silver++; else if(pts>=20)tierCount.bronze++; else tierCount.none++;
+        if((u.totalSpent||0)>0) topSpenders.push({email:u.email||u.id,spent:u.totalSpent||0,pts,orders:u.orderCount||0});
+      }
+      topSpenders.sort((a,b)=>b.spent-a.spent);
+
+      let totalOrders=0,pendingOrders=0,confirmedOrders=0,totalRevenue=0,monthlyRevenue=0,totalShipping=0,itemsSold=0;
+      const productSales={};
+      for(const o of orders){
+        totalOrders++;
+        if(o.status==='pending')pendingOrders++; else if(o.status==='confirmed')confirmedOrders++;
+        const rev=o.total||0; totalRevenue+=rev; totalShipping+=o.shipping||0;
+        const cMs=o.createdAt?.seconds?o.createdAt.seconds*1000:0;
+        if(cMs&&cMs>=startOfMonth) monthlyRevenue+=rev;
+        usersWithOrders.add(o.uid||'');
+        (o.items||[]).forEach(i=>{ const qty=i.qty||1; itemsSold+=qty; const k=i.name||'Unknown'; productSales[k]=(productSales[k]||0)+qty; });
+      }
+      const topProducts=Object.entries(productSales).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([name,qty])=>({name,qty}));
+
+      const s = {
+        users:{total:totalUsers,new30d:newUsers30d,withOrders:usersWithOrders.size,tiers:tierCount},
+        orders:{total:totalOrders,pending:pendingOrders,confirmed:confirmedOrders},
+        revenue:{total:Math.round(totalRevenue*100)/100,monthly:Math.round(monthlyRevenue*100)/100,shipping:Math.round(totalShipping*100)/100},
+        itemsSold, topProducts, topSpenders:topSpenders.slice(0,5)
+      };
       const u = s.users, o = s.orders, r = s.revenue;
 
       const card = (icon, label, value, sub='', color='var(--k)') =>
@@ -1075,9 +1115,10 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento ordini...</p>';
     try{
-      const fn = lfCallable('getAdminOrders');
-      const res = await fn();
-      adminOrders = res.data;
+      // Lettura diretta Firestore
+      const q = fb.query(fb.collection(fb.db,'orders'), fb.orderBy('createdAt','desc'));
+      const snap = await fb.getDocs(q);
+      adminOrders = snap.docs.map(d => ({ id: d.id, _docId: d.id, ...d.data() }));
       // Arricchisci item senza immagine con imageUrl attuale dal catalogo
       const missingIds = new Set();
       adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(!i.img && i.id && !i.isDigital) missingIds.add(i.id); }));
@@ -1238,9 +1279,9 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const fn=lfCallable('getAdminProducts');
-      const res=await fn();
-      adminCatalogProducts=res.data;
+      const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
+      const snap=await fb.getDocs(q);
+      adminCatalogProducts=snap.docs.map(d=>({id:d.id,...d.data()}));
       renderAdminCatalog();
     } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
   };
@@ -1629,9 +1670,9 @@ waitFB(()=>{
     tbody.innerHTML='<tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;letter-spacing:1px;">Caricamento...</td></tr>';
     try{
       if(!adminOrders.length){
-        const fn=lfCallable('getAdminOrders');
-        const res=await fn();
-        adminOrders=res.data;
+        const q=fb.query(fb.collection(fb.db,'orders'),fb.orderBy('createdAt','desc'));
+        const snap=await fb.getDocs(q);
+        adminOrders=snap.docs.map(d=>({id:d.id,_docId:d.id,...d.data()}));
       }
       const userMap={};
       adminOrders.forEach(o=>{
