@@ -17,9 +17,9 @@ const app = new Hono();
 // ── CORS ────────────────────────────────────────────────────────
 function corsHeaders(origin, env) {
   const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-  const ok = origin && (allowed.includes(origin) || allowed.includes('*'));
+  const ok = allowed.length === 0 || !origin || allowed.includes('*') || allowed.includes(origin);
   return {
-    'Access-Control-Allow-Origin': ok ? origin : (allowed[0] || '*'),
+    'Access-Control-Allow-Origin': ok && origin ? origin : '*',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
     'Access-Control-Max-Age': '86400',
