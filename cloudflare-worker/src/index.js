@@ -54,7 +54,7 @@ function callable(handler, opts = {}) {
 
       const ctx = { env, db: new Firestore(env), auth: null };
 
-      if (opts.auth === 'required' || opts.auth === 'admin') {
+      if (opts.auth === 'required' || opts.auth === 'admin' || opts.auth === 'adminEmail') {
         const token = bearerFrom(c.req.raw);
         if (!token) throw new HttpsError('unauthenticated', 'Login richiesto.');
         let decoded;
@@ -65,6 +65,16 @@ function callable(handler, opts = {}) {
         if (opts.auth === 'admin') {
           const userSnap = await ctx.db.getDoc('users', decoded.uid);
           if (userSnap.data()?.isAdmin !== true) {
+            throw new HttpsError('permission-denied', 'Solo admin.');
+          }
+        }
+
+        // adminEmail: verifica admin tramite allowlist email (non usa Firestore,
+        // quindi funziona anche senza FIREBASE_SERVICE_ACCOUNT).
+        if (opts.auth === 'adminEmail') {
+          const admins = (env.ADMIN_EMAILS || 'yishionvt@gmail.com')
+            .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+          if (!admins.includes((decoded.email || '').toLowerCase())) {
             throw new HttpsError('permission-denied', 'Solo admin.');
           }
         }
@@ -177,6 +187,8 @@ app.post('/batchSetGender',     callable(admin.batchSetGender,     { auth: 'admi
 // Checkout
 app.post('/createPaymentIntent', callable(checkout.createPaymentIntent, { auth: 'required' }));
 app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 'required' }));
+// Email tracking al cliente (admin via allowlist email)
+app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
 // Scraper (admin)
 app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'admin' }));
 app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'admin' }));
