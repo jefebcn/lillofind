@@ -3156,6 +3156,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     renderShop();
   };
 
+  // Retry image up to 2 times before hiding the card (handles proxy/timeout transients)
+  window._imgErr=function(img){
+    var r=parseInt(img.dataset.retry||0);
+    if(r<2){
+      img.dataset.retry=r+1;
+      setTimeout(function(){img.src=img.src;},1500*(r+1));
+    } else {
+      img.closest('.pcard').style.display='none';
+    }
+  };
+
   function cardHTML(p){
     const isNew=(p.createdAt?.seconds&&(Date.now()/1000-p.createdAt.seconds)<604800);
     const inWish=wishlist.includes(p.id);
@@ -3172,7 +3183,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       :(p.style?`<span style="position:absolute;top:8px;left:8px;background:var(--k);color:var(--w);font-size:9px;letter-spacing:2px;padding:3px 8px;z-index:3;">${p.style.toUpperCase()}</span>`:'');
     return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" onclick="openProduct('${p.id}')">
       <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
-        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="this.closest('.pcard').style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
+        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
         ${stockBadge}
         ${delBtn}
         <button class="wish-btn ${inWish?'active':''}" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">${inWish?'❤️':'♡'}</button>
