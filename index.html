@@ -3161,7 +3161,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     var r=parseInt(img.dataset.retry||0);
     if(r<2){
       img.dataset.retry=r+1;
-      setTimeout(function(){img.src=img.src;},1500*(r+1));
+      var src=img.src;
+      setTimeout(function(){
+        img.src='';   // force reset (required on mobile Safari — src=src is a no-op)
+        img.src=src;
+      },1500*(r+1));
     } else {
       img.closest('.pcard').style.display='none';
     }
