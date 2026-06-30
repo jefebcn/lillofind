@@ -9,7 +9,7 @@
 <meta name="robots" content="noindex, nofollow"/>
 <title>LILLOFIND — Admin Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style.css"/>
 
 <!-- Firebase -->
@@ -17,7 +17,7 @@
 
 <style>
 /* ── ADMIN BASE ───────────────────────────────── */
-body{font-family:'IBM Plex Mono',monospace;background:#0d0d0d;color:#f0f0f0;margin:0;}
+body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#f0f0f0;margin:0;}
 .bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
 input,textarea,select{font-size:16px !important;}
 button{touch-action:manipulation;}
@@ -54,7 +54,7 @@ button{touch-action:manipulation;}
 .anav-btn{
   display:flex;align-items:center;gap:12px;width:100%;
   padding:12px 18px;background:none;border:none;color:rgba(255,255,255,.4);
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;
+  font-family:'Inter',sans-serif;font-size:11px;letter-spacing:1px;
   cursor:pointer;transition:all .15s;text-align:left;position:relative;
 }
 .anav-btn:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.8);}
@@ -73,7 +73,7 @@ button{touch-action:manipulation;}
 .anav-footer-btns{display:flex;gap:6px;}
 .anav-fbtn{
   flex:1;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace;font-size:9px;
+  color:rgba(255,255,255,.6);font-family:'Inter',sans-serif;font-size:9px;
   letter-spacing:1px;cursor:pointer;transition:all .15s;text-decoration:none;
   display:inline-flex;align-items:center;justify-content:center;text-align:center;
 }
@@ -164,10 +164,10 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
   <div id="guard-login-form" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:320px;">
     <p style="margin-bottom:4px;">LILLOFIND <span style="font-size:12px;color:#444;letter-spacing:3px;">ADMIN</span></p>
     <small style="margin-bottom:8px;">Accedi per gestire il pannello</small>
-    <input id="guard-email" type="email" placeholder="Email admin" autocomplete="email" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;"/>
-    <input id="guard-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;"/>
+    <input id="guard-email" type="email" placeholder="Email admin" autocomplete="email" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Inter',sans-serif;font-size:13px;outline:none;"/>
+    <input id="guard-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Inter',sans-serif;font-size:13px;outline:none;"/>
     <p id="guard-err" style="display:none;color:#ff4444;font-size:10px;letter-spacing:1px;text-align:center;"></p>
-    <button onclick="adminLogin()" style="width:100%;padding:13px;background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Accedi →</button>
+    <button onclick="adminLogin()" style="width:100%;padding:13px;background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Accedi →</button>
     <a href="index.html" style="font-size:9px;color:#555;letter-spacing:1px;text-decoration:none;margin-top:4px;">← Torna al sito</a>
   </div>
   <!-- Stato 3: accesso negato (loggato ma non admin) -->
@@ -271,7 +271,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
     <div class="apg hidden" id="apg-prodotti">
       <div class="apg-hdr">
         <h1 class="apg-title bb">Prodotti</h1>
-        <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,255,0,.08);border:1px solid var(--led);padding:9px 16px;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--led);">🚀 Bulk Import →</a>
+        <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,255,0,.08);border:1px solid var(--led);padding:9px 16px;text-decoration:none;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:1px;color:var(--led);">🚀 Bulk Import →</a>
       </div>
 
       <!-- Add product -->
@@ -345,7 +345,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn-g" onclick="exitBulkMode()" style="padding:8px 16px;font-size:10px;border-color:#999;color:#999;">Annulla</button>
-            <button id="bulk-delete-btn" onclick="bulkDeleteSelected()" style="display:inline-flex;align-items:center;justify-content:center;background:#ff4757;color:#fff;border:none;padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:.5;pointer-events:none;">🗑 ELIMINA</button>
+            <button id="bulk-delete-btn" onclick="bulkDeleteSelected()" style="display:inline-flex;align-items:center;justify-content:center;background:#ff4757;color:#fff;border:none;padding:8px 20px;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:.5;pointer-events:none;">🗑 ELIMINA</button>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -550,7 +550,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       </div>
       <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
         <button class="btn-led" id="edit-save-btn" onclick="saveEditProduct()" style="flex:1;">💾 SALVA MODIFICHE →</button>
-        <button onclick="closeEditModal()" style="padding:12px 20px;border:1.5px solid rgba(255,255,255,.2);background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:#fff;">Annulla</button>
+        <button onclick="closeEditModal()" style="padding:12px 20px;border:1.5px solid rgba(255,255,255,.2);background:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:1px;color:#fff;">Annulla</button>
       </div>
       <input type="hidden" id="edit-pid"/>
     </div>
@@ -1370,7 +1370,7 @@ waitFB(()=>{
       : '<div style="width:48px;height:48px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>';
     const sizeStr = (p.sizes&&p.sizes.length) ? '· '+p.sizes.join(' ') : (p.size ? '· '+p.size : '');
     const actionsHtml = bulkMode ? '' : '<div style="display:flex;gap:6px;">'
-      + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:8px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">✏️ MODIFICA</button>'
+      + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:8px 14px;font-family:\'Inter\',sans-serif;font-size:10px;letter-spacing:1px;cursor:pointer;">✏️ MODIFICA</button>'
       + '<button onclick="deleteProd(\'' + p.id + '\',\'' + (p.name||'').replace(/'/g,"\\'") + '\');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:8px 10px;cursor:pointer;font-size:12px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor=\'#ff4757\';this.style.color=\'#ff4757\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#ccc\'">🗑</button>'
       + '</div>';
     const rowClick = bulkMode
@@ -1380,7 +1380,7 @@ waitFB(()=>{
       + chkHtml
       + imgHtml
       + '<div>'
-        + '<p style="font-size:12px;font-family:\'IBM Plex Mono\',monospace;font-weight:500;color:#fff;">' + escH(p.name||'—') + '</p>'
+        + '<p style="font-size:12px;font-family:\'Inter\',sans-serif;font-weight:500;color:#fff;">' + escH(p.name||'—') + '</p>'
         + '<p style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;">' + escH(p.brand||'') + ' ' + (p.model?'· '+escH(p.model):'') + ' ' + escH(sizeStr) + '</p>'
       + '</div>'
       + '<p style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">€' + (p.price||0).toFixed(2) + '</p>'
@@ -1723,7 +1723,7 @@ waitFB(()=>{
         <td style="color:var(--led);font-family:'Bebas Neue',sans-serif;font-size:20px;">€${u.total.toFixed(2)}</td>
         <td style="font-size:10px;color:var(--dim);">${u.lastDate}</td>
         <td>${badge}</td>
-        <td><button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button></td>
+        <td><button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button></td>
       </tr>`;
     }).join('');
   }
