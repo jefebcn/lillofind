@@ -429,8 +429,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <h1 class="apg-title bb">Spedizioni</h1>
       </div>
       <div class="admin-card">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Assegna Tracking Utente</p>
-        <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:24px;line-height:1.7;">Inserisci l'email del cliente e il codice di tracking DHL. Sarà visibile nella sezione "Traccia Pacco" del profilo cliente.</p>
+        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Assegna Tracking Utente</p>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:24px;line-height:1.7;">Inserisci l'email del cliente e il codice di tracking DHL. Sarà visibile nel profilo cliente <b>e inviato via email</b> al cliente.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
           <div style="display:flex;flex-direction:column;gap:6px;">
             <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Email Utente *</label>
@@ -793,7 +793,14 @@ waitFB(()=>{
       if(!targetUid){showToast('⚠️ Utente non trovato con questa email.');btn.textContent='Assegna Tracking →';btn.disabled=false;return;}
       const trackData={trackingCode:code,trackingProduct:product||'—',trackingStatus:status,trackingNote:note,trackingUpdatedAt:fb.serverTimestamp()};
       await fb.updateDoc(fb.doc(fb.db,'users',targetUid),trackData);
-      showToast('✅ Tracking assegnato a '+email+'!');
+      showToast('✅ Tracking salvato. Invio email...');
+      // Invia email al cliente col codice tracking (via Worker + Resend)
+      try{
+        await lfCallable('sendTrackingEmail')({email,code,product,status,note});
+        showToast('✅ Tracking assegnato ed email inviata a '+email+'!');
+      }catch(mailErr){
+        showToast('⚠️ Tracking salvato, ma email non inviata: '+(mailErr.message||'errore'));
+      }
       // Show in history
       const h=document.getElementById('tr-history');
       if(h){

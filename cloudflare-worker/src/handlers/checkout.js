@@ -60,6 +60,54 @@ ${itemsHtml}
   }
 }
 
+// ── sendTrackingEmail ───────────────────────────────────────────
+// Invia al cliente l'email col codice di tracking. Auth: adminEmail
+// (verifica solo il token + email admin, NON richiede il service account).
+export async function sendTrackingEmail(data, { env }) {
+  const email   = String(data?.email || '').trim();
+  const code    = String(data?.code || '').trim();
+  const product = String(data?.product || '').trim();
+  const status  = String(data?.status || '').trim();
+  const note    = String(data?.note || '').trim();
+  if (!email || !code) throw new HttpsError('invalid-argument', 'Email e codice tracking obbligatori.');
+  if (!env.RESEND_API_KEY) throw new HttpsError('unavailable', 'Invio email non configurato (RESEND_API_KEY mancante).');
+
+  const statusLabels = {
+    confermato: '✅ Ordine confermato', preparazione: '📦 In preparazione',
+    spedito: '🚀 Spedito', in_transito: '✈️ In transito',
+    in_consegna: '🚚 In consegna', consegnato: '🎉 Consegnato',
+  };
+  const statusLabel = statusLabels[status] || '📦 Aggiornamento spedizione';
+  const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
+  const trackUrl = 'https://www.dhl.com/it-it/home/tracciabilita.html?tracking-id=' + encodeURIComponent(code);
+
+  const resp = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: `📦 La tua spedizione LilloFind — ${escHtml(statusLabel)}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+<h2 style="color:#111;">${escHtml(statusLabel)}</h2>
+<p>Ciao,<br>il tuo ordine LilloFind è stato aggiornato.</p>
+${product ? `<p><b>Prodotto:</b> ${escHtml(product)}</p>` : ''}
+<p style="font-size:15px;"><b>Codice tracking:</b><br>
+<span style="font-size:20px;letter-spacing:1px;background:#f4f4f4;padding:8px 14px;display:inline-block;margin-top:6px;border-radius:4px;">${escHtml(code)}</span></p>
+${note ? `<p><b>Note:</b> ${escHtml(note)}</p>` : ''}
+<p style="margin:24px 0;">
+<a href="${escHtml(trackUrl)}" style="background:#111;color:#fff;text-decoration:none;padding:12px 22px;border-radius:4px;display:inline-block;">Traccia il pacco →</a></p>
+<p style="font-size:12px;color:#888;">Puoi seguire la spedizione anche dalla sezione "Traccia Pacco" del tuo profilo su LilloFind.</p>
+</div>`,
+    }),
+  });
+  if (!resp.ok) {
+    const t = await resp.text().catch(() => '');
+    throw new HttpsError('internal', 'Invio email fallito: ' + (t || resp.status));
+  }
+  return { sent: true };
+}
+
 // ── createPaymentIntent ─────────────────────────────────────────
 export async function createPaymentIntent(data, { env, db, auth }) {
   const { items } = data || {};
