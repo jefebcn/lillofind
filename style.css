@@ -1,143 +1,169 @@
 /* ══════════════════════════════════════════════
-   LILLOFIND — Shared Design System
+   LILLOFIND — Shared Design System (v2 — Premium Light)
    Importato da: index.html, admin.html,
                  subscriptions.html, app.html
+   Palette calda crema + accento salvia, angoli morbidi,
+   ombre leggere, tipografia pulita (Inter).
    ══════════════════════════════════════════════ */
 
 /* ── TOKENS ─────────────────────────────────── */
 :root{
-  --k:#0a0a0a;
-  --w:#f5f5f5;
-  --led:#C8FF00;
-  --led2:#00FFB2;
-  --mid:#555;
-  --dim:#aaa;
-  --border:#222;
-  --card:#fff;
+  --k:#23231f;        /* testo / elementi scuri (warm near-black) */
+  --w:#f5f2ec;        /* sfondo pagina (crema calda) */
+  --card:#ffffff;     /* superfici card */
+  --led:#6f7552;      /* accento salvia/oliva */
+  --led2:#99a074;     /* salvia chiaro */
+  --accent-soft:#eef0e6; /* tinta salvia molto tenue per sfondi */
+  --mid:#6b6b63;      /* testo secondario */
+  --dim:#a6a49b;      /* testo tenue / placeholder */
+  --border:#e7e2d8;   /* bordi morbidi */
+  --border-2:#d8d2c5; /* bordi leggermente più marcati */
+  --ink-soft:#3a3a34; /* testo scuro morbido */
+
+  /* forme & profondità */
+  --radius:14px;
+  --radius-sm:10px;
+  --radius-lg:22px;
+  --radius-pill:999px;
+  --shadow-sm:0 2px 10px rgba(35,35,31,.05);
+  --shadow:0 8px 28px rgba(35,35,31,.07);
+  --shadow-lg:0 18px 48px rgba(35,35,31,.10);
+  --ring:0 0 0 3px rgba(111,117,82,.18);
+
+  /* legacy warm accents (usati in badge digital) */
+  --dg1:#b8ad9c;
+  --dg2:#8a7963;
 }
 
 /* ── RESET ───────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
-body{background:var(--w);color:var(--k);overflow-x:hidden;}
+body{
+  background:var(--w);color:var(--k);overflow-x:hidden;
+  font-family:'Inter','Space Grotesk',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
 
-/* ── LED STRIPS ──────────────────────────────── */
+/* ── STRIP ACCENTO (ex LED) ──────────────────── */
 .led-strip{
   height:3px;width:100%;
-  background:linear-gradient(90deg,transparent 0%,var(--led) 20%,var(--led2) 50%,var(--led) 80%,transparent 100%);
-  box-shadow:0 0 12px var(--led),0 0 24px rgba(200,255,0,.3);
+  background:linear-gradient(90deg,transparent 0%,var(--led2) 20%,var(--led) 50%,var(--led2) 80%,transparent 100%);
+  opacity:.7;
 }
 .led-strip-sm{
   height:2px;
-  background:linear-gradient(90deg,transparent,var(--led),transparent);
-  box-shadow:0 0 8px var(--led);
+  background:linear-gradient(90deg,transparent,var(--led2),transparent);
 }
 
 /* ── TICKER ──────────────────────────────────── */
 .ticker-w{overflow:hidden;white-space:nowrap;}
-.ticker{display:inline-flex;animation:tick 32s linear infinite;}
-.ticker span{padding:0 36px;}
+.ticker{display:inline-flex;animation:tick 40s linear infinite;}
+.ticker span{padding:0 34px;}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ── SECTION LABEL ───────────────────────────── */
-.slbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);}
+.slbl{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--led);font-weight:600;}
 
 /* ── INPUTS ──────────────────────────────────── */
 .lf-in{
-  background:transparent;border:1.5px solid var(--k);
-  padding:13px 16px;width:100%;
-  font-family:'IBM Plex Mono',monospace;font-size:13px;
-  color:var(--k);outline:none;border-radius:0;
+  background:var(--card);border:1.5px solid var(--border-2);
+  padding:14px 18px;width:100%;
+  font-family:'Inter',sans-serif;font-size:14px;
+  color:var(--k);outline:none;border-radius:var(--radius);
   transition:border-color .2s,box-shadow .2s;
   -webkit-appearance:none;
 }
-.lf-in:focus{border-color:var(--led);box-shadow:0 0 0 3px rgba(200,255,0,.15);}
+.lf-in:focus{border-color:var(--led);box-shadow:var(--ring);}
 .lf-in::placeholder{color:var(--dim);}
 select.lf-in{
   appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 14px center;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236f7552' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center;
 }
 textarea.lf-in{resize:vertical;min-height:90px;}
 
-/* ── BUTTONS ─────────────────────────────────── */
+/* ── BUTTONS (pill, morbidi) ─────────────────── */
 .btn-k{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:var(--k);color:var(--w);border:none;
-  padding:14px 28px;min-height:48px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;
-  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
-  transition:opacity .2s,transform .1s;user-select:none;
-  -webkit-appearance:none;border-radius:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--k);color:#f5f2ec;border:none;
+  padding:14px 30px;min-height:50px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
+  transition:transform .12s,box-shadow .2s,opacity .2s;user-select:none;
+  -webkit-appearance:none;box-shadow:var(--shadow-sm);
 }
 .btn-k:active{transform:scale(.97);}
-.btn-k:hover{opacity:.75;}
-.btn-k:disabled{opacity:.35;cursor:not-allowed;}
+.btn-k:hover{box-shadow:var(--shadow);opacity:.92;}
+.btn-k:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
 
 .btn-led{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:var(--led);color:var(--k);border:none;
-  padding:14px 28px;min-height:48px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;
-  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
-  transition:opacity .2s,box-shadow .2s;
-  box-shadow:0 0 16px rgba(200,255,0,.4);
-  -webkit-appearance:none;border-radius:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--led);color:#fff;border:none;
+  padding:14px 30px;min-height:50px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
+  transition:transform .12s,box-shadow .2s,background .2s;
+  box-shadow:var(--shadow-sm);-webkit-appearance:none;
 }
-.btn-led:hover{opacity:.85;box-shadow:0 0 24px rgba(200,255,0,.6);}
+.btn-led:hover{background:#5e6446;box-shadow:var(--shadow);}
 .btn-led:active{transform:scale(.97);}
+.btn-led:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
 
 .btn-g{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:transparent;color:var(--k);border:1.5px solid var(--k);
-  padding:12px 28px;min-height:48px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;
-  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
-  transition:all .2s;-webkit-appearance:none;border-radius:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--card);color:var(--k);border:1.5px solid var(--border-2);
+  padding:13px 28px;min-height:50px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
+  transition:all .2s;-webkit-appearance:none;
 }
-.btn-g:hover{background:var(--k);color:var(--w);}
+.btn-g:hover{border-color:var(--led);color:var(--led);}
 .btn-g:active{transform:scale(.97);}
 
 .btn-w{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:var(--w);color:var(--k);border:none;
-  padding:14px 28px;min-height:48px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;
-  letter-spacing:2px;text-transform:uppercase;cursor:pointer;
-  transition:opacity .2s;-webkit-appearance:none;border-radius:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--card);color:var(--k);border:none;
+  padding:14px 30px;min-height:50px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
+  transition:box-shadow .2s;-webkit-appearance:none;box-shadow:var(--shadow-sm);
 }
-.btn-w:hover{opacity:.85;}
+.btn-w:hover{box-shadow:var(--shadow);}
 
-/* ── CHIPS ───────────────────────────────────── */
+/* ── CHIPS (pill) ────────────────────────────── */
 .chip{
-  display:inline-flex;align-items:center;
-  border:1.5px solid var(--k);padding:5px 12px;
-  margin:3px 2px;font-size:10px;letter-spacing:1.5px;
-  text-transform:uppercase;cursor:pointer;
-  transition:all .15s;user-select:none;min-height:32px;
+  display:inline-flex;align-items:center;gap:6px;
+  border:1.5px solid var(--border-2);padding:8px 16px;background:var(--card);
+  margin:3px 2px;font-size:12px;letter-spacing:.3px;font-weight:500;
+  cursor:pointer;border-radius:var(--radius-pill);
+  transition:all .15s;user-select:none;min-height:38px;color:var(--ink-soft);
 }
-.chip:hover,.chip.on{background:var(--k);color:var(--w);}
-.chip.on{border-color:var(--led);box-shadow:0 0 8px rgba(200,255,0,.3);}
+.chip:hover{border-color:var(--led);color:var(--led);}
+.chip.on{background:var(--led);color:#fff;border-color:var(--led);}
 
 /* ── NAV BUTTONS ─────────────────────────────── */
 .nbtn{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;
-  text-transform:uppercase;background:none;border:none;cursor:pointer;
-  color:var(--k);transition:opacity .2s;padding:8px 4px;min-height:44px;
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;letter-spacing:.2px;
+  background:none;border:none;cursor:pointer;
+  color:var(--k);transition:color .2s;padding:8px 4px;min-height:44px;
   display:inline-flex;align-items:center;
 }
-.nbtn:hover{opacity:.45;}
+.nbtn:hover{color:var(--led);}
 
 /* ── PAGES / ANIMATION ───────────────────────── */
 .pg{display:none;}
 .pg.on{display:block;}
-.fadein{animation:fadeup .35s ease forwards;}
+.fadein{animation:fadeup .4s ease forwards;}
 @keyframes fadeup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── LED BADGE ───────────────────────────────── */
+/* ── BADGE ACCENTO (ex led-badge) ────────────── */
 .led-badge{
   display:inline-flex;align-items:center;gap:6px;
-  border:1.5px solid var(--led);padding:4px 10px;
-  font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;
-  color:var(--led);background:rgba(200,255,0,.06);
+  border:1px solid var(--led2);padding:5px 12px;border-radius:var(--radius-pill);
+  font-family:'Inter',sans-serif;font-size:10px;letter-spacing:1.5px;font-weight:600;
+  text-transform:uppercase;color:var(--led);background:var(--accent-soft);
 }
+
+/* ── UTILITY SUPERFICI ───────────────────────── */
+.surface{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);}
+.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:.5px;}
