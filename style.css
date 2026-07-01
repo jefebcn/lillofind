@@ -40,7 +40,7 @@
 html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
 body{
   background:var(--w);color:var(--k);overflow-x:hidden;
-  font-family:'Inter','Space Grotesk',system-ui,sans-serif;
+  font-family:'Manrope','Bricolage Grotesque',system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
 }
 
@@ -68,7 +68,7 @@ body{
 .lf-in{
   background:var(--card);border:1.5px solid var(--border-2);
   padding:14px 18px;width:100%;
-  font-family:'Inter',sans-serif;font-size:14px;
+  font-family:'Manrope',sans-serif;font-size:14px;
   color:var(--k);outline:none;border-radius:var(--radius);
   transition:border-color .2s,box-shadow .2s;
   -webkit-appearance:none;
@@ -87,7 +87,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   background:var(--k);color:#f5f2ec;border:none;
   padding:14px 30px;min-height:50px;
-  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;
   letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
   transition:transform .12s,box-shadow .2s,opacity .2s;user-select:none;
   -webkit-appearance:none;box-shadow:var(--shadow-sm);
@@ -100,7 +100,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   background:var(--led);color:#fff;border:none;
   padding:14px 30px;min-height:50px;
-  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;
   letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
   transition:transform .12s,box-shadow .2s,background .2s;
   box-shadow:var(--shadow-sm);-webkit-appearance:none;
@@ -113,7 +113,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   background:var(--card);color:var(--k);border:1.5px solid var(--border-2);
   padding:13px 28px;min-height:50px;
-  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;
   letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
   transition:all .2s;-webkit-appearance:none;
 }
@@ -124,7 +124,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   background:var(--card);color:var(--k);border:none;
   padding:14px 30px;min-height:50px;
-  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;
   letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
   transition:box-shadow .2s;-webkit-appearance:none;box-shadow:var(--shadow-sm);
 }
@@ -143,7 +143,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 
 /* ── NAV BUTTONS ─────────────────────────────── */
 .nbtn{
-  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;letter-spacing:.2px;
+  font-family:'Manrope',sans-serif;font-size:14px;font-weight:500;letter-spacing:.2px;
   background:none;border:none;cursor:pointer;
   color:var(--k);transition:color .2s;padding:8px 4px;min-height:44px;
   display:inline-flex;align-items:center;
@@ -160,10 +160,10 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 .led-badge{
   display:inline-flex;align-items:center;gap:6px;
   border:1px solid var(--led2);padding:5px 12px;border-radius:var(--radius-pill);
-  font-family:'Inter',sans-serif;font-size:10px;letter-spacing:1.5px;font-weight:600;
+  font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:1.5px;font-weight:600;
   text-transform:uppercase;color:var(--led);background:var(--accent-soft);
 }
 
 /* ── UTILITY SUPERFICI ───────────────────────── */
 .surface{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);}
-.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:.5px;}
+.bb{font-family:'Bricolage Grotesque',sans-serif;letter-spacing:.5px;}
