@@ -145,6 +145,28 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 /* ── DESKTOP HEADER ──────────────────────────── */
 #site-hdr{position:sticky;top:0;z-index:90;background:var(--w);}
 
+/* ── NAV DROPDOWN (mega-menu a cascata) ──────── */
+.nav-dd{position:relative;}
+.nav-dd-arr{font-size:9px;opacity:.5;margin-left:1px;transition:transform .2s;}
+.nav-dd:hover .nav-dd-arr{transform:rotate(180deg);opacity:1;}
+.nav-dd-menu{
+  position:absolute;top:100%;left:0;min-width:230px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);padding:10px;margin-top:0;
+  opacity:0;visibility:hidden;transform:translateY(8px);
+  transition:opacity .18s,transform .18s,visibility .18s;
+  z-index:120;max-height:74vh;overflow-y:auto;
+}
+.nav-dd-menu.cols{min-width:380px;column-count:2;column-gap:6px;}
+.nav-dd:hover .nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0);}
+.nav-dd-grp{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);font-weight:700;margin:10px 8px 5px;break-inside:avoid;}
+.nav-dd-item{
+  display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;
+  padding:8px 10px;font-family:'Manrope',sans-serif;font-size:13px;color:var(--ink-soft);
+  border-radius:8px;transition:background .12s,color .12s;break-inside:avoid;
+}
+.nav-dd-item:hover{background:var(--accent-soft);color:var(--led);}
+
 /* ── MOBILE HEADER ───────────────────────────── */
 #mob-hdr{
   display:none;position:sticky;top:0;z-index:90;
@@ -926,8 +948,18 @@ img{ -webkit-user-drag:none; user-select:none; }
   <!-- Main nav -->
   <div id="top-nav" style="border-bottom:1px solid var(--border);background:var(--card);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;">
     <nav style="display:flex;gap:24px;align-items:center;">
-      <button class="nbtn" onclick="showPg('shop');resetFilters()">Shop</button>
-      <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneakers'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg>Sneakers</button>
+      <div class="nav-dd">
+        <button class="nbtn" onclick="showPg('shop');resetFilters()">Shop <span class="nav-dd-arr">▾</span></button>
+        <div class="nav-dd-menu" id="dd-shop"></div>
+      </div>
+      <div class="nav-dd">
+        <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneakers'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg>Sneakers <span class="nav-dd-arr">▾</span></button>
+        <div class="nav-dd-menu cols" id="dd-sneakers"></div>
+      </div>
+      <div class="nav-dd">
+        <button class="nbtn" onclick="showPg('shop');resetFilters()">Marchi <span class="nav-dd-arr">▾</span></button>
+        <div class="nav-dd-menu cols" id="dd-brands"></div>
+      </div>
       <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
       <button class="nbtn" onclick="location.href='subscriptions.html'" style="display:inline-flex;align-items:center;gap:5px;color:var(--k);font-weight:600;border:1px solid var(--border-2);border-radius:999px;padding:6px 14px;background:var(--card);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Digital</button>
       <a href="vault.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:#fff;font-weight:600;border:none;border-radius:999px;padding:6px 14px;background:var(--led);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>LF Vault</a>
@@ -2960,7 +2992,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // ── Products ───────────────────────────────────────────
   async function loadProds(){
-    if(products.length){renderShop();return;}
+    if(products.length){renderShop();try{buildNavMenus();}catch(_){}return;}
     const fb=window.__fb;
     document.getElementById('s-load').style.display='block';
     document.getElementById('s-grid').style.display='none';
@@ -2969,7 +3001,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const s=await fb.getDocs(q);
       products=s.docs.map(d=>({id:d.id,...d.data()}));
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-      try{buildChips();updateFilterUI();}catch(_){}
+      try{buildChips();updateFilterUI();buildNavMenus();}catch(_){}
       renderShop(); renderHomeProds();
       localStorage.setItem('lf_wishlist', JSON.stringify(wishlist));
       updateWishBadge();
@@ -4879,6 +4911,50 @@ img{ -webkit-user-drag:none; user-select:none; }
     const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=value?'':'none';
     const rstm=document.getElementById('rst-btn-m'); if(rstm) rstm.style.display=value?'':'none';
     if(typeof renderShop === 'function') renderShop();
+  };
+
+  // Applica model + brand insieme (usato dai mega-menu della nav)
+  window.setFilters2 = function(model, brand){
+    showPg('shop');
+    setTimeout(()=>{
+      filters = {model:model||'',brand:brand||'',size:'',style:'',color:''};
+      document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
+      if(model) document.querySelectorAll(`.chip[data-key="model"][data-val="${model}"]`).forEach(c=>c.classList.add('on'));
+      if(brand) document.querySelectorAll(`.chip[data-key="brand"][data-val="${brand}"]`).forEach(c=>c.classList.add('on'));
+      const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=(model||brand)?'':'none';
+      if(typeof updateFilterUI==='function') updateFilterUI();
+      if(typeof renderShop==='function') renderShop();
+      window.scrollTo({top:0,behavior:'smooth'});
+    },80);
+  };
+
+  // Popola i mega-menu della nav (Shop=categorie, Sneakers/Marchi=brand)
+  window.buildNavMenus = function(){
+    if(!window.products || !products.length) return;
+    const esc=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const brands=[...new Set(products.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+
+    const shop=document.getElementById('dd-shop');
+    if(shop){
+      const groups={};
+      MODEL_FILTERS.forEach(mf=>{ if(!products.some(p=>matchesModelFilter(p,mf.label))) return; (groups[mf.group]=groups[mf.group]||[]).push(mf.label); });
+      shop.innerHTML='<button class="nav-dd-item" style="font-weight:700;" onclick="showPg(\'shop\');resetFilters()">Tutti i prodotti</button>'+
+        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${g}</div>`+labels.map(l=>`<button class="nav-dd-item" onclick="setFilters2('${esc(l)}','')">${l}</button>`).join('')).join('');
+    }
+
+    const bm=document.getElementById('dd-brands');
+    if(bm){
+      bm.innerHTML=brands.length
+        ? brands.map(b=>`<button class="nav-dd-item" onclick="setFilters2('','${esc(b)}')">${b}</button>`).join('')
+        : '<div class="nav-dd-grp">Nessun marchio</div>';
+    }
+
+    const sn=document.getElementById('dd-sneakers');
+    if(sn){
+      const snBrands=[...new Set(products.filter(p=>matchesModelFilter(p,'Sneakers')).map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+      sn.innerHTML='<button class="nav-dd-item" style="font-weight:700;" onclick="setFilters2(\'Sneakers\',\'\')">Tutte le sneakers</button>'+
+        snBrands.map(b=>`<button class="nav-dd-item" onclick="setFilters2('Sneakers','${esc(b)}')">${b}</button>`).join('');
+    }
   };
 
   window.sortByNewest = function(){
