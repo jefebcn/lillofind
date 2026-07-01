@@ -190,6 +190,8 @@ app.post('/createPaymentIntent', callable(checkout.createPaymentIntent, { auth: 
 app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 'required' }));
 // Email tracking al cliente (admin via allowlist email)
 app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
+// Email conferma ordine al cliente (utente autenticato)
+app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 'required' }));
 // Scraper (admin)
 app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'admin' }));
 app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'admin' }));
