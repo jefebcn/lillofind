@@ -2535,73 +2535,80 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ════════════════════════════════════════════════════════
      FOOTER
 ════════════════════════════════════════════════════════ -->
-<footer style="background:var(--card);color:var(--k);margin-top:0;border-top:1px solid var(--border);">
-  <div class="led-strip"></div>
+<footer style="background:var(--k);color:#f5f2ec;margin-top:0;overflow:hidden;">
+  <style>
+    footer .flink{color:rgba(245,242,236,.6);font-family:'Manrope',sans-serif;font-size:13px;letter-spacing:.2px;font-weight:500;}
+    footer .flink:hover{color:var(--led2);}
+    .foot-col-title{font-size:11px;letter-spacing:2px;color:var(--led2);font-weight:700;margin-bottom:18px;text-transform:uppercase;font-family:'Manrope',sans-serif;}
+    .foot-badge{border:1px solid rgba(245,242,236,.18);border-radius:999px;padding:5px 12px;font-size:11px;color:rgba(245,242,236,.6);}
+    .foot-soc{font-size:12px;letter-spacing:1px;color:rgba(245,242,236,.6);text-decoration:none;font-weight:600;transition:color .2s;}
+    .foot-soc:hover{color:var(--led2);}
+    .foot-wordmark{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.8;color:transparent;-webkit-text-stroke:1.5px rgba(245,242,236,.10);font-size:min(24vw,340px);text-align:center;white-space:nowrap;user-select:none;pointer-events:none;padding:10px 0 0;}
+  </style>
 
   <!-- Newsletter -->
-  <div style="padding:40px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;background:var(--accent-soft);">
+  <div style="padding:44px 24px;border-bottom:1px solid rgba(245,242,236,.1);display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;max-width:1200px;margin:0 auto;">
     <div>
-      <p class="bb" style="font-size:26px;margin-bottom:4px;">📨 Drop Alert. Sempre Primo.</p>
-      <p style="font-size:12px;color:var(--mid);letter-spacing:.3px;">Iscriviti e accedi ai drop 24h prima. Niente spam.</p>
+      <p class="bb" style="font-size:30px;margin-bottom:6px;color:#fff;">Drop Alert. Sempre Primo.</p>
+      <p style="font-size:13px;color:rgba(245,242,236,.55);letter-spacing:.3px;">Iscriviti e accedi ai drop 24h prima. Niente spam.</p>
     </div>
     <div style="display:flex;gap:8px;max-width:400px;width:100%;">
-      <input id="nl-mail" class="lf-in" style="flex:1;min-width:0;" placeholder="La tua email..."/>
+      <input id="nl-mail" placeholder="La tua email..." style="flex:1;min-width:0;background:rgba(245,242,236,.06);border:1.5px solid rgba(245,242,236,.18);color:#fff;border-radius:var(--radius);padding:14px 18px;font-family:'Manrope',sans-serif;font-size:14px;outline:none;"/>
       <button class="btn-led" onclick="subNL()" style="white-space:nowrap;flex-shrink:0;">Iscriviti →</button>
     </div>
   </div>
 
   <!-- Main cols -->
-  <div style="padding:48px 24px;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:32px;border-bottom:1px solid var(--border);max-width:1200px;margin:0 auto;" class="grid-1-mob">
+  <div style="padding:48px 24px;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:32px;border-bottom:1px solid rgba(245,242,236,.1);max-width:1200px;margin:0 auto;" class="grid-1-mob">
 
     <div>
-      <p class="bb" style="font-size:30px;letter-spacing:4px;margin-bottom:12px;">LILLOFIND</p>
-      <p style="font-size:13px;color:var(--mid);line-height:1.8;max-width:240px;margin-bottom:20px;">Streetwear autentico, curato per chi ha uno stile definito. Nessuna tendenza passeggera.</p>
-      <div style="display:flex;gap:14px;margin-bottom:20px;">
-        <a href="#" style="font-size:12px;letter-spacing:1px;color:var(--mid);text-decoration:none;font-weight:600;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='var(--mid)'">IG</a>
-        <a href="#" style="font-size:12px;letter-spacing:1px;color:var(--mid);text-decoration:none;font-weight:600;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='var(--mid)'">TK</a>
-        <a href="#" style="font-size:12px;letter-spacing:1px;color:var(--mid);text-decoration:none;font-weight:600;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='var(--mid)'">YT</a>
-        <a href="#" style="font-size:12px;letter-spacing:1px;color:var(--mid);text-decoration:none;font-weight:600;" onmouseover="this.style.color='var(--led)'" onmouseout="this.style.color='var(--mid)'">X</a>
+      <p class="bb" style="font-size:30px;letter-spacing:4px;margin-bottom:12px;color:#fff;">LILLOFIND</p>
+      <p style="font-size:13px;color:rgba(245,242,236,.55);line-height:1.8;max-width:240px;margin-bottom:20px;">Streetwear autentico, curato per chi ha uno stile definito. Nessuna tendenza passeggera.</p>
+      <div style="display:flex;gap:16px;margin-bottom:20px;">
+        <a href="#" class="foot-soc">IG</a>
+        <a href="#" class="foot-soc">TK</a>
+        <a href="#" class="foot-soc">YT</a>
+        <a href="#" class="foot-soc">X</a>
       </div>
-      <!-- Trust badges -->
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <div style="border:1px solid var(--border-2);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--mid);">🔒 SSL</div>
-        <div style="border:1px solid var(--border-2);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--mid);">🚀 DHL</div>
-        <div style="border:1px solid var(--border-2);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--mid);">🇪🇺 GDPR</div>
-        <div style="border:1px solid var(--border-2);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--mid);">♻️ ECO</div>
+        <div class="foot-badge">🔒 SSL</div>
+        <div class="foot-badge">🚀 DHL</div>
+        <div class="foot-badge">🇪🇺 GDPR</div>
+        <div class="foot-badge">♻️ ECO</div>
       </div>
     </div>
 
     <div>
-      <p style="font-size:11px;letter-spacing:2px;color:var(--led);font-weight:600;margin-bottom:18px;text-transform:uppercase;">Esplora</p>
-      <button class="flink" onclick="showPg('shop')">🛍️ Shop</button>
-      <button class="flink" onclick="location.href='subscriptions.html'" style="color:var(--dg1);">📺 Digital Gear</button>
-      <button class="flink" onclick="showPg('lfpoints')">⬡ LFPoints</button>
-      <button class="flink" onclick="showPg('home')">🔥 Nuovi Arrivi</button>
-      <button class="flink" onclick="openInfo('brand')">👟 Brand</button>
-      <button class="flink" onclick="openInfo('outlet')">💸 Outlet</button>
-      <button class="flink" onclick="showPg('auth')">👤 Crea Account</button>
+      <p class="foot-col-title">Esplora</p>
+      <button class="flink" onclick="showPg('shop')">Shop</button>
+      <button class="flink" onclick="location.href='subscriptions.html'">Digital Gear</button>
+      <button class="flink" onclick="showPg('lfpoints')">LFPoints</button>
+      <button class="flink" onclick="showPg('home')">Nuovi Arrivi</button>
+      <button class="flink" onclick="openInfo('brand')">Brand</button>
+      <button class="flink" onclick="openInfo('outlet')">Outlet</button>
+      <button class="flink" onclick="showPg('auth')">Crea Account</button>
     </div>
 
     <div>
-      <p style="font-size:11px;letter-spacing:2px;color:var(--led);font-weight:600;margin-bottom:18px;text-transform:uppercase;">Assistenza</p>
-      <button class="flink" onclick="openInfo('come-ordinare')">📋 Come Ordinare</button>
-      <button class="flink" onclick="openInfo('spedizioni')">✈️ Spedizioni DHL</button>
-      <button class="flink" onclick="openInfo('resi')">🔄 Resi &amp; Rimborsi</button>
-      <button class="flink" onclick="document.getElementById('size-modal').classList.add('open')">📏 Guida Taglie</button>
-      <button class="flink" onclick="openInfo('traccia')">📍 Traccia Ordine</button>
-      <a href="/cdn-cgi/l/email-protection#22515752524d5056624e4b4e4e4d444b4c460c414d4f" class="flink" style="text-decoration:none;">✉️ Email Supporto</a>
-      <p style="font-size:12px;color:var(--dim);margin-top:10px;line-height:1.8;">Lun–Ven 9:00–18:00<br/>Sab 10:00–14:00</p>
+      <p class="foot-col-title">Assistenza</p>
+      <button class="flink" onclick="openInfo('come-ordinare')">Come Ordinare</button>
+      <button class="flink" onclick="openInfo('spedizioni')">Spedizioni DHL</button>
+      <button class="flink" onclick="openInfo('resi')">Resi &amp; Rimborsi</button>
+      <button class="flink" onclick="document.getElementById('size-modal').classList.add('open')">Guida Taglie</button>
+      <button class="flink" onclick="openInfo('traccia')">Traccia Ordine</button>
+      <a href="/cdn-cgi/l/email-protection#22515752524d5056624e4b4e4e4d444b4c460c414d4f" class="flink" style="text-decoration:none;">Email Supporto</a>
+      <p style="font-size:12px;color:rgba(245,242,236,.4);margin-top:12px;line-height:1.8;">Lun–Ven 9:00–18:00<br/>Sab 10:00–14:00</p>
     </div>
 
     <div>
-      <p style="font-size:11px;letter-spacing:2px;color:var(--led);font-weight:600;margin-bottom:18px;text-transform:uppercase;">Legale</p>
+      <p class="foot-col-title">Legale</p>
       <button class="flink" onclick="openInfo('privacy')">Privacy Policy</button>
       <button class="flink" onclick="openInfo('cookie')">Cookie Policy</button>
       <button class="flink" onclick="openInfo('termini')">Termini di Servizio</button>
       <button class="flink" onclick="openInfo('recesso')">Diritto di Recesso</button>
       <button class="flink" onclick="openInfo('note-legali')">Note Legali</button>
-      <div style="margin-top:18px;border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--accent-soft);">
-        <p style="font-size:11px;color:var(--mid);letter-spacing:.3px;line-height:1.9;">
+      <div style="margin-top:18px;border:1px solid rgba(245,242,236,.14);border-radius:var(--radius);padding:14px;background:rgba(245,242,236,.04);">
+        <p style="font-size:11px;color:rgba(245,242,236,.5);letter-spacing:.3px;line-height:1.9;">
           LILLOFIND S.R.L.<br/>P.IVA: IT 12874930963<br/>REA: MI – 2714501<br/>Cap. Soc. €10.000 i.v.<br/>Tower A, The Walk — JBR, Dubai, UAE
         </p>
       </div>
@@ -2610,16 +2617,19 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   <!-- Bottom bar -->
   <div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;max-width:1200px;margin:0 auto;">
-    <p style="font-size:11px;color:var(--dim);letter-spacing:.3px;">© 2026 LILLOFIND S.R.L. — All rights reserved.</p>
+    <p style="font-size:11px;color:rgba(245,242,236,.4);letter-spacing:.3px;">© 2026 LILLOFIND S.R.L. — All rights reserved.</p>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-      <div style="border:1px solid var(--border-2);border-radius:8px;padding:4px 9px;font-size:10px;color:var(--mid);">💳 VISA</div>
-      <div style="border:1px solid var(--border-2);border-radius:8px;padding:4px 9px;font-size:10px;color:var(--mid);">💳 MC</div>
-      <div style="border:1px solid var(--border-2);border-radius:8px;padding:4px 9px;font-size:10px;color:var(--mid);">🅿️ PAYPAL</div>
-      <div style="border:1px solid var(--border-2);border-radius:8px;padding:4px 9px;font-size:10px;color:var(--mid);"> APPLE PAY</div>
-      <div style="border:1px solid var(--border-2);border-radius:8px;padding:4px 9px;font-size:10px;color:var(--mid);">🛒 KLARNA</div>
+      <div class="foot-badge" style="font-size:10px;padding:4px 9px;">VISA</div>
+      <div class="foot-badge" style="font-size:10px;padding:4px 9px;">MC</div>
+      <div class="foot-badge" style="font-size:10px;padding:4px 9px;">PAYPAL</div>
+      <div class="foot-badge" style="font-size:10px;padding:4px 9px;">APPLE PAY</div>
+      <div class="foot-badge" style="font-size:10px;padding:4px 9px;">KLARNA</div>
     </div>
-    <p style="font-size:11px;color:var(--dim);letter-spacing:.3px;">DHL Express · Reso 30gg · SSL</p>
+    <p style="font-size:11px;color:rgba(245,242,236,.4);letter-spacing:.3px;">DHL Express · Reso 30gg · SSL</p>
   </div>
+
+  <!-- Wordmark editoriale -->
+  <div class="foot-wordmark">LILLOFIND</div>
 </footer>
 
 <!-- ════════════════════════════════════════════════════════
