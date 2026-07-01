@@ -1418,36 +1418,108 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
   </section>
 
-  <!-- TRUST & SHIPPING TRANSPARENCY -->
-  <section style="background:var(--k);color:var(--w);padding:40px 24px;border-bottom:2px solid var(--k);">
-    <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;">
-      <div style="padding:24px 28px;border-right:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">
-        <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+  <!-- CATEGORY FEATURE BLOCKS -->
+  <section style="padding:56px 24px;border-bottom:1px solid var(--border);background:var(--w);">
+    <div style="max-width:1200px;margin:0 auto;">
+      <p class="slbl" style="margin-bottom:10px;">Sfoglia per Categoria</p>
+      <h2 class="bb" style="font-size:clamp(30px,4.5vw,52px);margin-bottom:28px;color:var(--k);">Trova il tuo stile.</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;">
+
+        <div class="cat-block" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneakers'),80)" style="display:flex;align-items:stretch;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .25s,box-shadow .25s;min-height:190px;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-sm)'">
+          <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
+            <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Sneakers</h3>
+            <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">La collezione completa di sneakers 1:1, dai classici agli ultimi drop.</p>
+            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+          </div>
+          <div style="width:42%;background:url('hero1.png') center/cover no-repeat;flex-shrink:0;"></div>
         </div>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Spedizione Sicura</p>
-        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">DHL Express · 10/15 giorni lavorativi. <strong style="color:var(--w);">Zero rischi doganali</strong> grazie alla spedizione triangolata — nessuna tassa extra per tutta Europa.</p>
+
+        <div class="cat-block" onclick="showPg('shop');resetFilters()" style="display:flex;align-items:stretch;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .25s,box-shadow .25s;min-height:190px;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-sm)'">
+          <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
+            <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Streetwear</h3>
+            <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">Felpe, tee e capi statement dei brand più iconici.</p>
+            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+          </div>
+          <div style="width:42%;background:url('hero2.png') center/cover no-repeat;flex-shrink:0;"></div>
+        </div>
+
+        <div class="cat-block" onclick="showPg('shop');resetFilters()" style="display:flex;align-items:stretch;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .25s,box-shadow .25s;min-height:190px;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-sm)'">
+          <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
+            <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Hype &amp; Luxury</h3>
+            <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">I pezzi più ricercati del momento, selezionati per te.</p>
+            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+          </div>
+          <div style="width:42%;background:url('hero3.jpeg') center/cover no-repeat;flex-shrink:0;"></div>
+        </div>
+
+        <div class="cat-block" onclick="showPg('shop');resetFilters()" style="display:flex;align-items:stretch;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .25s,box-shadow .25s;min-height:190px;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-sm)'">
+          <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
+            <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Nuovi Drop</h3>
+            <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">Le ultime uscite ogni settimana. Sii sempre il primo.</p>
+            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+          </div>
+          <div style="width:42%;background:linear-gradient(135deg,var(--led),var(--led2));flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:44px;">🔥</div>
+        </div>
+
       </div>
-      <div style="padding:24px 28px;border-right:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">
-        <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+  </section>
+
+  <!-- PERCHÉ LILLOFIND — tecnologie & garanzie -->
+  <section style="padding:56px 24px;border-bottom:1px solid var(--border);background:var(--accent-soft);">
+    <div style="max-width:1200px;margin:0 auto;">
+      <p class="slbl" style="margin-bottom:10px;">Perché LilloFind</p>
+      <h2 class="bb" style="font-size:clamp(28px,4vw,46px);margin-bottom:34px;color:var(--k);">Qualità garantita, ad ogni passo.</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;">
+
+        <div>
+          <div style="width:50px;height:50px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow-sm);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <p style="font-size:14px;font-weight:700;color:var(--k);margin-bottom:4px;">Qualità 1:1</p>
+          <p style="font-size:12px;color:var(--mid);line-height:1.6;">Materiali identici all'originale, cuciture di precisione.</p>
         </div>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Garanzia di Rispedizione</p>
-        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">In caso di problema doganale <strong style="color:var(--w);">rispediamo a nostre spese</strong>. Rischio zero per te.</p>
-      </div>
-      <div style="padding:24px 28px;border-right:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">
-        <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+
+        <div>
+          <div style="width:50px;height:50px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow-sm);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+          </div>
+          <p style="font-size:14px;font-weight:700;color:var(--k);margin-bottom:4px;">Materiali Premium</p>
+          <p style="font-size:12px;color:var(--mid);line-height:1.6;">Pelli, tessuti e suole selezionati per durare.</p>
         </div>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Qualità 1:1 Verificata</p>
-        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">Materiali identici all'originale. Tag box incluse, cuciture di precisione. Foto QC disponibili prima della spedizione.</p>
-      </div>
-      <div style="padding:24px 28px;border-bottom:1px solid #1a1a1a;">
-        <div style="width:36px;height:36px;border:1px solid var(--led);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+
+        <div>
+          <div style="width:50px;height:50px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow-sm);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <p style="font-size:14px;font-weight:700;color:var(--k);margin-bottom:4px;">Foto QC</p>
+          <p style="font-size:12px;color:var(--mid);line-height:1.6;">Foto del tuo articolo prima della spedizione.</p>
         </div>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">Reso 30 Giorni</p>
-        <p style="font-size:10px;color:#aaa;line-height:1.8;letter-spacing:.3px;">Nessuna domanda. Reso completamente gratuito entro 30 giorni dalla ricezione. La tua soddisfazione è garantita.</p>
+
+        <div>
+          <div style="width:50px;height:50px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow-sm);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          </div>
+          <p style="font-size:14px;font-weight:700;color:var(--k);margin-bottom:4px;">Spedizione DHL</p>
+          <p style="font-size:12px;color:var(--mid);line-height:1.6;">Express 10/15 giorni, zero rischi doganali.</p>
+        </div>
+
+        <div>
+          <div style="width:50px;height:50px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow-sm);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </div>
+          <p style="font-size:14px;font-weight:700;color:var(--k);margin-bottom:4px;">Reso 30 Giorni</p>
+          <p style="font-size:12px;color:var(--mid);line-height:1.6;">Reso gratuito, nessuna domanda.</p>
+        </div>
+
+        <div>
+          <div style="width:50px;height:50px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow-sm);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <p style="font-size:14px;font-weight:700;color:var(--k);margin-bottom:4px;">Pagamenti Sicuri</p>
+          <p style="font-size:12px;color:var(--mid);line-height:1.6;">SSL · Visa, Mastercard, PayPal, Klarna.</p>
+        </div>
+
       </div>
     </div>
   </section>
@@ -1508,6 +1580,32 @@ img{ -webkit-user-drag:none; user-select:none; }
             <div><p style="font-size:11px;font-weight:600;">Andrea S.</p><p style="font-size:9px;color:#aaa;letter-spacing:1px;">Napoli · Ordine verificato</p></div>
             <div style="margin-left:auto;border:1px solid #e0e0e0;padding:2px 8px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;">Verificato</div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LILLOFIND CLUB -->
+  <section style="padding:56px 24px;border-bottom:1px solid var(--border);background:var(--w);">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="background:linear-gradient(120deg,#6f7552 0%,#565b3f 100%);border-radius:var(--radius-lg);padding:44px 40px;display:flex;align-items:center;gap:40px;flex-wrap:wrap;box-shadow:var(--shadow);position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none;"></div>
+        <!-- Tessera membership -->
+        <div style="flex-shrink:0;width:240px;height:150px;border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.3);padding:20px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.18);">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;line-height:1;">LILLOFIND<br/><span style="font-size:12px;opacity:.85;letter-spacing:5px;">CLUB</span></div>
+          <div style="font-size:10px;letter-spacing:2px;opacity:.9;">MEMBER · ⬡ LFPOINTS</div>
+        </div>
+        <!-- Testo + benefici -->
+        <div style="flex:1;min-width:280px;color:#fff;position:relative;">
+          <h2 class="bb" style="font-size:clamp(28px,3.5vw,46px);margin-bottom:10px;line-height:1;">Entra nel LilloFind Club.</h2>
+          <p style="font-size:14px;line-height:1.7;opacity:.92;margin-bottom:20px;max-width:460px;">Offerte esclusive, accesso anticipato ai drop, bonus personali e molto altro. Iscrizione gratuita — guadagni LFPOINTS ad ogni acquisto.</p>
+          <div style="display:flex;gap:14px 28px;flex-wrap:wrap;margin-bottom:24px;">
+            <div style="font-size:13px;font-weight:600;">✦ 5% cashback in LFPoints</div>
+            <div style="font-size:13px;font-weight:600;">✦ Accesso anticipato ai drop</div>
+            <div style="font-size:13px;font-weight:600;">✦ Sconti esclusivi members</div>
+            <div style="font-size:13px;font-weight:600;">✦ Regali &amp; sorprese</div>
+          </div>
+          <button class="btn-w" onclick="showPg('auth')">Diventa Membro — Gratis</button>
         </div>
       </div>
     </div>
