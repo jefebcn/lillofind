@@ -4333,7 +4333,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           if(products.length)return; // già caricati dall'auth
           products=s.docs.map(d=>({id:d.id,...d.data()}));
           products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-          renderHomeProds(); try{buildChips();}catch(_){}
+          renderHomeProds(); try{buildChips();buildNavMenus();}catch(_){}
         }).catch(()=>{});
     }
   });
@@ -4363,7 +4363,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
           const s=await fb.getDocs(q);
           products=s.docs.map(d=>({id:d.id,...d.data()}));
-          renderHomeProds(); try{buildChips();}catch(_){}
+          renderHomeProds(); try{buildChips();buildNavMenus();}catch(_){}
         } catch(_){}
       }
     });
@@ -4965,7 +4965,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // Popola i mega-menu della nav (Shop=categorie, Sneakers/Marchi=brand)
   window.buildNavMenus = function(){
-    if(!window.products || !products.length) return;
+    if(typeof products==='undefined' || !products.length) return;
     const esc=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
     const brands=[...new Set(products.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
