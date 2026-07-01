@@ -10,6 +10,6 @@
     "FIREBASE_PROJECT_ID": "lillofind-c455c",
     "ALLOWED_ORIGINS": "https://lillofind-c455c.web.app,https://lillofind-c455c.firebaseapp.com,http://localhost:8000,http://localhost:5000",
     "ADMIN_EMAILS": "yishionvt@gmail.com",
-    "RESEND_FROM": "LilloFind <onboarding@resend.dev>"
+    "RESEND_FROM": "LilloFind <noreply@lillofind.shop>"
   }
 }
