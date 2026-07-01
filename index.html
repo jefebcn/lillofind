@@ -968,14 +968,30 @@ img{ -webkit-user-drag:none; user-select:none; }
   <section id="pg-hero-section" style="min-height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden;border-bottom:3px solid var(--k);">
 
     <!-- ── PHOTO BACKGROUND — crossfade tra hero1, hero2, hero3 ogni 6s ── -->
-    <div id="hero-photo-bg" style="position:absolute;inset:0;z-index:0;overflow:hidden;background:radial-gradient(ellipse at 50% 32%,#fbf9f4 0%,var(--w) 58%,#ece7db 100%);">
-      <!-- Wordmark editoriale sovradimensionato (stile poster) -->
-      <div class="hero-wordmark" style="position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:min(40vw,560px);line-height:.78;color:transparent;-webkit-text-stroke:2px rgba(111,117,82,.16);white-space:nowrap;pointer-events:none;letter-spacing:-.03em;user-select:none;">LILLO</div>
-      <div class="hero-wordmark" style="position:absolute;top:64%;left:50%;transform:translate(-50%,-50%);font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:min(34vw,470px);line-height:.78;color:rgba(111,117,82,.07);white-space:nowrap;pointer-events:none;letter-spacing:-.03em;user-select:none;">FIND</div>
+    <div id="hero-photo-bg" style="position:absolute;inset:0;z-index:0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#fbf9f4 0%,var(--w) 55%,#ece7db 100%);">
+      <div class="hero-slide" style="background:url('hero4.jpg') center/contain no-repeat;animation:hero-xfade 21s ease-in-out infinite;"></div>
+      <div class="hero-slide" style="background:url('hero5.jpg') center/contain no-repeat;animation:hero-xfade 21s ease-in-out infinite;animation-delay:-7s;"></div>
+      <div class="hero-slide" style="background:url('hero6.jpg') center/contain no-repeat;animation:hero-xfade 21s ease-in-out infinite;animation-delay:-14s;"></div>
     </div>
+    <style>
+      .hero-slide{position:absolute;inset:0;}
+      @keyframes hero-xfade{0%,26%{opacity:1;}34%,92%{opacity:0;}100%{opacity:1;}}
+      /* HERO POSTER — layout centrato, poster interi, no testo sovrapposto */
+      #pg-hero-section{display:flex!important;flex-direction:column!important;justify-content:flex-end!important;}
+      #hero-badge,#hero-h1,#hero-divider,#hero-tagline,#hero-sub{display:none!important;}
+      #hero-content{grid-column:auto!important;grid-row:auto!important;padding:0!important;align-self:stretch!important;}
+      #hero-content-inner{background:transparent!important;padding:16px 20px 20px!important;text-align:center;}
+      #hero-cta{justify-content:center!important;max-width:520px;margin:0 auto!important;}
+      #hero-overlay{background:linear-gradient(180deg,transparent 0%,transparent 62%,rgba(245,242,236,.55) 82%,var(--w) 100%)!important;}
+      @media(min-width:769px){
+        #pg-hero-section{min-height:92vh!important;background:var(--w)!important;}
+        #hero-photo-bg .hero-slide{background-size:contain!important;background-position:center!important;}
+        #hero-content-inner{padding:0 24px 26px!important;}
+      }
+    </style>
 
-    <!-- ── OVERLAY CHIARO ── -->
-    <div id="hero-overlay" style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(245,242,236,.10) 0%,rgba(245,242,236,.25) 40%,rgba(245,242,236,.70) 75%,rgba(245,242,236,.92) 100%);"></div>
+    <!-- ── OVERLAY ── -->
+    <div id="hero-overlay" style="position:absolute;inset:0;z-index:1;pointer-events:none;"></div>
 
     <!-- ── SCANLINE TEXTURE ── -->
     <div style="position:absolute;inset:0;z-index:4;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);"></div>
