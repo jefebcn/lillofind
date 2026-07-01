@@ -108,6 +108,53 @@ ${note ? `<p><b>Note:</b> ${escHtml(note)}</p>` : ''}
   return { sent: true };
 }
 
+// ── sendOrderEmail ──────────────────────────────────────────────
+// Email di conferma ordine al cliente (+ notifica admin). Auth: required
+// (verifica solo il token, NON richiede il service account Firestore).
+export async function sendOrderEmail(data, { env, auth }) {
+  if (!env.RESEND_API_KEY) return { sent: false, reason: 'no_key' };
+  const to = (auth && auth.email) ? auth.email : (data && data.email) || '';
+  if (!to) return { sent: false, reason: 'no_email' };
+  const o = data || {};
+  const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
+  const payLabel = { bonifico: 'Bonifico bancario', paypal: 'PayPal', card: 'Carta' }[o.payment] || o.payment || '—';
+  const itemsHtml = (o.items || []).map(i =>
+    `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee;">${escHtml(i.name)}${i.size ? ' · ' + escHtml(i.size) : ''}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">x${escHtml(i.qty)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${((i.price || 0) * (i.qty || 1)).toFixed(2)}</td></tr>`
+  ).join('');
+  const addr = o.address || {};
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+<h2 style="color:#111;">Grazie per il tuo ordine 🎉</h2>
+<p>Ciao ${escHtml(o.name || '')},<br>abbiamo ricevuto il tuo ordine <b>${escHtml(o.orderId || '')}</b>.</p>
+<table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #111;">Prodotto</th><th style="padding:6px 8px;border-bottom:2px solid #111;">Qtà</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #111;">Prezzo</th></tr></thead>
+<tbody>${itemsHtml}</tbody></table>
+<p style="font-size:14px;">Subtotale: €${(o.subtotal || 0).toFixed(2)}<br>
+Spedizione: €${(o.shipping || 0).toFixed(2)}${o.discount ? `<br>Sconto: -€${(o.discount || 0).toFixed(2)}` : ''}<br>
+<b style="font-size:16px;">Totale: €${(o.total || 0).toFixed(2)}</b></p>
+<p style="font-size:14px;"><b>Metodo di pagamento:</b> ${escHtml(payLabel)}<br>
+<b>Stato:</b> In attesa di pagamento</p>
+${(addr.street) ? `<p style="font-size:13px;color:#555;"><b>Spedizione a:</b><br>${escHtml(addr.street)}, ${escHtml(addr.zip || '')} ${escHtml(addr.city || '')} ${escHtml(addr.country || '')}</p>` : ''}
+<p style="font-size:12px;color:#888;margin-top:20px;">Riceverai un aggiornamento appena il pagamento sarà confermato. Grazie per aver scelto LilloFind.</p>
+</div>`;
+
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject: `Conferma ordine ${o.orderId || ''} — LilloFind`, html }),
+    });
+    // Notifica admin (best-effort)
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [NOTIFY_EMAIL], subject: `🛍 Nuovo ordine ${o.orderId || ''} — €${(o.total || 0).toFixed(2)} (${escHtml(payLabel)})`, html: `<p><b>Nuovo ordine</b> da ${escHtml(o.name || '')} — ${escHtml(to)}</p>` + html }),
+    });
+  } catch (e) {
+    return { sent: false, reason: e.message };
+  }
+  return { sent: true };
+}
+
 // ── createPaymentIntent ─────────────────────────────────────────
 export async function createPaymentIntent(data, { env, db, auth }) {
   const { items } = data || {};

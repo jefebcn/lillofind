@@ -4128,6 +4128,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
     // Aggiorna spesa utente (i punti vengono accreditati alla conferma del pagamento)
     try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{totalSpent:(udata&&udata.totalSpent||0)+subtotal}); }catch(_){}
+    // Email di conferma ordine (fire-and-forget — non blocca il checkout)
+    try{ lfCallable('sendOrderEmail')({orderId,name:orderData.name,email:user.email||'',items:orderData.items,subtotal,shipping,discount,total,payment:orderData.payment,address:orderData.address}); }catch(_){}
     return { orderId, subtotal, shipping, discount, total, lfpoints:0, paymentMethod:payload.paymentMethod||'bonifico' };
   }
   updateCartBadge();
