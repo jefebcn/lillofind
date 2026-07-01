@@ -198,3 +198,5 @@ app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'admin' }));
 app.post('/uploadImage',  callable(scrapers.uploadImage,  { auth: 'admin' }));
 
 export default app;
+
+// deploy trigger: attiva email conferma ordine + tracking (build)
