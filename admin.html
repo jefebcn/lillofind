@@ -9,7 +9,7 @@
 <meta name="robots" content="noindex, nofollow"/>
 <title>LILLOFIND — Admin Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style.css"/>
 
 <!-- Firebase -->
@@ -17,15 +17,15 @@
 
 <style>
 /* ── ADMIN BASE ───────────────────────────────── */
-body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#f0f0f0;margin:0;}
-.bb{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+body{font-family:'Manrope',sans-serif;background:#0d0d0d;color:#f0f0f0;margin:0;}
+.bb{font-family:'Bricolage Grotesque',sans-serif;letter-spacing:1px;}
 input,textarea,select{font-size:16px !important;}
 button{touch-action:manipulation;}
 @media(max-width:768px){.grid-1-mob{grid-template-columns:1fr !important;}}
 
 /* ── AUTH GUARD ───────────────────────────────── */
 #auth-guard{position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
-#auth-guard p{color:var(--led);font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;}
+#auth-guard p{color:var(--led);font-family:'Bricolage Grotesque',sans-serif;font-size:32px;letter-spacing:4px;}
 #auth-guard small{color:#555;font-size:10px;letter-spacing:2px;}
 .guard-spinner{width:36px;height:36px;border:3px solid #222;border-top-color:var(--led);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -48,13 +48,13 @@ button{touch-action:manipulation;}
   overflow-y:auto;
 }
 .anav-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.07);}
-.anav-brand{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--led);}
+.anav-brand{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;letter-spacing:3px;color:var(--led);}
 .anav-tag{font-size:9px;letter-spacing:2px;color:#444;border:1px solid #222;padding:2px 6px;margin-left:8px;vertical-align:middle;}
 .anav-items{flex:1;padding:14px 0;}
 .anav-btn{
   display:flex;align-items:center;gap:13px;width:100%;
   padding:14px 20px;background:none;border:none;color:rgba(255,255,255,.5);
-  font-family:'Inter',sans-serif;font-size:14px;letter-spacing:.5px;font-weight:500;
+  font-family:'Manrope',sans-serif;font-size:14px;letter-spacing:.5px;font-weight:500;
   cursor:pointer;transition:all .15s;text-align:left;position:relative;
 }
 .anav-btn:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.8);}
@@ -73,7 +73,7 @@ button{touch-action:manipulation;}
 .anav-footer-btns{display:flex;gap:6px;}
 .anav-fbtn{
   flex:1;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.6);font-family:'Inter',sans-serif;font-size:9px;
+  color:rgba(255,255,255,.6);font-family:'Manrope',sans-serif;font-size:9px;
   letter-spacing:1px;cursor:pointer;transition:all .15s;text-decoration:none;
   display:inline-flex;align-items:center;justify-content:center;text-align:center;
 }
@@ -98,7 +98,7 @@ button{touch-action:manipulation;}
 .astat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:24px 22px;transition:border-color .15s;}
 .astat-card:hover{border-color:rgba(255,255,255,.2);}
 .astat-icon{font-size:28px;margin-bottom:12px;}
-.astat-val{font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1;color:#fff;margin-bottom:6px;}
+.astat-val{font-family:'Bricolage Grotesque',sans-serif;font-size:42px;line-height:1;color:#fff;margin-bottom:6px;}
 .astat-val.green{color:var(--led);}
 .astat-val.yellow{color:#f0c030;}
 .astat-lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);}
@@ -165,10 +165,10 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
   <div id="guard-login-form" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:320px;">
     <p style="margin-bottom:4px;">LILLOFIND <span style="font-size:12px;color:#444;letter-spacing:3px;">ADMIN</span></p>
     <small style="margin-bottom:8px;">Accedi per gestire il pannello</small>
-    <input id="guard-email" type="email" placeholder="Email admin" autocomplete="email" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Inter',sans-serif;font-size:13px;outline:none;"/>
-    <input id="guard-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Inter',sans-serif;font-size:13px;outline:none;"/>
+    <input id="guard-email" type="email" placeholder="Email admin" autocomplete="email" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;outline:none;"/>
+    <input id="guard-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;outline:none;"/>
     <p id="guard-err" style="display:none;color:#ff4444;font-size:10px;letter-spacing:1px;text-align:center;"></p>
-    <button onclick="adminLogin()" style="width:100%;padding:13px;background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Accedi →</button>
+    <button onclick="adminLogin()" style="width:100%;padding:13px;background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Accedi →</button>
     <a href="index.html" style="font-size:9px;color:#555;letter-spacing:1px;text-decoration:none;margin-top:4px;">← Torna al sito</a>
   </div>
   <!-- Stato 3: accesso negato (loggato ma non admin) -->
@@ -272,7 +272,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
     <div class="apg hidden" id="apg-prodotti">
       <div class="apg-hdr">
         <h1 class="apg-title bb">Prodotti</h1>
-        <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,255,0,.08);border:1px solid var(--led);padding:9px 16px;text-decoration:none;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:1px;color:var(--led);">🚀 Bulk Import →</a>
+        <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,255,0,.08);border:1px solid var(--led);padding:9px 16px;text-decoration:none;font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:1px;color:var(--led);">🚀 Bulk Import →</a>
       </div>
 
       <!-- Add product -->
@@ -346,7 +346,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn-g" onclick="exitBulkMode()" style="padding:8px 16px;font-size:10px;border-color:#999;color:#999;">Annulla</button>
-            <button id="bulk-delete-btn" onclick="bulkDeleteSelected()" style="display:inline-flex;align-items:center;justify-content:center;background:#ff4757;color:#fff;border:none;padding:8px 20px;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:.5;pointer-events:none;">🗑 ELIMINA</button>
+            <button id="bulk-delete-btn" onclick="bulkDeleteSelected()" style="display:inline-flex;align-items:center;justify-content:center;background:#ff4757;color:#fff;border:none;padding:8px 20px;font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:.5;pointer-events:none;">🗑 ELIMINA</button>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -551,7 +551,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       </div>
       <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
         <button class="btn-led" id="edit-save-btn" onclick="saveEditProduct()" style="flex:1;">💾 SALVA MODIFICHE →</button>
-        <button onclick="closeEditModal()" style="padding:12px 20px;border:1.5px solid rgba(255,255,255,.2);background:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:1px;color:#fff;">Annulla</button>
+        <button onclick="closeEditModal()" style="padding:12px 20px;border:1.5px solid rgba(255,255,255,.2);background:none;cursor:pointer;font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:1px;color:#fff;">Annulla</button>
       </div>
       <input type="hidden" id="edit-pid"/>
     </div>
@@ -1017,7 +1017,7 @@ waitFB(()=>{
       const card = (icon, label, value, sub='', color='var(--k)') =>
         `<div style="border:1.5px solid #e0e0e0;padding:22px 20px;background:#fff;">
           <div style="font-size:28px;margin-bottom:8px;">${icon}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:${color};line-height:1;">${value}</div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:38px;color:${color};line-height:1;">${value}</div>
           <div style="font-size:12px;letter-spacing:1.5px;color:#888;text-transform:uppercase;margin-top:6px;">${label}</div>
           ${sub?`<div style="font-size:12px;color:var(--dim);margin-top:4px;">${sub}</div>`:''}
         </div>`;
@@ -1065,7 +1065,7 @@ waitFB(()=>{
             ${s.topProducts.length ? s.topProducts.map((p,i)=>`
               <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
                 <span style="font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i+1}. ${p.name}</span>
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;flex-shrink:0;margin-left:10px;">×${p.qty}</span>
+                <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;flex-shrink:0;margin-left:10px;">×${p.qty}</span>
               </div>`).join('') : '<p style="font-size:14px;color:#aaa;">Nessun dato</p>'}
           </div>
         </div>
@@ -1163,7 +1163,7 @@ waitFB(()=>{
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid rgba(255,255,255,.07);gap:12px;flex-wrap:wrap;">
           <div><p style="font-size:15px;font-weight:600;">${escH(o.name||'—')}</p><p style="font-size:12px;color:var(--dim);">${escH(o.email||'—')} · ${ts}</p></div>
           <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:24px;">€${(o.total||0).toFixed(2)}</span>
+            <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:24px;">€${(o.total||0).toFixed(2)}</span>
             <span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;${ip?'background:var(--led);color:#000':'background:rgba(46,204,113,.15);color:#2ecc71;'}">${ip?'IN ATTESA':'CONFERMATO'}</span>
           </div>
         </div>`;
@@ -1378,7 +1378,7 @@ waitFB(()=>{
       : '<div style="width:60px;height:60px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>';
     const sizeStr = (p.sizes&&p.sizes.length) ? '· '+p.sizes.join(' ') : (p.size ? '· '+p.size : '');
     const actionsHtml = bulkMode ? '' : '<div style="display:flex;gap:8px;">'
-      + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:10px 18px;font-family:\'Inter\',sans-serif;font-size:13px;letter-spacing:.5px;cursor:pointer;">✏️ MODIFICA</button>'
+      + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:10px 18px;font-family:\'Manrope\',sans-serif;font-size:13px;letter-spacing:.5px;cursor:pointer;">✏️ MODIFICA</button>'
       + '<button onclick="deleteProd(\'' + p.id + '\',\'' + (p.name||'').replace(/'/g,"\\'") + '\');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:10px 12px;cursor:pointer;font-size:15px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor=\'#ff4757\';this.style.color=\'#ff4757\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#ccc\'">🗑</button>'
       + '</div>';
     const rowClick = bulkMode
@@ -1388,10 +1388,10 @@ waitFB(()=>{
       + chkHtml
       + imgHtml
       + '<div>'
-        + '<p style="font-size:15px;font-family:\'Inter\',sans-serif;font-weight:600;color:#fff;">' + escH(p.name||'—') + '</p>'
+        + '<p style="font-size:15px;font-family:\'Manrope\',sans-serif;font-weight:600;color:#fff;">' + escH(p.name||'—') + '</p>'
         + '<p style="font-size:13px;color:rgba(255,255,255,.45);margin-top:3px;">' + escH(p.brand||'') + ' ' + (p.model?'· '+escH(p.model):'') + ' ' + escH(sizeStr) + '</p>'
       + '</div>'
-      + '<p style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;">€' + (p.price||0).toFixed(2) + '</p>'
+      + '<p style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:26px;">€' + (p.price||0).toFixed(2) + '</p>'
       + actionsHtml
       + '</div>';
   }
@@ -1727,11 +1727,11 @@ waitFB(()=>{
           <div style="font-size:12px;font-weight:500;">${escH(u.email)}</div>
           ${u.name?`<div style="font-size:10px;color:var(--dim);">${escH(u.name)}</div>`:''}
         </td>
-        <td style="font-family:'Bebas Neue',sans-serif;font-size:20px;">${u.orders}</td>
-        <td style="color:var(--led);font-family:'Bebas Neue',sans-serif;font-size:20px;">€${u.total.toFixed(2)}</td>
+        <td style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;">${u.orders}</td>
+        <td style="color:var(--led);font-family:'Bricolage Grotesque',sans-serif;font-size:20px;">€${u.total.toFixed(2)}</td>
         <td style="font-size:10px;color:var(--dim);">${u.lastDate}</td>
         <td>${badge}</td>
-        <td><button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button></td>
+        <td><button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Manrope',sans-serif;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button></td>
       </tr>`;
     }).join('');
   }
@@ -1765,7 +1765,7 @@ waitFB(()=>{
   <button onclick="closeAdminLightbox()" style="position:fixed;top:16px;right:20px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;z-index:10000;line-height:1;">✕</button>
   <img id="admin-lb-img" src="" alt="" style="max-height:85vh;max-width:min(480px,90vw);object-fit:contain;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.6);"/>
   <div style="color:#fff;max-width:320px;min-width:200px;">
-    <p id="admin-lb-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:12px;line-height:1.2;"></p>
+    <p id="admin-lb-title" style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:12px;line-height:1.2;"></p>
     <div id="admin-lb-details" style="font-size:12px;line-height:2;color:#ccc;"></div>
   </div>
 </div>

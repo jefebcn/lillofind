@@ -22,8 +22,8 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link rel="preload" as="image" href="hero1.png"/>
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
-<noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/></noscript>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400..800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
+<noscript><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet"/></noscript>
 <link rel="stylesheet" href="style.css"/>
 
 <!-- Firebase -->
@@ -34,12 +34,12 @@
 :root{--h:60px;--hd:120px;}
 
 /* ── TYPOGRAPHY (index-specific) ─────────────── */
-body{font-family:'Inter','IBM Plex Mono',monospace;}
-.bb{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
-h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
-h1.bb,h2.bb,.bb{font-size:clamp(28px,7vw,96px);line-height:.93;}
-[class*="hero-h1"]{font-family:'Bebas Neue',sans-serif!important;}
-p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif;}
+body{font-family:'Manrope',system-ui,sans-serif;}
+.bb{font-family:'Bricolage Grotesque','Manrope',sans-serif;font-weight:800;letter-spacing:-0.01em;}
+h1,h2,h3{font-family:'Bricolage Grotesque','Manrope',sans-serif;font-weight:800;letter-spacing:-0.01em;}
+h1.bb,h2.bb,.bb{font-size:clamp(28px,7vw,96px);line-height:.95;}
+[class*="hero-h1"]{font-family:'Bricolage Grotesque',sans-serif!important;}
+p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-serif;}
 
 /* ── PRODUCT CARD ────────────────────────────── */
 .pcard{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:transform .25s,box-shadow .25s;background:var(--card);box-shadow:var(--shadow-sm);}
@@ -62,7 +62,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
 
 /* ── TAB ─────────────────────────────────────── */
 .tbtn{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
   background:none;border:none;padding:12px 20px;min-height:48px;
   border-bottom:3px solid transparent;cursor:pointer;transition:all .2s;flex:1;
 }
@@ -75,7 +75,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
 
 /* ── PROFILE TABS ────────────────────────────── */
 .prof-tab{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;
+  font-family:'Manrope',monospace;font-size:10px;letter-spacing:1.5px;
   text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;
   padding:14px 16px;cursor:pointer;color:#444;white-space:nowrap;
   transition:color .2s,border-color .2s;min-height:48px;
@@ -130,7 +130,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
 }
 .bnav-btn{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:8px 4px;font-family:'Inter',sans-serif;font-size:10px;
+  padding:8px 4px;font-family:'Manrope',sans-serif;font-size:10px;
   letter-spacing:.3px;color:var(--dim);
   background:none;border:none;cursor:pointer;gap:4px;
   min-height:56px;min-width:48px;
@@ -162,7 +162,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
   display:block;font-size:13px;color:var(--mid);letter-spacing:.2px;
   margin-bottom:11px;background:none;border:none;
   cursor:pointer;text-align:left;transition:color .2s;
-  font-family:'Inter',sans-serif;text-decoration:none;
+  font-family:'Manrope',sans-serif;text-decoration:none;
 }
 .flink:hover{color:var(--led);}
 
@@ -242,7 +242,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Inter',sans-serif
   display:none;position:fixed;bottom:96px;right:16px;z-index:80;
   background:var(--k);color:var(--led);width:44px;height:44px;
   font-size:18px;border:none;cursor:pointer;border-left:2px solid var(--led);
-  font-family:'IBM Plex Mono',monospace;transition:opacity .2s;
+  font-family:'Manrope',monospace;transition:opacity .2s;
 }
 #back-top.vis{display:flex;align-items:center;justify-content:center;}
 @media(min-width:769px){#back-top{bottom:32px;right:24px;}}
@@ -450,7 +450,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 .hcc:hover .hcc-ring{border-color:var(--led);transform:scale(1.07);}
 .hcc-ring img{width:100%;height:100%;object-fit:cover;display:block;}
 .hcc-emo{font-size:32px;line-height:1;}
-.hcc-label{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:var(--mid);transition:color .2s;text-align:center;}
+.hcc-label{font-family:'Bricolage Grotesque',sans-serif;font-size:14px;letter-spacing:1px;color:var(--mid);transition:color .2s;text-align:center;}
 .hcc:hover .hcc-label{color:var(--led);}
 
 
@@ -524,7 +524,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   min-width:44px;min-height:44px;
   display:flex;align-items:center;justify-content:center;
   border:1.5px solid #ddd;background:var(--w);
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;
+  font-family:'Manrope',monospace;font-size:11px;letter-spacing:1px;
   cursor:pointer;transition:all .15s;padding:0 10px;
   touch-action:manipulation;
 }
@@ -576,7 +576,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 .search-drop-info{flex:1;min-width:0;}
 .search-drop-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .search-drop-brand{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;}
-.search-drop-price{font-family:"Bebas Neue",sans-serif;font-size:16px;flex-shrink:0;}
+.search-drop-price{font-family:"Bricolage Grotesque",sans-serif;font-size:16px;flex-shrink:0;}
 .search-drop-empty{padding:14px;font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;text-align:center;}
 
 /* ── STICKY ADD TO CART (mobile modal) ──────────── */
@@ -591,8 +591,8 @@ img{ -webkit-user-drag:none; user-select:none; }
 #sticky-atc-inner{display:flex;gap:10px;align-items:center;max-width:600px;margin:0 auto;}
 #sticky-atc-info{flex:1;min-width:0;}
 #sticky-atc-name{font-size:11px;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
-#sticky-atc-price{font-family:"Bebas Neue",sans-serif;font-size:20px;color:var(--led);}
-#sticky-atc-btn{background:var(--led);color:var(--k);border:none;padding:12px 20px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;box-shadow:0 0 12px rgba(200,255,0,.4);flex-shrink:0;}
+#sticky-atc-price{font-family:"Bricolage Grotesque",sans-serif;font-size:20px;color:var(--led);}
+#sticky-atc-btn{background:var(--led);color:var(--k);border:none;padding:12px 20px;font-family:"Manrope",monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;box-shadow:0 0 12px rgba(200,255,0,.4);flex-shrink:0;}
 @media(min-width:769px){#sticky-atc{display:none!important;}}
 
 /* ── SOCIAL PROOF TOAST ──────────────────────────── */
@@ -641,7 +641,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 .digital-badge{
   display:inline-flex;align-items:center;gap:5px;
   background:rgba(181,168,157,.15);border:1px solid var(--dg1);
-  color:var(--dg2);font-family:'IBM Plex Mono',monospace;
+  color:var(--dg2);font-family:'Manrope',monospace;
   font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
   padding:3px 8px;
 }
@@ -703,7 +703,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   border:1.5px solid var(--border-2);background:var(--card);border-radius:var(--radius-sm);
   color:var(--mid);cursor:pointer;font-weight:500;
   transition:all .15s;
-  font-family:'Inter',sans-serif;text-align:center;
+  font-family:'Manrope',sans-serif;text-align:center;
 }
 .gtrio-btn:hover{border-color:var(--led);color:var(--led);}
 .gtrio-btn.active{border-color:var(--led);color:#fff;background:var(--led);}
@@ -715,7 +715,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   width:100%;background:none;border:none;padding:14px 0;cursor:pointer;
   color:var(--k);font-size:12px;letter-spacing:.8px;
   text-transform:uppercase;font-weight:600;
-  font-family:'Inter',sans-serif;transition:color .15s;
+  font-family:'Manrope',sans-serif;transition:color .15s;
 }
 .fsec-hd:hover{color:var(--led);}
 .fsec-hd.has-active{color:var(--led);}
@@ -783,7 +783,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 #mob-filter-btn{
   position:fixed;bottom:80px;right:16px;z-index:700;
   background:var(--led);color:#fff;border:none;
-  padding:12px 18px;font-family:'Inter',sans-serif;border-radius:999px;
+  padding:12px 18px;font-family:'Manrope',sans-serif;border-radius:999px;
   font-size:12px;letter-spacing:.3px;font-weight:600;cursor:pointer;
   display:none;align-items:center;gap:8px;box-shadow:var(--shadow);
   transition:transform .15s;
@@ -819,12 +819,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     </button>
     <div style="padding:40px 36px 32px;">
       <p style="font-size:9px;letter-spacing:3px;color:var(--led);text-transform:uppercase;margin-bottom:10px;">Members Only</p>
-      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,5vw,48px);line-height:.95;margin-bottom:12px;">EARLY ACCESS.<br/>PRIMA DI TUTTI.</h2>
+      <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(32px,5vw,48px);line-height:.95;margin-bottom:12px;">EARLY ACCESS.<br/>PRIMA DI TUTTI.</h2>
       <div style="height:2px;width:40px;background:var(--led);box-shadow:0 0 12px var(--led);margin-bottom:16px;"></div>
       <p style="font-size:11px;color:#666;line-height:1.8;margin-bottom:24px;">Iscriviti alla Drop Alert e ricevi i nuovi arrivi <strong style="color:var(--w);">24h prima</strong> dell'apertura al pubblico. Più <strong style="color:var(--led);">10% di sconto</strong> sul primo ordine.</p>
       <div style="display:flex;gap:0;margin-bottom:12px;">
-        <input id="nl-popup-mail" style="flex:1;border:1px solid #333;border-right:none;background:transparent;padding:14px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--w);outline:none;min-width:0;" placeholder="La tua email..."/>
-        <button onclick="subNLPopup()" style="background:var(--led);color:var(--k);border:none;padding:14px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;flex-shrink:0;font-weight:bold;">Entra →</button>
+        <input id="nl-popup-mail" style="flex:1;border:1px solid #333;border-right:none;background:transparent;padding:14px 16px;font-family:'Manrope',monospace;font-size:12px;color:var(--w);outline:none;min-width:0;" placeholder="La tua email..."/>
+        <button onclick="subNLPopup()" style="background:var(--led);color:var(--k);border:none;padding:14px 18px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;flex-shrink:0;font-weight:bold;">Entra →</button>
       </div>
       <p style="font-size:9px;color:#888;letter-spacing:1px;">Niente spam. Disiscrivi in qualsiasi momento.</p>
     </div>
@@ -843,12 +843,12 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ══════════ MOBILE HEADER ══════════ -->
 <header id="mob-hdr" style="position:relative;">
   <button onclick="openDrawer()" style="background:none;border:none;cursor:pointer;color:var(--k);font-size:22px;padding:8px;min-width:44px;flex-shrink:0;">☰</button>
-  <button onclick="showPg('home')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--k);white-space:nowrap;">LILLOFIND</button>
+  <button onclick="showPg('home')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:4px;color:var(--k);white-space:nowrap;">LILLOFIND</button>
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <div id="m-badge" style="display:none;background:var(--led);color:#fff;padding:4px 10px;border-radius:999px;font-size:10px;letter-spacing:.5px;cursor:pointer;" onclick="showPg('lfpoints')">
       <span id="m-pts">0</span>pt
     </div>
-    <button onclick="showPg('auth')" id="m-li-btn" style="background:var(--led);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.3px;padding:8px 14px;">Accedi</button>
+    <button onclick="showPg('auth')" id="m-li-btn" style="background:var(--led);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;letter-spacing:.3px;padding:8px 14px;">Accedi</button>
     <button onclick="showPg('profile')" id="m-prof-btn" style="display:none;background:none;border:none;cursor:pointer;color:var(--k);min-width:44px;min-height:44px;display:none;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
   </div>
 </header>
@@ -858,7 +858,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div id="drawer-bg" onclick="closeDrawer()"></div>
   <nav id="drawer-panel">
     <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--k);">LILLOFIND</span>
+      <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;letter-spacing:3px;color:var(--k);">LILLOFIND</span>
       <button onclick="closeDrawer()" style="background:none;border:none;color:var(--k);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:24px;">
@@ -873,7 +873,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="padding:20px 24px;border-top:1px solid var(--border);">
       <div id="d-pts-wrap" style="display:none;margin-bottom:16px;">
         <p style="font-size:9px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Il tuo saldo</p>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--led);"><span id="d-pts">0</span> PTS</p>
+        <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:32px;color:var(--led);"><span id="d-pts">0</span> PTS</p>
       </div>
       <p style="font-size:9px;color:#333;letter-spacing:1px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b6c5c3c6c6d9c4c2f6dadfdadad9d0dfd8d298d5d9db">[email&#160;protected]</a></p>
     </div>
@@ -882,7 +882,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <style>
 .drawer-link{
   display:flex;align-items:center;gap:12px;padding:14px 8px;
-  font-family:'Inter',sans-serif;font-size:14px;letter-spacing:.3px;font-weight:500;
+  font-family:'Manrope',sans-serif;font-size:14px;letter-spacing:.3px;font-weight:500;
   color:var(--k);background:none;border:none;
   cursor:pointer;text-align:left;border-bottom:1px solid var(--border);
   min-height:52px;transition:color .2s;width:100%;
@@ -918,7 +918,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <span>🇮🇹 IT / EUR</span><span style="color:var(--border-2);">|</span><span>DHL Express</span><span style="color:var(--border-2);">|</span><span>🔒 SSL Secured</span>
       </div>
 <div style="display:flex;gap:20px;align-items:center;">
-        <button id="u-out" onclick="handleLogout()" style="display:none;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.5px;color:var(--mid);background:none;border:none;cursor:pointer;">Esci</button>
+        <button id="u-out" onclick="handleLogout()" style="display:none;font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:.5px;color:var(--mid);background:none;border:none;cursor:pointer;">Esci</button>
         <span id="u-pts" style="display:none;color:var(--led);font-weight:600;">⬡ <span id="u-pts-n">0</span> PTS</span>
       </div>
     </div>
@@ -933,7 +933,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <a href="vault.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:#fff;font-weight:600;border:none;border-radius:999px;padding:6px 14px;background:var(--led);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>LF Vault</a>
     </nav>
     <div style="position:absolute;left:50%;transform:translateX(-50%);">
-      <button onclick="showPg('home')" style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:4px;color:var(--k);background:none;border:none;cursor:pointer;">LILLOFIND</button>
+      <button onclick="showPg('home')" style="font-family:'Bricolage Grotesque',sans-serif;font-size:30px;letter-spacing:4px;color:var(--k);background:none;border:none;cursor:pointer;">LILLOFIND</button>
     </div>
     <div style="display:flex;gap:16px;align-items:center;">
       <button id="n-profile" class="nbtn" style="display:none;" onclick="showPg('profile')">Profilo</button>
@@ -1205,7 +1205,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="display:flex;justify-content:space-between;align-items:center;padding:0 24px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <span style="width:8px;height:8px;border-radius:50%;background:var(--led);display:inline-block;animation:pulse-led 2s ease-in-out infinite;"></span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--k);">FRESH DROPS</span>
+        <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;letter-spacing:3px;color:var(--k);">FRESH DROPS</span>
       </div>
       <button class="btn-g" onclick="showPg('shop')" style="padding:8px 18px;font-size:12px;min-height:0;">Vedi tutti →</button>
     </div>
@@ -1273,22 +1273,22 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(181,168,157,.1) 0%,transparent 60%);pointer-events:none;"></div>
     <div style="max-width:1100px;margin:0 auto;padding:40px 36px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;position:relative;">
       <div style="flex:1;min-width:240px;">
-        <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg1);margin-bottom:8px;">Lillo-Life · Digital</p>
+        <p style="font-family:'Manrope',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg1);margin-bottom:8px;">Lillo-Life · Digital</p>
         <h2 class="bb" style="font-size:clamp(28px,4.5vw,56px);line-height:.93;margin-bottom:12px;">Upgrade il tuo<br/><span style="color:var(--dg1);">Lifestyle Digitale.</span></h2>
-        <p style="font-size:11px;color:#aaa;line-height:1.8;max-width:380px;font-family:'Inter',sans-serif;">Abbonamenti premium condivisi a prezzo esclusivo. Netflix, Spotify, ChatGPT Plus e altri — consegnati via email.</p>
+        <p style="font-size:11px;color:#aaa;line-height:1.8;max-width:380px;font-family:'Manrope',sans-serif;">Abbonamenti premium condivisi a prezzo esclusivo. Netflix, Spotify, ChatGPT Plus e altri — consegnati via email.</p>
         <div style="display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,3vw,32px);color:var(--dg1);">Da soli €3.50/mese</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:#666;text-decoration:line-through;">vs prezzi ufficiali</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(20px,3vw,32px);color:var(--dg1);">Da soli €3.50/mese</span>
+          <span style="font-family:'Manrope',monospace;font-size:9px;letter-spacing:1px;color:#666;text-decoration:line-through;">vs prezzi ufficiali</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;">
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">📺 Netflix</span>
-          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">🎵 Spotify</span>
-          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">🤖 ChatGPT+</span>
-          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;">🎨 Canva Pro</span>
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'Manrope',monospace;font-size:9px;letter-spacing:1px;">📺 Netflix</span>
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'Manrope',monospace;font-size:9px;letter-spacing:1px;">🎵 Spotify</span>
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'Manrope',monospace;font-size:9px;letter-spacing:1px;">🤖 ChatGPT+</span>
+          <span style="border:1px solid rgba(181,168,157,.3);color:var(--dg1);padding:5px 12px;font-family:'Manrope',monospace;font-size:9px;letter-spacing:1px;">🎨 Canva Pro</span>
         </div>
-        <button onclick="location.href='subscriptions.html'" style="background:linear-gradient(135deg,var(--dg1),var(--dg2));color:var(--w);border:none;padding:14px 32px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 20px rgba(142,121,99,.3);" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Esplora Digital Gear →</button>
+        <button onclick="location.href='subscriptions.html'" style="background:linear-gradient(135deg,var(--dg1),var(--dg2));color:var(--w);border:none;padding:14px 32px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 20px rgba(142,121,99,.3);" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Esplora Digital Gear →</button>
       </div>
     </div>
   </section>
@@ -1313,7 +1313,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <p class="bb" style="font-size:clamp(20px,5vw,32px);color:var(--w);letter-spacing:2px;line-height:1;">Molti altri prodotti in arrivo prossimamente.</p>
       </div>
-      <button onclick="document.getElementById('nl-mail').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('nl-mail').focus()" style="background:none;border:1.5px solid #2a2a2a;color:#888;padding:11px 20px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .2s;" onmouseover="this.style.borderColor='var(--led)';this.style.color='var(--led)'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#888'">Ricevi notifica →</button>
+      <button onclick="document.getElementById('nl-mail').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('nl-mail').focus()" style="background:none;border:1.5px solid #2a2a2a;color:#888;padding:11px 20px;font-family:'Manrope',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .2s;" onmouseover="this.style.borderColor='var(--led)';this.style.color='var(--led)'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#888'">Ricevi notifica →</button>
     </div>
   </section>
 
@@ -1336,13 +1336,13 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg" width="52" height="20"><path d="M0 30 Q50-10 100 5 L60 30 Z" fill="#111"/></svg>
           </div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">NIKE</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">NIKE</span>
         </div>
 
         <!-- Jordan -->
         <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Jordan'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:32px;">🏀</div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">JORDAN</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">JORDAN</span>
         </div>
 
         <!-- Adidas -->
@@ -1350,7 +1350,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <svg viewBox="0 0 60 50" xmlns="http://www.w3.org/2000/svg" width="40" height="34"><polygon points="30,2 58,48 2,48" fill="none" stroke="#111" stroke-width="5"/><line x1="15" y1="38" x2="45" y2="38" stroke="#111" stroke-width="5"/><line x1="20" y1="27" x2="40" y2="27" stroke="#111" stroke-width="5"/></svg>
           </div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">ADIDAS</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">ADIDAS</span>
         </div>
 
         <!-- Supreme -->
@@ -1358,13 +1358,13 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="width:52px;height:28px;background:#e8111a;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial Black',sans-serif;font-size:9px;font-weight:900;color:#fff;letter-spacing:.5px;">Supreme</span>
           </div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">SUPREME</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">SUPREME</span>
         </div>
 
         <!-- Bape -->
         <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Bape'),120)" style="border:1.5px solid #e0e0e0;background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:30px;">🦍</div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">BAPE</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">BAPE</span>
         </div>
 
         <!-- Off-White -->
@@ -1372,7 +1372,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial',sans-serif;font-size:9px;font-weight:900;color:#111;letter-spacing:.5px;text-align:center;line-height:1.4;">OFF<br/>WHITE</span>
           </div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">OFF-WHITE</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">OFF-WHITE</span>
         </div>
 
         <!-- New Balance -->
@@ -1380,7 +1380,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial Black',sans-serif;font-size:28px;font-weight:900;color:#c8102e;">N</span>
           </div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">NEW BALANCE</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">NEW BALANCE</span>
         </div>
 
         <!-- Stüssy -->
@@ -1388,7 +1388,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Georgia',serif;font-size:22px;font-weight:700;color:#111;font-style:italic;">Stüssy</span>
           </div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">STÜSSY</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:#111;">STÜSSY</span>
         </div>
 
       </div>
@@ -1396,23 +1396,23 @@ img{ -webkit-user-drag:none; user-select:none; }
       <!-- Ticker dei brand sotto -->
       <div class="ticker-w" style="margin-top:36px;border-top:1px solid #e0e0e0;padding-top:18px;overflow:hidden;">
         <div class="ticker" style="gap:0;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NIKE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">JORDAN</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">ADIDAS</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">SUPREME</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">BAPE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">OFF-WHITE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NEW BALANCE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">STÜSSY</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NIKE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">JORDAN</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">ADIDAS</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">SUPREME</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">BAPE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">OFF-WHITE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NEW BALANCE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">STÜSSY</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
           <!-- duplicato per loop infinito -->
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NIKE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">JORDAN</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">ADIDAS</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">SUPREME</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">BAPE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">OFF-WHITE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NEW BALANCE</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">STÜSSY</span><span style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NIKE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">JORDAN</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">ADIDAS</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">SUPREME</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">BAPE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">OFF-WHITE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">NEW BALANCE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">STÜSSY</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:11px;letter-spacing:4px;color:#ccc;padding:0 24px;">·</span>
         </div>
       </div>
     </div>
@@ -1558,7 +1558,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="display:flex;gap:2px;margin-bottom:14px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <p style="font-size:12px;color:#333;line-height:1.8;margin-bottom:16px;">"Adidas Samba OG arrivate in 9 giorni, imballaggio curatissimo e foto QC prima della spedizione. Qualità Ottima. Servizio top, tornerò sicuro."</p>
           <div style="display:flex;align-items:center;gap:10px;border-top:1px solid #f0f0f0;padding-top:14px;">
-            <div style="width:32px;height:32px;background:var(--k);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--led);">F</div>
+            <div style="width:32px;height:32px;background:var(--k);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;color:var(--led);">F</div>
             <div><p style="font-size:11px;font-weight:600;">Federico B.</p><p style="font-size:9px;color:#aaa;letter-spacing:1px;">Torino · Ordine verificato</p></div>
             <div style="margin-left:auto;border:1px solid #e0e0e0;padding:2px 8px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;">Verificato</div>
           </div>
@@ -1567,7 +1567,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="display:flex;gap:2px;margin-bottom:14px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <p style="font-size:12px;color:#333;line-height:1.8;margin-bottom:16px;">"Ho fatto le foto QC e sono rimasto a bocca aperta. Spedito il giorno dopo e ricevuto senza problemi doganali. Tornerò sicuramente."</p>
           <div style="display:flex;align-items:center;gap:10px;border-top:1px solid #f0f0f0;padding-top:14px;">
-            <div style="width:32px;height:32px;background:var(--k);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--led);">L</div>
+            <div style="width:32px;height:32px;background:var(--k);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;color:var(--led);">L</div>
             <div><p style="font-size:11px;font-weight:600;">Lorenzo T.</p><p style="font-size:9px;color:#aaa;letter-spacing:1px;">Roma · Ordine verificato</p></div>
             <div style="margin-left:auto;border:1px solid #e0e0e0;padding:2px 8px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;">Verificato</div>
           </div>
@@ -1576,7 +1576,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="display:flex;gap:2px;margin-bottom:14px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <p style="font-size:12px;color:#333;line-height:1.8;margin-bottom:16px;">"Supreme Box Logo hoodie perfetta. I LFPOINTS mi hanno fatto risparmiare €15 sul secondo ordine. Programma fedeltà top."</p>
           <div style="display:flex;align-items:center;gap:10px;border-top:1px solid #f0f0f0;padding-top:14px;">
-            <div style="width:32px;height:32px;background:var(--k);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--led);">A</div>
+            <div style="width:32px;height:32px;background:var(--k);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;color:var(--led);">A</div>
             <div><p style="font-size:11px;font-weight:600;">Andrea S.</p><p style="font-size:9px;color:#aaa;letter-spacing:1px;">Napoli · Ordine verificato</p></div>
             <div style="margin-left:auto;border:1px solid #e0e0e0;padding:2px 8px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;">Verificato</div>
           </div>
@@ -1592,7 +1592,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none;"></div>
         <!-- Tessera membership -->
         <div style="flex-shrink:0;width:240px;height:150px;border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.3);padding:20px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.18);">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;line-height:1;">LILLOFIND<br/><span style="font-size:12px;opacity:.85;letter-spacing:5px;">CLUB</span></div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:3px;line-height:1;">LILLOFIND<br/><span style="font-size:12px;opacity:.85;letter-spacing:5px;">CLUB</span></div>
           <div style="font-size:10px;letter-spacing:2px;opacity:.9;">MEMBER · ⬡ LFPOINTS</div>
         </div>
         <!-- Testo + benefici -->
@@ -1630,7 +1630,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div id="fs-active-tags"></div>
       <!-- Genere -->
       <div style="margin-bottom:4px;">
-        <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:'IBM Plex Mono',monospace;font-weight:600;">Genere</div>
+        <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:'Manrope',monospace;font-weight:600;">Genere</div>
         <div class="gender-trio">
           <button class="gtrio-btn active" data-g="" onclick="setGender('')">Tutti</button>
           <button class="gtrio-btn" data-g="uomo" onclick="setGender('uomo')">♂ Uomo</button>
@@ -1882,7 +1882,7 @@ img{ -webkit-user-drag:none; user-select:none; }
                 <p style="font-size:12px;font-weight:500;">🅿 PayPal</p>
                 <p style="font-size:10px;color:var(--dim);">Riceverai le istruzioni per il pagamento PayPal dopo la conferma ordine.</p>
               </div>
-              <span style="margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#003087;letter-spacing:1px;">PAY<span style="color:#009cde">PAL</span></span>
+              <span style="margin-left:auto;font-family:'Bricolage Grotesque',sans-serif;font-size:18px;color:#003087;letter-spacing:1px;">PAY<span style="color:#009cde">PAL</span></span>
             </label>
             <div id="pay-paypal-fields" style="display:none;padding:16px 18px;border-bottom:1px solid #e0e0e0;background:#f0f7ff;">
               <p style="font-size:11px;color:#003087;line-height:1.7;">Clicca "Conferma Ordine" — l'ordine viene registrato e riceverai le coordinate PayPal per il pagamento. I <strong>LFPOINTS</strong> vengono accreditati alla verifica del pagamento.</p>
@@ -2190,7 +2190,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
 
       <!-- Google Sign-in -->
-      <button onclick="doGoogleAuth()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 20px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:border-color .2s,box-shadow .2s;margin-bottom:4px;" onmouseover="this.style.borderColor='var(--k)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.borderColor='#ddd';this.style.boxShadow='none'">
+      <button onclick="doGoogleAuth()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 20px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-family:'Manrope',monospace;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:border-color .2s,box-shadow .2s;margin-bottom:4px;" onmouseover="this.style.borderColor='var(--k)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.borderColor='#ddd';this.style.boxShadow='none'">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Continua con Google
       </button>
@@ -2261,7 +2261,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:14px;">
             <div id="pr-avatar" style="width:46px;height:46px;border-radius:50%;background:var(--led);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <span id="pr-initials" style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:var(--k);">?</span>
+              <span id="pr-initials" style="font-family:'Manrope',monospace;font-weight:700;font-size:18px;color:var(--k);">?</span>
             </div>
             <div>
               <p id="pr-name" style="font-size:15px;font-weight:700;letter-spacing:.5px;">—</p>
@@ -2351,15 +2351,15 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0;">
         <button onclick="document.getElementById('prof-sec-tracking').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">📦</p>
-          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Traccia</p>
+          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Manrope',monospace;">Traccia</p>
         </button>
         <button onclick="document.getElementById('prof-sec-prizes').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--led)';this.style.background='rgba(200,255,0,.04)'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">🎁</p>
-          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Premi</p>
+          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Manrope',monospace;">Premi</p>
         </button>
         <button onclick="document.getElementById('prof-sec-address').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">📍</p>
-          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;">Indirizzi</p>
+          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Manrope',monospace;">Indirizzi</p>
         </button>
       </div>
 
@@ -2536,8 +2536,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="border:2px solid var(--k);padding:24px;">
         <p class="slbl" style="margin-bottom:16px;">Aspetto</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <button onclick="setTheme('light')" id="theme-light" style="flex:1;min-width:100px;border:2px solid var(--k);padding:14px;background:#f5f5f5;color:#0a0a0a;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;">☀️ Chiaro</button>
-          <button onclick="setTheme('dark')" id="theme-dark" style="flex:1;min-width:100px;border:2px solid #333;padding:14px;background:#0a0a0a;color:#f5f5f5;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;">🌙 Scuro</button>
+          <button onclick="setTheme('light')" id="theme-light" style="flex:1;min-width:100px;border:2px solid var(--k);padding:14px;background:#f5f5f5;color:#0a0a0a;cursor:pointer;font-family:'Manrope',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;">☀️ Chiaro</button>
+          <button onclick="setTheme('dark')" id="theme-dark" style="flex:1;min-width:100px;border:2px solid #333;padding:14px;background:#0a0a0a;color:#f5f5f5;cursor:pointer;font-family:'Manrope',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;">🌙 Scuro</button>
         </div>
         <p style="font-size:10px;color:var(--dim);margin-top:10px;letter-spacing:1px;">Il tema scuro è in beta — alcune sezioni potrebbero non essere ottimizzate.</p>
       </div>
@@ -2553,7 +2553,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div class="modal-bg" id="size-picker-modal" onclick="if(event.target===this){this.classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();}" style="align-items:flex-end;">
   <div style="background:#fff;width:100%;max-width:480px;padding:28px 22px;border-top:3px solid var(--k);max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <p style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;">Scegli Opzioni</p>
+      <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:2px;">Scegli Opzioni</p>
       <button onclick="document.getElementById('size-picker-modal').classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();" style="background:none;border:none;font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
     </div>
     <div id="size-picker-body"></div>
@@ -2627,7 +2627,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button class="btn-led" onclick="calcFit()" style="width:100%;margin-bottom:16px;">Calcola la mia taglia →</button>
         <div id="ff-result" style="display:none;border:2px solid var(--led);padding:20px;background:rgba(200,255,0,.04);">
           <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">La tua taglia consigliata</p>
-          <p id="ff-result-size" style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:var(--k);margin-bottom:4px;"></p>
+          <p id="ff-result-size" style="font-family:'Bricolage Grotesque',sans-serif;font-size:52px;line-height:1;color:var(--k);margin-bottom:4px;"></p>
           <p id="ff-result-msg" style="font-size:11px;color:var(--mid);line-height:1.7;"></p>
         </div>
       </div>
@@ -2677,7 +2677,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <input type="file" id="pr-file-input" accept="image/*" style="display:none;" onchange="prHandleFile(this)"/>
 
     <div id="pr-actions" style="display:none;margin-bottom:14px;">
-      <button onclick="prRemoveFile()" style="background:none;border:1px solid #2a2a2a;color:#666;padding:7px 16px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✕ Rimuovi foto</button>
+      <button onclick="prRemoveFile()" style="background:none;border:1px solid #2a2a2a;color:#666;padding:7px 16px;font-family:'Manrope',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✕ Rimuovi foto</button>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;">
@@ -3050,7 +3050,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <div style="padding:8px 8px 10px;">
             ${p.brand?`<p style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:1px;">${p.brand}</p>`:''}
-            <p style="font-size:10px;font-family:'IBM Plex Mono',monospace;line-height:1.3;margin-bottom:4px;">${(p.name||'').slice(0,24)}${(p.name||'').length>24?'…':''}</p>
+            <p style="font-size:10px;font-family:'Manrope',monospace;line-height:1.3;margin-bottom:4px;">${(p.name||'').slice(0,24)}${(p.name||'').length>24?'…':''}</p>
             <p class="bb" style="font-size:14px;">€${(p.price||0).toFixed(0)}</p>
           </div>
         </div>`).join(''));
@@ -3332,7 +3332,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="padding:28px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;max-height:85vh;">
           <div>
             ${p.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">${p.brand}</p>`:''}
-            <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,3vw,34px);line-height:1.1;margin-bottom:8px;">${p.name}</h2>
+            <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(22px,3vw,34px);line-height:1.1;margin-bottom:8px;">${p.name}</h2>
             ${p.model?`<p style="font-size:11px;color:var(--mid);letter-spacing:1px;">Modello: ${p.model}</p>`:''}
             ${p.description?`<p style="font-size:12px;color:var(--mid);line-height:1.8;margin-top:8px;">${p.description}</p>`:''}
           </div>
@@ -3349,7 +3349,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${s}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${p.size}</span>`:''}
           </div>
           <div style="border-top:1px solid #e0e0e0;padding-top:16px;">
-            <p style="font-family:'Bebas Neue',sans-serif;font-size:42px;margin-bottom:6px;">€${(p.price||0).toFixed(2)}</p>
+            <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:42px;margin-bottom:6px;">€${(p.price||0).toFixed(2)}</p>
             <div style="border:1px solid rgba(200,255,0,.4);padding:5px 10px;background:rgba(200,255,0,.05);display:inline-flex;align-items:center;gap:6px;">
               <span style="font-size:10px;color:var(--led);letter-spacing:2px;">⬡ +${Math.floor(p.price||0)} LFPOINTS al checkout</span>
             </div>
@@ -3368,8 +3368,8 @@ img{ -webkit-user-drag:none; user-select:none; }
             <p style="font-size:10px;color:#666;line-height:1.7;">Aggiungi il QC nel carrello: riceverai 3-4 foto reali del tuo articolo prima della spedizione. Gratis per i membri Silver+.</p>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
-            <button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});document.getElementById('prod-modal').classList.remove('open');">Aggiungi al Carrello →</button>
-            <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${inWish?'❤️':'♡'}</button>
+            <button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});document.getElementById('prod-modal').classList.remove('open');">Aggiungi al Carrello →</button>
+            <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:'Manrope',monospace;font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${inWish?'❤️':'♡'}</button>
             <button style="border:1.5px solid #ddd;background:none;padding:12px 14px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;" onclick="shareProduct('${p.name.replace(/'/g,"\\'")}',${p.price||0},'${p.id}')" title="Condividi">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
@@ -3385,7 +3385,7 @@ img{ -webkit-user-drag:none; user-select:none; }
                   ${rp.imageUrl?`<img src="${pImg(rp.imageUrl)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:''}
                 </div>
                 <p style="font-size:9px;line-height:1.3;color:#333;">${rp.name}</p>
-                <p style="font-family:'Bebas Neue',sans-serif;font-size:13px;">€${(rp.price||0).toFixed(0)}</p>
+                <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;">€${(rp.price||0).toFixed(0)}</p>
               </div>`).join('')}
             </div>
           </div>`:''}
@@ -3455,7 +3455,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <div style="padding:12px 10px;">
             ${p.brand?`<p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
-            <h4 style="font-size:12px;margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${p.name}</h4>
+            <h4 style="font-size:12px;margin-bottom:2px;font-family:'Manrope',monospace;">${p.name}</h4>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
               <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
               ${isSoldOut?`<span style="font-size:9px;letter-spacing:1px;color:#999;text-transform:uppercase;padding:6px 10px;border:1px solid #ddd;">Esaurito</span>`:`<button class="btn-k" style="padding:6px 10px;font-size:9px;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">ADD+</button>`}
@@ -3595,8 +3595,8 @@ img{ -webkit-user-drag:none; user-select:none; }
             ${isLow&&!isSoldOut?`<span style="position:absolute;top:6px;left:6px;background:#ff4500;color:#fff;font-size:8px;letter-spacing:1px;padding:2px 6px;">ULTIMI</span>`:''}
             <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
               ${p.brand?`<p style="font-size:8px;color:rgba(200,255,0,.8);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
-              <p style="font-size:10px;color:#fff;line-height:1.2;font-family:'IBM Plex Mono',monospace;">${(p.name||'').length>22?(p.name||'').slice(0,22)+'…':p.name||''}</p>
-              <p style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#fff;margin-top:3px;">€${(p.price||0).toFixed(0)}</p>
+              <p style="font-size:10px;color:#fff;line-height:1.2;font-family:'Manrope',monospace;">${(p.name||'').length>22?(p.name||'').slice(0,22)+'…':p.name||''}</p>
+              <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:16px;color:#fff;margin-top:3px;">€${(p.price||0).toFixed(0)}</p>
             </div>
           </div>
         </div>`;
@@ -3647,7 +3647,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const locked=pts<r.pts;
       return `<div class="rew-row" style="padding:14px 16px;gap:8px;${locked?'opacity:.45':''}">
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:9px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;">${r.pts}</span>
+          <span style="font-size:9px;letter-spacing:1px;font-family:'Manrope',monospace;">${r.pts}</span>
         </div>
         <div>
           <span class="bb" style="font-size:20px;${!locked?'color:var(--led)':''}">${r.label}</span>
@@ -3836,19 +3836,19 @@ img{ -webkit-user-drag:none; user-select:none; }
     body.innerHTML=`
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         ${prod.imageUrl?`<img src="${pImg(prod.imageUrl)}" style="width:60px;height:60px;object-fit:cover;border:1px solid #e0e0e0;" onerror="this.style.display='none'">`:''}
-        <div><p style="font-size:9px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:'Bebas Neue',sans-serif;font-size:22px;">${prod.name||'Prodotto'}</p><p style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--led);">€${price.toFixed(2)}</p></div>
+        <div><p style="font-size:9px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;">${prod.name||'Prodotto'}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;color:var(--led);">€${price.toFixed(2)}</p></div>
       </div>
       ${sizes.length?`<div style="margin-bottom:18px;">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Seleziona Taglia *</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;" id="picker-sizes">
-          ${sizes.map(s=>`<button onclick="pickSz('${s}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${s}</button>`).join('')}
+          ${sizes.map(s=>`<button onclick="pickSz('${s}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:'Manrope',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${s}</button>`).join('')}
         </div>
         <p id="sz-err" style="font-size:9px;color:red;margin-top:6px;display:none;">Seleziona una taglia</p>
       </div>`:''}
       ${colors.length?`<div style="margin-bottom:18px;">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Colore Desiderato *</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;" id="picker-colors">
-          ${colors.map(c=>`<button onclick="pickCol('${c}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${c}</button>`).join('')}
+          ${colors.map(c=>`<button onclick="pickCol('${c}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:'Manrope',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${c}</button>`).join('')}
         </div>
         <p id="col-err" style="font-size:9px;color:red;margin-top:6px;display:none;">Seleziona un colore</p>
       </div>`:`<div style="margin-bottom:18px;">
@@ -4049,12 +4049,12 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(confirmEl){
         confirmEl.innerHTML=`
           <div style="background:#0a0a0a;border:2px solid var(--led);padding:32px 28px;max-width:480px;width:90%;text-align:center;">
-            <p style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--led);margin-bottom:6px;">ORDINE REGISTRATO</p>
+            <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;letter-spacing:3px;color:var(--led);margin-bottom:6px;">ORDINE REGISTRATO</p>
             <p style="font-size:10px;color:#555;letter-spacing:2px;margin-bottom:22px;">${orderId}</p>
             <div style="background:#0d0d18;border:1px solid #003087;padding:18px;margin-bottom:20px;text-align:left;">
               <p style="font-size:10px;color:#6699cc;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">🅿 COMPLETA IL PAGAMENTO PAYPAL</p>
               <a href="${PAYPAL_ME}/${total.toFixed(2)}EUR" target="_blank" rel="noopener"
-                style="display:block;background:#003087;color:#fff;text-align:center;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;text-decoration:none;margin-bottom:14px;">
+                style="display:block;background:#003087;color:#fff;text-align:center;padding:14px;font-family:'Bricolage Grotesque',sans-serif;font-size:20px;letter-spacing:3px;text-decoration:none;margin-bottom:14px;">
                 PAGA €${total.toFixed(2)} SU PAYPAL →
               </a>
               <p style="font-size:10px;color:#888;margin-bottom:6px;">Oppure invia manualmente a: <span style="color:#6cf;font-family:monospace;">${PAYPAL_EMAIL}</span></p>
@@ -4062,7 +4062,7 @@ img{ -webkit-user-drag:none; user-select:none; }
               <p style="font-family:monospace;font-size:14px;color:var(--led);margin-top:4px;letter-spacing:1px;">${orderId}</p>
             </div>
             <p style="font-size:10px;color:#555;margin-bottom:20px;">I tuoi <strong style="color:var(--led);">+${Math.floor(subtotal)} LFPOINTS</strong> verranno accreditati alla conferma del pagamento.</p>
-            <button onclick="document.getElementById('order-confirm-overlay').style.display='none';showPg('shop');" style="background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;padding:14px 32px;width:100%;">HO CAPITO — VAI ALLO SHOP</button>
+            <button onclick="document.getElementById('order-confirm-overlay').style.display='none';showPg('shop');" style="background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;letter-spacing:3px;padding:14px 32px;width:100%;">HO CAPITO — VAI ALLO SHOP</button>
           </div>`;
         confirmEl.style.display='flex';
       } else {
@@ -4146,7 +4146,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         const shipAmt=allDigital?0:getShippingCost(totW);
         const grandTotal=+(sub+shipAmt).toFixed(2);
         // Monta Payment Element
-        _stripeElements=_stripe.elements({clientSecret,appearance:{theme:'stripe',variables:{fontFamily:'"IBM Plex Mono",monospace',colorPrimary:'#0a0a0a'}}});
+        _stripeElements=_stripe.elements({clientSecret,appearance:{theme:'stripe',variables:{fontFamily:'"Manrope",monospace',colorPrimary:'#0a0a0a'}}});
         const pe=_stripeElements.create('payment',{layout:'tabs'});
         document.getElementById('stripe-payment-element').innerHTML='';
         pe.mount('#stripe-payment-element');
@@ -4498,12 +4498,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     wrap.innerHTML=`
       <div style="margin-bottom:20px;background:#f8f8f8;border-left:3px solid var(--led);padding:16px 18px;">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Codice Tracking DHL</p>
-        <p style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--k);">${code}</p>
+        <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;letter-spacing:3px;color:var(--k);">${code}</p>
         ${udata.trackingProduct&&udata.trackingProduct!=='—'?`<p style="font-size:10px;color:var(--mid);margin-top:4px;letter-spacing:1px;">📦 ${udata.trackingProduct}</p>`:''}
         ${udata.trackingNote?`<p style="font-size:10px;color:var(--mid);margin-top:4px;font-style:italic;">💬 ${udata.trackingNote}</p>`:''}
       </div>
       <div style="margin-bottom:20px;">${stepsHTML}</div>
-      <a href="${dhlUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--k);color:var(--w);padding:12px 20px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+      <a href="${dhlUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--k);color:var(--w);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
         🌐 Traccia su DHL.com →
       </a>`;
   }
@@ -4540,19 +4540,19 @@ img{ -webkit-user-drag:none; user-select:none; }
       body:`<p style="margin-bottom:16px;">Ordinare su LILLOFIND è semplice e veloce. Segui questi passi:</p>
 <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
   <div style="border:1px solid #e0e0e0;padding:14px 16px;display:flex;gap:14px;align-items:flex-start;">
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">01</span>
+    <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">01</span>
     <div><strong style="font-size:12px;">Scegli il prodotto</strong><p style="font-size:11px;color:var(--mid);margin-top:4px;">Vai allo Shop, usa i filtri per trovare taglia, brand e stile. Leggi la scheda prodotto e consulta la Guida Taglie per scegliere la misura giusta.</p></div>
   </div>
   <div style="border:1px solid #e0e0e0;padding:14px 16px;display:flex;gap:14px;align-items:flex-start;">
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">02</span>
+    <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">02</span>
     <div><strong style="font-size:12px;">Aggiungi al carrello</strong><p style="font-size:11px;color:var(--mid);margin-top:4px;">Clicca "Add+" sulla card del prodotto. Se non sei loggato, ti verrà chiesto di accedere. Accedere è necessario per accumulare LFPOINTS.</p></div>
   </div>
   <div style="border:1px solid #e0e0e0;padding:14px 16px;display:flex;gap:14px;align-items:flex-start;">
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">03</span>
+    <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">03</span>
     <div><strong style="font-size:12px;">Procedi al pagamento</strong><p style="font-size:11px;color:var(--mid);margin-top:4px;">Accettiamo Visa, Mastercard, PayPal, Apple Pay e Klarna (pagamento rateale). Tutti i pagamenti sono protetti da crittografia SSL 256-bit.</p></div>
   </div>
   <div style="border:1px solid #e0e0e0;padding:14px 16px;display:flex;gap:14px;align-items:flex-start;">
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">04</span>
+    <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;color:#ddd;flex-shrink:0;line-height:1;">04</span>
     <div><strong style="font-size:12px;">Conferma e tracking</strong><p style="font-size:11px;color:var(--mid);margin-top:4px;">Riceverai una email di conferma. Appena il pacco viene spedito, il codice DHL apparirà nella sezione "Traccia Pacco" del tuo profilo.</p></div>
   </div>
 </div>
@@ -4561,7 +4561,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     'spedizioni':{
       title:'✈️ Spedizioni DHL Express',
       body:`<div style="border-left:3px solid var(--led);padding:12px 16px;margin-bottom:20px;background:#f8f8f8;">
-  <p style="font-size:13px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">Spediamo con DHL Express in tutta Italia</p>
+  <p style="font-size:13px;font-family:'Bricolage Grotesque',sans-serif;letter-spacing:2px;">Spediamo con DHL Express in tutta Italia</p>
   <p style="font-size:11px;color:var(--mid);margin-top:4px;">Consegna stimata: <strong>10–15 giorni lavorativi</strong> dalla conferma dell'ordine</p>
 </div>
 <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
@@ -4577,7 +4577,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     'resi':{
       title:'🔄 Resi & Rimborsi',
       body:`<div style="border-left:3px solid var(--led);padding:12px 16px;margin-bottom:20px;background:#f8f8f8;">
-  <p style="font-size:13px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">Reso gratuito entro 30 giorni dalla consegna</p>
+  <p style="font-size:13px;font-family:'Bricolage Grotesque',sans-serif;letter-spacing:2px;">Reso gratuito entro 30 giorni dalla consegna</p>
   <p style="font-size:11px;color:var(--mid);margin-top:4px;">Nessuna domanda. Il rimborso viene accreditato entro 5–10 giorni lavorativi.</p>
 </div>
 <p style="font-size:12px;font-weight:600;margin-bottom:10px;">Come effettuare un reso:</p>
@@ -5369,16 +5369,16 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ── Vault Unlock Banner ────────────────────────────────────── -->
 <div id="vault-unlock-banner" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:20px;">
   <div style="background:#0a0a0a;border:2px solid var(--led);max-width:420px;width:100%;padding:36px 28px;text-align:center;box-shadow:0 0 60px rgba(200,255,0,.25);position:relative;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:4px;color:var(--led);margin-bottom:12px;">LF VAULT</div>
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:4px;color:var(--led);margin-bottom:12px;">LF VAULT</div>
     <div style="font-size:40px;margin-bottom:16px;">🔓</div>
-    <p style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;margin-bottom:8px;line-height:1.2;">COMPLIMENTI!</p>
+    <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;margin-bottom:8px;line-height:1.2;">COMPLIMENTI!</p>
     <p style="font-size:13px;color:#bbb;margin-bottom:20px;line-height:1.5;">Hai sbloccato l'accesso a <strong style="color:var(--led);">LF Vault</strong></p>
     <div style="background:#0d0d00;border:1px solid var(--led);padding:14px 20px;margin-bottom:24px;display:inline-block;">
       <span style="font-size:10px;letter-spacing:3px;color:#888;text-transform:uppercase;display:block;margin-bottom:4px;">Password di accesso</span>
       <span style="font-family:monospace;font-size:32px;color:var(--led);font-weight:700;letter-spacing:6px;">2809</span>
     </div>
     <p style="font-size:11px;color:#555;margin-bottom:20px;">Questo banner si chiude automaticamente in <span id="vault-banner-cd" style="color:var(--led);font-weight:700;">5</span>s</p>
-    <button onclick="closeVaultBanner();window.location.href='vault.html'" style="background:var(--led);color:#000;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;padding:12px 32px;width:100%;">ACCEDI AL VAULT</button>
+    <button onclick="closeVaultBanner();window.location.href='vault.html'" style="background:var(--led);color:#000;border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;letter-spacing:3px;padding:12px 32px;width:100%;">ACCEDI AL VAULT</button>
   </div>
 </div>
 
@@ -5398,7 +5398,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   <div class="mfd-body">
     <!-- Gender -->
     <div style="padding:14px 0 10px;border-bottom:1px solid rgba(255,255,255,.06);">
-      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;">Genere</div>
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px;font-family:'Manrope',monospace;">Genere</div>
       <div style="display:flex;gap:6px;">
         <button class="gtrio-btn active" data-gm="" onclick="setGender('');syncMobGender(this);" style="flex:1;">Tutti</button>
         <button class="gtrio-btn" data-gm="uomo" onclick="setGender('uomo');syncMobGender(this);" style="flex:1;">♂ Uomo</button>
