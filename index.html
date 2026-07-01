@@ -4083,9 +4083,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
     if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Elaborazione...';}
     try{
-      const validateOrder=lfCallable('validateOrder');
-      const result=await validateOrder(_orderPayload);
-      _handleOrderSuccess(result.data,_orderPayload);
+      const result=await validateOrderClient(_orderPayload);
+      _handleOrderSuccess(result,_orderPayload);
     }catch(e){
       console.error('placeOrder error:',e.code,e.message);
       showToast('⚠️ '+(e.message||'Si è verificato un errore. Riprova.'));
@@ -4093,6 +4092,44 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
     }
   };
+
+  // Registra l'ordine direttamente su Firestore (PayPal/Bonifico) — non usa il Worker.
+  async function validateOrderClient(payload){
+    const fb=window.__fb;
+    if(!user) throw new Error('Login richiesto.');
+    const items=payload._items||[];
+    if(!items.length) throw new Error('Carrello vuoto.');
+    const allDigital=items.every(i=>i.isDigital);
+    const subtotal=items.reduce((s,i)=>s+(i.price||0)*i.qty,0);
+    const phys=items.filter(i=>!i.isDigital);
+    const totW=phys.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
+    const shipping=allDigital?0:getShippingCost(totW);
+    let discount=0; const ar=udata&&udata.activeReward?udata.activeReward:null;
+    if(ar){
+      if(ar.type==='fisso') discount=Math.min(ar.val,subtotal);
+      else if(ar.type==='percentuale') discount=subtotal*(ar.val/100);
+      if(ar.freeShipping) discount+=shipping;
+      discount=Math.round(discount*100)/100;
+    }
+    const total=Math.max(0,Math.round((subtotal+shipping-discount)*100)/100);
+    const lfpoints=Math.floor(subtotal);
+    const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
+    const orderData={
+      orderId, uid:user.uid, email:user.email||'',
+      name:payload.name||'', phone:payload.phone||'',
+      address:payload.shippingAddress||{street:'',city:'',zip:'',country:'Italia'},
+      notes:payload.notes||'',
+      items:items.map(i=>({id:i.id,name:i.name||'',price:i.price||0,brand:i.brand||'',category:i.category||'',boxOption:i.boxOption||'',qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||i.imageUrl||'',isDigital:!!i.isDigital})),
+      subtotal, shipping, discount, total,
+      payment:payload.paymentMethod||'bonifico',
+      lfpoints, isDigitalOrder:allDigital, deliveryType:allDigital?'digital':'physical',
+      status:'pending', createdAt:fb.serverTimestamp(),
+    };
+    await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
+    // Aggiorna spesa utente (i punti vengono accreditati alla conferma del pagamento)
+    try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{totalSpent:(udata&&udata.totalSpent||0)+subtotal}); }catch(_){}
+    return { orderId, subtotal, shipping, discount, total, lfpoints:0, paymentMethod:payload.paymentMethod||'bonifico' };
+  }
   updateCartBadge();
 
   // ── Handle redirect from subscriptions.html ─────────────
