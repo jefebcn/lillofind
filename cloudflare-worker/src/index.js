@@ -33,8 +33,13 @@ app.use('*', async (c, next) => {
     return new Response(null, { status: 204, headers: corsHeaders(origin, c.env) });
   }
   await next();
-  const h = corsHeaders(origin, c.env);
-  for (const k of Object.keys(h)) c.res.headers.set(k, h[k]);
+  // Le risposte immutabili (es. dalla cache di proxyImage) non permettono di
+  // modificare gli header → il set lancerebbe eccezione (500). Le proteggiamo:
+  // hanno già i propri header CORS.
+  try {
+    const h = corsHeaders(origin, c.env);
+    for (const k of Object.keys(h)) c.res.headers.set(k, h[k]);
+  } catch (_) { /* header immutabili — ignora */ }
 });
 
 const HTTP_STATUS = {
@@ -110,7 +115,7 @@ app.get('/proxyImage', async (c) => {
   cacheUrl.searchParams.set('_cv', '2');
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   const hit = await cache.match(cacheKey);
-  if (hit && hit.ok) return hit;
+  if (hit && hit.ok) return new Response(hit.body, hit); // copia mutabile
 
   try {
     const upstream = await fetch(url, {
