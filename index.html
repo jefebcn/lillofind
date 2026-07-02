@@ -21,7 +21,9 @@
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
-<link rel="preload" as="image" href="hero1.png"/>
+<link rel="preconnect" href="https://lillofind.conti9708.workers.dev" crossorigin/>
+<link rel="dns-prefetch" href="https://lillofind.conti9708.workers.dev"/>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400..800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
 <noscript><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet"/></noscript>
 <link rel="stylesheet" href="style.css"/>
@@ -3120,8 +3122,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ── Products ───────────────────────────────────────────
-  let _prodsLoading=false, _prodsFull=false;
-  const _PROD_FIRST=80; // primo batch veloce per il first paint
+  let _firstLoading=false, _fullLoading=false, _prodsFull=false;
+  const _PROD_FIRST=60; // primo batch veloce per il first paint
 
   function _afterProds(){
     try{buildChips();updateFilterUI();buildNavMenus();}catch(_){}
@@ -3130,37 +3132,48 @@ img{ -webkit-user-drag:none; user-select:none; }
     try{ localStorage.setItem('lf_wishlist', JSON.stringify(wishlist)); updateWishBadge(); }catch(_){}
   }
 
-  // Caricamento a due fasi: prima 80 prodotti (istantaneo), poi il resto in background.
-  async function ensureProducts(){
-    if(_prodsFull || _prodsLoading) { if(products.length) renderShop(); return; }
-    _prodsLoading=true;
+  // Fase 1 — batch veloce (per home + primo schermo shop). NON carica tutto il catalogo.
+  async function loadFirstProducts(){
+    if(products.length || _firstLoading) return;
+    _firstLoading=true;
     const fb=window.__fb;
     try{
-      // Fase 1 — batch veloce
-      if(!products.length){
-        const q1=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'),fb.limit(_PROD_FIRST));
-        const s1=await fb.getDocs(q1);
-        products=s1.docs.map(d=>({id:d.id,...d.data()}));
-        _afterProds();
-      }
-      // Fase 2 — catalogo completo (in background, non blocca il first paint)
+      const q1=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'),fb.limit(_PROD_FIRST));
+      const s1=await fb.getDocs(q1);
+      if(!products.length){ products=s1.docs.map(d=>({id:d.id,...d.data()})); _afterProds(); }
+    } catch(e){
+      const el=document.getElementById('s-load'); if(el&&!products.length) el.textContent='Errore caricamento.';
+    } finally { _firstLoading=false; }
+  }
+
+  // Fase 2 — catalogo completo. Caricato solo quando serve (apertura Shop / ricerca / filtri).
+  async function loadFullCatalog(){
+    if(_prodsFull || _fullLoading) return;
+    _fullLoading=true;
+    const fb=window.__fb;
+    try{
       const q2=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
       const s2=await fb.getDocs(q2);
       products=s2.docs.map(d=>({id:d.id,...d.data()}));
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       _prodsFull=true;
       _afterProds();
-    } catch(e){
-      const el=document.getElementById('s-load'); if(el&&!products.length) el.textContent='Errore caricamento.';
-    } finally { _prodsLoading=false; }
+    } catch(e){ /* mantiene i 60 già mostrati */ }
+    finally { _fullLoading=false; }
   }
 
-  // Chiamata quando si apre lo Shop
+  // Retro-compatibilità
+  async function ensureProducts(){ await loadFirstProducts(); }
+
+  // Apertura Shop: mostra subito i primi 60, poi carica il catalogo completo per filtri/ricerca
   async function loadProds(){
-    if(products.length){ renderShop(); if(!_prodsFull) ensureProducts(); return; }
-    const sl=document.getElementById('s-load'); if(sl) sl.style.display='block';
-    const sg=document.getElementById('s-grid'); if(sg) sg.style.display='none';
-    ensureProducts();
+    if(products.length){ renderShop(); }
+    else {
+      const sl=document.getElementById('s-load'); if(sl) sl.style.display='block';
+      const sg=document.getElementById('s-grid'); if(sg) sg.style.display='none';
+      await loadFirstProducts();
+    }
+    loadFullCatalog();
   }
 
   // Color name → CSS color map
@@ -4504,9 +4517,11 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // ── Firebase: fetch prodotti subito (parallelo con auth) ─
   waitFB(()=>{
-    const fb=window.__fb;
-    // Avvia il fetch prodotti immediatamente (due fasi: batch veloce + resto in background)
-    ensureProducts();
+    // Prima i 60 per un first paint istantaneo; poi il catalogo completo a thread libero
+    loadFirstProducts().then(()=>{
+      if('requestIdleCallback' in window) requestIdleCallback(()=>loadFullCatalog(),{timeout:4000});
+      else setTimeout(loadFullCatalog,2000);
+    });
   });
 
   // ── Firebase auth ──────────────────────────────────────
