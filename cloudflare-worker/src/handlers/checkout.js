@@ -118,24 +118,83 @@ export async function sendOrderEmail(data, { env, auth }) {
   const o = data || {};
   const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
   const payLabel = { bonifico: 'Bonifico bancario', paypal: 'PayPal', card: 'Carta' }[o.payment] || o.payment || '—';
+  const nextStep = {
+    bonifico: 'Per completare l\'ordine effettua il bonifico indicando come <b>causale il numero ordine</b>. Trovi le coordinate bancarie nella pagina di conferma sul sito. L\'ordine viene evaso entro 24h dalla ricezione del pagamento.',
+    paypal: 'Completa il pagamento su <b>PayPal</b> seguendo le istruzioni mostrate al checkout. Appena ricevuto, prepariamo la spedizione.',
+    card: 'Pagamento ricevuto correttamente. Stiamo preparando il tuo ordine.',
+  }[o.payment] || 'Riceverai un aggiornamento appena il pagamento sarà confermato.';
+
   const itemsHtml = (o.items || []).map(i =>
-    `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee;">${escHtml(i.name)}${i.size ? ' · ' + escHtml(i.size) : ''}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">x${escHtml(i.qty)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${((i.price || 0) * (i.qty || 1)).toFixed(2)}</td></tr>`
+    `<tr>
+      <td style="padding:12px 0;border-bottom:1px solid #ece7db;font-size:14px;color:#23231f;">
+        <span style="font-weight:600;">${escHtml(i.name)}</span>${i.brand ? `<br><span style="font-size:12px;color:#8a8a80;">${escHtml(i.brand)}</span>` : ''}${i.size ? `<span style="font-size:12px;color:#8a8a80;"> · Taglia ${escHtml(i.size)}</span>` : ''}
+      </td>
+      <td style="padding:12px 8px;border-bottom:1px solid #ece7db;text-align:center;font-size:13px;color:#6b6b63;white-space:nowrap;">×${escHtml(i.qty)}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #ece7db;text-align:right;font-size:14px;font-weight:600;color:#23231f;white-space:nowrap;">€${((i.price || 0) * (i.qty || 1)).toFixed(2)}</td>
+    </tr>`
   ).join('');
   const addr = o.address || {};
-  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#111;">
-<h2 style="color:#111;">Grazie per il tuo ordine 🎉</h2>
-<p>Ciao ${escHtml(o.name || '')},<br>abbiamo ricevuto il tuo ordine <b>${escHtml(o.orderId || '')}</b>.</p>
-<table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
-<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #111;">Prodotto</th><th style="padding:6px 8px;border-bottom:2px solid #111;">Qtà</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid #111;">Prezzo</th></tr></thead>
-<tbody>${itemsHtml}</tbody></table>
-<p style="font-size:14px;">Subtotale: €${(o.subtotal || 0).toFixed(2)}<br>
-Spedizione: €${(o.shipping || 0).toFixed(2)}${o.discount ? `<br>Sconto: -€${(o.discount || 0).toFixed(2)}` : ''}<br>
-<b style="font-size:16px;">Totale: €${(o.total || 0).toFixed(2)}</b></p>
-<p style="font-size:14px;"><b>Metodo di pagamento:</b> ${escHtml(payLabel)}<br>
-<b>Stato:</b> In attesa di pagamento</p>
-${(addr.street) ? `<p style="font-size:13px;color:#555;"><b>Spedizione a:</b><br>${escHtml(addr.street)}, ${escHtml(addr.zip || '')} ${escHtml(addr.city || '')} ${escHtml(addr.country || '')}</p>` : ''}
-<p style="font-size:12px;color:#888;margin-top:20px;">Riceverai un aggiornamento appena il pagamento sarà confermato. Grazie per aver scelto LilloFind.</p>
-</div>`;
+  const totalRow = (label, val, opts = {}) =>
+    `<tr><td style="padding:4px 0;font-size:${opts.big ? '16px' : '13px'};color:${opts.big ? '#23231f' : '#6b6b63'};font-weight:${opts.big ? '700' : '400'};">${label}</td><td style="padding:4px 0;text-align:right;font-size:${opts.big ? '18px' : '13px'};color:${opts.accent ? '#6f7552' : '#23231f'};font-weight:${opts.big ? '700' : '600'};">${val}</td></tr>`;
+
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f2ec;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;padding:24px 12px;font-family:'Helvetica Neue',Arial,sans-serif;">
+<tr><td align="center">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e7e2d8;border-radius:16px;overflow:hidden;">
+    <!-- Header -->
+    <tr><td style="background:#23231f;padding:26px 32px;text-align:center;">
+      <div style="font-size:26px;font-weight:800;letter-spacing:4px;color:#f5f2ec;">LILLOFIND</div>
+      <div style="font-size:10px;letter-spacing:3px;color:#99a074;text-transform:uppercase;margin-top:4px;">Drop your style</div>
+    </td></tr>
+    <!-- Hero -->
+    <tr><td style="padding:32px 32px 8px;">
+      <div style="display:inline-block;background:#eef0e6;color:#6f7552;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:6px 14px;border-radius:999px;">Ordine ricevuto</div>
+      <h1 style="font-size:24px;color:#23231f;margin:16px 0 6px;">Grazie, ${escHtml((o.name || '').split(' ')[0] || '')}! 🎉</h1>
+      <p style="font-size:14px;color:#6b6b63;line-height:1.6;margin:0;">Abbiamo ricevuto il tuo ordine <b style="color:#23231f;">${escHtml(o.orderId || '')}</b>. Ecco il riepilogo.</p>
+    </td></tr>
+    <!-- Items -->
+    <tr><td style="padding:20px 32px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${itemsHtml}</table>
+    </td></tr>
+    <!-- Totals -->
+    <tr><td style="padding:16px 32px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${totalRow('Subtotale', '€' + (o.subtotal || 0).toFixed(2))}
+        ${totalRow('Spedizione DHL', (o.shipping ? '€' + (o.shipping).toFixed(2) : 'Gratis'))}
+        ${o.discount ? totalRow('Sconto', '-€' + (o.discount).toFixed(2), { accent: true }) : ''}
+        <tr><td colspan="2" style="border-top:1px solid #e7e2d8;padding-top:8px;"></td></tr>
+        ${totalRow('Totale', '€' + (o.total || 0).toFixed(2), { big: true })}
+      </table>
+      <div style="background:#eef0e6;border-radius:10px;padding:10px 14px;margin-top:14px;font-size:12px;color:#6f7552;font-weight:600;">⬡ +${Math.floor(o.subtotal || 0)} LFPOINTS verranno accreditati alla conferma del pagamento</div>
+    </td></tr>
+    <!-- Payment / next steps -->
+    <tr><td style="padding:20px 32px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f3;border:1px solid #e7e2d8;border-radius:12px;">
+        <tr><td style="padding:16px 18px;">
+          <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8a8a80;font-weight:700;">Pagamento · ${escHtml(payLabel)}</p>
+          <p style="margin:0;font-size:13px;color:#4a4a44;line-height:1.6;">${nextStep}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+    ${(addr.street) ? `<!-- Shipping -->
+    <tr><td style="padding:18px 32px 0;">
+      <p style="margin:0 0 4px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8a8a80;font-weight:700;">Spedizione a</p>
+      <p style="margin:0;font-size:13px;color:#4a4a44;line-height:1.6;">${escHtml(o.name || '')}<br>${escHtml(addr.street)}<br>${escHtml(addr.zip || '')} ${escHtml(addr.city || '')}<br>${escHtml(addr.country || 'Italia')}</p>
+    </td></tr>` : ''}
+    <!-- CTA -->
+    <tr><td style="padding:24px 32px;">
+      <a href="https://lillofind.shop" style="display:inline-block;background:#6f7552;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:13px 28px;border-radius:999px;">Continua lo shopping →</a>
+    </td></tr>
+    <!-- Footer -->
+    <tr><td style="background:#23231f;padding:24px 32px;text-align:center;">
+      <div style="font-size:16px;font-weight:800;letter-spacing:3px;color:#f5f2ec;margin-bottom:8px;">LILLOFIND</div>
+      <p style="margin:0 0 6px;font-size:11px;color:#8a8a80;line-height:1.7;">Spedizione DHL Express · Reso 30 giorni · Qualità 1:1 verificata</p>
+      <p style="margin:0;font-size:11px;color:#66665e;">Hai domande? Rispondi a questa email.<br>© 2026 LilloFind — lillofind.shop</p>
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body></html>`;
 
   try {
     await fetch('https://api.resend.com/emails', {
