@@ -3027,21 +3027,47 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ── Products ───────────────────────────────────────────
-  async function loadProds(){
-    if(products.length){renderShop();try{buildNavMenus();}catch(_){}return;}
+  let _prodsLoading=false, _prodsFull=false;
+  const _PROD_FIRST=80; // primo batch veloce per il first paint
+
+  function _afterProds(){
+    try{buildChips();updateFilterUI();buildNavMenus();}catch(_){}
+    renderHomeProds();
+    if(document.getElementById('pg-shop')?.classList.contains('on')) renderShop();
+    try{ localStorage.setItem('lf_wishlist', JSON.stringify(wishlist)); updateWishBadge(); }catch(_){}
+  }
+
+  // Caricamento a due fasi: prima 80 prodotti (istantaneo), poi il resto in background.
+  async function ensureProducts(){
+    if(_prodsFull || _prodsLoading) { if(products.length) renderShop(); return; }
+    _prodsLoading=true;
     const fb=window.__fb;
-    document.getElementById('s-load').style.display='block';
-    document.getElementById('s-grid').style.display='none';
     try{
-      const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
-      const s=await fb.getDocs(q);
-      products=s.docs.map(d=>({id:d.id,...d.data()}));
+      // Fase 1 — batch veloce
+      if(!products.length){
+        const q1=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'),fb.limit(_PROD_FIRST));
+        const s1=await fb.getDocs(q1);
+        products=s1.docs.map(d=>({id:d.id,...d.data()}));
+        _afterProds();
+      }
+      // Fase 2 — catalogo completo (in background, non blocca il first paint)
+      const q2=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
+      const s2=await fb.getDocs(q2);
+      products=s2.docs.map(d=>({id:d.id,...d.data()}));
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-      try{buildChips();updateFilterUI();buildNavMenus();}catch(_){}
-      renderShop(); renderHomeProds();
-      localStorage.setItem('lf_wishlist', JSON.stringify(wishlist));
-      updateWishBadge();
-    } catch(e){ document.getElementById('s-load').textContent='Errore caricamento.'; }
+      _prodsFull=true;
+      _afterProds();
+    } catch(e){
+      const el=document.getElementById('s-load'); if(el&&!products.length) el.textContent='Errore caricamento.';
+    } finally { _prodsLoading=false; }
+  }
+
+  // Chiamata quando si apre lo Shop
+  async function loadProds(){
+    if(products.length){ renderShop(); if(!_prodsFull) ensureProducts(); return; }
+    const sl=document.getElementById('s-load'); if(sl) sl.style.display='block';
+    const sg=document.getElementById('s-grid'); if(sg) sg.style.display='none';
+    ensureProducts();
   }
 
   // Color name → CSS color map
@@ -4386,16 +4412,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── Firebase: fetch prodotti subito (parallelo con auth) ─
   waitFB(()=>{
     const fb=window.__fb;
-    // Avvia il fetch prodotti immediatamente senza aspettare auth
-    if(!products.length){
-      fb.getDocs(fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc')))
-        .then(s=>{
-          if(products.length)return; // già caricati dall'auth
-          products=s.docs.map(d=>({id:d.id,...d.data()}));
-          products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-          renderHomeProds(); try{buildChips();buildNavMenus();}catch(_){}
-        }).catch(()=>{});
-    }
+    // Avvia il fetch prodotti immediatamente (due fasi: batch veloce + resto in background)
+    ensureProducts();
   });
 
   // ── Firebase auth ──────────────────────────────────────
@@ -4418,14 +4436,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
         if(typeof renderOrderHistory==='function') renderOrderHistory();
       }
-      if(!products.length){
-        try{
-          const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
-          const s=await fb.getDocs(q);
-          products=s.docs.map(d=>({id:d.id,...d.data()}));
-          renderHomeProds(); try{buildChips();buildNavMenus();}catch(_){}
-        } catch(_){}
-      }
+      if(!products.length) ensureProducts();
     });
   });
 
