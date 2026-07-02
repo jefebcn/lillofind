@@ -213,6 +213,10 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <button class="anav-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')">
         <span class="anav-icon">🚚</span>Spedizioni
       </button>
+      <button class="anav-btn" data-pg="richieste" onclick="showAdminPg('richieste')">
+        <span class="anav-icon">📩</span>Richieste
+        <span class="anav-badge" id="req-nav-badge" style="display:none;"></span>
+      </button>
       <button class="anav-btn" data-pg="ai" onclick="showAdminPg('ai')">
         <span class="anav-icon">🤖</span>Strumenti AI
       </button>
@@ -469,6 +473,16 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           <div id="tr-history" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
+    </div>
+
+    <!-- ─── PAGE: RICHIESTE PRODOTTO ─── -->
+    <div class="apg hidden" id="apg-richieste">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Richieste Prodotto</h1>
+        <button onclick="loadProductRequests()" class="btn-k" style="padding:9px 18px;font-size:13px;">↻ Aggiorna</button>
+      </div>
+      <p style="font-size:14px;color:var(--mid);margin-bottom:20px;">Richieste "non trovo il prodotto" inviate dai clienti (foto + note).</p>
+      <div id="req-list"><p style="font-size:13px;color:var(--dim);">Caricamento...</p></div>
     </div>
 
     <!-- ─── PAGE: STRUMENTI AI ─── -->
@@ -1653,6 +1667,37 @@ waitFB(()=>{
       document.body.style.overflow='';
     }
     if(name==='clienti' && !_usersLoaded) loadUsersPage();
+    if(name==='richieste') loadProductRequests();
+  };
+
+  // ── Richieste prodotto ("non trovo prodotto") ──
+  window.loadProductRequests = async function(){
+    const fb=window.__fb;
+    const list=document.getElementById('req-list');
+    if(!fb||!list) return;
+    list.innerHTML='<p style="font-size:13px;color:var(--dim);">Caricamento...</p>';
+    try{
+      const q=fb.query(fb.collection(fb.db,'product_requests'),fb.orderBy('ts','desc'));
+      const snap=await fb.getDocs(q);
+      const reqs=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const badge=document.getElementById('req-nav-badge');
+      if(badge){ badge.textContent=reqs.length; badge.style.display=reqs.length?'flex':'none'; }
+      if(!reqs.length){ list.innerHTML='<p style="font-size:14px;color:var(--dim);">Nessuna richiesta al momento.</p>'; return; }
+      list.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">'+reqs.map(r=>{
+        const ts=r.ts?.seconds?new Date(r.ts.seconds*1000).toLocaleString('it-IT'):'—';
+        const email=escH(r.userEmail||'ospite');
+        const note=r.note?escH(r.note):'<span style="color:var(--dim);">(nessuna nota)</span>';
+        const img=r.image?`<img src="${r.image}" style="width:100%;height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px;cursor:zoom-in;" onclick="window.open('').document.write('<img src=\\''+this.src+'\\' style=max-width:100%>')">`:'<div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:12px;">Nessuna foto</div>';
+        return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;">
+          ${img}
+          <p style="font-size:14px;color:#fff;line-height:1.5;margin-bottom:10px;">${note}</p>
+          <div style="border-top:1px solid rgba(255,255,255,.1);padding-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:12px;color:var(--led);font-weight:600;">${email}</span>
+            <span style="font-size:11px;color:var(--dim);">${ts}</span>
+          </div>
+        </div>`;
+      }).join('')+'</div>';
+    }catch(e){ list.innerHTML='<p style="color:#ff6b6b;font-size:13px;">Errore: '+(e.message||e)+'</p>'; }
   };
 
   window.toggleAdminNav = function(){
