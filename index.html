@@ -3296,18 +3296,24 @@ img{ -webkit-user-drag:none; user-select:none; }
     renderShop();
   };
 
-  // Retry image up to 2 times before hiding the card (handles proxy/timeout transients)
+  // Riprova a caricare l'immagine (proxy lento sulle novità non ancora in cache);
+  // se dopo i tentativi non arriva, mostra un placeholder — NON nasconde il prodotto.
   window._imgErr=function(img){
     var r=parseInt(img.dataset.retry||0);
-    if(r<2){
+    if(r<4){
       img.dataset.retry=r+1;
       var src=img.src;
-      setTimeout(function(){
-        img.src='';   // force reset (required on mobile Safari — src=src is a no-op)
-        img.src=src;
-      },1500*(r+1));
+      setTimeout(function(){ img.src=''; img.src=src; }, 1200*(r+1));
     } else {
-      img.closest('.pcard').style.display='none';
+      var box=img.parentNode;
+      img.style.display='none';
+      if(box && !box.querySelector('.img-fallback')){
+        var d=document.createElement('div');
+        d.className='img-fallback';
+        d.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#efece4;color:#b5b0a4;font-family:\'Bricolage Grotesque\',sans-serif;font-size:13px;letter-spacing:2px;';
+        d.textContent='LILLOFIND';
+        box.appendChild(d);
+      }
     }
   };
 
