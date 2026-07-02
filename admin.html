@@ -719,17 +719,30 @@ waitFB(()=>{
     loginForm.style.display = 'none';
     spinWrap.style.display  = 'flex';
 
+    // Confronto email robusto (case-insensitive, senza spazi)
+    const emailNorm = (user.email || '').trim().toLowerCase();
+    const allow = ADMIN_EMAILS.map(e => e.trim().toLowerCase());
+    const grantedByEmail = allow.includes(emailNorm);
+
     try {
       const snap = await fb.getDoc(fb.doc(fb.db, 'users', user.uid));
       const data = snap.exists() ? snap.data() : {};
 
-      const isAdmin = data.isAdmin === true || ADMIN_EMAILS.includes(user.email);
+      const isAdmin = data.isAdmin === true || grantedByEmail;
       if (!isAdmin) {
         // Loggato ma non admin → mostra pannello negato
         spinWrap.style.display = 'none';
         document.getElementById('guard-denied-email').textContent = user.email||'';
         denied.style.display   = 'flex';
         return;
+      }
+
+      // Self-heal: admin autorizzato via email ma senza isAdmin nel doc utente.
+      // Scrive isAdmin:true così le regole Firestore concedono i permessi
+      // (necessario per modificare/eliminare prodotti da client).
+      if (grantedByEmail && data.isAdmin !== true) {
+        try { await fb.setDoc(fb.doc(fb.db,'users',user.uid), { isAdmin:true, email:user.email||'' }, { merge:true }); }
+        catch(_){ /* regole potrebbero bloccare — ignora, l'accesso al pannello resta ok */ }
       }
 
       // ✅ Accesso confermato
@@ -748,7 +761,7 @@ waitFB(()=>{
     } catch(e) {
       console.error('Auth guard error:', e);
       // Firestore non raggiungibile — fallback su lista email
-      if (ADMIN_EMAILS.includes(user.email)) {
+      if (grantedByEmail) {
         if (emailEl) emailEl.textContent = user.email || '';
         if (guard)   guard.style.display = 'none';
         if (wrap)    wrap.style.display  = 'flex';
