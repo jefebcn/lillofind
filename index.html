@@ -3132,23 +3132,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     try{ warmImageCache(); }catch(_){}
   }
 
-  // Riscaldamento cache immagini: pre-carica le foto dei prodotti più recenti in
-  // background, così il proxy Cloudflare le mette in cache e diventano istantanee.
-  let _warmed=false;
-  function warmImageCache(){
-    if(_warmed || !products || !products.length) return;
-    _warmed=true;
-    try{ if(navigator.connection && navigator.connection.saveData) return; }catch(_){}
-    var isMobile=/Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
-    var N=isMobile?12:30;
-    var urls=products.slice(0,N).map(function(p){return p.imageUrl;}).filter(Boolean).map(function(u){return pImg(u);});
-    var i=0;
-    (function next(){
-      if(i>=urls.length) return;
-      var im=new Image(); im.src=urls[i++];
-      im.onload=im.onerror=function(){ setTimeout(next,150); };
-    })();
-  }
+  // (Rimosso il prefetch aggressivo: aggiungeva richieste extra che facevano
+  // scattare il throttling di Yupoo. Le immagini si caricano/cachano naturalmente
+  // man mano che le card entrano nel viewport, con retry lato Worker e client.)
+  function warmImageCache(){}
 
   // Caricamento prodotti — semplice e robusto, con fallback senza orderBy.
   async function loadAllProducts(){
