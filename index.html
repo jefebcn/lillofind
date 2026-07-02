@@ -202,7 +202,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   z-index:300;align-items:center;justify-content:center;padding:16px;
 }
 .modal-bg.open{display:flex;}
-.modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 
 /* ── COOKIE BANNER ───────────────────────────── */
 #cookie-bar{
@@ -304,8 +304,14 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 
 /* ── STICKY ATC MOBILE ────────────────────────── */
 @media(max-width:600px){
-  #prod-modal .modal-box{max-height:100vh!important;height:100%;max-width:100%!important;border-radius:0;}
-  #prod-modal-grid{grid-template-columns:1fr!important;overflow-y:auto;max-height:100vh;}
+  /* Modal a tutto schermo con UN SOLO contenitore scrollabile (.modal-box) */
+  #prod-modal{padding:0!important;align-items:stretch!important;}
+  #prod-modal .modal-box{max-height:100dvh!important;height:100dvh!important;max-width:100%!important;border-radius:0;}
+  /* niente scroll annidato: la griglia non scrolla da sola */
+  #prod-modal-grid{grid-template-columns:1fr!important;overflow:visible!important;max-height:none!important;}
+  /* immagine: si adatta alla larghezza, niente altezza forzata a 480px */
+  #prod-modal-grid > div:first-child{min-height:auto!important;}
+  #prod-modal-grid > div:first-child img{min-height:auto!important;height:auto!important;max-height:56vh;}
 }
 
 /* ── LED BADGE ───────────────────────────────── */
@@ -2479,11 +2485,11 @@ img{ -webkit-user-drag:none; user-select:none; }
   </div>
 </div>
 
-<div id="prod-modal" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
+<div id="prod-modal" class="modal-bg" onclick="if(event.target===this)closeProd()">
   <div class="modal-box" style="padding:0;max-width:960px;width:100%;">
-    <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
-      <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#555;">Dettaglio Prodotto</p>
-      <button onclick="document.getElementById('prod-modal').classList.remove('open')" style="background:none;border:none;color:var(--w);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+    <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;">
+      <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#999;">Dettaglio Prodotto</p>
+      <button onclick="closeProd()" style="background:none;border:none;color:var(--w);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
     </div>
     <div id="prod-modal-body"></div>
   </div>
@@ -3219,6 +3225,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     return products.filter(p=>p.id!==pid&&(p.brand===brand||p.style===style)).slice(0,3);
   }
 
+  window.closeProd=function(){
+    const m=document.getElementById('prod-modal');
+    if(m) m.classList.remove('open');
+    document.body.style.overflow='';
+  };
   window.openProduct=function(pid){
     const p=products.find(x=>x.id===pid);
     if(!p)return;
@@ -3231,6 +3242,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!modal||!body)return;
     // Open modal shell immediately — fill content on next frame (avoids click lag)
     modal.classList.add('open');
+    document.body.style.overflow='hidden';
+    // porta lo scroll del modal in cima all'apertura
+    const boxEl=modal.querySelector('.modal-box'); if(boxEl) boxEl.scrollTop=0;
     body.innerHTML='<div style="padding:60px;text-align:center;"><div class="skel" style="width:60px;height:8px;margin:0 auto;"></div></div>';
     requestAnimationFrame(()=>{
     const isNew=(p.createdAt?.seconds&&(Date.now()/1000-p.createdAt.seconds)<604800);
@@ -3281,7 +3295,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <p style="font-size:10px;color:#666;line-height:1.7;">Aggiungi il QC nel carrello: riceverai 3-4 foto reali del tuo articolo prima della spedizione. Gratis per i membri Silver+.</p>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
-            <button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});document.getElementById('prod-modal').classList.remove('open');">Aggiungi al Carrello →</button>
+            <button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});closeProd();">Aggiungi al Carrello →</button>
             <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:'Manrope',monospace;font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${inWish?'❤️':'♡'}</button>
             <button style="border:1.5px solid #ddd;background:none;padding:12px 14px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;" onclick="shareProduct('${p.name.replace(/'/g,"\\'")}',${p.price||0},'${p.id}')" title="Condividi">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -3293,7 +3307,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#aaa;margin-bottom:12px;">Completa il Drop</p>
             <div style="display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;">
               ${getRelatedProducts(p.id,p.brand,p.style).slice(0,3).map(rp=>`
-              <div onclick="document.getElementById('prod-modal').classList.remove('open');setTimeout(()=>openProduct('${rp.id}'),100);" style="flex-shrink:0;width:90px;cursor:pointer;">
+              <div onclick="closeProd();setTimeout(()=>openProduct('${rp.id}'),100);" style="flex-shrink:0;width:90px;cursor:pointer;">
                 <div style="width:90px;height:90px;background:#f0f0f0;overflow:hidden;margin-bottom:6px;">
                   ${rp.imageUrl?`<img src="${pImg(rp.imageUrl)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:''}
                 </div>
@@ -5180,7 +5194,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(_stickyPid) buy(_stickyPid, _stickyPrice);
     // The buy() call opens size-picker, so hide sticky immediately
     hideStickyATC();
-    document.getElementById('prod-modal').classList.remove('open');
+    closeProd();
   };
 
   function showStickyATC(pid, name, price){
