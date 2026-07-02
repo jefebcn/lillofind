@@ -30,5 +30,11 @@ service cloud.firestore {
       allow read:  if request.auth.uid == uid || isAdmin();
       allow write: if request.auth.uid == uid || isAdmin();
     }
+
+    // Richieste prodotto ("non trovo prodotto") — chiunque può inviare, solo admin legge
+    match /product_requests/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }
