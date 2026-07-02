@@ -473,17 +473,44 @@ img{ -webkit-user-drag:none; user-select:none; }
 /* ── HOME LATEST DROPS — grid for 8 products ────── */
 @media(min-width:900px){#home-prods{grid-template-columns:repeat(4,1fr);gap:20px;}}
 
-/* ── HOME CATEGORY CIRCLES ──────────────────────────── */
-#home-cat-circles{display:flex;gap:20px;overflow-x:auto;padding:0 24px 8px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}
+/* ── HOME CATEGORY — editorial tiles ─────────────────── */
+#home-cat-circles{
+  display:grid;grid-auto-flow:column;grid-auto-columns:minmax(158px,1fr);gap:14px;
+  overflow-x:auto;padding:6px 24px 14px;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
+}
 #home-cat-circles::-webkit-scrollbar{display:none;}
-.hcc{display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;min-width:88px;-webkit-tap-highlight-color:transparent;}
-.hcc-ring{width:90px;height:90px;border-radius:50%;border:2px solid var(--border-2);overflow:hidden;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;transition:border-color .25s,transform .25s;box-shadow:var(--shadow-sm);}
-@media(min-width:900px){.hcc-ring{width:110px;height:110px;} .hcc{min-width:108px;}}
-.hcc:hover .hcc-ring{border-color:var(--led);transform:scale(1.07);}
-.hcc-ring img{width:100%;height:100%;object-fit:cover;display:block;}
-.hcc-emo{font-size:32px;line-height:1;}
-.hcc-label{font-family:'Bricolage Grotesque',sans-serif;font-size:14px;letter-spacing:1px;color:var(--mid);transition:color .2s;text-align:center;}
-.hcc:hover .hcc-label{color:var(--led);}
+@media(min-width:900px){
+  #home-cat-circles{grid-auto-flow:row;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;overflow:visible;padding:6px 0;}
+}
+.hcc{
+  position:relative;aspect-ratio:3/4;border-radius:var(--radius-lg);overflow:hidden;
+  cursor:pointer;scroll-snap-align:start;background:#2c2c26;box-shadow:var(--shadow);
+  isolation:isolate;-webkit-tap-highlight-color:transparent;
+}
+.hcc-ring{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.hcc-ring img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.82);transition:transform .5s cubic-bezier(.2,.7,.2,1),filter .3s;}
+.hcc:hover .hcc-ring img{transform:scale(1.08);filter:brightness(.92);}
+.hcc::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(20,20,17,0) 32%,rgba(20,20,17,.8) 100%);}
+.hcc-emo{font-size:54px;line-height:1;opacity:.5;}
+.hcc-arrow{
+  position:absolute;top:12px;right:12px;z-index:2;width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.16);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;
+  transform:translateY(-4px);opacity:0;transition:opacity .25s,transform .25s,background .2s;
+}
+.hcc:hover .hcc-arrow{opacity:1;transform:translateY(0);background:var(--led);}
+.hcc-label{
+  position:absolute;left:14px;right:14px;bottom:14px;z-index:2;
+  font-family:'Bricolage Grotesque',sans-serif;font-size:19px;font-weight:700;letter-spacing:.4px;color:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  text-shadow:0 2px 12px rgba(0,0,0,.45);
+}
+.hcc-count{
+  font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;letter-spacing:.4px;
+  color:var(--k);background:var(--w);padding:3px 9px;border-radius:var(--radius-pill);white-space:nowrap;
+}
 
 
 .hide-scrollbar::-webkit-scrollbar{display:none;}
@@ -1105,10 +1132,16 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 
 
-  <!-- CATEGORY CIRCLES -->
-  <section style="padding:40px 0 32px;background:var(--w);border-bottom:1px solid var(--border);overflow:hidden;">
+  <!-- CATEGORY TILES -->
+  <section style="padding:56px 0 52px;background:var(--k);overflow:hidden;">
     <div style="max-width:1200px;margin:0 auto;">
-      <p class="slbl" style="padding:0 24px;margin-bottom:20px;">Sfoglia per Categoria</p>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 24px;margin-bottom:26px;">
+        <div>
+          <p class="slbl" style="color:var(--led2);margin-bottom:8px;">Le Collezioni</p>
+          <h2 class="bb" style="font-size:clamp(28px,5vw,44px);line-height:1.02;color:var(--w);font-weight:700;">Sfoglia per<br>Categoria</h2>
+        </div>
+        <button onclick="showPg('shop');resetFilters()" class="bb" style="background:none;border:none;color:var(--led2);font-size:13px;letter-spacing:1px;cursor:pointer;white-space:nowrap;padding-bottom:6px;display:inline-flex;align-items:center;gap:6px;">VEDI TUTTO <span style="font-size:16px;">→</span></button>
+      </div>
       <div id="home-cat-circles"></div>
     </div>
   </section>
@@ -3346,6 +3379,10 @@ img{ -webkit-user-drag:none; user-select:none; }
         ${stockBadge}
         ${delBtn}
         <button class="wish-btn ${inWish?'active':''}" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;top:10px;right:10px;width:36px;height:36px;background:rgba(255,255,255,.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:50%;box-shadow:var(--shadow-sm);">${inWish?'❤️':'♡'}</button>
+        ${window._isAdmin?`<div style="position:absolute;bottom:8px;left:8px;display:flex;gap:6px;z-index:4;">
+          <button onclick="event.stopPropagation();adminEditProduct('${p.id}')" title="Modifica" style="width:36px;height:36px;border:none;border-radius:10px;background:rgba(35,35,31,.88);color:#fff;cursor:pointer;font-size:15px;box-shadow:var(--shadow-sm);">✏️</button>
+          <button onclick="event.stopPropagation();adminDeleteProduct('${p.id}')" title="Elimina" style="width:36px;height:36px;border:none;border-radius:10px;background:rgba(201,80,63,.92);color:#fff;cursor:pointer;font-size:15px;box-shadow:var(--shadow-sm);">🗑</button>
+        </div>`:''}
       </div>
       <div style="padding:16px 15px 15px;">
         ${p.brand?`<p style="font-size:10px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:600;">${p.brand}</p>`:''}
@@ -3371,6 +3408,25 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(m) m.classList.remove('open');
     document.body.style.overflow='';
     document.body.classList.remove('prod-open');
+  };
+
+  // ── Controlli admin inline sullo shop (visibili solo se _isAdmin) ──
+  window.adminEditProduct=function(id){ location.href='admin.html?edit='+encodeURIComponent(id); };
+  window.adminDeleteProduct=async function(id){
+    const p=products.find(x=>x.id===id);
+    if(!confirm('Eliminare "'+(p?(p.name||id):id)+'"?\nL\'azione è definitiva.')) return;
+    try{
+      const fb=window.__fb;
+      await fb.deleteDoc(fb.doc(fb.db,'products',id));
+      products=products.filter(x=>x.id!==id);
+      _prodsLoaded=true;
+      showToast('🗑 Prodotto eliminato');
+      try{renderShop();}catch(_){}
+      try{renderHomeProds();}catch(_){}
+      try{closeProd();}catch(_){}
+    }catch(e){
+      showToast('⚠️ Errore: '+(e.code||e.message||'riprova'));
+    }
   };
   window.openProduct=function(pid){
     const p=products.find(x=>x.id===pid);
@@ -3610,22 +3666,26 @@ img{ -webkit-user-drag:none; user-select:none; }
       {label:'Cardigan', model:'Cardigan',   emoji:'🧶'},
       {label:'Cappelli', model:'Cappello',   emoji:'🧢'},
     ];
-    const imgMap={};
+    const imgMap={},cntMap={};
     if(products&&products.length){
       products.forEach(p=>{
-        if(!p.imageUrl || typeof p.model!=='string') return;
+        if(typeof p.model!=='string') return;
         const pm=p.model.toLowerCase();
         CATS.forEach(c=>{
-          if(!imgMap[c.model] && pm===c.model.toLowerCase())
-            imgMap[c.model]=pImg(p.imageUrl);
+          if(pm===c.model.toLowerCase()){
+            cntMap[c.model]=(cntMap[c.model]||0)+1;
+            if(!imgMap[c.model] && p.imageUrl) imgMap[c.model]=pImg(p.imageUrl);
+          }
         });
       });
     }
     el.innerHTML=CATS.map(c=>{
       const img=imgMap[c.model]||'';
+      const n=cntMap[c.model]||0;
       return `<div class="hcc" onclick="showPg('shop');resetFilters();setTimeout(()=>setFilter('model','${c.model}'),80)">
         <div class="hcc-ring">${img?`<img src="${img}" alt="${c.label}" loading="lazy" onerror="this.parentNode.innerHTML='<span class=hcc-emo>${c.emoji}</span>'">`:`<span class="hcc-emo">${c.emoji}</span>`}</div>
-        <span class="hcc-label">${c.label}</span>
+        <span class="hcc-arrow">→</span>
+        <span class="hcc-label">${c.label}${n?`<span class="hcc-count">${n}</span>`:''}</span>
       </div>`;
     }).join('');
   }
@@ -4543,6 +4603,10 @@ img{ -webkit-user-drag:none; user-select:none; }
           udata={};
         }
       } else { udata=null; }
+      // Admin inline: mostra i controlli modifica/elimina sulle card
+      const wasAdmin=window._isAdmin;
+      window._isAdmin = !!(udata && udata.isAdmin===true);
+      if(window._isAdmin!==wasAdmin){ try{renderShop();}catch(_){} try{renderHomeProds();}catch(_){} }
       updateNav(u,udata); updateHomeDisplay();
       // Re-render profile if it's already open (covers race condition on load)
       if(u && document.getElementById('pg-profile')?.classList.contains('on')){
