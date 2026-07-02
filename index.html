@@ -3122,58 +3122,53 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ── Products ───────────────────────────────────────────
-  let _firstLoading=false, _fullLoading=false, _prodsFull=false;
-  const _PROD_FIRST=60; // primo batch veloce per il first paint
+  let _prodsLoaded=false, _prodsLoading=false;
 
   function _afterProds(){
     try{buildChips();updateFilterUI();buildNavMenus();}catch(_){}
-    renderHomeProds();
-    if(document.getElementById('pg-shop')?.classList.contains('on')) renderShop();
+    try{renderHomeProds();}catch(_){}
+    try{ if(document.getElementById('pg-shop')?.classList.contains('on')) renderShop(); }catch(_){}
     try{ localStorage.setItem('lf_wishlist', JSON.stringify(wishlist)); updateWishBadge(); }catch(_){}
   }
 
-  // Fase 1 — batch veloce (per home + primo schermo shop). NON carica tutto il catalogo.
-  async function loadFirstProducts(){
-    if(products.length || _firstLoading) return;
-    _firstLoading=true;
+  // Caricamento prodotti — semplice e robusto, con fallback senza orderBy.
+  async function loadAllProducts(){
+    if(_prodsLoaded || _prodsLoading) return;
+    _prodsLoading=true;
     const fb=window.__fb;
     try{
-      const q1=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'),fb.limit(_PROD_FIRST));
-      const s1=await fb.getDocs(q1);
-      if(!products.length){ products=s1.docs.map(d=>({id:d.id,...d.data()})); _afterProds(); }
-    } catch(e){
-      const el=document.getElementById('s-load'); if(el&&!products.length) el.textContent='Errore caricamento.';
-    } finally { _firstLoading=false; }
-  }
-
-  // Fase 2 — catalogo completo. Caricato solo quando serve (apertura Shop / ricerca / filtri).
-  async function loadFullCatalog(){
-    if(_prodsFull || _fullLoading) return;
-    _fullLoading=true;
-    const fb=window.__fb;
-    try{
-      const q2=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
-      const s2=await fb.getDocs(q2);
-      products=s2.docs.map(d=>({id:d.id,...d.data()}));
+      let docs=[];
+      // 1° tentativo: ordinati per data
+      try{
+        const s=await fb.getDocs(fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc')));
+        docs=s.docs;
+      }catch(e1){ console.warn('orderBy createdAt fallito, uso fallback',e1&&e1.code); docs=[]; }
+      // Fallback: nessun ordinamento (copre prodotti senza campo createdAt o problemi di indice)
+      if(!docs.length){
+        const s2=await fb.getDocs(fb.collection(fb.db,'products'));
+        docs=s2.docs;
+      }
+      products=docs.map(d=>({id:d.id,...d.data()}));
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-      _prodsFull=true;
+      _prodsLoaded=true;
       _afterProds();
-    } catch(e){ /* mantiene i 60 già mostrati */ }
-    finally { _fullLoading=false; }
+    }catch(e){
+      console.error('loadAllProducts error:',e&&e.code,e&&e.message);
+      const el=document.getElementById('s-load'); if(el) el.textContent='Errore caricamento prodotti. Riprova.';
+    }finally{ _prodsLoading=false; }
   }
 
-  // Retro-compatibilità
-  async function ensureProducts(){ await loadFirstProducts(); }
+  // Alias retro-compatibili (varie parti del codice chiamano questi nomi)
+  async function ensureProducts(){ return loadAllProducts(); }
+  async function loadFirstProducts(){ return loadAllProducts(); }
+  async function loadFullCatalog(){ return loadAllProducts(); }
 
-  // Apertura Shop: mostra subito i primi 60, poi carica il catalogo completo per filtri/ricerca
+  // Apertura Shop
   async function loadProds(){
-    if(products.length){ renderShop(); }
-    else {
-      const sl=document.getElementById('s-load'); if(sl) sl.style.display='block';
-      const sg=document.getElementById('s-grid'); if(sg) sg.style.display='none';
-      await loadFirstProducts();
-    }
-    loadFullCatalog();
+    if(products.length){ renderShop(); return; }
+    const sl=document.getElementById('s-load'); if(sl) sl.style.display='block';
+    const sg=document.getElementById('s-grid'); if(sg) sg.style.display='none';
+    await loadAllProducts();
   }
 
   // Color name → CSS color map
@@ -4516,10 +4511,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   buildSizeGuide();
 
   // ── Firebase: fetch prodotti subito (parallelo con auth) ─
-  waitFB(()=>{
-    // Prima i 60 per un first paint istantaneo, poi subito il catalogo completo
-    loadFirstProducts().finally(()=>{ loadFullCatalog(); });
-  });
+  waitFB(()=>{ loadAllProducts(); });
 
   // ── Firebase auth ──────────────────────────────────────
   waitFB(()=>{
