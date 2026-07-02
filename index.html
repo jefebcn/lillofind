@@ -3626,9 +3626,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     const imgMap={};
     if(products&&products.length){
       products.forEach(p=>{
-        if(!p.imageUrl) return;
+        if(!p.imageUrl || typeof p.model!=='string') return;
+        const pm=p.model.toLowerCase();
         CATS.forEach(c=>{
-          if(!imgMap[c.model]&&p.model&&p.model.toLowerCase()===c.model.toLowerCase())
+          if(!imgMap[c.model] && pm===c.model.toLowerCase())
             imgMap[c.model]=pImg(p.imageUrl);
         });
       });
@@ -3643,18 +3644,21 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
 
   function renderHomeProds(){
+    try{ renderHomeCatCircles(); }catch(e){ console.warn('catCircles',e); }
     const h=document.getElementById('home-prods');
-    if(!h)return;
-    renderHomeCatCircles();
-    requestAnimationFrame(()=>{
-      const latest=products.slice(0,8);
-      h.textContent='';
-      h.insertAdjacentHTML('afterbegin',latest.length?latest.map(cardHTML).join(''):'<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>');
-      h.style.display='grid';
-    });
-    // Populate carousel and recently viewed
-    renderCarousel();
-    renderRecentlyViewed();
+    if(h){
+      requestAnimationFrame(()=>{
+        try{
+          const latest=products.slice(0,8);
+          h.textContent='';
+          h.insertAdjacentHTML('afterbegin',latest.length?latest.map(cardHTML).join(''):'<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>');
+          h.style.display='grid';
+        }catch(e){ console.warn('homeProds',e); }
+      });
+    }
+    // Carosello e recently viewed — indipendenti, un errore non blocca gli altri
+    try{ renderCarousel(); }catch(e){ console.warn('carousel',e); }
+    try{ renderRecentlyViewed(); }catch(e){ console.warn('recentlyViewed',e); }
   }
 
   function renderCarousel(){
