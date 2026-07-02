@@ -310,9 +310,11 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   /* niente scroll annidato: la griglia non scrolla da sola */
   #prod-modal-grid{grid-template-columns:1fr!important;overflow:visible!important;max-height:none!important;}
   /* immagine: si adatta alla larghezza, niente altezza forzata a 480px */
-  #prod-modal-grid > div:first-child{min-height:auto!important;}
-  #prod-modal-grid > div:first-child img{min-height:auto!important;height:auto!important;max-height:56vh;}
+  #prod-modal-grid > div:first-child{min-height:auto!important;max-height:44vh;}
+  #prod-modal-grid > div:first-child img{min-height:auto!important;height:auto!important;max-height:44vh;object-fit:contain;background:#f0f0f0;}
 }
+/* Nascondi il toast social-proof mentre il dettaglio prodotto è aperto (evita sovrapposizioni) */
+body.prod-open #sp-toast{display:none!important;}
 
 /* ── LED BADGE ───────────────────────────────── */
 .led-badge{
@@ -3229,6 +3231,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const m=document.getElementById('prod-modal');
     if(m) m.classList.remove('open');
     document.body.style.overflow='';
+    document.body.classList.remove('prod-open');
   };
   window.openProduct=function(pid){
     const p=products.find(x=>x.id===pid);
@@ -3243,6 +3246,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Open modal shell immediately — fill content on next frame (avoids click lag)
     modal.classList.add('open');
     document.body.style.overflow='hidden';
+    document.body.classList.add('prod-open');
     // porta lo scroll del modal in cima all'apertura
     const boxEl=modal.querySelector('.modal-box'); if(boxEl) boxEl.scrollTop=0;
     body.innerHTML='<div style="padding:60px;text-align:center;"><div class="skel" style="width:60px;height:8px;margin:0 auto;"></div></div>';
