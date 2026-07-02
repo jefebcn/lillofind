@@ -4517,11 +4517,8 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // ── Firebase: fetch prodotti subito (parallelo con auth) ─
   waitFB(()=>{
-    // Prima i 60 per un first paint istantaneo; poi il catalogo completo a thread libero
-    loadFirstProducts().then(()=>{
-      if('requestIdleCallback' in window) requestIdleCallback(()=>loadFullCatalog(),{timeout:4000});
-      else setTimeout(loadFullCatalog,2000);
-    });
+    // Prima i 60 per un first paint istantaneo, poi subito il catalogo completo
+    loadFirstProducts().finally(()=>{ loadFullCatalog(); });
   });
 
   // ── Firebase auth ──────────────────────────────────────
