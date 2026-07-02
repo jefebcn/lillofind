@@ -168,7 +168,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
     <input id="guard-email" type="email" placeholder="Email admin" autocomplete="email" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;outline:none;"/>
     <input id="guard-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 14px;border:1.5px solid #333;background:#111;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;outline:none;"/>
     <p id="guard-err" style="display:none;color:#ff4444;font-size:10px;letter-spacing:1px;text-align:center;"></p>
-    <button onclick="adminLogin()" style="width:100%;padding:13px;background:var(--led);color:var(--k);border:none;cursor:pointer;font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Accedi →</button>
+    <button onclick="adminLogin()" style="width:100%;padding:13px;background:var(--led);color:#fff;border:none;cursor:pointer;font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Accedi →</button>
+    <button onclick="adminResetPassword()" style="background:none;border:none;color:var(--led2);font-size:12px;font-weight:600;cursor:pointer;margin-top:2px;">Password dimenticata?</button>
     <a href="index.html" style="font-size:9px;color:#555;letter-spacing:1px;text-decoration:none;margin-top:4px;">← Torna al sito</a>
   </div>
   <!-- Stato 3: accesso negato (loggato ma non admin) -->
@@ -614,8 +615,27 @@ window.doAdminLogout = function(){
 // AUTH GUARD — blocca accesso se non admin
 // ══════════════════════════════════════════════════════════════════════════
 // ── Admin login da form guard ──────────────────────────────
+window.adminResetPassword = async function(){
+  const errEl = document.getElementById('guard-err');
+  const email = document.getElementById('guard-email').value.trim();
+  errEl.style.color='#ff4444';
+  if(!email){ errEl.textContent='Scrivi la tua email admin qui sopra, poi ripremi.'; errEl.style.display='block'; return; }
+  try{
+    const fb = window.__fb;
+    await fb.sendPasswordResetEmail(fb.auth, email);
+    errEl.style.color='#8ec16a';
+    errEl.textContent='✅ Email di reset inviata a '+email+'. Controlla la posta (anche spam).';
+    errEl.style.display='block';
+  }catch(e){
+    errEl.style.color='#ff4444';
+    errEl.textContent = e.code==='auth/user-not-found' ? 'Nessun account admin con questa email.' : 'Errore invio reset. Riprova.';
+    errEl.style.display='block';
+  }
+};
+
 window.adminLogin = async function(){
   const errEl = document.getElementById('guard-err');
+  errEl.style.color='#ff4444';
   errEl.style.display = 'none';
   const email = document.getElementById('guard-email').value.trim();
   const pass  = document.getElementById('guard-pass').value;
@@ -1305,7 +1325,22 @@ waitFB(()=>{
       const snap=await fb.getDocs(q);
       adminCatalogProducts=snap.docs.map(d=>({id:d.id,...d.data()}));
       renderAdminCatalog();
+      // Deep-link: admin.html?edit=<id> (arrivo da ✏️ sul sito) → apri modifica
+      try{ maybeOpenEditFromURL(); }catch(_){}
     } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
+  };
+
+  // Se l'URL contiene ?edit=<id>, vai alla pagina Prodotti e apri il modale di
+  // modifica per quel prodotto (usato dal pulsante ✏️ inline nello shop pubblico).
+  window.maybeOpenEditFromURL = function(){
+    const pid = new URLSearchParams(location.search).get('edit');
+    if(!pid) return;
+    const p = adminCatalogProducts.find(x=>x.id===pid);
+    if(!p) return; // catalogo non ancora pronto: verrà riprovato al prossimo load
+    // Consuma il parametro così un refresh non riapre di continuo il modale
+    try{ history.replaceState(null,'',location.pathname); }catch(_){}
+    try{ showAdminPg('prodotti'); }catch(_){}
+    setTimeout(()=>{ try{ openEditModal(pid); }catch(_){} }, 200);
   };
 
   let bulkMode = false;
