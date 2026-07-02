@@ -117,18 +117,35 @@ app.get('/proxyImage', async (c) => {
   const hit = await cache.match(cacheKey);
   if (hit && hit.ok) return new Response(hit.body, hit); // copia mutabile
 
+  const reqHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Referer': `https://${parsed.hostname}/`,
+    'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+    'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
+  };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
   try {
-    const upstream = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': `https://${parsed.hostname}/`,
-        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-      },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!upstream.ok) {
+    // Retry con backoff: Yupoo restituisce 5xx/429 in caso di throttling temporaneo
+    let upstream = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        upstream = await fetch(url, { headers: reqHeaders, signal: AbortSignal.timeout(12000) });
+      } catch (fe) {
+        if (attempt < 2) { await sleep(350 * (attempt + 1)); continue; }
+        throw fe;
+      }
+      if (upstream.ok) break;
+      // 5xx o 429 → riprova; 4xx (es. 404) → esci subito
+      if ((upstream.status >= 500 || upstream.status === 429) && attempt < 2) {
+        await sleep(350 * (attempt + 1));
+        continue;
+      }
+      break;
+    }
+    if (!upstream || !upstream.ok) {
       return new Response('Upstream error', {
-        status: upstream.status,
+        status: (upstream && upstream.status) || 502,
         headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
       });
     }
