@@ -2123,6 +2123,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Password</label>
           <input class="lf-in" id="a-pass" type="password" placeholder="min. 6 caratteri" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
         </div>
+        <button id="forgot-pass-btn" onclick="resetPassword()" style="align-self:flex-end;background:none;border:none;cursor:pointer;font-size:12px;color:var(--led);font-weight:600;padding:2px 0;margin-top:-6px;">Password dimenticata?</button>
         <button class="btn-led" id="auth-cta" onclick="doAuth()" style="margin-top:4px;width:100%;">Accedi →</button>
         <button onclick="switchTab(authTab==='li'?'reg':'li')" class="btn-g" style="width:100%;">
           <span id="switch-tab-lbl">Non hai un account? Registrati</span>
@@ -2987,6 +2988,28 @@ img{ -webkit-user-drag:none; user-select:none; }
     const cta=document.getElementById('auth-cta'); if(cta) cta.textContent=t==='li'?'Accedi →':'Crea Account →';
     const sp=document.getElementById('reg-social-proof'); if(sp) sp.style.display=t==='reg'?'block':'none';
     const sw=document.getElementById('switch-tab-lbl'); if(sw) sw.textContent=t==='li'?'Non hai un account? Registrati':'Hai già un account? Accedi';
+    const fp=document.getElementById('forgot-pass-btn'); if(fp) fp.style.display=t==='li'?'block':'none';
+  };
+
+  // Reset password via email
+  window.resetPassword=async function(){
+    const fb=window.__fb;
+    if(!fb){ showToast('⚠️ Riprova tra un istante.'); return; }
+    const email=(document.getElementById('a-email')?.value||'').trim();
+    if(!email){
+      showToast('✉️ Inserisci la tua email qui sopra, poi ripremi.');
+      document.getElementById('a-email')?.focus();
+      return;
+    }
+    try{
+      await fb.sendPasswordResetEmail(fb.auth,email);
+      showToast('✅ Email di reset inviata a '+email+'. Controlla la posta (anche spam).');
+    }catch(e){
+      const m=e.code==='auth/invalid-email'?'Email non valida.':
+              e.code==='auth/user-not-found'?'Nessun account con questa email.':
+              'Errore invio. Riprova.';
+      showToast('⚠️ '+m);
+    }
   };
 
   window.doAuth=async function(){
@@ -4724,19 +4747,27 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.doGoogleAuth=async function(){
     const fb=window.__fb;
     if(!fb){ showToast('⚠️ Firebase non ancora pronto, riprova.'); return; }
+    // Su mobile i popup sono spesso bloccati/inaffidabili → usa direttamente il redirect
+    const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if(isMobile){
+      try{ await fb.signInWithRedirect(fb.auth,fb._googleProvider); }
+      catch(e){ console.error('Google redirect error:',e.code,e.message); showToast('⚠️ Errore Google ('+(e.code||'unknown')+').'); }
+      return;
+    }
     try{
       const result=await fb.signInWithPopup(fb.auth,fb._googleProvider);
       await _saveGoogleUser(result.user);
       showToast('🎉 Benvenuto '+(result.user.displayName||result.user.email)+'!');
       showPg('home');
     } catch(e){
-      if(e.code==='auth/popup-blocked'){
-        // Fallback redirect se popup bloccato
-        try{ await fb.signInWithRedirect(fb.auth,fb._googleProvider); } catch(_){}
-      } else if(e.code!=='auth/popup-closed-by-user'){
-        console.error('Google auth error:',e.code,e.message);
-        showToast('⚠️ Errore Google ('+(e.code||'unknown')+'). Riprova.');
+      // Qualsiasi problema col popup (bloccato, chiuso, non supportato) → fallback redirect
+      if(e.code==='auth/popup-closed-by-user'){ return; }
+      if(e.code==='auth/popup-blocked'||e.code==='auth/cancelled-popup-request'||e.code==='auth/operation-not-supported-in-this-environment'){
+        try{ await fb.signInWithRedirect(fb.auth,fb._googleProvider); }catch(_){}
+        return;
       }
+      console.error('Google auth error:',e.code,e.message);
+      showToast('⚠️ Errore Google ('+(e.code||'unknown')+'). Verifica che il dominio sia autorizzato in Firebase.');
     }
   };
 
