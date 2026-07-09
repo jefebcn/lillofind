@@ -946,6 +946,8 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button class="drawer-acc" onclick="toggleDrawerAcc(this)">Tutti i Marchi <span class="drawer-acc-arr">▾</span></button>
         <div class="drawer-sub" id="dd-brands-m"></div>
 
+        <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('style','Sport'),80)" class="drawer-link">🏅 Sport</button>
+
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="location.href='subscriptions.html';" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
         <div style="height:1px;background:var(--border);margin:12px 0;"></div>
@@ -1038,6 +1040,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button class="nbtn" onclick="showPg('shop');resetFilters()">Marchi <span class="nav-dd-arr">▾</span></button>
         <div class="nav-dd-menu cols" id="dd-brands"></div>
       </div>
+      <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('style','Sport'),80)" style="display:inline-flex;align-items:center;gap:5px;">🏅 Sport</button>
       <button class="nbtn" onclick="showPg('lfpoints')">LFPoints</button>
       <button class="nbtn" onclick="location.href='subscriptions.html'" style="display:inline-flex;align-items:center;gap:5px;color:var(--k);font-weight:600;border:1px solid var(--border-2);border-radius:999px;padding:6px 14px;background:var(--card);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Digital</button>
       <a href="vault.html" class="nbtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:#fff;font-weight:600;border:none;border-radius:999px;padding:6px 14px;background:var(--led);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>LF Vault</a>
@@ -1174,6 +1177,26 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div class="carousel-skel"></div><div class="carousel-skel"></div>
       <div class="carousel-skel"></div><div class="carousel-skel"></div>
       <div class="carousel-skel"></div>
+    </div>
+  </section>
+
+  <!-- SPORT SECTION -->
+  <section id="home-sport-wrap" style="background:linear-gradient(135deg,#1a1c17 0%,#26271f 100%);color:var(--w);border-bottom:1px solid var(--border);padding:46px 0 42px;overflow:hidden;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 24px;margin-bottom:24px;">
+        <div>
+          <p class="slbl" style="color:var(--led2);margin-bottom:8px;">Performance &amp; Street</p>
+          <h2 class="bb" style="font-size:clamp(32px,6vw,56px);line-height:.92;color:var(--w);font-weight:800;letter-spacing:2px;display:flex;align-items:center;gap:14px;">SPORT <span style="font-size:.55em;">🏅</span></h2>
+          <p style="font-size:12px;color:#a9a89f;margin-top:10px;max-width:380px;line-height:1.6;">Sneakers, capi tecnici e streetwear dei migliori brand sportivi.</p>
+        </div>
+        <button onclick="showPg('shop');setTimeout(()=>setFilter('style','Sport'),80)" class="bb" style="background:var(--led);border:none;color:#fff;font-size:13px;letter-spacing:1px;cursor:pointer;white-space:nowrap;padding:12px 22px;border-radius:var(--radius-pill);display:inline-flex;align-items:center;gap:6px;box-shadow:var(--shadow);">VEDI TUTTO <span style="font-size:16px;">→</span></button>
+      </div>
+      <!-- Riga prodotti sport — popolata da JS -->
+      <div id="home-sport" style="display:flex;gap:12px;padding:0 24px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none;" class="hide-scrollbar">
+        <div class="carousel-skel"></div><div class="carousel-skel"></div>
+        <div class="carousel-skel"></div><div class="carousel-skel"></div>
+        <div class="carousel-skel"></div>
+      </div>
     </div>
   </section>
 
@@ -2942,8 +2965,8 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // ── Update active filter UI (tags + badge) ─────────────
   function updateFilterUI(){
-    const labelMap={model:'Categoria',brand:'Marchio',size:'Taglia',color:'Colore',gender:'Genere'};
-    const tags=Object.entries(filters).filter(([k,v])=>v&&k!=='style');
+    const labelMap={model:'Categoria',brand:'Marchio',size:'Taglia',color:'Colore',gender:'Genere',style:'Stile'};
+    const tags=Object.entries(filters).filter(([k,v])=>v);
     // Tags
     const tc=document.getElementById('fs-active-tags');
     if(tc) tc.innerHTML=tags.map(([k,v])=>
@@ -3655,6 +3678,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>c.toLowerCase()===filters.color.toLowerCase()))||''+(p.color||'').toLowerCase()===filters.color.toLowerCase())&&
       (!filters.gender||p.gender===filters.gender)&&
+      (!filters.style||(filters.style==='Sport'?isSportProduct(p):p.style===filters.style))&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
     if(_sLoad) _sLoad.style.display='none';
@@ -3732,7 +3756,49 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
     // Carosello e recently viewed — indipendenti, un errore non blocca gli altri
     try{ renderCarousel(); }catch(e){ console.warn('carousel',e); }
+    try{ renderHomeSport(); }catch(e){ console.warn('homeSport',e); }
     try{ renderRecentlyViewed(); }catch(e){ console.warn('recentlyViewed',e); }
+  }
+
+  // Un prodotto è "sport" se taggato style=Sport oppure di un brand sportivo.
+  const SPORT_BRANDS=['nike','adidas','jordan','puma','under armour','new balance','reebok','asics','the north face','lacoste','fila','kappa','champion'];
+  function isSportProduct(p){
+    if(!p) return false;
+    if(typeof p.style==='string' && p.style.toLowerCase()==='sport') return true;
+    const b=(p.brand||'').toLowerCase();
+    return SPORT_BRANDS.some(s=>b.includes(s));
+  }
+
+  function renderHomeSport(){
+    const track=document.getElementById('home-sport');
+    const wrap=document.getElementById('home-sport-wrap');
+    if(!track||!products.length) return;
+    const pool=products.filter(isSportProduct).slice(0,16);
+    if(!pool.length){
+      // Nessun prodotto sport: nascondi l'intera sezione per non lasciarla vuota.
+      if(wrap) wrap.style.display='none';
+      return;
+    }
+    if(wrap) wrap.style.display='';
+    const cards=pool.map(p=>{
+      const isSoldOut=p.soldOut===true;
+      return `<div class="carousel-card" onclick="openProduct('${p.id}')">
+        <div style="aspect-ratio:3/4;background:#111;overflow:hidden;position:relative;">
+          ${p.imageUrl
+            ? `<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`
+            : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#333;letter-spacing:2px;">NO IMG</div>`
+          }
+          ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;letter-spacing:2px;color:#fff;border:1px solid #fff;padding:2px 7px;">SOLD OUT</span></div>':''}
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
+            ${p.brand?`<p style="font-size:8px;color:rgba(200,255,0,.8);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
+            <p style="font-size:10px;color:#fff;line-height:1.2;font-family:'Manrope',monospace;">${(p.name||'').length>22?(p.name||'').slice(0,22)+'…':p.name||''}</p>
+            <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:16px;color:#fff;margin-top:3px;">€${(p.price||0).toFixed(0)}</p>
+          </div>
+        </div>
+      </div>`;
+    });
+    track.textContent='';
+    track.insertAdjacentHTML('afterbegin', cards.join(''));
   }
 
   function renderCarousel(){
@@ -5221,6 +5287,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     document.querySelectorAll(`.chip[data-key="${type}"][data-val="${value}"],.size-box[data-key="${type}"][data-val="${value}"]`).forEach(c=>c.classList.add('on'));
     const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=value?'':'none';
     const rstm=document.getElementById('rst-btn-m'); if(rstm) rstm.style.display=value?'':'none';
+    if(typeof updateFilterUI === 'function') updateFilterUI();
     if(typeof renderShop === 'function') renderShop();
   };
 
