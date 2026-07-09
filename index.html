@@ -3132,11 +3132,13 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   window.doAuth=async function(){
     const fb=window.__fb;
+    if(!fb){ showToast('⚠️ Sistema non ancora pronto, riprova tra un istante.'); return; }
     const email=document.getElementById('a-email').value.trim();
     const pass=document.getElementById('a-pass').value;
     const name=document.getElementById('a-name').value.trim();
     const btn=document.getElementById('auth-cta');
     if(!email||!pass)return showToast('Compila tutti i campi.');
+    if(authTab!=='li' && pass.length<6)return showToast('⚠️ Password min. 6 caratteri.');
     btn.textContent='...'; btn.disabled=true;
     try{
       if(authTab==='li'){
@@ -3145,17 +3147,29 @@ img{ -webkit-user-drag:none; user-select:none; }
       } else {
         if(!name){showToast('Inserisci il nome.');btn.textContent='Crea Account →';btn.disabled=false;return;}
         const c=await fb.createUserWithEmailAndPassword(fb.auth,email,pass);
-        await fb.setDoc(fb.doc(fb.db,'users',c.user.uid),{
-          email,displayName:name,lfpoints:50,totalSpent:0,
-          preferredSize:'',preferredBrands:[],createdAt:fb.serverTimestamp()
-        });
+        // La creazione del doc utente non deve bloccare il login: se fallisce
+        // (es. regole), l'account è comunque creato e l'utente è autenticato.
+        try{
+          await fb.setDoc(fb.doc(fb.db,'users',c.user.uid),{
+            email,displayName:name,lfpoints:50,totalSpent:0,
+            preferredSize:'',preferredBrands:[],createdAt:fb.serverTimestamp()
+          });
+        }catch(dberr){ console.warn('setDoc utente fallito (non bloccante):',dberr?.code||dberr); }
         showToast('🎉 Benvenuto! 50 LFPOINTS accreditati.');
       }
       showPg('home');
     } catch(e){
-      const m=e.code==='auth/invalid-credential'?'Credenziali errate.':
-               e.code==='auth/email-already-in-use'?'Email già usata.':
-               e.code==='auth/weak-password'?'Password min. 6 caratteri.':' Si è verificato un errore. Riprova.';
+      console.error('doAuth error:',e&&e.code,e&&e.message);
+      const code=e&&e.code||'';
+      let m;
+      if(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/user-not-found') m='Email o password errati.';
+      else if(code==='auth/email-already-in-use') m='Email già registrata. Prova ad accedere.';
+      else if(code==='auth/weak-password') m='Password troppo debole (min. 6 caratteri).';
+      else if(code==='auth/invalid-email') m='Indirizzo email non valido.';
+      else if(code==='auth/operation-not-allowed') m='Accesso email/password non abilitato. (Avvisa l\'assistenza)';
+      else if(code==='auth/too-many-requests') m='Troppi tentativi. Riprova tra qualche minuto.';
+      else if(code==='auth/network-request-failed') m='Connessione assente. Controlla la rete.';
+      else m='Errore ('+(code||'sconosciuto')+'). Riprova.';
       showToast('⚠️ '+m);
     }
     btn.textContent=authTab==='li'?'Accedi →':'Crea Account →'; btn.disabled=false;
