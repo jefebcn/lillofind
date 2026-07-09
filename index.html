@@ -3807,11 +3807,17 @@ img{ -webkit-user-drag:none; user-select:none; }
       return;
     }
     if(wrap) wrap.style.display='';
-    // Sfondo banner = foto del primo prodotto sport con immagine disponibile
+    // Sfondo banner: usa l'immagine personalizzata assets/sport-banner.jpg se
+    // presente, altrimenti fallback sulla foto del primo prodotto sport.
     const bg=document.getElementById('home-sport-bg');
     if(bg){
       const hero=pool.find(p=>p.imageUrl);
-      if(hero) bg.style.backgroundImage="url('"+pImg(hero.imageUrl)+"')";
+      const fallback=hero?"url('"+pImg(hero.imageUrl)+"')":'';
+      const CUSTOM='assets/sport-banner.jpg';
+      const probe=new Image();
+      probe.onload=()=>{ bg.style.backgroundImage="url('"+CUSTOM+"')"; };
+      probe.onerror=()=>{ if(fallback) bg.style.backgroundImage=fallback; };
+      probe.src=CUSTOM;
     }
     const cards=pool.map(p=>{
       const isSoldOut=p.soldOut===true;
