@@ -3787,32 +3787,53 @@ img{ -webkit-user-drag:none; user-select:none; }
     try{ renderRecentlyViewed(); }catch(e){ console.warn('recentlyViewed',e); }
   }
 
-  // Un prodotto è "sport" se taggato style=Sport oppure di un brand sportivo.
-  const SPORT_BRANDS=['nike','adidas','jordan','puma','under armour','new balance','reebok','asics','the north face','lacoste','fila','kappa','champion'];
+  // Classifica un prodotto come "sport" analizzandone le CARATTERISTICHE
+  // (tag admin, nome, modello, descrizione) — NON basta il brand, perché i
+  // brand sportivi vendono anche articoli lifestyle (es. ciabatte, Yeezy).
   function isSportProduct(p){
     if(!p) return false;
+    // 1) Tag esplicito dell'admin ha sempre la priorità (Stile = Sport)
     if(typeof p.style==='string' && p.style.toLowerCase()==='sport') return true;
-    const b=(p.brand||'').toLowerCase();
-    return SPORT_BRANDS.some(s=>b.includes(s));
+    const txt=((p.name||'')+' '+(p.model||'')+' '+(p.description||'')).toLowerCase();
+    // 2) Esclusioni: articoli non sportivi anche se di brand atletici
+    const EXCLUDE=['slide','ciabatt','sandal','infradito','clog','croc','pantofol','mule',
+      'yeezy','cardigan','piumino','cappotto','giacchetto','elegant','formal','jeans','denim','borsa','tracolla','portafogl','cintura','occhial','cappell'];
+    if(EXCLUDE.some(w=>txt.includes(w))) return false;
+    // 3) Sotto-stringhe distintive sportive (sicure come substring)
+    const SUB=['running','runner','training','jogging','tracksuit','sportiv','athletic',
+      'performance','ultraboost','ultra boost','air max','air zoom','climacool','tech fleece',
+      'dri-fit','dri fit','allenament','maglia da calcio','tuta sportiva','felpa tecnica'];
+    if(SUB.some(w=>txt.includes(w))) return true;
+    // 4) Parole intere sportive (evita falsi positivi tipo 'run' dentro altre parole)
+    const words=txt.split(/[^a-z0-9]+/).filter(Boolean);
+    const WORDS=['run','gym','palestra','fitness','calcio','football','soccer','basket','basketball',
+      'tennis','padel','rugby','volley','tuta','jersey','leggings','shorts','pantaloncini','corsa'];
+    return WORDS.some(w=>words.includes(w));
   }
 
   function renderHomeSport(){
     const track=document.getElementById('home-sport');
     const wrap=document.getElementById('home-sport-wrap');
-    if(!track||!products.length) return;
-    const pool=products.filter(isSportProduct).slice(0,16);
-    if(!pool.length){
-      // Nessun prodotto sport: nascondi l'intera sezione per non lasciarla vuota.
-      if(wrap) wrap.style.display='none';
-      return;
-    }
-    if(wrap) wrap.style.display='';
-    // Sfondo banner = foto del primo prodotto sport con immagine disponibile
+    if(!wrap) return;
+    const pool=(products&&products.length)?products.filter(isSportProduct).slice(0,16):[];
+    // Il banner resta SEMPRE visibile (promo motivazionale + link allo shop).
+    // Sfondo: immagine personalizzata assets/sport-banner.jpg se presente,
+    // altrimenti la foto del primo prodotto sport, altrimenti sfondo scuro.
     const bg=document.getElementById('home-sport-bg');
     if(bg){
       const hero=pool.find(p=>p.imageUrl);
-      if(hero) bg.style.backgroundImage="url('"+pImg(hero.imageUrl)+"')";
+      const fallback=hero?"url('"+pImg(hero.imageUrl)+"')":'';
+      const CUSTOM='assets/sport-banner.jpg';
+      const probe=new Image();
+      probe.onload=()=>{ bg.style.backgroundImage="url('"+CUSTOM+"')"; };
+      probe.onerror=()=>{ if(fallback) bg.style.backgroundImage=fallback; };
+      probe.src=CUSTOM;
     }
+    // La riga prodotti si mostra solo se ci sono veri prodotti sport
+    if(!track) return;
+    const rowWrap=track.parentElement;
+    if(!pool.length){ if(rowWrap) rowWrap.style.display='none'; return; }
+    if(rowWrap) rowWrap.style.display='';
     const cards=pool.map(p=>{
       const isSoldOut=p.soldOut===true;
       return `<div class="carousel-card" onclick="openProduct('${p.id}')">
