@@ -549,6 +549,23 @@ img{ -webkit-user-drag:none; user-select:none; }
   .carousel-skel{width:180px;}
 }
 
+/* ── SPORT BANNER ─────────────────────────────────────── */
+.sport-banner{position:relative;min-height:300px;display:flex;align-items:center;cursor:pointer;overflow:hidden;isolation:isolate;}
+@media(min-width:769px){.sport-banner{min-height:400px;}}
+.sport-banner-bg{position:absolute;inset:0;z-index:0;background:#20221b center/cover no-repeat;filter:brightness(.5) saturate(1.05);transition:transform .7s cubic-bezier(.2,.7,.2,1);}
+.sport-banner:hover .sport-banner-bg{transform:scale(1.06);}
+.sport-banner-ov{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(18,20,15,.95) 0%,rgba(18,20,15,.78) 42%,rgba(18,20,15,.35) 72%,rgba(18,20,15,.2) 100%);}
+.sport-banner-lines{position:absolute;inset:0;z-index:1;opacity:.14;pointer-events:none;
+  background:repeating-linear-gradient(115deg,transparent 0 34px,var(--led2) 34px 36px);}
+.sport-banner-runner{position:absolute;right:4%;bottom:0;z-index:1;height:88%;width:auto;color:var(--led);opacity:.22;pointer-events:none;}
+@media(max-width:640px){.sport-banner-runner{right:-6%;opacity:.13;}}
+.sport-banner-txt{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:44px 24px;width:100%;}
+.sport-banner-h{font-size:clamp(56px,13vw,132px);line-height:.82;font-weight:800;letter-spacing:2px;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.4);}
+.sport-banner-sub{font-size:14px;line-height:1.6;color:#d6d5cc;max-width:360px;margin:16px 0 24px;}
+.sport-banner-cta{display:inline-flex;align-items:center;gap:9px;background:var(--led);color:#fff;padding:14px 28px;border-radius:var(--radius-pill);font-size:13px;letter-spacing:1px;box-shadow:var(--shadow);transition:background .2s,transform .12s;}
+.sport-banner:hover .sport-banner-cta{background:#5e6446;}
+.sport-banner:active .sport-banner-cta{transform:scale(.97);}
+
 
 /* ── PERSPECTIVE GRID — hero background (mobile-first) ───────── */
 #hero-pgrid{
@@ -1181,17 +1198,27 @@ img{ -webkit-user-drag:none; user-select:none; }
   </section>
 
   <!-- SPORT SECTION -->
-  <section id="home-sport-wrap" style="background:linear-gradient(135deg,#1a1c17 0%,#26271f 100%);color:var(--w);border-bottom:1px solid var(--border);padding:46px 0 42px;overflow:hidden;">
-    <div style="max-width:1200px;margin:0 auto;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 24px;margin-bottom:24px;">
-        <div>
-          <p class="slbl" style="color:var(--led2);margin-bottom:8px;">Performance &amp; Street</p>
-          <h2 class="bb" style="font-size:clamp(32px,6vw,56px);line-height:.92;color:var(--w);font-weight:800;letter-spacing:2px;display:flex;align-items:center;gap:14px;">SPORT <span style="font-size:.55em;">🏅</span></h2>
-          <p style="font-size:12px;color:#a9a89f;margin-top:10px;max-width:380px;line-height:1.6;">Sneakers, capi tecnici e streetwear dei migliori brand sportivi.</p>
-        </div>
-        <button onclick="showPg('shop');setTimeout(()=>setFilter('style','Sport'),80)" class="bb" style="background:var(--led);border:none;color:#fff;font-size:13px;letter-spacing:1px;cursor:pointer;white-space:nowrap;padding:12px 22px;border-radius:var(--radius-pill);display:inline-flex;align-items:center;gap:6px;box-shadow:var(--shadow);">VEDI TUTTO <span style="font-size:16px;">→</span></button>
+  <section id="home-sport-wrap" style="background:#161812;color:var(--w);border-bottom:1px solid var(--border);overflow:hidden;">
+    <!-- BANNER cliccabile: foto prodotto sport + scritta motivazionale -->
+    <div class="sport-banner" onclick="showPg('shop');setTimeout(()=>setFilter('style','Sport'),80)">
+      <!-- Foto di sfondo (impostata da JS col primo prodotto sport) -->
+      <div id="home-sport-bg" class="sport-banner-bg"></div>
+      <!-- Overlay scuro per leggibilità testo -->
+      <div class="sport-banner-ov"></div>
+      <!-- Speed-lines diagonali (energia sport) -->
+      <div class="sport-banner-lines"></div>
+      <!-- Silhouette runner -->
+      <svg class="sport-banner-runner" viewBox="0 0 448 512" aria-hidden="true"><path fill="currentColor" d="M400 305.6c-4.8-14.5-15.9-26.2-30.3-31.4l-70.8-25.6-13.7-41.2c-8.4-25.2-31.5-42-58-42.1-6.3 0-12.6 1-18.6 3l-77.2 25.9c-14.4 4.8-26.6 14.6-34.4 27.6l-25.6 42.7c-9.1 15.2-4.2 34.9 11 44s34.9 4.2 44-11l25.6-42.7 39.4-13.2-50 155.4c-.9 2.8-1.4 5.8-1.4 8.8 0 16.9 13.1 31.4 30.4 32.4l89.4 5.2-27.7 92.3c-5.1 17 4.5 34.9 21.5 40s34.9-4.5 40-21.5l35.9-119.6c1-3.3 1.4-6.7 1.2-10-.7-13.9-10.9-25.6-24.7-28.2l-58.4-11 22.5-70 8.3 24.9c4.4 13.2 14.6 23.6 27.7 28.4l70.8 25.6c16.6 6 35-2.6 41-19.2s-2.6-35-19.2-41zM336 128c35.3 0 64-28.7 64-64S371.3 0 336 0s-64 28.7-64 64 28.7 64 64 64z"/></svg>
+      <!-- Testo motivazionale -->
+      <div class="sport-banner-txt">
+        <p class="slbl" style="color:var(--led2);margin-bottom:10px;">Performance &amp; Street</p>
+        <h2 class="bb sport-banner-h">DO IT.</h2>
+        <p class="sport-banner-sub">Sneakers e capi tecnici dei brand sportivi.<br>Nessuna scusa — inizia adesso.</p>
+        <span class="bb sport-banner-cta">SCOPRI LO SPORT <span style="font-size:16px;">→</span></span>
       </div>
-      <!-- Riga prodotti sport — popolata da JS -->
+    </div>
+    <!-- Riga prodotti sport — popolata da JS -->
+    <div style="max-width:1200px;margin:0 auto;padding:30px 0 42px;">
       <div id="home-sport" style="display:flex;gap:12px;padding:0 24px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none;" class="hide-scrollbar">
         <div class="carousel-skel"></div><div class="carousel-skel"></div>
         <div class="carousel-skel"></div><div class="carousel-skel"></div>
@@ -3780,6 +3807,12 @@ img{ -webkit-user-drag:none; user-select:none; }
       return;
     }
     if(wrap) wrap.style.display='';
+    // Sfondo banner = foto del primo prodotto sport con immagine disponibile
+    const bg=document.getElementById('home-sport-bg');
+    if(bg){
+      const hero=pool.find(p=>p.imageUrl);
+      if(hero) bg.style.backgroundImage="url('"+pImg(hero.imageUrl)+"')";
+    }
     const cards=pool.map(p=>{
       const isSoldOut=p.soldOut===true;
       return `<div class="carousel-card" onclick="openProduct('${p.id}')">
