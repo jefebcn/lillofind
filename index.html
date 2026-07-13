@@ -3787,9 +3787,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     try{ renderRecentlyViewed(); }catch(e){ console.warn('recentlyViewed',e); }
   }
 
-  // Classifica un prodotto come "sport" analizzandone le CARATTERISTICHE
-  // (tag admin, nome, modello, descrizione) — NON basta il brand, perché i
-  // brand sportivi vendono anche articoli lifestyle (es. ciabatte, Yeezy).
+  // Brand considerati sportivi (Nike in testa: mostrati per primi)
+  const SPORT_BRANDS=['nike','adidas','jordan','puma','new balance','under armour',
+    'asics','reebok','the north face','fila','kappa','champion','lacoste','umbro','mizuno'];
+  // Classifica un prodotto come "sport": brand sportivo OPPURE segnali sportivi
+  // nel testo, ESCLUDENDO gli articoli lifestyle (ciabatte, slide, accessori…).
   function isSportProduct(p){
     if(!p) return false;
     // 1) Tag esplicito dell'admin ha sempre la priorità (Stile = Sport)
@@ -3799,12 +3801,15 @@ img{ -webkit-user-drag:none; user-select:none; }
     const EXCLUDE=['slide','ciabatt','sandal','infradito','clog','croc','pantofol','mule',
       'yeezy','cardigan','piumino','cappotto','giacchetto','elegant','formal','jeans','denim','borsa','tracolla','portafogl','cintura','occhial','cappell'];
     if(EXCLUDE.some(w=>txt.includes(w))) return false;
-    // 3) Sotto-stringhe distintive sportive (sicure come substring)
+    // 3) Brand sportivo (es. Nike) → incluso
+    const brand=(p.brand||'').toLowerCase();
+    if(SPORT_BRANDS.some(b=>brand.includes(b))) return true;
+    // 4) Oppure segnali sportivi distintivi nel testo (brand non in lista)
     const SUB=['running','runner','training','jogging','tracksuit','sportiv','athletic',
       'performance','ultraboost','ultra boost','air max','air zoom','climacool','tech fleece',
       'dri-fit','dri fit','allenament','maglia da calcio','tuta sportiva','felpa tecnica'];
     if(SUB.some(w=>txt.includes(w))) return true;
-    // 4) Parole intere sportive (evita falsi positivi tipo 'run' dentro altre parole)
+    // 5) Parole intere sportive (evita falsi positivi tipo 'run' dentro altre parole)
     const words=txt.split(/[^a-z0-9]+/).filter(Boolean);
     const WORDS=['run','gym','palestra','fitness','calcio','football','soccer','basket','basketball',
       'tennis','padel','rugby','volley','tuta','jersey','leggings','shorts','pantaloncini','corsa'];
@@ -3815,7 +3820,14 @@ img{ -webkit-user-drag:none; user-select:none; }
     const track=document.getElementById('home-sport');
     const wrap=document.getElementById('home-sport-wrap');
     if(!wrap) return;
-    const pool=(products&&products.length)?products.filter(isSportProduct).slice(0,16):[];
+    // Filtra i prodotti sport e mette i Nike per primi
+    const pool=(products&&products.length)?products.filter(isSportProduct):[];
+    pool.sort((a,b)=>{
+      const an=(a.brand||'').toLowerCase().includes('nike')?0:1;
+      const bn=(b.brand||'').toLowerCase().includes('nike')?0:1;
+      return an-bn;
+    });
+    pool.splice(16); // massimo 16 nella riga
     // Il banner resta SEMPRE visibile (promo motivazionale + link allo shop).
     // Sfondo: immagine personalizzata assets/sport-banner.jpg se presente,
     // altrimenti la foto del primo prodotto sport, altrimenti sfondo scuro.
