@@ -825,8 +825,8 @@ waitFB(()=>{
     const btn=document.getElementById('ad-btn');
     btn.textContent='...'; btn.disabled=true;
     try{
-      const saveFn=lfCallable('saveProduct');
-      await saveFn({
+      // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker.
+      await fb.addDoc(fb.collection(fb.db,'products'),{
         name,price,
         description:document.getElementById('ad-desc').value.trim(),
         model:document.getElementById('ad-model').value.trim(),
@@ -836,7 +836,8 @@ waitFB(()=>{
         style:document.getElementById('ad-style').value,
         imageUrl:document.getElementById('ad-img').value.trim(),
         category:'', weightKg:0,
-        gender:document.getElementById('ad-gender').value||'unisex'
+        gender:document.getElementById('ad-gender').value||'unisex',
+        createdAt: fb.serverTimestamp()
       });
       showToast('✅ Prodotto salvato!');
       ['ad-name','ad-price','ad-desc','ad-model','ad-brand','ad-img','ad-colors'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -846,7 +847,7 @@ waitFB(()=>{
       document.getElementById('ad-gender').value='unisex';
       const ip=document.getElementById('img-prev'); if(ip) ip.style.display='none';
       products=[];
-    } catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
+    } catch(e){ console.error('adminSave:',e&&e.code,e&&e.message); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
     btn.textContent='Salva Prodotto →'; btn.disabled=false;
   };
 
@@ -857,11 +858,10 @@ waitFB(()=>{
     if(!confirm('Eliminare '+name+'?'))return;
     const fb=window.__fb;
     try{
-      const fn=lfCallable('deleteAdminProduct');
-      await fn({id:pid});
+      await fb.deleteDoc(fb.doc(fb.db,'products',pid));
       showToast('🗑 Prodotto eliminato.');
       loadAdminCatalog();
-    }catch(e){showToast('⚠️ Si è verificato un errore. Riprova.');}
+    }catch(e){ console.error('deleteProd:',e&&e.code,e&&e.message); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
   };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1031,18 +1031,18 @@ waitFB(()=>{
       const imgUrl=imgInput?.dataset.b64||'';
       if(!name||isNaN(price)){errors++;continue;}
       try{
-        const saveFn=lfCallable('saveProduct');
-        await saveFn({
+        await fb.addDoc(fb.collection(fb.db,'products'),{
           name,price,
           brand:bulkSelectedCat.brand||'',
           model:model||bulkSelectedCat.model||'',
           category:'', weightKg:0,
           sizes:size?[size]:['S','M','L','XL'],
-          size,imageUrl:imgUrl,colors:[],description:''
+          size,imageUrl:imgUrl,colors:[],description:'',
+          createdAt: fb.serverTimestamp()
         });
         saved++;
         if(status) status.textContent=`${saved} prodotti salvati...`;
-      } catch(e){errors++;}
+      } catch(e){ console.error('bulkSave:',e&&e.code,e&&e.message); errors++; }
     }
     products=[];// force reload
     btn.textContent='💾 Salva Tutti →'; btn.disabled=false;
@@ -1349,13 +1349,20 @@ waitFB(()=>{
     if(!docId) return;
     if(btn){ btn.textContent='...'; btn.disabled=true; }
     try{
-      const fn=lfCallable('updateAdminOrder');
-      await fn({id:docId, status:'confirmed'});
+      // Scrittura diretta su Firestore (le regole la consentono agli admin).
+      // Evita il Worker, che richiederebbe un service account non configurato.
+      await fb.updateDoc(fb.doc(fb.db,'orders',docId), {
+        status:'confirmed',
+        confirmedAt: fb.serverTimestamp()
+      });
       const idx = adminOrders.findIndex(o=>o._docId===docId);
       if(idx>=0) adminOrders[idx].status='confirmed';
       renderAdminOrders();
       showToast('✅ Ordine confermato!');
-    } catch(e){ showToast('⚠️ Si è verificato un errore. Riprova.'); }
+    } catch(e){
+      console.error('confirmAdminOrder:', e && e.code, e && e.message);
+      showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')');
+    }
     if(btn){ btn.textContent='✅ Conferma Ordine'; btn.disabled=false; }
   };
 
@@ -1461,10 +1468,9 @@ waitFB(()=>{
     if(btn){ btn.textContent = 'Eliminazione...'; btn.style.pointerEvents='none'; }
     let deleted = 0;
     const ids = [...bulkSelected];
-    const delFn=lfCallable('deleteAdminProduct');
     for(const pid of ids){
-      try{ await delFn({id:pid}); deleted++; }
-      catch(e){ console.error('Errore eliminando',pid,e); }
+      try{ await fb.deleteDoc(fb.doc(fb.db,'products',pid)); deleted++; }
+      catch(e){ console.error('Errore eliminando',pid,e&&e.code,e&&e.message); }
     }
     showToast('Eliminat' + (deleted===1?'o':'i') + ' ' + deleted + ' prodott' + (deleted===1?'o':'i') + '.');
     exitBulkMode();
@@ -1612,8 +1618,9 @@ waitFB(()=>{
     const btn = document.getElementById('edit-save-btn');
     btn.textContent = 'Salvando...'; btn.disabled = true;
     try{
-      const fn=lfCallable('updateAdminProduct');
-      await fn({id:pid, data:{name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')}});
+      // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker.
+      await fb.updateDoc(fb.doc(fb.db,'products',pid),
+        {name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')});
       // Update local cache
       const idx = adminCatalogProducts.findIndex(p=>p.id===pid);
       if(idx>=0) adminCatalogProducts[idx] = {...adminCatalogProducts[idx], name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')};
@@ -1623,7 +1630,7 @@ waitFB(()=>{
       closeEditModal();
       renderAdminCatalog();
       showToast('✅ Prodotto aggiornato!');
-    } catch(e){ showToast('⚠️ Si è verificato un errore. Riprova.'); }
+    } catch(e){ console.error('saveEditProduct:',e&&e.code,e&&e.message); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
     btn.textContent = '💾 SALVA MODIFICHE →'; btn.disabled = false;
   };
 
@@ -1731,15 +1738,17 @@ waitFB(()=>{
     const btn2 = document.getElementById('gc-only-new-btn');
     btn.disabled = true; btn2.disabled = true;
     try {
-      const fn = lfCallable('batchSetGender');
-      for (let i = 0; i < updates.length; i += 500) {
-        btn.textContent = `Applicazione... ${Math.min(i+500,updates.length)}/${updates.length}`;
-        await fn({ updates: updates.slice(i, i + 500) });
+      // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker.
+      let done = 0;
+      for (const u of updates) {
+        await fb.updateDoc(fb.doc(fb.db,'products',u.id), { gender: u.gender });
+        done++;
+        if(done % 10 === 0 || done === updates.length) btn.textContent = `Applicazione... ${done}/${updates.length}`;
       }
       showToast('✅ ' + updates.length + ' prodotti aggiornati!');
       updates.forEach(u => { const r = _gcData.find(x => x.id === u.id); if(r){ r.currentGender = u.gender; r.overrideGender = null; } });
       gcRenderTable(_gcViewFilter);
-    } catch(e) { showToast('Errore: ' + e.message); }
+    } catch(e) { console.error('batchSetGender:',e&&e.code,e&&e.message); showToast('Errore: ' + ((e&&e.code)||e.message)); }
     btn.textContent = 'Applica Classificazione'; btn.disabled = false; btn2.disabled = false;
   }
 
