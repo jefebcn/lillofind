@@ -1314,7 +1314,12 @@ waitFB(()=>{
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p class="bb" style="font-size:30px;">€${(o.total||0).toFixed(2)}</p>
-            <p style="font-size:12px;color:var(--dim);">${payEmoji} ${o.payment||'—'}</p>
+            ${(o.subtotal!=null||o.shipping!=null)?`<p style="font-size:12px;color:var(--dim);margin-top:2px;line-height:1.5;">
+              ${o.subtotal!=null?'Merce €'+Number(o.subtotal).toFixed(2):''}
+              ${o.shipping!=null?'<br>Spedizione '+(Number(o.shipping)>0?'€'+Number(o.shipping).toFixed(2):'Gratis'):''}
+              ${Number(o.discount)>0?'<br>Sconto −€'+Number(o.discount).toFixed(2):''}
+            </p>`:''}
+            <p style="font-size:12px;color:var(--dim);margin-top:4px;">${payEmoji} ${o.payment||'—'}</p>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;padding:16px;background:rgba(255,255,255,.04);border-left:3px solid rgba(255,255,255,.15);">
@@ -1390,6 +1395,9 @@ waitFB(()=>{
       L.push('• '+(i.name||'—')+(det?' ('+det+')':'')+' ×'+q+' — €'+tot);
     });
     L.push('');
+    if(o.subtotal!=null) L.push('Merce: €'+Number(o.subtotal).toFixed(2));
+    if(o.shipping!=null) L.push('Spedizione: '+(Number(o.shipping)>0?'€'+Number(o.shipping).toFixed(2):'Gratis'));
+    if(Number(o.discount)>0) L.push('Sconto: −€'+Number(o.discount).toFixed(2));
     L.push('💰 *TOTALE: €'+(Number(o.total)||0).toFixed(2)+'*');
     const pay={card:'Carta',paypal:'PayPal',bonifico:'Bonifico'}[o.payment]||o.payment||'—';
     L.push('💳 Pagamento: '+pay);
@@ -1441,7 +1449,9 @@ waitFB(()=>{
         td{padding:11px 6px;border-bottom:1px solid #eee;vertical-align:top;}
         td.c{text-align:center;} td.r{text-align:right;white-space:nowrap;}
         .det{font-size:12px;color:#999;}
-        .tot{margin-top:18px;text-align:right;font-size:22px;font-weight:800;}
+        .sums{margin-top:14px;margin-left:auto;width:260px;font-size:14px;}
+        .sum{display:flex;justify-content:space-between;padding:5px 0;color:#3a3a34;}
+        .tot{margin-top:12px;text-align:right;font-size:22px;font-weight:800;border-top:2px solid #23231f;padding-top:12px;}
         .tot small{display:block;font-size:11px;font-weight:600;color:#6b6b63;letter-spacing:1px;text-transform:uppercase;}
         .foot{margin-top:34px;padding-top:16px;border-top:1px solid #e7e2d8;font-size:11px;color:#a6a49b;line-height:1.6;}
         .noprint{margin-top:26px;text-align:center;}
@@ -1459,6 +1469,11 @@ waitFB(()=>{
       <h2>Articoli</h2>
       <table><thead><tr><th>Prodotto</th><th class="c">Qtà</th><th class="r">Prezzo</th><th class="r">Totale</th></tr></thead>
       <tbody>${rows||'<tr><td colspan="4">—</td></tr>'}</tbody></table>
+      <div class="sums">
+        ${o.subtotal!=null?`<div class="sum"><span>Merce</span><span>€${Number(o.subtotal).toFixed(2)}</span></div>`:''}
+        ${o.shipping!=null?`<div class="sum"><span>Spedizione</span><span>${Number(o.shipping)>0?'€'+Number(o.shipping).toFixed(2):'Gratis'}</span></div>`:''}
+        ${Number(o.discount)>0?`<div class="sum"><span>Sconto</span><span>−€${Number(o.discount).toFixed(2)}</span></div>`:''}
+      </div>
       <div class="tot"><small>Totale · Pagamento: ${escH(pay)}</small>€${(Number(o.total)||0).toFixed(2)}</div>
       ${o.notes?`<h2>Note</h2><div style="font-size:14px;">${escH(o.notes)}</div>`:''}
       <div class="foot">Documento di cortesia non fiscale. Grazie per aver scelto LilloFind.</div>
