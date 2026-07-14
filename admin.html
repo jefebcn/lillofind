@@ -1338,6 +1338,8 @@ waitFB(()=>{
         ${o.notes?`<div style="font-size:13px;color:var(--mid);font-style:italic;margin-bottom:12px;">📝 ${escH(o.notes)}</div>`:''}
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
           ${isPending?`<button onclick="confirmAdminOrder('${o._docId}',this)" class="btn-led" style="padding:11px 22px;font-size:13px;">✅ Conferma Ordine</button>`:''}
+          <button onclick="copyOrderMessage('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;background:#25D366;">📲 Messaggio WhatsApp</button>
+          <button onclick="printOrderReceipt('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">🧾 Ricevuta</button>
           <button onclick="sendTrackingFromOrder('${(o.email||'').replace(/'/g,"\\'")}','${(o.name||'').replace(/'/g,"\\'")}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📦 Assegna Tracking</button>
         </div>
       </div>`;
@@ -1364,6 +1366,108 @@ waitFB(()=>{
       showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')');
     }
     if(btn){ btn.textContent='✅ Conferma Ordine'; btn.disabled=false; }
+  };
+
+  // Costruisce il riepilogo testuale dell'ordine (per WhatsApp / copia)
+  function buildOrderMessage(o){
+    const L=[];
+    L.push('🧾 *LILLOFIND — Riepilogo Ordine*');
+    if(o.orderId) L.push('N° ordine: '+o.orderId);
+    const ts=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT'):'';
+    if(ts) L.push('Data: '+ts);
+    L.push('');
+    L.push('👤 '+(o.name||'—'));
+    if(o.phone) L.push('📞 '+o.phone);
+    const a=o.address||{};
+    const addr=[a.street,[a.zip,a.city].filter(Boolean).join(' '),a.country].filter(Boolean).join(', ');
+    if(addr) L.push('📍 '+addr);
+    L.push('');
+    L.push('🛍️ *Articoli:*');
+    (o.items||[]).forEach(i=>{
+      const q=i.qty||1;
+      const tot=((i.price||0)*q).toFixed(2);
+      const det=[i.brand,i.size?'Tg '+i.size:'',i.color].filter(Boolean).join(' · ');
+      L.push('• '+(i.name||'—')+(det?' ('+det+')':'')+' ×'+q+' — €'+tot);
+    });
+    L.push('');
+    L.push('💰 *TOTALE: €'+(Number(o.total)||0).toFixed(2)+'*');
+    const pay={card:'Carta',paypal:'PayPal',bonifico:'Bonifico'}[o.payment]||o.payment||'—';
+    L.push('💳 Pagamento: '+pay);
+    if(o.notes) L.push('📝 Note: '+o.notes);
+    L.push('');
+    L.push('Grazie per aver scelto LilloFind! 🖤');
+    return L.join('\n');
+  }
+
+  // Copia il messaggio e, se c'è il telefono, apre WhatsApp precompilato
+  window.copyOrderMessage = async function(docId){
+    const o = adminOrders.find(x=>x._docId===docId);
+    if(!o){ showToast('⚠️ Ordine non trovato.'); return; }
+    const msg = buildOrderMessage(o);
+    try{ await navigator.clipboard.writeText(msg); showToast('📋 Messaggio copiato!'); }
+    catch(e){ try{ prompt('Copia il messaggio:', msg); }catch(_){} }
+    const phone=(''+(o.phone||'')).replace(/[^0-9]/g,'');
+    if(phone) window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+  };
+
+  // Apre una ricevuta stampabile (Stampa → Salva come PDF)
+  window.printOrderReceipt = function(docId){
+    const o = adminOrders.find(x=>x._docId===docId);
+    if(!o){ showToast('⚠️ Ordine non trovato.'); return; }
+    const ts=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleString('it-IT'):'';
+    const a=o.address||{};
+    const addr=[a.street,[a.zip,a.city].filter(Boolean).join(' '),a.country].filter(Boolean).join(', ');
+    const pay={card:'Carta',paypal:'PayPal',bonifico:'Bonifico'}[o.payment]||o.payment||'—';
+    const rows=(o.items||[]).map(i=>{
+      const q=i.qty||1;
+      const det=[i.brand,i.size?'Tg '+i.size:'',i.color].filter(Boolean).join(' · ');
+      return `<tr><td>${escH(i.name||'—')}${det?'<br><span class="det">'+escH(det)+'</span>':''}</td>`
+        +`<td class="c">${q}</td><td class="r">€${(i.price||0).toFixed(2)}</td>`
+        +`<td class="r">€${((i.price||0)*q).toFixed(2)}</td></tr>`;
+    }).join('');
+    const html=`<!doctype html><html lang="it"><head><meta charset="utf-8">
+      <title>Ricevuta ${escH(o.orderId||'')}</title>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Helvetica Neue',Arial,sans-serif;color:#23231f;background:#fff;padding:40px;max-width:720px;margin:0 auto;}
+        .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #23231f;padding-bottom:18px;margin-bottom:22px;}
+        .brand{font-size:26px;font-weight:800;letter-spacing:2px;}
+        .brand span{color:#6f7552;}
+        .doc{text-align:right;font-size:12px;color:#6b6b63;line-height:1.6;}
+        h2{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#6f7552;margin:22px 0 8px;}
+        .grid{display:flex;gap:40px;flex-wrap:wrap;font-size:14px;line-height:1.7;}
+        table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;}
+        th{text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#6b6b63;border-bottom:2px solid #e7e2d8;padding:8px 6px;}
+        td{padding:11px 6px;border-bottom:1px solid #eee;vertical-align:top;}
+        td.c{text-align:center;} td.r{text-align:right;white-space:nowrap;}
+        .det{font-size:12px;color:#999;}
+        .tot{margin-top:18px;text-align:right;font-size:22px;font-weight:800;}
+        .tot small{display:block;font-size:11px;font-weight:600;color:#6b6b63;letter-spacing:1px;text-transform:uppercase;}
+        .foot{margin-top:34px;padding-top:16px;border-top:1px solid #e7e2d8;font-size:11px;color:#a6a49b;line-height:1.6;}
+        .noprint{margin-top:26px;text-align:center;}
+        .noprint button{background:#23231f;color:#fff;border:none;padding:12px 26px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;}
+        @media print{.noprint{display:none;}body{padding:0;}}
+      </style></head><body>
+      <div class="top">
+        <div><div class="brand">LILLO<span>FIND</span></div><div style="font-size:12px;color:#6b6b63;margin-top:4px;">lillofind.shop</div></div>
+        <div class="doc"><strong>RICEVUTA</strong><br>N° ${escH(o.orderId||'—')}<br>${escH(ts||'')}</div>
+      </div>
+      <div class="grid">
+        <div><h2>Cliente</h2>${escH(o.name||'—')}<br>${escH(o.email||'')}<br>${escH(o.phone||'')}</div>
+        <div><h2>Spedizione</h2>${escH(addr||'—')}</div>
+      </div>
+      <h2>Articoli</h2>
+      <table><thead><tr><th>Prodotto</th><th class="c">Qtà</th><th class="r">Prezzo</th><th class="r">Totale</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="4">—</td></tr>'}</tbody></table>
+      <div class="tot"><small>Totale · Pagamento: ${escH(pay)}</small>€${(Number(o.total)||0).toFixed(2)}</div>
+      ${o.notes?`<h2>Note</h2><div style="font-size:14px;">${escH(o.notes)}</div>`:''}
+      <div class="foot">Documento di cortesia non fiscale. Grazie per aver scelto LilloFind.</div>
+      <div class="noprint"><button onclick="window.print()">🖨️ Stampa / Salva PDF</button></div>
+      </body></html>`;
+    const w=window.open('','_blank');
+    if(!w){ showToast('⚠️ Consenti i popup per aprire la ricevuta.'); return; }
+    w.document.write(html);
+    w.document.close();
   };
 
   window.sendTrackingFromOrder = function(email, name){
