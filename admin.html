@@ -1355,6 +1355,7 @@ waitFB(()=>{
           ${isPending?`<button onclick="confirmAdminOrder('${o._docId}',this)" class="btn-led" style="padding:11px 22px;font-size:13px;">✅ Conferma Ordine</button>`:''}
           <button onclick="copyOrderMessage('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;background:#25D366;">📲 Messaggio WhatsApp</button>
           <button onclick="printOrderReceipt('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">🧾 Ricevuta</button>
+          <button onclick="openQCPhotos('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📸 Foto QC${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?' ('+o.qcPhotos.length+')':''}</button>
           <button onclick="sendTrackingFromOrder('${(o.email||'').replace(/'/g,"\\'")}','${(o.name||'').replace(/'/g,"\\'")}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📦 Assegna Tracking</button>
         </div>
       </div>`;
@@ -1505,6 +1506,45 @@ waitFB(()=>{
     if(!w){ showToast('⚠️ Consenti i popup per aprire la ricevuta.'); return; }
     w.document.write(html);
     w.document.close();
+  };
+
+  // Foto QC dell'ordine: l'admin allega foto reali → il cliente le vede nel profilo
+  window.openQCPhotos = function(docId){
+    const o = adminOrders.find(x=>x._docId===docId);
+    if(!o){ showToast('⚠️ Ordine non trovato.'); return; }
+    const existing = Array.isArray(o.qcPhotos)? o.qcPhotos.slice() : [];
+    const box=document.createElement('div');
+    box.id='qc-modal';
+    box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    box.onclick=function(e){ if(e.target===box) box.remove(); };
+    box.innerHTML='<div style="background:#141414;color:#fff;max-width:480px;width:100%;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">'
+      +'<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center;"><strong>📸 Foto QC — '+(o.orderId||'')+'</strong><span onclick="document.getElementById(\'qc-modal\').remove()" style="cursor:pointer;font-size:20px;opacity:.6;">×</span></div>'
+      +'<div style="padding:18px 20px;">'
+      +'<p style="font-size:12px;color:#aaa;margin-bottom:8px;">Incolla gli URL delle foto (uno per riga) oppure carica dei file. Il cliente le vedrà nel suo profilo.</p>'
+      +'<textarea id="qc-urls" placeholder="https://... (una per riga)" style="width:100%;min-height:80px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:8px;padding:10px;font-size:12px;">'+existing.join('\n')+'</textarea>'
+      +'<div style="margin:10px 0;"><input type="file" id="qc-files" accept="image/*" multiple style="font-size:12px;color:#aaa;"/></div>'
+      +'<div id="qc-preview" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>'
+      +'<button id="qc-save" style="width:100%;background:var(--led);color:#fff;border:none;padding:12px;border-radius:999px;font-weight:700;cursor:pointer;">Salva foto QC</button>'
+      +'</div></div>';
+    document.body.appendChild(box);
+    const uploaded=[];
+    document.getElementById('qc-files').onchange=function(ev){
+      [...ev.target.files].forEach(file=>{
+        const r=new FileReader();
+        r.onload=e=>{ uploaded.push(e.target.result); const im=document.createElement('img'); im.src=e.target.result; im.style.cssText='width:54px;height:54px;object-fit:cover;border-radius:6px;'; document.getElementById('qc-preview').appendChild(im); };
+        r.readAsDataURL(file);
+      });
+    };
+    document.getElementById('qc-save').onclick=async function(){
+      const fb=window.__fb;
+      const urls=(document.getElementById('qc-urls').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+      const all=urls.concat(uploaded);
+      try{
+        await fb.updateDoc(fb.doc(fb.db,'orders',docId),{qcPhotos:all});
+        const idx=adminOrders.findIndex(x=>x._docId===docId); if(idx>=0) adminOrders[idx].qcPhotos=all;
+        box.remove(); renderAdminOrders(); showToast('✅ Foto QC salvate ('+all.length+')');
+      }catch(e){ console.error('QC save:',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+    };
   };
 
   window.sendTrackingFromOrder = function(email, name){
