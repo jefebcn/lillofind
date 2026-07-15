@@ -7,9 +7,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Admin determinato dall'email autenticata (allowlist), NON da un campo del
+    // documento utente: quel campo è scrivibile dall'utente stesso e non deve
+    // conferire privilegi. Le email admin sono uniche in Firebase Auth
+    // (nessun altro può registrarle) → nessuna auto-promozione possibile.
     function isAdmin() {
       return signedIn() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+        request.auth.token.email in ['yishionvt@gmail.com', 'admin@lillofind.com'];
+    }
+
+    // Impedisce all'utente di scriversi isAdmin:true sul proprio documento
+    // (difesa in profondità: le regole non lo usano, ma evita confusione).
+    function noSelfAdmin() {
+      return !('isAdmin' in request.resource.data)
+        || request.resource.data.isAdmin == resource.data.get('isAdmin', false);
     }
 
     // Products — lettura pubblica, scrittura solo admin
@@ -28,7 +39,7 @@ service cloud.firestore {
     // Users — utente legge/scrive il proprio doc, admin legge tutti
     match /users/{uid} {
       allow read:  if request.auth.uid == uid || isAdmin();
-      allow write: if request.auth.uid == uid || isAdmin();
+      allow write: if isAdmin() || (request.auth.uid == uid && noSelfAdmin());
     }
 
     // Richieste prodotto ("non trovo prodotto") — chiunque può inviare, solo admin legge
