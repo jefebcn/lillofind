@@ -54,6 +54,19 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Referral — il nuovo utente crea il doc riferendo se stesso come "referred";
+    // solo il referrer può leggerlo e segnarlo "credited" (per accreditarsi i punti).
+    match /referrals/{id} {
+      allow create: if signedIn()
+        && request.resource.data.referred == request.auth.uid
+        && request.resource.data.referrer != request.auth.uid;
+      allow read:   if isAdmin() || (signedIn() && resource.data.referrer == request.auth.uid);
+      allow update: if signedIn() && resource.data.referrer == request.auth.uid
+        && request.resource.data.referrer == resource.data.referrer
+        && request.resource.data.referred == resource.data.referred;
+      allow delete: if isAdmin();
+    }
+
     // Recensioni prodotto — lettura pubblica; scrittura solo utenti loggati
     // (una recensione per il proprio account); modifica/eliminazione admin.
     match /reviews/{id} {
