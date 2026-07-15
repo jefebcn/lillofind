@@ -49,6 +49,10 @@
       fbq('init', c.metaPixel); fbq('track', 'PageView');
     }
   })();
+  // PWA: registra il service worker (HTML sempre network-first → nessun contenuto obsoleto)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
+  }
 </script>
 <script src="https://js.stripe.com/v3/"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -929,6 +933,8 @@ img{ -webkit-user-drag:none; user-select:none; }
 </head>
 <body>
 
+<a href="#main" style="position:absolute;left:-9999px;top:0;z-index:100000;background:var(--k);color:#fff;padding:10px 16px;border-radius:0 0 8px 0;" onfocus="this.style.left='0'" onblur="this.style.left='-9999px'">Vai al contenuto</a>
+
 <!-- ══════════ TOAST ══════════ -->
 <div id="toast"></div>
 
@@ -972,7 +978,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 <!-- ══════════ MOBILE HEADER ══════════ -->
 <header id="mob-hdr" style="position:relative;">
-  <button onclick="openDrawer()" style="background:none;border:none;cursor:pointer;color:var(--k);font-size:22px;padding:8px;min-width:44px;flex-shrink:0;">☰</button>
+  <button onclick="openDrawer()" aria-label="Apri menu" style="background:none;border:none;cursor:pointer;color:var(--k);font-size:22px;padding:8px;min-width:44px;flex-shrink:0;">☰</button>
   <button onclick="showPg('home')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:4px;color:var(--k);white-space:nowrap;">LILLOFIND</button>
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <div id="m-badge" style="display:none;background:var(--led);color:#fff;padding:4px 10px;border-radius:999px;font-size:10px;letter-spacing:.5px;cursor:pointer;" onclick="showPg('lfpoints')">
@@ -1133,6 +1139,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ════════════════════════════════════════════════════════
      HOME PAGE
 ════════════════════════════════════════════════════════ -->
+<span id="main" tabindex="-1"></span>
 <div id="pg-home" class="pg on">
 
   <!-- HERO — Mobile-first: globe fills top, content anchored to bottom -->
