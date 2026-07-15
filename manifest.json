@@ -1,13 +1,31 @@
 {
-  "name": "LilloFind",
+  "id": "/",
+  "name": "LilloFind — Streetwear & Sneakers",
   "short_name": "LilloFind",
-  "description": "Streetwear Premium — LilloFind Shop",
-  "start_url": ".",
+  "description": "Streetwear autentico, sneakers e capi sportivi dei migliori brand. Fresh drop ogni settimana, foto QC prima della spedizione e programma LFPoints.",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#080808",
-  "theme_color": "#080808",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "lang": "it",
+  "dir": "ltr",
+  "background_color": "#161812",
+  "theme_color": "#23231f",
+  "categories": ["shopping", "lifestyle"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "assets/screenshot-1.jpg", "sizes": "1080x1920", "type": "image/jpeg", "form_factor": "narrow", "label": "Fresh drop e streetwear" },
+    { "src": "assets/screenshot-2.jpg", "sizes": "1080x1920", "type": "image/jpeg", "form_factor": "narrow", "label": "Sport e LFPoints" }
+  ],
+  "shortcuts": [
+    { "name": "Shop", "short_name": "Shop", "url": "/?utm_source=pwa&go=shop", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Sport", "short_name": "Sport", "url": "/?utm_source=pwa&go=sport", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "LFPoints", "short_name": "LFPoints", "url": "/?utm_source=pwa&go=lfpoints", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }

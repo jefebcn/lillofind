@@ -938,6 +938,64 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ══════════ TOAST ══════════ -->
 <div id="toast"></div>
 
+<!-- ══════════ INSTALLA APP (PWA) ══════════ -->
+<div id="pwa-install" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:9000;background:var(--k);color:var(--w);border-radius:16px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.35);align-items:center;gap:12px;max-width:480px;margin:0 auto;">
+  <img src="icon-192.png" alt="" style="width:44px;height:44px;border-radius:10px;flex-shrink:0;"/>
+  <div style="flex:1;min-width:0;">
+    <p style="font-weight:700;font-size:14px;line-height:1.2;">Installa l'app LilloFind</p>
+    <p style="font-size:11px;opacity:.72;line-height:1.3;">Drop, offerte e ordini a portata di tap.</p>
+  </div>
+  <button onclick="lfInstall()" style="background:var(--led);color:#fff;border:none;padding:10px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Installa</button>
+  <button onclick="lfDismissInstall()" aria-label="Chiudi" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;opacity:.55;line-height:1;">×</button>
+</div>
+
+<script>
+(function(){
+  var deferred=null;
+  function el(){ return document.getElementById('pwa-install'); }
+  function isStandalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; }
+  function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
+  function dismissed(){ try{ return localStorage.getItem('lf_pwa_dismiss')==='1'; }catch(_){ return false; } }
+  function show(){ if(isStandalone()||dismissed()) return; var b=el(); if(b) b.style.display='flex'; }
+  window.lfDismissInstall=function(){ try{ localStorage.setItem('lf_pwa_dismiss','1'); }catch(_){}; var b=el(); if(b) b.style.display='none'; };
+  window.lfInstall=async function(){
+    var b=el();
+    if(deferred){ deferred.prompt(); var c=await deferred.userChoice; deferred=null; if(b) b.style.display='none'; if(window.gtag&&c) gtag('event','pwa_install_'+(c.outcome||'x')); return; }
+    if(isIOS()){ lfShowIOSInstall(); return; }
+    if(b) b.style.display='none';
+  };
+  window.lfShowIOSInstall=function(){
+    if(document.getElementById('lf-ios-install')) return;
+    var d=document.createElement('div');
+    d.id='lf-ios-install';
+    d.style.cssText='position:fixed;inset:0;background:rgba(20,20,17,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:22px;';
+    d.onclick=function(e){ if(e.target===d) d.remove(); };
+    d.innerHTML='<div style="background:#fff;color:#23231f;max-width:360px;width:100%;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">'
+      +'<div style="background:#23231f;color:#f5f2ec;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;">Installa su iPhone</strong><span onclick="document.getElementById(\'lf-ios-install\').remove()" style="cursor:pointer;font-size:20px;opacity:.7;">×</span></div>'
+      +'<div style="padding:20px;font-size:14px;line-height:1.7;">'
+      +'<p style="margin-bottom:14px;">Aggiungi LilloFind alla schermata Home in 2 passaggi:</p>'
+      +'<p style="margin-bottom:10px;">1️⃣ Tocca il pulsante <strong>Condividi</strong> <span style="display:inline-block;border:1px solid #ccc;border-radius:6px;padding:0 6px;">&#8613;</span> nella barra di Safari.</p>'
+      +'<p>2️⃣ Scegli <strong>“Aggiungi a Home”</strong> ➕ e conferma.</p>'
+      +'</div></div>';
+    document.body.appendChild(d);
+  };
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred=e; setTimeout(show, 3500); });
+  window.addEventListener('appinstalled', function(){ var b=el(); if(b) b.style.display='none'; try{ localStorage.setItem('lf_pwa_dismiss','1'); }catch(_){}; if(window.gtag) gtag('event','pwa_installed'); });
+  window.addEventListener('load', function(){ if(isIOS() && !isStandalone() && !dismissed()) setTimeout(show, 4500); });
+
+  // Scorciatoie manifest (?go=shop|sport|lfpoints) → naviga quando l'app è pronta
+  var go=new URLSearchParams(location.search).get('go');
+  if(go){ var t=setInterval(function(){
+      if(typeof window.showPg==='function'){ clearInterval(t);
+        if(go==='shop'){ showPg('shop'); if(window.resetFilters) resetFilters(); }
+        else if(go==='sport'){ showPg('shop'); setTimeout(function(){ if(window.setFilter) setFilter('style','Sport'); }, 250); }
+        else if(go==='lfpoints'){ showPg('lfpoints'); }
+      }
+    }, 120); setTimeout(function(){ clearInterval(t); }, 8000);
+  }
+})();
+</script>
+
 <!-- ══════════ SOCIAL PROOF TOAST ══════════ -->
 <div id="sp-toast">
   <div id="sp-toast-name"><span id="sp-toast-dot"></span><span id="sp-toast-who"></span></div>
@@ -1011,6 +1069,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div class="drawer-sub" id="dd-brands-m"></div>
 
         <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('style','Sport'),80)" class="drawer-link">🏅 Sport</button>
+        <button onclick="closeDrawer();lfInstall()" class="drawer-link">📲 Installa app</button>
 
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="location.href='subscriptions.html';" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
