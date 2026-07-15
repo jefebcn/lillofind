@@ -4762,9 +4762,13 @@ img{ -webkit-user-drag:none; user-select:none; }
           udata={};
         }
       } else { udata=null; }
-      // Admin inline: mostra i controlli modifica/elimina sulle card
+      // Admin inline: mostra i controlli modifica/elimina sulle card.
+      // Gate SOLO su allowlist email (autorevole anche nelle regole Firestore):
+      // il campo isAdmin del documento utente è scrivibile dall'utente e non è
+      // più affidabile per i permessi.
+      const ADMIN_EMAILS=['yishionvt@gmail.com','admin@lillofind.com'];
       const wasAdmin=window._isAdmin;
-      window._isAdmin = !!(udata && udata.isAdmin===true);
+      window._isAdmin = !!(u && u.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase()));
       if(window._isAdmin!==wasAdmin){ try{renderShop();}catch(_){} try{renderHomeProds();}catch(_){} }
       updateNav(u,udata); updateHomeDisplay();
       // Re-render profile if it's already open (covers race condition on load)
