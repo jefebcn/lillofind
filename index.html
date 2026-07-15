@@ -3685,13 +3685,77 @@ img{ -webkit-user-drag:none; user-select:none; }
               </div>`).join('')}
             </div>
           </div>`:''}
+          <!-- Recensioni prodotto -->
+          <div id="prod-reviews" style="border-top:2px solid #e8e8e8;padding-top:16px;margin-top:4px;">
+            <p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Caricamento recensioni…</p>
+          </div>
         </div>
       </div>`;
     // Make grid responsive
     const grid=document.getElementById('prod-modal-grid');
     if(grid&&window.innerWidth<600) grid.style.gridTemplateColumns='1fr';
+    // Carica le recensioni del prodotto
+    try{ loadProductReviews(p.id); }catch(_){}
     // modal was already opened before rAF, no need to add class again
     }); // end requestAnimationFrame
+  };
+
+  // ── Recensioni prodotto ────────────────────────────────
+  let _reviewRating=0;
+  function starsHTML(n,size){ let s=''; for(let i=1;i<=5;i++){ s+=`<span style="color:${i<=n?'#e8b84b':'#d8d2c5'};font-size:${size||14}px;">★</span>`; } return s; }
+  window.loadProductReviews=async function(pid){
+    const fb=window.__fb;
+    const box=document.getElementById('prod-reviews');
+    if(!fb||!box) return;
+    let revs=[];
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'reviews'),fb.where('productId','==',pid)));
+      revs=snap.docs.map(d=>({id:d.id,...d.data()}));
+      revs.sort((a,b)=>((b.createdAt?.seconds)||0)-((a.createdAt?.seconds)||0));
+    }catch(e){ console.warn('reviews load',e&&e.code); }
+    const avg=revs.length?(revs.reduce((s,r)=>s+(r.rating||0),0)/revs.length):0;
+    const logged=!!(window.__fb&&window.__fb.auth&&window.__fb.auth.currentUser);
+    const head=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#aaa;">Recensioni</p>
+        ${revs.length?`<span>${starsHTML(Math.round(avg),15)}</span><span style="font-size:12px;color:var(--mid);">${avg.toFixed(1)} · ${revs.length}</span>`:'<span style="font-size:12px;color:var(--dim);">Ancora nessuna</span>'}
+      </div>`;
+    const list=revs.slice(0,5).map(r=>`<div style="border-top:1px solid #f0efe9;padding:10px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span style="font-size:13px;font-weight:600;">${(r.userName||'Cliente').replace(/</g,'&lt;')}</span>
+          <span>${starsHTML(r.rating||0,12)}</span>
+        </div>
+        ${r.text?`<p style="font-size:13px;color:var(--mid);line-height:1.6;margin-top:4px;">${(r.text||'').replace(/</g,'&lt;')}</p>`:''}
+      </div>`).join('');
+    const form=logged?`<div style="margin-top:14px;border-top:1px solid #e8e8e8;padding-top:12px;">
+        <p style="font-size:12px;color:var(--mid);margin-bottom:6px;">Lascia una recensione</p>
+        <div id="rev-stars" style="font-size:26px;cursor:pointer;user-select:none;letter-spacing:2px;margin-bottom:8px;">
+          ${[1,2,3,4,5].map(i=>`<span data-star="${i}" onclick="setReviewRating(${i})" style="color:#d8d2c5;">★</span>`).join('')}
+        </div>
+        <textarea id="rev-text" placeholder="Com'è andata? (facoltativo)" style="width:100%;border:1.5px solid var(--border-2);border-radius:10px;padding:10px;font-family:'Manrope',sans-serif;font-size:13px;resize:vertical;min-height:60px;"></textarea>
+        <button onclick="submitReview('${pid}')" style="margin-top:8px;background:var(--k);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
+      </div>`:`<p style="font-size:12px;color:var(--dim);margin-top:8px;"><a onclick="showPg('auth')" style="color:var(--led);cursor:pointer;text-decoration:underline;">Accedi</a> per lasciare una recensione.</p>`;
+    _reviewRating=0;
+    box.innerHTML=head+(list||'')+form;
+  };
+  window.setReviewRating=function(n){
+    _reviewRating=n;
+    document.querySelectorAll('#rev-stars [data-star]').forEach(s=>{ s.style.color=(+s.dataset.star<=n)?'#e8b84b':'#d8d2c5'; });
+  };
+  window.submitReview=async function(pid){
+    const fb=window.__fb;
+    const cu=fb&&fb.auth&&fb.auth.currentUser;
+    if(!cu){ showToast('Accedi per recensire.'); return; }
+    if(!_reviewRating){ showToast('⚠️ Seleziona un voto (stelle).'); return; }
+    const text=(document.getElementById('rev-text')?.value||'').trim().slice(0,600);
+    try{
+      await fb.addDoc(fb.collection(fb.db,'reviews'),{
+        productId:pid, userId:cu.uid,
+        userName:(cu.displayName||cu.email||'Cliente').split('@')[0],
+        rating:_reviewRating, text, createdAt:fb.serverTimestamp()
+      });
+      showToast('🌟 Grazie per la recensione!');
+      loadProductReviews(pid);
+    }catch(e){ console.error('submitReview:',e&&e.code,e&&e.message); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
   };
 
     window.toggleWish=function(pid,btn){
