@@ -47,5 +47,11 @@ service cloud.firestore {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }
+
+    // Avvisami quando disponibile — chiunque può iscriversi, solo admin legge
+    match /stock_alerts/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }

@@ -1392,11 +1392,21 @@ waitFB(()=>{
     L.push('💰 *TOTALE: €'+(Number(o.total)||0).toFixed(2)+'*');
     const pay={card:'Carta',paypal:'PayPal',bonifico:'Bonifico'}[o.payment]||o.payment||'—';
     L.push('💳 Pagamento: '+pay);
+    if(o.payment==='bonifico'){
+      L.push('');
+      L.push('🏦 *Per completare, effettua il bonifico:*');
+      L.push('IBAN: '+LF_IBAN);
+      L.push('Intestatario: '+LF_IBAN_HOLDER);
+      L.push('Causale: Ordine '+(o.orderId||''));
+    }
     if(o.notes) L.push('📝 Note: '+o.notes);
     L.push('');
     L.push('Grazie per aver scelto LilloFind! 🖤');
     return L.join('\n');
   }
+  // Dati bonifico (usati in messaggio WhatsApp e ricevuta)
+  const LF_IBAN='IE06 SUMU 9903 6511 9972 84';
+  const LF_IBAN_HOLDER='LilloFind';
 
   // Copia il messaggio e, se c'è il telefono, apre WhatsApp precompilato
   window.copyOrderMessage = async function(docId){
@@ -1466,6 +1476,8 @@ waitFB(()=>{
         ${Number(o.discount)>0?`<div class="sum"><span>Sconto</span><span>−€${Number(o.discount).toFixed(2)}</span></div>`:''}
       </div>
       <div class="tot"><small>Totale · Pagamento: ${escH(pay)}</small>€${(Number(o.total)||0).toFixed(2)}</div>
+      ${o.payment==='bonifico'?`<h2>Coordinate bonifico</h2><div style="font-size:14px;line-height:1.8;">
+        IBAN: <strong>${escH(LF_IBAN)}</strong><br>Intestatario: ${escH(LF_IBAN_HOLDER)}<br>Causale: Ordine ${escH(o.orderId||'')}</div>`:''}
       ${o.notes?`<h2>Note</h2><div style="font-size:14px;">${escH(o.notes)}</div>`:''}
       <div class="foot">Documento di cortesia non fiscale. Grazie per aver scelto LilloFind.</div>
       <div class="noprint"><button onclick="window.print()">🖨️ Stampa / Salva PDF</button></div>
