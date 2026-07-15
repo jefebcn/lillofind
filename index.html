@@ -997,6 +997,38 @@ img{ -webkit-user-drag:none; user-select:none; }
   // Referral: memorizza il codice invitante (?ref=UID) per accreditarlo alla registrazione
   try{ var ref=new URLSearchParams(location.search).get('ref'); if(ref) localStorage.setItem('lf_ref', ref); }catch(_){}
 
+  // Onboarding di benvenuto — una sola volta, per i nuovi visitatori non loggati
+  function lfSeenOnboard(){ try{ return localStorage.getItem('lf_onboarded')==='1'; }catch(_){ return true; } }
+  window.lfCloseOnboard=function(){ try{ localStorage.setItem('lf_onboarded','1'); }catch(_){}; var o=document.getElementById('lf-onboard'); if(o) o.remove(); };
+  window.lfOnboardCTA=function(){ lfCloseOnboard(); try{ if(window.showPg){ showPg('auth'); if(window.switchTab) switchTab('reg'); } }catch(_){}; };
+  function lfShowOnboard(){
+    if(lfSeenOnboard() || isStandalone()) return;
+    // non mostrare se già loggato
+    if(window.__fb && window.__fb.auth && window.__fb.auth.currentUser) { try{localStorage.setItem('lf_onboarded','1');}catch(_){}; return; }
+    if(document.getElementById('lf-onboard')) return;
+    var d=document.createElement('div');
+    d.id='lf-onboard';
+    d.style.cssText='position:fixed;inset:0;background:rgba(20,20,17,.78);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;';
+    d.onclick=function(e){ if(e.target===d) lfCloseOnboard(); };
+    d.innerHTML='<div style="background:#fff;color:#23231f;width:100%;max-width:480px;border-radius:22px 22px 0 0;box-shadow:0 -12px 50px rgba(0,0,0,.35);overflow:hidden;animation:fadeup .35s ease;">'
+      +'<div style="background:radial-gradient(120% 100% at 50% 0%,#26271f,#161812);color:#f5f2ec;padding:26px 24px 20px;text-align:center;position:relative;">'
+      +'<span onclick="lfCloseOnboard()" style="position:absolute;top:14px;right:16px;font-size:22px;cursor:pointer;opacity:.6;">×</span>'
+      +'<p style="font-weight:800;letter-spacing:8px;font-size:16px;margin-bottom:8px;">LILLOFIND</p>'
+      +'<p style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:26px;line-height:1.1;">Benvenuto nei drop.</p></div>'
+      +'<div style="padding:20px 24px 8px;display:flex;flex-direction:column;gap:14px;">'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;">⬡</span><div><strong style="font-size:14px;">50 LFPoints gratis</strong><p style="font-size:12px;color:#6b6b63;">Subito all\'iscrizione = €5 sul primo ordine.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;">📸</span><div><strong style="font-size:14px;">Foto QC prima di spedire</strong><p style="font-size:12px;color:#6b6b63;">Vedi il tuo articolo reale prima della spedizione.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;">🚚</span><div><strong style="font-size:14px;">Spedizione tracciata</strong><p style="font-size:12px;color:#6b6b63;">DHL Express, zero rischi doganali.</p></div></div>'
+      +'</div>'
+      +'<div style="padding:8px 24px 26px;display:flex;flex-direction:column;gap:10px;">'
+      +'<button onclick="lfOnboardCTA()" style="background:#6f7552;color:#fff;border:none;padding:15px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;">Crea account — 50 punti gratis</button>'
+      +'<button onclick="lfCloseOnboard()" style="background:none;border:none;color:#6b6b63;font-size:13px;cursor:pointer;">Sfoglia prima →</button>'
+      +'</div></div>';
+    document.body.appendChild(d);
+    try{ lfTrack('onboarding_shown'); }catch(_){}
+  }
+  window.addEventListener('load', function(){ setTimeout(lfShowOnboard, 2500); });
+
   // Scorciatoie manifest (?go=shop|sport|lfpoints) → naviga quando l'app è pronta
   var go=new URLSearchParams(location.search).get('go');
   if(go){ var t=setInterval(function(){
