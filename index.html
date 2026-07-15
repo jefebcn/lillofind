@@ -49,6 +49,17 @@
       fbq('init', c.metaPixel); fbq('track', 'PageView');
     }
   })();
+  // Helper unico per tracciare eventi verso GA4 e Meta Pixel (no-op se non configurati)
+  window.lfTrack = function(name, params){
+    params = params || {};
+    try { if (window.gtag) gtag('event', name, params); } catch(_){}
+    try {
+      if (window.fbq) {
+        var map = { sign_up:'CompleteRegistration', add_to_cart:'AddToCart', begin_checkout:'InitiateCheckout', purchase:'Purchase', view_item:'ViewContent', add_to_wishlist:'AddToWishlist', search:'Search' };
+        if (map[name]) fbq('track', map[name], params); else fbq('trackCustom', name, params);
+      }
+    } catch(_){}
+  };
   // PWA: registra il service worker (HTML sempre network-first → nessun contenuto obsoleto)
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
@@ -3316,6 +3327,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             preferredSize:'',preferredBrands:[],createdAt:fb.serverTimestamp()
           });
         }catch(dberr){ console.warn('setDoc utente fallito (non bloccante):',dberr?.code||dberr); }
+        try{ lfTrack('sign_up',{method:'email'}); }catch(_){}
         showToast('🎉 Benvenuto! 50 LFPOINTS accreditati.');
       }
       showPg('home');
@@ -3661,6 +3673,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.openProduct=function(pid){
     const p=products.find(x=>x.id===pid);
     if(!p)return;
+    try{ lfTrack('view_item',{item_id:pid,item_name:p.name,value:p.price||0,currency:'EUR'}); }catch(_){}
     // Track recently viewed (max 8, no duplicates)
     let rv = JSON.parse(localStorage.getItem('lf_rv')||'[]');
     rv = [pid, ...rv.filter(x=>x!==pid)].slice(0,8);
@@ -4343,6 +4356,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.buy=function(pid,price){
     if(!user){showToast('Accedi per acquistare 👆');showPg('auth');return;}
     _buyPid=pid; _buyPrice=price;
+    try{ lfTrack('add_to_cart',{value:price,currency:'EUR',item_id:pid}); }catch(_){}
     const prod=products.find(p=>p.id===pid)||{id:pid,price};
     const sizes=prod.sizes&&prod.sizes.length?prod.sizes:(prod.size?[prod.size]:[]);
     const colors=prod.colors&&prod.colors.length?prod.colors:[];
@@ -4542,6 +4556,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function _handleOrderSuccess(data, orderData){
     const {orderId,subtotal,shipping,discount,total,lfpoints:pts,paymentMethod:pm}=data;
     const method=pm||orderData.paymentMethod||'card';
+    try{ lfTrack('purchase',{transaction_id:orderId,value:total,shipping:shipping,currency:'EUR'}); }catch(_){}
     const prevPts=(udata?.lfpoints||0);
     // LFPoints: accreditati subito solo se pagamento verificato (carta)
     const newPts=prevPts+(pts||0);
