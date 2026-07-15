@@ -4908,6 +4908,11 @@ img{ -webkit-user-drag:none; user-select:none; }
               <span style="font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;background:${statusColor[st]||'#999'};color:${statusTxt[st]||'#fff'};">${statusLabel[st]||st}</span>
             </div>
           </div>
+          ${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?`<div style="margin-top:10px;">
+            <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--led);margin-bottom:6px;font-weight:700;">📸 Foto QC del tuo articolo</p>
+            <div style="display:flex;gap:6px;overflow-x:auto;">
+              ${o.qcPhotos.map(u=>`<img src="${pImg(u)}" onclick="openLightbox('${pImg(u)}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:zoom-in;flex-shrink:0;" onerror="this.style.display='none'">`).join('')}
+            </div></div>`:''}
         </div>`;
       }).join('');
     }catch(e){
