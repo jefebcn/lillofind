@@ -972,12 +972,14 @@ window.saveAll=async function(){
 
     try{
       const rowModel=document.getElementById('rt-'+id)?.value||'';
-      const saveFn=lfCallable('saveProduct');
-      await saveFn({
+      // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker,
+      // che richiederebbe un service account non configurato.
+      await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand:rowBrand,model:rowModel,
         category:rowCategory,
         sizes:sizes.length?sizes:['S','M','L','XL'],size:sizes.join(', '),
-        colors,imageUrl:imgUrl,description:'',weightKg:0
+        colors,imageUrl:imgUrl,description:'',weightKg:0,
+        createdAt:imp.serverTimestamp()
       });
       saved++; savedCount++;
       row.classList.add('saved-ok');
@@ -1318,8 +1320,7 @@ window.saveCSV = async function(){
     lbl.textContent = 'Salvo ' + (i+1) + ' / ' + csvRows.length + ' — ' + r.nome;
     bar.style.width = Math.round(((i+1)/csvRows.length)*100) + '%';
     try{
-      const saveFn=lfCallable('saveProduct');
-      await saveFn({
+      await imp.addDoc(imp.collection(imp.db,'products'),{
         name:        r.nome,
         price:       r.prezzo,
         brand:       r.brand,
@@ -1330,7 +1331,8 @@ window.saveCSV = async function(){
         colors:      r.colori,
         imageUrl:    r.url,
         description: '',
-        weightKg:    0
+        weightKg:    0,
+        createdAt:   imp.serverTimestamp()
       });
       saved++;
       if(stEl){ stEl.innerHTML='<span style="color:var(--led);font-size:10px;letter-spacing:1px;">✅ SALVATO</span>'; }
