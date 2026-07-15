@@ -1029,6 +1029,17 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
   window.addEventListener('load', function(){ setTimeout(lfShowOnboard, 2500); });
 
+  // Deep-link prodotto (?p=<id>) → apre la scheda quando i prodotti sono caricati
+  var pid=new URLSearchParams(location.search).get('p');
+  if(pid){ var pt=0; var pTimer=setInterval(function(){ pt++;
+      if(typeof window.openProduct==='function'){ window.openProduct(pid);
+        var m=document.getElementById('prod-modal');
+        if(m && m.classList.contains('open')){ clearInterval(pTimer); }
+      }
+      if(pt>60) clearInterval(pTimer);
+    }, 200);
+  }
+
   // Scorciatoie manifest (?go=shop|sport|lfpoints) → naviga quando l'app è pronta
   var go=new URLSearchParams(location.search).get('go');
   if(go){ var t=setInterval(function(){
@@ -3652,6 +3663,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(m) m.classList.remove('open');
     document.body.style.overflow='';
     document.body.classList.remove('prod-open');
+    try{
+      document.title=_defaultTitle;
+      const ogt=document.querySelector('meta[property="og:title"]'); if(ogt) ogt.setAttribute('content','LILLOFIND — Drop Your Style');
+      const ogi=document.querySelector('meta[property="og:image"]'); if(ogi) ogi.setAttribute('content','https://lillofind.shop/assets/og-image.jpg');
+      if(location.search.indexOf('p=')>-1) history.replaceState(null,'',location.pathname);
+    }catch(_){}
   };
 
   // ── Guida taglie ──────────────────────────────────────
@@ -3714,9 +3731,16 @@ img{ -webkit-user-drag:none; user-select:none; }
       showToast('⚠️ Errore: '+(e.code||e.message||'riprova'));
     }
   };
+  const _defaultTitle=document.title;
   window.openProduct=function(pid){
     const p=products.find(x=>x.id===pid);
     if(!p)return;
+    try{
+      document.title=`${p.name}${p.brand?' · '+p.brand:''} — €${(p.price||0).toFixed(0)} | LilloFind`;
+      const ogt=document.querySelector('meta[property="og:title"]'); if(ogt) ogt.setAttribute('content',p.name+' — LilloFind');
+      const ogi=document.querySelector('meta[property="og:image"]'); if(ogi&&p.imageUrl) ogi.setAttribute('content',pImg(p.imageUrl));
+      history.replaceState(null,'',location.pathname+'?p='+encodeURIComponent(pid));
+    }catch(_){}
     try{ lfTrack('view_item',{item_id:pid,item_name:p.name,value:p.price||0,currency:'EUR'}); }catch(_){}
     // Track recently viewed (max 8, no duplicates)
     let rv = JSON.parse(localStorage.getItem('lf_rv')||'[]');
