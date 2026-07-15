@@ -3528,6 +3528,48 @@ img{ -webkit-user-drag:none; user-select:none; }
     document.body.classList.remove('prod-open');
   };
 
+  // ── Guida taglie ──────────────────────────────────────
+  window.openSizeGuide=function(model){
+    const isShoe=/sneaker|scarp|shoe/i.test(model||'');
+    const shoeRows=[['36','5','23'],['37','6','23.5'],['38','7','24.5'],['39','7.5','25'],['40','8','25.5'],['41','9','26'],['42','9.5','27'],['43','10','27.5'],['44','11','28.5'],['45','12','29.5']];
+    const clothRows=[['XS','44-46','82-86'],['S','46-48','86-90'],['M','48-50','90-96'],['L','50-52','96-102'],['XL','52-54','102-108'],['XXL','54-56','108-114']];
+    const th=isShoe?['EU','US','CM']:['Taglia','IT','Torace (cm)'];
+    const rows=isShoe?shoeRows:clothRows;
+    const html=`<div id="lf-sizeguide" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(20,20,17,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#fff;max-width:420px;width:100%;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);">
+          <p class="bb" style="font-size:18px;">Guida Taglie ${isShoe?'· Scarpe':'· Abbigliamento'}</p>
+          <button onclick="document.getElementById('lf-sizeguide').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mid);">×</button>
+        </div>
+        <div style="padding:8px 22px 20px;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr>${th.map(h=>`<th style="text-align:left;padding:10px 6px;border-bottom:2px solid var(--border);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mid);">${h}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(r=>`<tr>${r.map((c,idx)=>`<td style="padding:9px 6px;border-bottom:1px solid #f0efe9;${idx===0?'font-weight:700;':'color:var(--mid);'}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+          <p style="font-size:11px;color:var(--dim);margin-top:14px;line-height:1.6;">Le misure sono indicative. In caso di dubbio tra due taglie, scegli la più grande. Scrivici per consigli sulla vestibilità di un modello specifico.</p>
+        </div>
+      </div>
+    </div>`;
+    document.getElementById('lf-sizeguide')?.remove();
+    document.body.insertAdjacentHTML('beforeend',html);
+  };
+
+  // ── Avvisami quando disponibile (prodotto esaurito) ───
+  window.notifyWhenAvailable=async function(pid){
+    const fb=window.__fb;
+    const p=products.find(x=>x.id===pid);
+    let email=(user&&user.email)||'';
+    if(!email){ email=(prompt('Lascia la tua email: ti avvisiamo appena il prodotto torna disponibile.')||'').trim(); }
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ if(email!=='') showToast('⚠️ Email non valida.'); return; }
+    try{
+      await fb.addDoc(fb.collection(fb.db,'stock_alerts'),{
+        productId:pid, productName:p?p.name||'':'', email:email.toLowerCase(),
+        notified:false, createdAt:fb.serverTimestamp()
+      });
+      showToast('🔔 Perfetto! Ti avviseremo via email.');
+    }catch(e){ console.error('stockAlert:',e&&e.code,e&&e.message); showToast('⚠️ Errore, riprova.'); }
+  };
+
   // ── Controlli admin inline sullo shop (visibili solo se _isAdmin) ──
   window.adminEditProduct=function(id){ location.href='admin.html?edit='+encodeURIComponent(id); };
   window.adminDeleteProduct=async function(id){
@@ -3591,6 +3633,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${s}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${p.size}</span>`:''}
+            ${((p.sizes&&p.sizes.length)||p.size)?`<button onclick="openSizeGuide('${(p.model||'').replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--led);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;">📏 Guida taglie</button>`:''}
           </div>
           <div style="border-top:1px solid #e0e0e0;padding-top:16px;">
             <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:42px;margin-bottom:6px;">€${(p.price||0).toFixed(2)}</p>
@@ -3612,7 +3655,9 @@ img{ -webkit-user-drag:none; user-select:none; }
             <p style="font-size:10px;color:#666;line-height:1.7;">Aggiungi il QC nel carrello: riceverai 3-4 foto reali del tuo articolo prima della spedizione. Gratis per i membri Silver+.</p>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
-            <button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});closeProd();">Aggiungi al Carrello →</button>
+            ${p.soldOut===true
+              ? `<button style="flex:1;background:var(--k);color:#fff;border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;" onclick="notifyWhenAvailable('${p.id}')">🔔 Avvisami quando disponibile</button>`
+              : `<button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});closeProd();">Aggiungi al Carrello →</button>`}
             <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:'Manrope',monospace;font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${inWish?'❤️':'♡'}</button>
             <button style="border:1.5px solid #ddd;background:none;padding:12px 14px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;" onclick="shareProduct('${p.name.replace(/'/g,"\\'")}',${p.price||0},'${p.id}')" title="Condividi">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
