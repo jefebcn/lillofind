@@ -217,6 +217,9 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <button class="anav-btn" data-pg="prodotti" onclick="showAdminPg('prodotti')">
         <span class="anav-icon">👗</span>Prodotti
       </button>
+      <button class="anav-btn" data-pg="importa" onclick="showAdminPg('importa')">
+        <span class="anav-icon">⚡</span>Importa Veloce
+      </button>
       <button class="anav-btn" data-pg="clienti" onclick="showAdminPg('clienti')">
         <span class="anav-icon">👥</span>Clienti
       </button>
@@ -497,6 +500,18 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <h2 class="bb" style="font-size:20px;margin:34px 0 6px;">🔔 Avvisami quando disponibile</h2>
       <p style="font-size:14px;color:var(--mid);margin-bottom:16px;">Clienti che vogliono essere avvisati quando un prodotto esaurito torna disponibile.</p>
       <div id="stockalert-list"><p style="font-size:13px;color:var(--dim);">Caricamento...</p></div>
+    </div>
+
+    <!-- ─── PAGE: IMPORTA VELOCE ─── -->
+    <div class="apg hidden" id="apg-importa">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">⚡ Importa Veloce</h1>
+        <a href="importer.html" target="_blank" rel="noopener" class="btn-k" style="padding:9px 18px;font-size:13px;text-decoration:none;">↗ Apri a schermo intero</a>
+      </div>
+      <p style="font-size:14px;color:var(--mid);margin-bottom:16px;">Aggiunta rapida prodotti + importatore Yupoo con riconoscimento AI (brand, nome e categoria). Sei già autenticato: nessun nuovo accesso richiesto.</p>
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;background:#fff;">
+        <iframe id="importa-frame" title="Importa prodotti" style="width:100%;height:80vh;border:0;display:block;"></iframe>
+      </div>
     </div>
 
     <!-- ─── PAGE: STRUMENTI AI ─── -->
@@ -1898,6 +1913,8 @@ waitFB(()=>{
     }
     if(name==='clienti' && !_usersLoaded) loadUsersPage();
     if(name==='richieste') loadProductRequests();
+    // Carica l'importer solo la prima volta che apri la sezione (lazy)
+    if(name==='importa'){ const f=document.getElementById('importa-frame'); if(f && !f.getAttribute('src')) f.setAttribute('src','importer.html'); }
   };
 
   // ── Richieste prodotto ("non trovo prodotto") ──
