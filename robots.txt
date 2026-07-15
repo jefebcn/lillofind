@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /importer.html
+Disallow: /yupoo-scraper.html
+
+Sitemap: https://lillofind.shop/sitemap.xml
