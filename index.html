@@ -2344,7 +2344,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button onclick="switchTab(authTab==='li'?'reg':'li')" class="btn-g" style="width:100%;">
           <span id="switch-tab-lbl">Non hai un account? Registrati</span>
         </button>
-        <p style="font-size:9px;color:var(--dim);line-height:1.7;text-align:center;">Continuando accetti i <u style="cursor:pointer;">Termini</u> e la <u style="cursor:pointer;">Privacy Policy</u>.</p>
+        <p style="font-size:9px;color:var(--dim);line-height:1.7;text-align:center;">Continuando accetti i <u style="cursor:pointer;" onclick="openInfo('termini')">Termini</u> e la <u style="cursor:pointer;" onclick="openInfo('privacy')">Privacy Policy</u>.</p>
       </div>
 
       <!-- Benefits grid (for non-logged) -->
@@ -2922,9 +2922,13 @@ img{ -webkit-user-drag:none; user-select:none; }
 ════════════════════════════════════════════════════════ -->
 <div id="info-modal" class="modal-bg" onclick="if(event.target===this)closeInfo()" style="align-items:flex-start;padding-top:40px;">
   <div class="modal-box" style="padding:0;max-width:600px;">
-    <div style="background:var(--k);color:var(--w);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1;">
-      <p class="bb" id="info-title" style="font-size:22px;letter-spacing:2px;"></p>
-      <button onclick="closeInfo()" style="background:none;border:none;color:var(--w);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div style="background:var(--k);color:var(--w);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;z-index:1;">
+      <p class="bb" id="info-title" style="font-size:22px;letter-spacing:2px;flex:1;min-width:0;"></p>
+      <div id="info-lang" style="display:none;gap:4px;flex-shrink:0;">
+        <button onclick="switchInfoLang('it')" data-l="it" style="background:none;border:1px solid rgba(255,255,255,.3);color:var(--w);font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 9px;border-radius:6px;cursor:pointer;">IT</button>
+        <button onclick="switchInfoLang('en')" data-l="en" style="background:none;border:1px solid rgba(255,255,255,.3);color:var(--w);font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 9px;border-radius:6px;cursor:pointer;">EN</button>
+      </div>
+      <button onclick="closeInfo()" style="background:none;border:none;color:var(--w);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
     </div>
     <div class="led-strip-sm"></div>
     <div id="info-body" style="padding:28px 24px;font-size:12px;color:#333;line-height:1.9;"></div>
@@ -5110,7 +5114,28 @@ img{ -webkit-user-drag:none; user-select:none; }
 </ul>
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">I tuoi diritti</p>
 <p style="font-size:11px;color:var(--mid);margin-bottom:16px;">Hai diritto di accesso, rettifica, cancellazione, limitazione del trattamento e portabilità dei dati. Per esercitare questi diritti scrivi a privacy@lillofind.com.</p>
-<p style="font-size:11px;color:var(--dim);">I dati non vengono mai venduti o ceduti a terzi per scopi commerciali.</p>`
+<p style="font-size:11px;color:var(--dim);">I dati non vengono mai venduti o ceduti a terzi per scopi commerciali.</p>`,
+      en:{ title:'🔐 Privacy Policy',
+      body:`<p style="margin-bottom:16px;font-size:11px;">Last updated: January 2025 — In compliance with EU Regulation 2016/679 (GDPR)</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Who processes your data</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">Data controller: LILLOFIND S.R.L., VAT IT 12874930963 — Tower A, The Walk, Jumeirah Beach Residence, Dubai, UAE. DPO contact: privacy@lillofind.com</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">What data we collect</p>
+<ul style="font-size:11px;color:var(--mid);list-style:disc;padding-left:18px;margin-bottom:16px;line-height:1.9;">
+  <li>Identity and contact data (name, email) provided at sign-up</li>
+  <li>Anonymous browsing data for statistics (anonymized IP)</li>
+  <li>Purchase data (order history, LFPOINTS) to run the loyalty program</li>
+  <li>Style preferences saved in your profile</li>
+</ul>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">How we use your data</p>
+<ul style="font-size:11px;color:var(--mid);list-style:disc;padding-left:18px;margin-bottom:16px;line-height:1.9;">
+  <li>Order fulfilment and shipping communications</li>
+  <li>Managing the LFPOINTS program</li>
+  <li>Newsletter (only with explicit consent)</li>
+  <li>Compliance with legal obligations</li>
+</ul>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Your rights</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">You have the right to access, rectify, erase, restrict processing and to data portability. To exercise these rights write to privacy@lillofind.com.</p>
+<p style="font-size:11px;color:var(--dim);">Your data is never sold or transferred to third parties for commercial purposes.</p>` }
     },
     'cookie':{
       title:'🍪 Cookie Policy',
@@ -5131,7 +5156,26 @@ img{ -webkit-user-drag:none; user-select:none; }
     <p style="font-size:10px;color:var(--mid);margin-top:4px;">Usati per mostrare contenuti pertinenti sui social. Richiedono consenso esplicito e possono essere revocati in qualsiasi momento.</p>
   </div>
 </div>
-<p style="font-size:11px;color:var(--dim);">Puoi gestire le preferenze cookie attraverso le impostazioni del tuo browser o contattando privacy@lillofind.com.</p>`
+<p style="font-size:11px;color:var(--dim);">Puoi gestire le preferenze cookie attraverso le impostazioni del tuo browser o contattando privacy@lillofind.com.</p>`,
+      en:{ title:'🍪 Cookie Policy',
+      body:`<p style="margin-bottom:16px;font-size:11px;">In compliance with Directive 2009/136/EC and the GDPR.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">What cookies are</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">Cookies are small text files saved on your device that let us recognize you on later visits and improve your experience.</p>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+  <div style="border:1px solid #e0e0e0;padding:12px 14px;">
+    <strong style="font-size:11px;">🔧 Technical cookies (necessary)</strong>
+    <p style="font-size:10px;color:var(--mid);margin-top:4px;">Essential for the site to work: user session, language preferences, cart. No consent required.</p>
+  </div>
+  <div style="border:1px solid #e0e0e0;padding:12px 14px;">
+    <strong style="font-size:11px;">📊 Analytics cookies (optional)</strong>
+    <p style="font-size:10px;color:var(--mid);margin-top:4px;">Help us understand how users browse the site (Firebase Analytics, anonymous data). Require consent.</p>
+  </div>
+  <div style="border:1px solid #e0e0e0;padding:12px 14px;">
+    <strong style="font-size:11px;">📣 Marketing cookies (optional)</strong>
+    <p style="font-size:10px;color:var(--mid);margin-top:4px;">Used to show relevant content on social media. Require explicit consent and can be withdrawn at any time.</p>
+  </div>
+</div>
+<p style="font-size:11px;color:var(--dim);">You can manage cookie preferences via your browser settings or by contacting privacy@lillofind.com.</p>` }
     },
     'termini':{
       title:'📄 Termini di Servizio',
@@ -5145,7 +5189,19 @@ img{ -webkit-user-drag:none; user-select:none; }
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">4. Programma LFPOINTS</p>
 <p style="font-size:11px;color:var(--mid);margin-bottom:14px;">I punti LFPOINTS non hanno valore monetario diretto. LILLOFIND si riserva il diritto di modificare o terminare il programma con preavviso di 30 giorni. I punti non sono trasferibili.</p>
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">5. Proprietà Intellettuale</p>
-<p style="font-size:11px;color:var(--mid);">Tutti i contenuti della piattaforma (testi, immagini, loghi, design) sono di proprietà di LILLOFIND S.R.L. È vietata la riproduzione senza autorizzazione scritta.</p>`
+<p style="font-size:11px;color:var(--mid);">Tutti i contenuti della piattaforma (testi, immagini, loghi, design) sono di proprietà di LILLOFIND S.R.L. È vietata la riproduzione senza autorizzazione scritta.</p>`,
+      en:{ title:'📄 Terms of Service',
+      body:`<p style="margin-bottom:16px;font-size:11px;">Last updated: January 2025. Please read carefully before using the LILLOFIND platform.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">1. Acceptance of Terms</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:14px;">By using the LILLOFIND platform you fully accept these Terms of Service. If you do not accept them, please do not use the service.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">2. User Account</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:14px;">You are responsible for keeping your login credentials confidential. Any activity carried out from your account is your responsibility. LILLOFIND reserves the right to suspend accounts in breach of these terms.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">3. Prices and Payments</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:14px;">Prices shown include VAT. LILLOFIND reserves the right to change prices at any time. Prices at the time of order are binding.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">4. LFPOINTS Program</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:14px;">LFPOINTS have no direct monetary value. LILLOFIND reserves the right to modify or end the program with 30 days' notice. Points are not transferable.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">5. Intellectual Property</p>
+<p style="font-size:11px;color:var(--mid);">All platform content (text, images, logos, design) is owned by LILLOFIND S.R.L. Reproduction without written authorization is prohibited.</p>` }
     },
     'recesso':{
       title:'↩️ Diritto di Recesso',
@@ -5162,7 +5218,22 @@ img{ -webkit-user-drag:none; user-select:none; }
   <li>Prodotti personalizzati o su misura</li>
   <li>Prodotti chiaramente usati o danneggiati dopo la consegna</li>
   <li>Prodotti senza tag originali rimossi volontariamente</li>
-</ul>`
+</ul>`,
+      en:{ title:'↩️ Right of Withdrawal',
+      body:`<div style="border-left:3px solid var(--led);padding:12px 16px;margin-bottom:20px;background:#f8f8f8;">
+  <p style="font-size:12px;font-weight:600;">You have 14 days to change your mind — we give you 30.</p>
+  <p style="font-size:11px;color:var(--mid);margin-top:4px;">In compliance with Italian Legislative Decree 206/2005 (Consumer Code) and EU Directive 2011/83.</p>
+</div>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">How to exercise the right of withdrawal</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">To withdraw, simply send a message to <strong>support@lillofind.com</strong> within 30 days of receiving the product, with subject "WITHDRAWAL — [order number]".</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Refund times</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">The refund is credited within <strong>14 business days</strong> of receiving the returned product, to the same payment method used. No penalties apply.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Exceptions</p>
+<ul style="font-size:11px;color:var(--mid);list-style:disc;padding-left:18px;line-height:1.9;">
+  <li>Personalized or made-to-measure products</li>
+  <li>Products clearly used or damaged after delivery</li>
+  <li>Products with original tags deliberately removed</li>
+</ul>` }
     },
     'note-legali':{
       title:'⚖️ Note Legali',
@@ -5180,15 +5251,50 @@ img{ -webkit-user-drag:none; user-select:none; }
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">Legge Applicabile e Foro Competente</p>
 <p style="font-size:11px;color:var(--mid);margin-bottom:16px;">I presenti termini sono regolati dalla legge italiana. Per qualsiasi controversia è competente il Tribunale di Milano, salvo diversa previsione di legge a favore del consumatore.</p>
 <p style="font-size:12px;font-weight:600;margin-bottom:8px;">Risoluzione Alternativa delle Controversie (ODR)</p>
-<p style="font-size:11px;color:var(--mid);">In conformità al Regolamento UE 524/2013, per eventuali controversie relative a contratti online puoi utilizzare la piattaforma ODR della Commissione Europea: <strong>ec.europa.eu/consumers/odr</strong></p>`
+<p style="font-size:11px;color:var(--mid);">In conformità al Regolamento UE 524/2013, per eventuali controversie relative a contratti online puoi utilizzare la piattaforma ODR della Commissione Europea: <strong>ec.europa.eu/consumers/odr</strong></p>`,
+      en:{ title:'⚖️ Legal Notice',
+      body:`<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Company details</p>
+<div style="border:1px solid #e0e0e0;padding:14px;margin-bottom:16px;font-size:11px;color:var(--mid);line-height:1.9;">
+  LILLOFIND S.R.L.<br/>
+  VAT: IT 12874930963<br/>
+  Tax code: 12874930963<br/>
+  REA: MI – 2714501<br/>
+  Share capital: €10,000.00 fully paid up<br/>
+  Registered office: Tower A, The Walk — Jumeirah Beach Residence, Dubai, United Arab Emirates
+</div>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Liability</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">LILLOFIND S.R.L. is not liable for any direct or indirect damages arising from use of the website or from temporary service interruption for maintenance.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Governing Law and Jurisdiction</p>
+<p style="font-size:11px;color:var(--mid);margin-bottom:16px;">These terms are governed by Italian law. Any dispute falls under the jurisdiction of the Court of Milan, unless otherwise provided by law in favor of the consumer.</p>
+<p style="font-size:12px;font-weight:600;margin-bottom:8px;">Online Dispute Resolution (ODR)</p>
+<p style="font-size:11px;color:var(--mid);">Under EU Regulation 524/2013, for disputes relating to online contracts you can use the European Commission's ODR platform: <strong>ec.europa.eu/consumers/odr</strong></p>` }
     },
   };
 
+  let _infoKey=null, _infoLang='it';
+  function _renderInfo(){
+    const data=INFO_CONTENT[_infoKey];
+    if(!data)return;
+    const hasEN=!!(data.en&&data.en.body);
+    const lang=(_infoLang==='en'&&hasEN)?'en':'it';
+    document.getElementById('info-title').textContent=(lang==='en'?data.en.title:data.title);
+    document.getElementById('info-body').innerHTML=(lang==='en'?data.en.body:data.body);
+    const sw=document.getElementById('info-lang');
+    if(sw){
+      sw.style.display=hasEN?'flex':'none';
+      sw.querySelectorAll('[data-l]').forEach(b=>{
+        const on=b.dataset.l===lang;
+        b.style.background=on?'var(--led)':'none';
+        b.style.borderColor=on?'var(--led)':'rgba(255,255,255,.3)';
+      });
+    }
+  }
+  window.switchInfoLang=function(l){ _infoLang=l; _renderInfo(); };
   window.openInfo=function(key){
     const data=INFO_CONTENT[key];
     if(!data)return;
-    document.getElementById('info-title').textContent=data.title;
-    document.getElementById('info-body').innerHTML=data.body;
+    _infoKey=key;
+    _renderInfo();
     document.getElementById('info-modal').classList.add('open');
     document.body.style.overflow='hidden';
   };
