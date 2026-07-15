@@ -994,6 +994,9 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.addEventListener('appinstalled', function(){ var b=el(); if(b) b.style.display='none'; try{ localStorage.setItem('lf_pwa_dismiss','1'); }catch(_){}; if(window.gtag) gtag('event','pwa_installed'); });
   window.addEventListener('load', function(){ if(isIOS() && !isStandalone() && !dismissed()) setTimeout(show, 4500); });
 
+  // Referral: memorizza il codice invitante (?ref=UID) per accreditarlo alla registrazione
+  try{ var ref=new URLSearchParams(location.search).get('ref'); if(ref) localStorage.setItem('lf_ref', ref); }catch(_){}
+
   // Scorciatoie manifest (?go=shop|sport|lfpoints) → naviga quando l'app è pronta
   var go=new URLSearchParams(location.search).get('go');
   if(go){ var t=setInterval(function(){
@@ -1081,6 +1084,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
         <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('style','Sport'),80)" class="drawer-link">🏅 Sport</button>
         <button onclick="closeDrawer();lfInstall()" class="drawer-link">📲 Installa app</button>
+        <button onclick="closeDrawer();openReferral()" class="drawer-link">🎁 Invita un amico</button>
 
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="location.href='subscriptions.html';" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
@@ -3327,6 +3331,14 @@ img{ -webkit-user-drag:none; user-select:none; }
             preferredSize:'',preferredBrands:[],createdAt:fb.serverTimestamp()
           });
         }catch(dberr){ console.warn('setDoc utente fallito (non bloccante):',dberr?.code||dberr); }
+        // Referral: registra l'invito se arrivato da un link ?ref=
+        try{
+          const ref=localStorage.getItem('lf_ref');
+          if(ref && ref!==c.user.uid){
+            await fb.addDoc(fb.collection(fb.db,'referrals'),{referrer:ref,referred:c.user.uid,credited:false,createdAt:fb.serverTimestamp()});
+            localStorage.removeItem('lf_ref');
+          }
+        }catch(_){}
         try{ lfTrack('sign_up',{method:'email'}); }catch(_){}
         showToast('🎉 Benvenuto! 50 LFPOINTS accreditati.');
       }
@@ -5006,6 +5018,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       window._isAdmin = !!(u && u.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase()));
       if(window._isAdmin!==wasAdmin){ try{renderShop();}catch(_){} try{renderHomeProds();}catch(_){} }
       updateNav(u,udata); updateHomeDisplay();
+      if(u){ try{ claimReferralRewards(); }catch(_){} }
       // Re-render profile if it's already open (covers race condition on load)
       if(u && document.getElementById('pg-profile')?.classList.contains('on')){
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
@@ -5376,6 +5389,51 @@ img{ -webkit-user-drag:none; user-select:none; }
     document.getElementById('info-modal').classList.remove('open');
     document.body.style.overflow='';
   };
+
+  // ── Referral: invita un amico ──────────────────────────
+  const REFERRAL_POINTS=50;
+  window.openReferral=function(){
+    if(!user){ showToast('Accedi per invitare gli amici 👆'); showPg('auth'); return; }
+    const link='https://lillofind.shop/?ref='+encodeURIComponent(user.uid);
+    const html=`<div id="lf-ref" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(20,20,17,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:22px;">
+      <div style="background:#fff;color:var(--k);max-width:400px;width:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg);">
+        <div style="background:var(--k);color:var(--w);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;">🎁 Invita un amico</strong><span onclick="document.getElementById('lf-ref').remove()" style="cursor:pointer;font-size:20px;opacity:.7;">×</span></div>
+        <div style="padding:22px;">
+          <p style="font-size:14px;line-height:1.6;color:var(--mid);margin-bottom:16px;">Condividi il tuo link: quando un amico si iscrive, ricevi <strong style="color:var(--led);">${REFERRAL_POINTS} LFPOINTS</strong> (=€${(REFERRAL_POINTS/10).toFixed(0)}). Lui riceve 50 punti di benvenuto.</p>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input id="lf-ref-link" value="${link}" readonly style="flex:1;min-width:0;border:1.5px solid var(--border-2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--k);"/>
+            <button onclick="lfCopyRef()" class="bb" style="background:var(--k);color:#fff;border:none;border-radius:10px;padding:0 16px;font-size:12px;cursor:pointer;">Copia</button>
+          </div>
+          <button onclick="lfShareRef('${link}')" style="width:100%;background:var(--led);color:#fff;border:none;padding:12px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;">Condividi il link →</button>
+        </div>
+      </div></div>`;
+    document.getElementById('lf-ref')?.remove();
+    document.body.insertAdjacentHTML('beforeend',html);
+  };
+  window.lfCopyRef=async function(){ const i=document.getElementById('lf-ref-link'); try{ await navigator.clipboard.writeText(i.value); showToast('📋 Link copiato!'); }catch(_){ i.select(); document.execCommand('copy'); showToast('📋 Link copiato!'); } };
+  window.lfShareRef=async function(link){ if(navigator.share){ try{ await navigator.share({title:'LilloFind',text:'Iscriviti a LilloFind e ricevi 50 LFPOINTS 🎁',url:link}); }catch(_){} } else { lfCopyRef(); } };
+
+  // Accredita al referrer i punti degli inviti non ancora accreditati
+  async function claimReferralRewards(){
+    const fb=window.__fb;
+    if(!user||!fb) return;
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'referrals'),fb.where('referrer','==',user.uid)));
+      const pending=snap.docs.filter(d=>d.data().credited!==true);
+      if(!pending.length) return;
+      let gained=0;
+      for(const d of pending){ try{ await fb.updateDoc(fb.doc(fb.db,'referrals',d.id),{credited:true}); gained+=REFERRAL_POINTS; }catch(_){} }
+      if(gained>0){
+        const newPts=(udata?.lfpoints||0)+gained;
+        try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{lfpoints:newPts}); }catch(_){}
+        udata={...udata,lfpoints:newPts};
+        try{updateNav(user,udata);}catch(_){} try{updateHomeDisplay();}catch(_){}
+        try{ lfTrack('referral_reward',{value:gained}); }catch(_){}
+        showToast('🎉 +'+gained+' LFPOINTS da invito amico!');
+      }
+    }catch(e){ console.warn('claimReferral',e&&e.code); }
+  }
+  window.claimReferralRewards=claimReferralRewards;
 
   // ── GOOGLE AUTH ──────────────────────────────────────────
   async function _saveGoogleUser(u){
