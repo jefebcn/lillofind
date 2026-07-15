@@ -9,7 +9,8 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const PROJECT = 'lillofind-c455c';
-const API_KEY = 'AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg'; // chiave web pubblica
+// Chiave web Firebase passata dal workflow via secret (evita di scriverla nel repo).
+const API_KEY = process.env.FIREBASE_API_KEY || '';
 const WORKER = 'https://lillofind.conti9708.workers.dev';
 
 function pImg(url) {
@@ -30,6 +31,7 @@ function val(f) {
 }
 
 async function fetchProducts() {
+  if (!API_KEY) { console.warn('FIREBASE_API_KEY non impostata: salto il fetch prodotti.'); return []; }
   const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/products?key=${API_KEY}&pageSize=100`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Firestore list failed: ' + res.status);

@@ -32,6 +32,8 @@ jobs:
 
       - name: Genera contenuti social
         run: node scripts/generate-social.js
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
 
       - name: Commit dei nuovi contenuti
         run: |
