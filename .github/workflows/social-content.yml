@@ -1,0 +1,46 @@
+name: Contenuti social (settimanali)
+
+# Genera in automatico 3 storie Instagram + caption dai prodotti più recenti,
+# ogni lunedì. I file finiscono in social/<data>/ nel repo, pronti da postare.
+# Puoi anche lanciarlo a mano da Actions → "Run workflow".
+
+on:
+  schedule:
+    - cron: '17 8 * * 1'   # ogni lunedì ~08:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm install playwright@1.56.1 --no-save
+          npx playwright install --with-deps chromium
+
+      - name: Genera contenuti social
+        run: node scripts/generate-social.js
+
+      - name: Commit dei nuovi contenuti
+        run: |
+          git config user.name "lillofind-bot"
+          git config user.email "bot@lillofind.shop"
+          if [ -n "$(git status --porcelain social/)" ]; then
+            git add social/
+            git commit -m "chore: contenuti social settimanali auto-generati"
+            git push
+          else
+            echo "Nessun nuovo contenuto da committare."
+          fi
