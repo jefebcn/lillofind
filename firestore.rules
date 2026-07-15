@@ -53,5 +53,16 @@ service cloud.firestore {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }
+
+    // Recensioni prodotto — lettura pubblica; scrittura solo utenti loggati
+    // (una recensione per il proprio account); modifica/eliminazione admin.
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
+      allow update, delete: if isAdmin();
+    }
   }
 }
