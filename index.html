@@ -1207,11 +1207,15 @@ img{ -webkit-user-drag:none; user-select:none; }
       #u-pts{align-items:center;gap:6px;color:var(--led);font-weight:700;background:var(--card);border:1px solid var(--border-2);border-radius:999px;padding:3px 12px;letter-spacing:.5px;line-height:1;}
       #u-out{font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--mid);background:none;border:none;cursor:pointer;padding:0;transition:color .15s;}
       #u-out:hover{color:var(--k);}
+      .util-lang{display:inline-flex;align-items:center;gap:4px;}
+      .util-lang button{background:none;border:none;cursor:pointer;font:inherit;letter-spacing:1.2px;color:var(--dim);padding:0 2px;transition:color .15s;}
+      .util-lang button.on{color:var(--ink-soft);font-weight:800;}
+      .util-lang .sl{color:var(--border-2);}
       @media(max-width:600px){ .util-bar{padding:8px 16px;font-size:9px;gap:8px;} .util-sm-hide{display:none;} }
     </style>
     <div class="util-bar">
       <div class="util-l">
-        <span class="u-it"><strong>IT</strong> / EUR</span>
+        <span class="util-lang"><button data-lang-btn="it" onclick="lfSetLang('it')">IT</button><span class="sl">/</span><button data-lang-btn="en" onclick="lfSetLang('en')">EN</button><span style="color:var(--dim);margin-left:4px;">· EUR</span></span>
         <span class="util-sep"></span>
         <span class="u-it util-sm-hide"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> DHL Express</span>
         <span class="util-sep util-sm-hide"></span>
@@ -1226,6 +1230,40 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
   </div>
+  <!-- ── i18n engine (IT sorgente, EN da dizionario) ── -->
+  <script>
+  (function(){
+    var EN={
+      'nav.brands':'Brands','nav.profile':'Profile','nav.signin':'Sign in',
+      'hero.badge2':'SS 2026 — Drop Live Now',
+      'hero.tagline':'Premium streetwear, no compromises.',
+      'hero.features':'Nike · Jordan · Bape · Supreme · and more — 1:1 Quality · DHL Shipping · Free 30-day returns',
+      'sec.collections':'The Collections','sec.browse':'Browse by Category','sec.viewall':'VIEW ALL',
+      'sec.freshdrops':'FRESH DROPS','sec.seeall':'See all','sport.badge':'New Section',
+      'sport.perf':'Performance & Street','sport.sub2':'Sneakers and technical wear from sport brands. No excuses — start now.',
+      'sport.h':'IT ARRIVED','sport.sub':'Sneakers, tech and streetwear from the best sport brands.','sport.cta':'DISCOVER SPORT',
+      'foot.help':'Help','foot.company':'Company','foot.legal':'Legal','foot.follow':'Follow us',
+      'auth.signin':'Sign in','auth.signup':'Sign up','auth.email':'Email','auth.pass':'Password','auth.name':'Full name',
+      'auth.cta.li':'Sign in →','auth.cta.reg':'Create account →','auth.forgot':'Forgot password?',
+      'cta.addcart':'Add to Cart →','cta.viewnew':'See the new arrivals'
+    };
+    window.LF_EN=EN;
+    window.lfSetLang=function(lang){
+      try{ document.querySelectorAll('[data-i18n]').forEach(function(el){
+        var k=el.getAttribute('data-i18n');
+        if(el.getAttribute('data-it')===null) el.setAttribute('data-it', el.textContent);
+        el.textContent=(lang==='en'&&EN[k])?EN[k]:el.getAttribute('data-it');
+      }); }catch(_){}
+      document.documentElement.lang=lang;
+      try{ localStorage.setItem('lf_lang',lang); }catch(_){}
+      document.querySelectorAll('[data-lang-btn]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-lang-btn')===lang); });
+      window.LF_LANG=lang;
+    };
+    var saved='it'; try{ saved=localStorage.getItem('lf_lang')||'it'; }catch(_){}
+    function boot(){ window.lfSetLang(saved); }
+    if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+  })();
+  </script>
   <!-- Main nav -->
   <div id="top-nav" style="border-bottom:1px solid var(--border);background:var(--card);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;">
     <nav style="display:flex;gap:24px;align-items:center;">
@@ -1238,7 +1276,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div class="nav-dd-menu cols" id="dd-sneakers"></div>
       </div>
       <div class="nav-dd">
-        <button class="nbtn" onclick="showPg('shop');resetFilters()">Marchi <span class="nav-dd-arr">▾</span></button>
+        <button class="nbtn" onclick="showPg('shop');resetFilters()"><span data-i18n="nav.brands">Marchi</span> <span class="nav-dd-arr">▾</span></button>
         <div class="nav-dd-menu cols" id="dd-brands"></div>
       </div>
       <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('style','Sport'),80)" style="display:inline-flex;align-items:center;gap:5px;">🏅 Sport</button>
@@ -1250,7 +1288,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <button onclick="showPg('home')" style="font-family:'Bricolage Grotesque',sans-serif;font-size:30px;letter-spacing:4px;color:var(--k);background:none;border:none;cursor:pointer;">LILLOFIND</button>
     </div>
     <div style="display:flex;gap:16px;align-items:center;">
-      <button id="n-profile" class="nbtn" style="display:none;" onclick="showPg('profile')">Profilo</button>
+      <button id="n-profile" class="nbtn" style="display:none;" onclick="showPg('profile')" data-i18n="nav.profile">Profilo</button>
       <div id="n-badge" style="display:none;background:var(--led);color:var(--k);padding:4px 12px;font-size:10px;letter-spacing:2px;cursor:pointer;box-shadow:0 0 10px rgba(200,255,0,.4);" onclick="showPg('lfpoints')">
         ⬡ <span id="n-pts">0</span>
       </div>
@@ -1292,12 +1330,12 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div class="hero-text">
         <div class="led-badge" style="margin-bottom:18px;">
           <span style="width:6px;height:6px;border-radius:50%;background:var(--led);display:inline-block;"></span>
-          SS 2026 — Drop Live Ora
+          <span data-i18n="hero.badge2">SS 2026 — Drop Live Ora</span>
         </div>
         <h1 class="bb" style="color:var(--k);margin:0;">DEFINE<br/>YOUR<br/><span style="color:var(--led);">DROP.</span></h1>
         <div style="width:56px;height:3px;background:var(--led);border-radius:2px;margin:20px auto;" class="hero-divider-line"></div>
-        <p style="font-size:16px;color:var(--ink-soft);line-height:1.5;font-weight:500;margin-bottom:6px;">Streetwear premium, senza compromessi.</p>
-        <p style="font-size:13px;color:var(--mid);letter-spacing:.2px;line-height:1.8;margin-bottom:24px;">Nike · Jordan · Bape · Supreme · e molto altro<br/>Qualità 1:1 · Spedizione DHL · Reso 30gg gratis</p>
+        <p style="font-size:16px;color:var(--ink-soft);line-height:1.5;font-weight:500;margin-bottom:6px;" data-i18n="hero.tagline">Streetwear premium, senza compromessi.</p>
+        <p style="font-size:13px;color:var(--mid);letter-spacing:.2px;line-height:1.8;margin-bottom:24px;" data-i18n="hero.features">Nike · Jordan · Bape · Supreme · e molto altro<br/>Qualità 1:1 · Spedizione DHL · Reso 30gg gratis</p>
         <div class="hero-cta-row">
           <button class="btn-led" onclick="showPg('shop')" style="min-width:160px;font-size:13px;padding:16px 22px;">Shop the Drop →</button>
           <button class="btn-g" onclick="showPg('lfpoints')" style="min-width:140px;padding:16px 22px;">⦡ LFPoints</button>
@@ -1355,10 +1393,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="max-width:1200px;margin:0 auto;">
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 24px;margin-bottom:26px;">
         <div>
-          <p class="slbl" style="color:var(--led2);margin-bottom:8px;">Le Collezioni</p>
-          <h2 class="bb" style="font-size:clamp(28px,5vw,44px);line-height:1.02;color:var(--w);font-weight:700;">Sfoglia per<br>Categoria</h2>
+          <p class="slbl" style="color:var(--led2);margin-bottom:8px;" data-i18n="sec.collections">Le Collezioni</p>
+          <h2 class="bb" style="font-size:clamp(28px,5vw,44px);line-height:1.02;color:var(--w);font-weight:700;" data-i18n="sec.browse">Sfoglia per<br>Categoria</h2>
         </div>
-        <button onclick="showPg('shop');resetFilters()" class="bb" style="background:none;border:none;color:var(--led2);font-size:13px;letter-spacing:1px;cursor:pointer;white-space:nowrap;padding-bottom:6px;display:inline-flex;align-items:center;gap:6px;">VEDI TUTTO <span style="font-size:16px;">→</span></button>
+        <button onclick="showPg('shop');resetFilters()" class="bb" style="background:none;border:none;color:var(--led2);font-size:13px;letter-spacing:1px;cursor:pointer;white-space:nowrap;padding-bottom:6px;display:inline-flex;align-items:center;gap:6px;"><span data-i18n="sec.viewall">VEDI TUTTO</span> <span style="font-size:16px;">→</span></button>
       </div>
       <div id="home-cat-circles"></div>
     </div>
@@ -1396,10 +1434,10 @@ img{ -webkit-user-drag:none; user-select:none; }
       <svg class="sport-banner-runner" viewBox="0 0 448 512" aria-hidden="true"><path fill="currentColor" d="M400 305.6c-4.8-14.5-15.9-26.2-30.3-31.4l-70.8-25.6-13.7-41.2c-8.4-25.2-31.5-42-58-42.1-6.3 0-12.6 1-18.6 3l-77.2 25.9c-14.4 4.8-26.6 14.6-34.4 27.6l-25.6 42.7c-9.1 15.2-4.2 34.9 11 44s34.9 4.2 44-11l25.6-42.7 39.4-13.2-50 155.4c-.9 2.8-1.4 5.8-1.4 8.8 0 16.9 13.1 31.4 30.4 32.4l89.4 5.2-27.7 92.3c-5.1 17 4.5 34.9 21.5 40s34.9-4.5 40-21.5l35.9-119.6c1-3.3 1.4-6.7 1.2-10-.7-13.9-10.9-25.6-24.7-28.2l-58.4-11 22.5-70 8.3 24.9c4.4 13.2 14.6 23.6 27.7 28.4l70.8 25.6c16.6 6 35-2.6 41-19.2s-2.6-35-19.2-41zM336 128c35.3 0 64-28.7 64-64S371.3 0 336 0s-64 28.7-64 64 28.7 64 64 64z"/></svg>
       <!-- Testo motivazionale -->
       <div class="sport-banner-txt">
-        <p class="slbl" style="color:var(--led2);margin-bottom:10px;">Performance &amp; Street</p>
+        <p class="slbl" style="color:var(--led2);margin-bottom:10px;" data-i18n="sport.perf">Performance &amp; Street</p>
         <h2 class="bb sport-banner-h">DO IT.</h2>
-        <p class="sport-banner-sub">Sneakers e capi tecnici dei brand sportivi.<br>Nessuna scusa — inizia adesso.</p>
-        <span class="bb sport-banner-cta">SCOPRI LO SPORT <span style="font-size:16px;">→</span></span>
+        <p class="sport-banner-sub" data-i18n="sport.sub2">Sneakers e capi tecnici dei brand sportivi.<br>Nessuna scusa — inizia adesso.</p>
+        <span class="bb sport-banner-cta"><span data-i18n="sport.cta">SCOPRI LO SPORT</span> <span style="font-size:16px;">→</span></span>
       </div>
     </div>
     <!-- Riga prodotti sport — popolata da JS -->
