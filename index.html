@@ -3501,12 +3501,51 @@ img{ -webkit-user-drag:none; user-select:none; }
     {label:'Zaino / Borsa',  group:'🧢 Accessori',  aliases:['zaino','borsa','bag','backpack']},
   ];
 
+  // ── Classificatore categoria (agente) ─────────────────────────────
+  // Deduce la categoria REALE dal testo del prodotto (nome + modello +
+  // categoria), con priorità ordinata dal più specifico al più generico.
+  // Fondamentale: T-Shirt viene controllata PRIMA di Camicia, così "t-shirt"
+  // non finisce erroneamente tra le camicie (bug del vecchio matcher a substring).
+  const _CLASSIFY_RULES=[
+    // Calzature
+    ['Sneakers',            ['sneaker','scarpe','scarpa','shoe','air force','air max','dunk','runner','trainer']],
+    // Accessori
+    ['Calzini',             ['calzini','calze','socks','sock']],
+    ['Sciarpa',             ['sciarpa','scarf']],
+    ['Zaino / Borsa',       ['zaino','borsa','borsello','tracolla','bag','backpack','pouch','marsupio']],
+    ['Cappello',            ['cappello','berretto','beanie','snapback','cappellino',' cap',' hat','bucket']],
+    // Bottom
+    ['Jogger',              ['jogger','joggers','tuta pantalone']],
+    ['Pantaloncini',        ['pantaloncini','shorts','bermuda','short ']],
+    ['Pantaloni',           ['pantaloni','pantalone','pants','trousers','jeans','denim pant','cargo','chino']],
+    // Top — dal più specifico
+    ['Piumino',             ['piumino','puffer','puffy','down jacket','doudoune']],
+    ['Bomber',              ['bomber']],
+    ['Giacchetto',          ['giacchetto','giubbotto','giacca','jacket','coach jacket','windbreaker','harrington']],
+    ['Gilet',               ['gilet','vest','smanicato']],
+    ['Cardigan',            ['cardigan']],
+    ['Pile',                ['pile','fleece','polar']],
+    ['Felpa con Cappuccio', ['felpa con cappuccio','hoodie','hooded','felpa cappuccio']],
+    ['Felpa',               ['felpa','crewneck','sweatshirt','sweat ','girocollo']],
+    ['Maglia Manica Lunga', ['manica lunga','longsleeve','long sleeve','long-sleeve','ls tee']],
+    ['Polo',                ['polo']],
+    ['Canotta',             ['canotta','canottiera','tank top','tank']],
+    ['T-Shirt',             ['t-shirt','tshirt','t shirt','tee','maglietta']],
+    ['Camicia',             ['camicia','camicie','flanella','flannel','button up','button-up','button down','overshirt','shirt']],
+  ];
+  function classifyModel(p){
+    if(!p) return '';
+    const t=((p.model||'')+' '+(p.name||'')+' '+(p.category||'')).toLowerCase();
+    for(const [label, kws] of _CLASSIFY_RULES){
+      if(kws.some(k=>t.includes(k))) return label;
+    }
+    return '';
+  }
+  window.classifyModel=classifyModel;
+
   function matchesModelFilter(p, label){
-    const mf=MODEL_FILTERS.find(f=>f.label===label);
-    if(!mf) return (p.model||'')=== label;
-    const parts=(p.model||'').toLowerCase().split(/[,;\/]+/).map(s=>s.trim()).filter(Boolean);
-    const cat=(p.category||'').toLowerCase();
-    return parts.some(m=>mf.aliases.some(a=>m.includes(a)||a.includes(m)))||mf.aliases.includes(cat);
+    if(MODEL_FILTERS.some(f=>f.label===label)) return classifyModel(p)===label;
+    return (p.model||'')===label;
   }
 
   function buildChips(){
@@ -4048,10 +4087,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     const imgMap={},cntMap={};
     if(products&&products.length){
       products.forEach(p=>{
-        if(typeof p.model!=='string') return;
-        const pm=p.model.toLowerCase();
+        const cls=classifyModel(p); // categoria reale dedotta dal nome/modello
+        if(!cls) return;
         CATS.forEach(c=>{
-          if(pm===c.model.toLowerCase()){
+          if(cls===c.model){
             cntMap[c.model]=(cntMap[c.model]||0)+1;
             if(!imgMap[c.model] && p.imageUrl) imgMap[c.model]=pImg(p.imageUrl);
           }
