@@ -3960,12 +3960,13 @@ img{ -webkit-user-drag:none; user-select:none; }
         <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#aaa;">Recensioni</p>
         ${revs.length?`<span>${starsHTML(Math.round(avg),15)}</span><span style="font-size:12px;color:var(--mid);">${avg.toFixed(1)} · ${revs.length}</span>`:'<span style="font-size:12px;color:var(--dim);">Ancora nessuna</span>'}
       </div>`;
-    const list=revs.slice(0,5).map(r=>`<div style="border-top:1px solid #f0efe9;padding:10px 0;">
+    const list=revs.slice(0,6).map(r=>`<div style="border-top:1px solid #f0efe9;padding:10px 0;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <span style="font-size:13px;font-weight:600;">${(r.userName||'Cliente').replace(/</g,'&lt;')}</span>
           <span>${starsHTML(r.rating||0,12)}</span>
         </div>
         ${r.text?`<p style="font-size:13px;color:var(--mid);line-height:1.6;margin-top:4px;">${(r.text||'').replace(/</g,'&lt;')}</p>`:''}
+        ${r.photo?`<img src="${r.photo}" onclick="openLightbox('${r.photo}')" style="width:88px;height:88px;object-fit:cover;border-radius:8px;margin-top:8px;cursor:zoom-in;border:1px solid var(--border);" alt="Foto recensione"/>`:''}
       </div>`).join('');
     const form=logged?`<div style="margin-top:14px;border-top:1px solid #e8e8e8;padding-top:12px;">
         <p style="font-size:12px;color:var(--mid);margin-bottom:6px;">Lascia una recensione</p>
@@ -3973,10 +3974,32 @@ img{ -webkit-user-drag:none; user-select:none; }
           ${[1,2,3,4,5].map(i=>`<span data-star="${i}" onclick="setReviewRating(${i})" style="color:#d8d2c5;">★</span>`).join('')}
         </div>
         <textarea id="rev-text" placeholder="Com'è andata? (facoltativo)" style="width:100%;border:1.5px solid var(--border-2);border-radius:10px;padding:10px;font-family:'Manrope',sans-serif;font-size:13px;resize:vertical;min-height:60px;"></textarea>
-        <button onclick="submitReview('${pid}')" style="margin-top:8px;background:var(--k);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+          <label style="font-size:12px;color:var(--led);cursor:pointer;text-decoration:underline;">📷 Aggiungi foto<input type="file" accept="image/*" onchange="lfReviewPhoto(this)" style="display:none;"></label>
+          <img id="rev-photo-prev" style="display:none;width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"/>
+        </div>
+        <button onclick="submitReview('${pid}')" style="margin-top:10px;background:var(--k);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
       </div>`:`<p style="font-size:12px;color:var(--dim);margin-top:8px;"><a onclick="showPg('auth')" style="color:var(--led);cursor:pointer;text-decoration:underline;">Accedi</a> per lasciare una recensione.</p>`;
-    _reviewRating=0;
+    _reviewRating=0; _reviewPhoto='';
     box.innerHTML=head+(list||'')+form;
+  };
+  // Ridimensiona/comprimi la foto recensione a max 800px (base64 leggero)
+  let _reviewPhoto='';
+  window.lfReviewPhoto=function(input){
+    const file=input.files&&input.files[0]; if(!file) return;
+    const rd=new FileReader();
+    rd.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=800, sc=Math.min(1,max/Math.max(img.width,img.height));
+        const c=document.createElement('canvas'); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        _reviewPhoto=c.toDataURL('image/jpeg',0.62);
+        const pv=document.getElementById('rev-photo-prev'); if(pv){ pv.src=_reviewPhoto; pv.style.display='inline-block'; }
+      };
+      img.src=e.target.result;
+    };
+    rd.readAsDataURL(file);
   };
   window.setReviewRating=function(n){
     _reviewRating=n;
@@ -3989,11 +4012,14 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!_reviewRating){ showToast('⚠️ Seleziona un voto (stelle).'); return; }
     const text=(document.getElementById('rev-text')?.value||'').trim().slice(0,600);
     try{
-      await fb.addDoc(fb.collection(fb.db,'reviews'),{
+      const data={
         productId:pid, userId:cu.uid,
         userName:(cu.displayName||cu.email||'Cliente').split('@')[0],
         rating:_reviewRating, text, createdAt:fb.serverTimestamp()
-      });
+      };
+      if(_reviewPhoto) data.photo=_reviewPhoto;
+      await fb.addDoc(fb.collection(fb.db,'reviews'),data);
+      _reviewPhoto='';
       showToast('🌟 Grazie per la recensione!');
       loadProductReviews(pid);
     }catch(e){ console.error('submitReview:',e&&e.code,e&&e.message); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
