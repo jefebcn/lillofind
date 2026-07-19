@@ -1959,6 +1959,16 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button class="fsec-hd" onclick="toggleFsec(this)"><span>Colore</span><span class="fsec-arr">▾</span></button>
         <div class="fsec-bd" id="ch-color"></div>
       </div>
+      <!-- Prezzo -->
+      <div class="fsec">
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Prezzo</span><span class="fsec-arr">▾</span></button>
+        <div class="fsec-bd" id="ch-price">
+          <span class="chip" data-price="0-30" onclick="setPriceRange(0,30,this)">&lt; €30</span>
+          <span class="chip" data-price="30-60" onclick="setPriceRange(30,60,this)">€30–60</span>
+          <span class="chip" data-price="60-100" onclick="setPriceRange(60,100,this)">€60–100</span>
+          <span class="chip" data-price="100-99999" onclick="setPriceRange(100,99999,this)">&gt; €100</span>
+        </div>
+      </div>
     </aside>
     <!-- Main -->
     <main style="flex:1;padding:24px 16px;min-width:0;">
@@ -3167,7 +3177,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function waitFB(cb){ window.__fb ? cb() : setTimeout(()=>waitFB(cb), 80); }
 
   // ── State ──────────────────────────────────────────────
-  let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:''};
+  let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:'',priceMin:null,priceMax:null};
   let user=null, udata=null, authTab='li';
   let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
 
@@ -3220,21 +3230,27 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── Update active filter UI (tags + badge) ─────────────
   function updateFilterUI(){
     const labelMap={model:'Categoria',brand:'Marchio',size:'Taglia',color:'Colore',gender:'Genere',style:'Stile'};
-    const tags=Object.entries(filters).filter(([k,v])=>v);
+    const tags=Object.entries(filters).filter(([k,v])=>v && k!=='priceMin' && k!=='priceMax');
     // Tags
     const tc=document.getElementById('fs-active-tags');
-    if(tc) tc.innerHTML=tags.map(([k,v])=>
-      `<span class="af-tag" onclick="toggleF('${k}','${v}');updateFilterUI();">
-        ${v} <span class="af-tag-x">×</span>
-      </span>`
-    ).join('');
+    if(tc){
+      let html=tags.map(([k,v])=>
+        `<span class="af-tag" onclick="toggleF('${k}','${v}');updateFilterUI();">${v} <span class="af-tag-x">×</span></span>`
+      ).join('');
+      if(filters.priceMin!=null){
+        const lbl=filters.priceMax>=99999?('> €'+filters.priceMin):('€'+filters.priceMin+'–'+filters.priceMax);
+        html+=`<span class="af-tag" onclick="setPriceRange(${filters.priceMin},${filters.priceMax})">${lbl} <span class="af-tag-x">×</span></span>`;
+      }
+      tc.innerHTML=html;
+    }
     // Badge
+    const nActive=tags.length+(filters.priceMin!=null?1:0);
     const badge=document.getElementById('fs-badge');
     const rstBtn=document.getElementById('rst-btn');
     const rstBtnM=document.getElementById('rst-btn-m');
-    if(badge){badge.style.display=tags.length?'flex':'none';badge.textContent=tags.length;}
-    if(rstBtn){rstBtn.style.display=tags.length?'':'none';}
-    if(rstBtnM){rstBtnM.style.display=tags.length?'':'none';}
+    if(badge){badge.style.display=nActive?'flex':'none';badge.textContent=nActive;}
+    if(rstBtn){rstBtn.style.display=nActive?'':'none';}
+    if(rstBtnM){rstBtnM.style.display=nActive?'':'none';}
     // Section headers glow when active
     document.querySelectorAll('.fsec-hd').forEach(hd=>{
       const bd=hd.nextElementSibling;
@@ -3674,11 +3690,22 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   window.resetFilters=function(){
-    filters={model:'',brand:'',size:'',style:'',color:'',gender:''};
-    document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
+    filters={model:'',brand:'',size:'',style:'',color:'',gender:'',priceMin:null,priceMax:null};
+    document.querySelectorAll('.chip[data-key],.chip[data-price],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()==='tutti'));
     document.querySelectorAll('.gtrio-btn[data-g]').forEach(b=>b.classList.toggle('active',b.dataset.g===''));
     document.querySelectorAll('.gtrio-btn[data-gm]').forEach(b=>b.classList.toggle('active',b.dataset.gm===''));
+    updateFilterUI();
+    renderShop();
+  };
+
+  // Filtro prezzo (range preset)
+  window.setPriceRange=function(min,max,el){
+    const active=(filters.priceMin===min&&filters.priceMax===max);
+    document.querySelectorAll('.chip[data-price]').forEach(c=>c.classList.remove('on'));
+    if(active){ filters.priceMin=null; filters.priceMax=null; }
+    else { filters.priceMin=min; filters.priceMax=max; if(el) el.classList.add('on'); }
+    const rst=document.getElementById('rst-btn'); if(rst) rst.style.display='';
     updateFilterUI();
     renderShop();
   };
@@ -4129,6 +4156,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>c.toLowerCase()===filters.color.toLowerCase()))||''+(p.color||'').toLowerCase()===filters.color.toLowerCase())&&
       (!filters.gender||p.gender===filters.gender)&&
+      (filters.priceMin==null||((p.price||0)>=filters.priceMin&&(p.price||0)<=filters.priceMax))&&
       (!filters.style||(filters.style==='Sport'?isSportProduct(p):p.style===filters.style))&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
