@@ -1243,8 +1243,11 @@ img{ -webkit-user-drag:none; user-select:none; }
       'sport.perf':'Performance & Street','sport.sub2':'Sneakers and technical wear from sport brands. No excuses — start now.',
       'sport.h':'IT ARRIVED','sport.sub':'Sneakers, tech and streetwear from the best sport brands.','sport.cta':'DISCOVER SPORT',
       'foot.help':'Help','foot.company':'Company','foot.legal':'Legal','foot.follow':'Follow us',
+      'foot.nl.h':'Drop Alert. Always First.','foot.nl.sub':'Subscribe and get drops 24h early. No spam.','foot.nl.cta':'Subscribe →',
+      'foot.explore':'Explore','foot.newarrivals':'New Arrivals','foot.createaccount':'Create Account',
       'auth.signin':'Sign in','auth.signup':'Sign up','auth.email':'Email','auth.pass':'Password','auth.name':'Full name',
-      'auth.cta.li':'Sign in →','auth.cta.reg':'Create account →','auth.forgot':'Forgot password?',
+      'auth.cta.li':'Sign in →','auth.cta.reg':'Create account →','auth.forgot':'Forgot password?','auth.oremail':'or with email',
+      'auth.switch.li':"Don't have an account? Sign up",'auth.switch.reg':'Already have an account? Sign in',
       'cta.addcart':'Add to Cart →','cta.viewnew':'See the new arrivals'
     };
     window.LF_EN=EN;
@@ -1258,6 +1261,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       try{ localStorage.setItem('lf_lang',lang); }catch(_){}
       document.querySelectorAll('[data-lang-btn]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-lang-btn')===lang); });
       window.LF_LANG=lang;
+      // aggiorna le stringhe auth controllate da JS (cta + label toggle)
+      try{ if(typeof window.switchTab==='function'){ var rt=document.getElementById('t-reg'); window.switchTab(rt&&rt.classList.contains('on')?'reg':'li'); } }catch(_){}
     };
     var saved='it'; try{ saved=localStorage.getItem('lf_lang')||'it'; }catch(_){}
     function boot(){ window.lfSetLang(saved); }
@@ -2488,8 +2493,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 32px;max-width:520px;margin:0 auto;width:100%;">
       <!-- Tabs -->
       <div style="border-bottom:2px solid var(--k);margin-bottom:32px;display:flex;">
-        <button id="t-li" class="tbtn on" onclick="switchTab('li')">Accedi</button>
-        <button id="t-reg" class="tbtn" onclick="switchTab('reg')">Registrati</button>
+        <button id="t-li" class="tbtn on" onclick="switchTab('li')" data-i18n="auth.signin">Accedi</button>
+        <button id="t-reg" class="tbtn" onclick="switchTab('reg')" data-i18n="auth.signup">Registrati</button>
       </div>
 
       <!-- Social proof (register tab) -->
@@ -2508,12 +2513,12 @@ img{ -webkit-user-drag:none; user-select:none; }
       </button>
       <div style="display:flex;align-items:center;gap:12px;margin:4px 0;">
         <div style="flex:1;height:1px;background:#e0e0e0;"></div>
-        <span style="font-size:10px;color:var(--dim);white-space:nowrap;">oppure con email</span>
+        <span style="font-size:10px;color:var(--dim);white-space:nowrap;" data-i18n="auth.oremail">oppure con email</span>
         <div style="flex:1;height:1px;background:#e0e0e0;"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div id="a-name-row" style="display:none;flex-direction:column;gap:6px;">
-          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome Completo</label>
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;" data-i18n="auth.name">Nome Completo</label>
           <input class="lf-in" id="a-name" placeholder="Mario Rossi"/>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
@@ -2524,7 +2529,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Password</label>
           <input class="lf-in" id="a-pass" type="password" placeholder="min. 6 caratteri" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
         </div>
-        <button id="forgot-pass-btn" onclick="resetPassword()" style="align-self:flex-end;background:none;border:none;cursor:pointer;font-size:12px;color:var(--led);font-weight:600;padding:2px 0;margin-top:-6px;">Password dimenticata?</button>
+        <button id="forgot-pass-btn" onclick="resetPassword()" style="align-self:flex-end;background:none;border:none;cursor:pointer;font-size:12px;color:var(--led);font-weight:600;padding:2px 0;margin-top:-6px;" data-i18n="auth.forgot">Password dimenticata?</button>
         <button class="btn-led" id="auth-cta" onclick="doAuth()" style="margin-top:4px;width:100%;">Accedi →</button>
         <button onclick="switchTab(authTab==='li'?'reg':'li')" class="btn-g" style="width:100%;">
           <span id="switch-tab-lbl">Non hai un account? Registrati</span>
@@ -3019,12 +3024,12 @@ img{ -webkit-user-drag:none; user-select:none; }
   <!-- Newsletter -->
   <div style="padding:44px 24px;border-bottom:1px solid rgba(245,242,236,.1);display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;max-width:1200px;margin:0 auto;">
     <div>
-      <p class="bb" style="font-size:30px;margin-bottom:6px;color:#fff;">Drop Alert. Sempre Primo.</p>
-      <p style="font-size:13px;color:rgba(245,242,236,.55);letter-spacing:.3px;">Iscriviti e accedi ai drop 24h prima. Niente spam.</p>
+      <p class="bb" style="font-size:30px;margin-bottom:6px;color:#fff;" data-i18n="foot.nl.h">Drop Alert. Sempre Primo.</p>
+      <p style="font-size:13px;color:rgba(245,242,236,.55);letter-spacing:.3px;" data-i18n="foot.nl.sub">Iscriviti e accedi ai drop 24h prima. Niente spam.</p>
     </div>
     <div style="display:flex;gap:8px;max-width:400px;width:100%;">
       <input id="nl-mail" placeholder="La tua email..." style="flex:1;min-width:0;background:rgba(245,242,236,.06);border:1.5px solid rgba(245,242,236,.18);color:#fff;border-radius:var(--radius);padding:14px 18px;font-family:'Manrope',sans-serif;font-size:14px;outline:none;"/>
-      <button class="btn-led" onclick="subNL()" style="white-space:nowrap;flex-shrink:0;">Iscriviti →</button>
+      <button class="btn-led" onclick="subNL()" style="white-space:nowrap;flex-shrink:0;" data-i18n="foot.nl.cta">Iscriviti →</button>
     </div>
   </div>
 
@@ -3049,14 +3054,14 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
 
     <div>
-      <p class="foot-col-title">Esplora</p>
+      <p class="foot-col-title" data-i18n="foot.explore">Esplora</p>
       <button class="flink" onclick="showPg('shop')">Shop</button>
       <button class="flink" onclick="location.href='subscriptions.html'">Digital Gear</button>
       <button class="flink" onclick="showPg('lfpoints')">LFPoints</button>
-      <button class="flink" onclick="showPg('home')">Nuovi Arrivi</button>
+      <button class="flink" onclick="showPg('home')" data-i18n="foot.newarrivals">Nuovi Arrivi</button>
       <button class="flink" onclick="openInfo('brand')">Brand</button>
       <button class="flink" onclick="openInfo('outlet')">Outlet</button>
-      <button class="flink" onclick="showPg('auth')">Crea Account</button>
+      <button class="flink" onclick="showPg('auth')" data-i18n="foot.createaccount">Crea Account</button>
     </div>
 
     <div>
@@ -3396,9 +3401,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     document.getElementById('t-li').classList.toggle('on',t==='li');
     document.getElementById('t-reg').classList.toggle('on',t==='reg');
     const row=document.getElementById('a-name-row'); if(row) row.style.display=t==='reg'?'flex':'none';
-    const cta=document.getElementById('auth-cta'); if(cta) cta.textContent=t==='li'?'Accedi →':'Crea Account →';
+    const en=(window.LF_LANG==='en'), D=window.LF_EN||{};
+    const cta=document.getElementById('auth-cta'); if(cta) cta.textContent=t==='li'?(en?D['auth.cta.li']:'Accedi →'):(en?D['auth.cta.reg']:'Crea Account →');
     const sp=document.getElementById('reg-social-proof'); if(sp) sp.style.display=t==='reg'?'block':'none';
-    const sw=document.getElementById('switch-tab-lbl'); if(sw) sw.textContent=t==='li'?'Non hai un account? Registrati':'Hai già un account? Accedi';
+    const sw=document.getElementById('switch-tab-lbl'); if(sw) sw.textContent=t==='li'?(en?D['auth.switch.li']:'Non hai un account? Registrati'):(en?D['auth.switch.reg']:'Hai già un account? Accedi');
     const fp=document.getElementById('forgot-pass-btn'); if(fp) fp.style.display=t==='li'?'block':'none';
   };
 
