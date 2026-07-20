@@ -1245,6 +1245,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       'foot.help':'Help','foot.company':'Company','foot.legal':'Legal','foot.follow':'Follow us',
       'foot.nl.h':'Drop Alert. Always First.','foot.nl.sub':'Subscribe and get drops 24h early. No spam.','foot.nl.cta':'Subscribe →',
       'foot.explore':'Explore','foot.newarrivals':'New Arrivals','foot.createaccount':'Create Account',
+      'shop.filters':'Filters','shop.reset':'Reset','shop.f.category':'Category','shop.f.brand':'Brand','shop.f.size':'Size','shop.f.color':'Color','shop.f.price':'Price','shop.sort.new':'Newest',
+      'cart.title':'Cart','cart.subtotal':'Subtotal','cart.checkout':'Proceed to Checkout →',
       'auth.signin':'Sign in','auth.signup':'Sign up','auth.email':'Email','auth.pass':'Password','auth.name':'Full name',
       'auth.cta.li':'Sign in →','auth.cta.reg':'Create account →','auth.forgot':'Forgot password?','auth.oremail':'or with email',
       'auth.switch.li':"Don't have an account? Sign up",'auth.switch.reg':'Already have an account? Sign in',
@@ -1929,9 +1931,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     <aside id="filter-aside">
       <!-- Header -->
       <div class="fs-hdr">
-        <span class="fs-hdr-title">Filtri</span>
+        <span class="fs-hdr-title" data-i18n="shop.filters">Filtri</span>
         <span class="fs-active-badge" id="fs-badge"></span>
-        <button class="fs-reset-btn" id="rst-btn" onclick="resetFilters()">Azzera</button>
+        <button class="fs-reset-btn" id="rst-btn" onclick="resetFilters()" data-i18n="shop.reset">Azzera</button>
       </div>
       <!-- Active filter tags -->
       <div id="fs-active-tags"></div>
@@ -1946,27 +1948,27 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
       <!-- Categoria -->
       <div class="fsec">
-        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Categoria</span><span class="fsec-arr">▾</span></button>
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.category">Categoria</span><span class="fsec-arr">▾</span></button>
         <div class="fsec-bd" id="ch-model"></div>
       </div>
       <!-- Marchio -->
       <div class="fsec">
-        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Marchio</span><span class="fsec-arr">▾</span></button>
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.brand">Marchio</span><span class="fsec-arr">▾</span></button>
         <div class="fsec-bd" id="ch-brand"></div>
       </div>
       <!-- Taglia -->
       <div class="fsec">
-        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Taglia</span><span class="fsec-arr">▾</span></button>
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.size">Taglia</span><span class="fsec-arr">▾</span></button>
         <div class="fsec-bd" id="ch-size"></div>
       </div>
       <!-- Colore -->
       <div class="fsec">
-        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Colore</span><span class="fsec-arr">▾</span></button>
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.color">Colore</span><span class="fsec-arr">▾</span></button>
         <div class="fsec-bd" id="ch-color"></div>
       </div>
       <!-- Prezzo -->
       <div class="fsec">
-        <button class="fsec-hd" onclick="toggleFsec(this)"><span>Prezzo</span><span class="fsec-arr">▾</span></button>
+        <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.price">Prezzo</span><span class="fsec-arr">▾</span></button>
         <div class="fsec-bd" id="ch-price">
           <span class="chip" data-price="0-30" onclick="setPriceRange(0,30,this)">&lt; €30</span>
           <span class="chip" data-price="30-60" onclick="setPriceRange(30,60,this)">€30–60</span>
@@ -1984,7 +1986,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <!-- Sort dropdown -->
           <div style="position:relative;">
             <select id="shop-sort" class="lf-in" style="font-size:10px;padding:7px 28px 7px 10px;width:auto;min-width:148px;cursor:pointer;" onchange="applySort(this.value)">
-              <option value="new">Più Recenti</option>
+              <option value="new" data-i18n="shop.sort.new">Più Recenti</option>
               <option value="price-asc">Prezzo: Basso → Alto</option>
               <option value="price-desc">Prezzo: Alto → Basso</option>
               <option value="alpha">A → Z</option>
@@ -2027,7 +2029,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-cart" class="pg">
   <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
-      <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Carrello</h1>
+      <h1 class="bb" style="font-size:clamp(36px,5vw,64px);" data-i18n="cart.title">Carrello</h1>
       <button class="btn-g" onclick="showPg('shop')" style="font-size:10px;padding:8px 16px;">← Continua a Fare Shopping</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 340px;gap:32px;" class="grid-1-mob">
@@ -2043,7 +2045,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <p class="bb" style="font-size:24px;margin-bottom:20px;">Riepilogo Ordine</p>
           <div style="display:flex;flex-direction:column;gap:10px;border-bottom:1px solid #e0e0e0;padding-bottom:16px;margin-bottom:16px;">
             <div style="display:flex;justify-content:space-between;font-size:11px;">
-              <span style="color:var(--mid);">Subtotale</span><span id="cart-subtotal">€0.00</span>
+              <span style="color:var(--mid);" data-i18n="cart.subtotal">Subtotale</span><span id="cart-subtotal">€0.00</span>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:11px;">
               <span style="color:var(--mid);">Spedizione DHL</span><span id="cart-ship">—</span>
@@ -2084,7 +2086,7 @@ img{ -webkit-user-drag:none; user-select:none; }
               </div>
             </label>
           </div>
-          <button onclick="showPg('checkout')" class="btn-led" style="width:100%;font-size:12px;padding:16px;">Procedi al Checkout →</button>
+          <button onclick="showPg('checkout')" class="btn-led" style="width:100%;font-size:12px;padding:16px;" data-i18n="cart.checkout">Procedi al Checkout →</button>
           <div style="margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:9px;color:var(--dim);letter-spacing:1px;">🔒 SSL Sicuro</span>
             <span style="font-size:9px;color:var(--dim);letter-spacing:1px;">🚀 DHL Express</span>
@@ -3939,7 +3941,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
             ${p.soldOut===true
               ? `<button style="flex:1;background:var(--k);color:#fff;border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;" onclick="notifyWhenAvailable('${p.id}')">🔔 Avvisami quando disponibile</button>`
-              : `<button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});closeProd();">Aggiungi al Carrello →</button>`}
+              : `<button style="flex:1;background:var(--led);color:var(--k);border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(200,255,0,.4);" onclick="buy('${p.id}',${p.price||0});closeProd();">${(window.LF_LANG==='en')?'Add to Cart →':'Aggiungi al Carrello →'}</button>`}
             <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:'Manrope',monospace;font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${inWish?'❤️':'♡'}</button>
             <button style="border:1.5px solid #ddd;background:none;padding:12px 14px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;" onclick="shareProduct('${p.name.replace(/'/g,"\\'")}',${p.price||0},'${p.id}')" title="Condividi">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -6429,7 +6431,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="mob-filter-overlay" onclick="closeMobFilter()"></div>
 <div id="mob-filter-drawer">
   <div class="mfd-header">
-    <span class="mfd-title">Filtri</span>
+    <span class="mfd-title" data-i18n="shop.filters">Filtri</span>
     <button class="mfd-close" onclick="closeMobFilter()">✕</button>
   </div>
   <div class="mfd-body">
@@ -6444,22 +6446,22 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
     <!-- Categoria -->
     <div class="fsec">
-      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Categoria</span><span class="fsec-arr">▾</span></button>
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.category">Categoria</span><span class="fsec-arr">▾</span></button>
       <div class="fsec-bd" id="ch-model-m"></div>
     </div>
     <!-- Marchio -->
     <div class="fsec">
-      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Marchio</span><span class="fsec-arr">▾</span></button>
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.brand">Marchio</span><span class="fsec-arr">▾</span></button>
       <div class="fsec-bd" id="ch-brand-m"></div>
     </div>
     <!-- Taglia -->
     <div class="fsec">
-      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Taglia</span><span class="fsec-arr">▾</span></button>
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.size">Taglia</span><span class="fsec-arr">▾</span></button>
       <div class="fsec-bd" id="ch-size-m"></div>
     </div>
     <!-- Colore -->
     <div class="fsec">
-      <button class="fsec-hd" onclick="toggleFsec(this)"><span>Colore</span><span class="fsec-arr">▾</span></button>
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.color">Colore</span><span class="fsec-arr">▾</span></button>
       <div class="fsec-bd" id="ch-color-m"></div>
     </div>
   </div>
