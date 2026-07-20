@@ -3631,6 +3631,32 @@ img{ -webkit-user-drag:none; user-select:none; }
     return (p.model||'')===label;
   }
 
+  // ── Normalizzazione marchi (raggruppa varianti sotto un'unica denominazione) ──
+  const BRAND_CANON={
+    nike:'Nike', airjordan:'Jordan', jordan:'Jordan', adidas:'Adidas', adidasoriginals:'Adidas',
+    yeezy:'Yeezy', newbalance:'New Balance', nb:'New Balance', asics:'Asics', puma:'Puma', reebok:'Reebok',
+    converse:'Converse', vans:'Vans', offwhite:'Off-White', supreme:'Supreme', bape:'Bape', abathingape:'Bape',
+    stussy:'Stüssy', stssy:'Stüssy', trapstar:'Trapstar', corteiz:'Corteiz', crtz:'Corteiz', palmangels:'Palm Angels',
+    essentials:'Essentials', fearofgod:'Fear of God', fearofgodessentials:'Essentials', fog:'Fear of God',
+    thenorthface:'The North Face', northface:'The North Face', tnf:'The North Face',
+    ralphlauren:'Ralph Lauren', poloralphlauren:'Ralph Lauren', polo:'Ralph Lauren',
+    louisvuitton:'Louis Vuitton', lv:'Louis Vuitton', gucci:'Gucci', balenciaga:'Balenciaga', dior:'Dior',
+    yvessaintlaurent:'Saint Laurent', saintlaurent:'Saint Laurent', ysl:'Saint Laurent',
+    moncler:'Moncler', stoneisland:'Stone Island', carhartt:'Carhartt', carharttwip:'Carhartt',
+    represent:'Represent', amiri:'Amiri', ericemanuel:'Eric Emanuel', hellstar:'Hellstar', denimtears:'Denim Tears',
+    lacoste:'Lacoste', tommyhilfiger:'Tommy Hilfiger', tommy:'Tommy Hilfiger', calvinklein:'Calvin Klein', ck:'Calvin Klein',
+    burberry:'Burberry', prada:'Prada', fendi:'Fendi', versace:'Versace', armani:'Armani', emporioarmani:'Armani', ea7:'Armani',
+    hugoboss:'Hugo Boss', boss:'Hugo Boss', kenzo:'Kenzo', offwhiteco:'Off-White', huf:'HUF'
+  };
+  function _brandKey(b){ return (b||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  window.canonBrand=function(b){
+    if(!b) return '';
+    const k=_brandKey(b);
+    if(BRAND_CANON[k]) return BRAND_CANON[k];
+    // Fallback: minuscolo → Title Case (così "NIKE"/"nike"/"Nike" → "Nike")
+    return String(b).trim().replace(/\s+/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+  };
+
   function buildChips(){
     ['model','brand','size','color'].forEach(k=>{
       let html='', htmlMob='';
@@ -3670,7 +3696,9 @@ img{ -webkit-user-drag:none; user-select:none; }
         }).join('')}</div>`;
         htmlMob=html;
       } else {
-        const vals=[...new Set(products.map(p=>p[k]).filter(Boolean))];
+        // brand: raggruppa le varianti sotto la denominazione canonica
+        const raw = k==='brand' ? products.map(p=>canonBrand(p.brand)) : products.map(p=>p[k]);
+        const vals=[...new Set(raw.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
         html=vals.map(v=>`<span class="chip" data-key="${k}" data-val="${v}" onclick="toggleF('${k}','${v}')">${v}</span>`).join('');
         htmlMob=html;
       }
@@ -4161,7 +4189,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     _shopFiltered=products.filter(p=>
       (!filters.model||matchesModelFilter(p,filters.model))&&
-      (!filters.brand||p.brand===filters.brand)&&
+      (!filters.brand||canonBrand(p.brand)===filters.brand)&&
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>c.toLowerCase()===filters.color.toLowerCase()))||''+(p.color||'').toLowerCase()===filters.color.toLowerCase())&&
       (!filters.gender||p.gender===filters.gender)&&
@@ -6022,7 +6050,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.buildNavMenus = function(){
     if(typeof products==='undefined' || !products.length) return;
     const esc=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    const brands=[...new Set(products.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const brands=[...new Set(products.map(p=>canonBrand(p.brand)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
     const shop=document.getElementById('dd-shop');
     if(shop){
@@ -6039,7 +6067,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         : '<div class="nav-dd-grp">Nessun marchio</div>';
     }
 
-    const snBrands=[...new Set(products.filter(p=>matchesModelFilter(p,'Sneakers')).map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const snBrands=[...new Set(products.filter(p=>matchesModelFilter(p,'Sneakers')).map(p=>canonBrand(p.brand)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     const sn=document.getElementById('dd-sneakers');
     if(sn){
       sn.innerHTML='<button class="nav-dd-item" style="font-weight:700;" onclick="setFilters2(\'Sneakers\',\'\')">Tutte le sneakers</button>'+
