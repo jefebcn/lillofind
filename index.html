@@ -2146,6 +2146,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ck-fname" placeholder="Mario"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Cognome *</label><input class="lf-in" id="ck-lname" placeholder="Rossi"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Email *</label><input class="lf-in" id="ck-email" placeholder="email@esempio.it" type="email" autocomplete="email"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Indirizzo *</label><input class="lf-in" id="ck-street" placeholder="Via Roma 1"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Città *</label><input class="lf-in" id="ck-city" placeholder="Milano"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">CAP *</label><input class="lf-in" id="ck-zip" placeholder="20100" maxlength="5"/></div>
@@ -4579,7 +4580,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── Buy — shows size/color picker ─────────────────────
   let _buyPid=null,_buyPrice=0;
   window.buy=function(pid,price){
-    if(!user){showToast('Accedi per acquistare 👆');showPg('auth');return;}
+    // Guest: può aggiungere al carrello senza account; l'accesso (o ospite) avviene al checkout
     _buyPid=pid; _buyPrice=price;
     try{ lfTrack('add_to_cart',{value:price,currency:'EUR',item_id:pid}); }catch(_){}
     const prod=products.find(p=>p.id===pid)||{id:pid,price};
@@ -4834,8 +4835,19 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
 
   window.placeOrder=async function(){
-    if(!user){showToast('Accedi per completare l\'ordine');showPg('auth');return;}
     if(!cart.length){showToast('Carrello vuoto!');return;}
+    // Guest checkout: se non loggato, crea una sessione ospite (accesso anonimo Firebase).
+    // Se l'accesso anonimo non è abilitato, ripiega sul login.
+    if(!user){
+      try{
+        const fb=window.__fb;
+        const cred=await fb.signInAnonymously(fb.auth);
+        user=cred.user; if(!udata) udata={};
+      }catch(e){
+        console.error('guest signin:',e&&e.code,e&&e.message);
+        showToast('Accedi per completare l\'ordine'); showPg('auth'); return;
+      }
+    }
     const allDigital=cart.every(i=>i.isDigital);
 
     // ── Helper: highlight invalid field ─────────────────────
@@ -4871,6 +4883,13 @@ img{ -webkit-user-drag:none; user-select:none; }
       }
     }
 
+    // Email (obbligatoria — serve per conferma ordine, soprattutto per gli ospiti)
+    const email=(document.getElementById('ck-email')?.value.trim())||(user&&user.email)||'';
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+      markErr('ck-email'); showToast('⚠️ Inserisci una email valida per la conferma.');
+      document.getElementById('ck-email')?.scrollIntoView({behavior:'smooth',block:'center'}); return;
+    } else clearErr('ck-email');
+
     const _orderItems=[...cart];
     const phone=document.getElementById('ck-phone')?.value.trim()||'—';
     const country=document.getElementById('ck-country')?.value||'Italia';
@@ -4880,6 +4899,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       paymentMethod:selectedPayment||'card',
       shippingAddress:{street,city,zip,country},
       name:fname+' '+lname,
+      email,
       phone,
       notes,
       _items:_orderItems,
@@ -4958,7 +4978,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const lfpoints=Math.floor(subtotal);
     const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
     const orderData={
-      orderId, uid:user.uid, email:user.email||'',
+      orderId, uid:user.uid, email:payload.email||user.email||'',
       name:payload.name||'', phone:payload.phone||'',
       address:payload.shippingAddress||{street:'',city:'',zip:'',country:'Italia'},
       notes:payload.notes||'',
@@ -4972,7 +4992,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Aggiorna spesa utente (i punti vengono accreditati alla conferma del pagamento)
     try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{totalSpent:(udata&&udata.totalSpent||0)+subtotal}); }catch(_){}
     // Email di conferma ordine (fire-and-forget — non blocca il checkout)
-    try{ lfCallable('sendOrderEmail')({orderId,name:orderData.name,email:user.email||'',items:orderData.items,subtotal,shipping,discount,total,payment:orderData.payment,address:orderData.address}); }catch(_){}
+    try{ lfCallable('sendOrderEmail')({orderId,name:orderData.name,email:orderData.email||'',items:orderData.items,subtotal,shipping,discount,total,payment:orderData.payment,address:orderData.address}); }catch(_){}
     return { orderId, subtotal, shipping, discount, total, lfpoints:0, paymentMethod:payload.paymentMethod||'bonifico' };
   }
   updateCartBadge();
@@ -5236,7 +5256,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       window._isAdmin = !!(u && u.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase()));
       if(window._isAdmin!==wasAdmin){ try{renderShop();}catch(_){} try{renderHomeProds();}catch(_){} }
       updateNav(u,udata); updateHomeDisplay();
-      if(u){ try{ claimReferralRewards(); }catch(_){} }
+      if(u){ try{ claimReferralRewards(); }catch(_){} try{ const cke=document.getElementById('ck-email'); if(cke && !cke.value && u.email) cke.value=u.email; }catch(_){} }
       // Re-render profile if it's already open (covers race condition on load)
       if(u && document.getElementById('pg-profile')?.classList.contains('on')){
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
