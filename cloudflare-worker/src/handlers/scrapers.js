@@ -609,20 +609,33 @@ export async function yupooFetch(data, _ctx) {
 export async function yupooAnalyze(data, { env }) {
   const { imageUrl, brandHint = '', modelHint = '' } = data || {};
   if (!imageUrl || typeof imageUrl !== 'string') throw new HttpsError('invalid-argument', 'imageUrl mancante.');
+  if (!env.ANTHROPIC_API_KEY) {
+    throw new HttpsError('failed-precondition', 'ANTHROPIC_API_KEY non configurato sul Worker (secret mancante).');
+  }
 
   const url = imageUrl.startsWith('//') ? 'https:' + imageUrl : imageUrl;
+  let imgHost = ''; try { imgHost = new URL(url).hostname; } catch (_) {}
 
   let imageBase64, mediaType;
   try {
-    const resp = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://www.yupoo.com/',
-        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-      },
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    // Referer basato sull'host reale dell'immagine (Yupoo blocca referer generici)
+    // + retry con backoff su 403/429/5xx.
+    const imgHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': imgHost ? `https://${imgHost}/` : 'https://www.yupoo.com/',
+      'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+      'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
+    };
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    let resp = null;
+    for (let a = 0; a < 3; a++) {
+      try { resp = await fetch(url, { headers: imgHeaders, signal: AbortSignal.timeout(12000) }); }
+      catch (fe) { if (a < 2) { await sleep(300 * (a + 1)); continue; } throw fe; }
+      if (resp.ok) break;
+      if ((resp.status >= 500 || resp.status === 403 || resp.status === 429) && a < 2) { await sleep(300 * (a + 1)); continue; }
+      break;
+    }
+    if (!resp || !resp.ok) throw new Error('HTTP ' + (resp ? resp.status : '?'));
     const ct = resp.headers.get('content-type') || 'image/jpeg';
     mediaType = ct.split(';')[0].trim();
     if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)) mediaType = 'image/jpeg';
