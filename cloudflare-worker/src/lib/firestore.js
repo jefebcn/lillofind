@@ -40,6 +40,9 @@ async function getAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
   if (_tokenCache.token && _tokenCache.exp > now + 60) return _tokenCache.token;
 
+  if (!env.FIREBASE_SERVICE_ACCOUNT) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT non configurato sul Worker (secret mancante).');
+  }
   const sa = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT);
   const header = { alg: 'RS256', typ: 'JWT' };
   const claim = {
