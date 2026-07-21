@@ -214,10 +214,10 @@ app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 
 app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
 // Email conferma ordine al cliente (utente autenticato)
 app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 'required' }));
-// Scraper (admin)
-app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'admin' }));
-app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'admin' }));
-app.post('/uploadImage',  callable(scrapers.uploadImage,  { auth: 'admin' }));
+// Scraper (admin via allowlist email — non richiede FIREBASE_SERVICE_ACCOUNT)
+app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'adminEmail' }));
+app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'adminEmail' }));
+app.post('/uploadImage',  callable(scrapers.uploadImage,  { auth: 'adminEmail' }));
 
 export default app;
 
