@@ -1647,7 +1647,7 @@ window.analyzeAndAddRows = async function(){
   const imp    = window.__imp;
   const fnAI   = lfCallable('yupooAnalyze');
   const fnFetch = lfCallable('yupooFetch');
-  let done = 0, addedCount = 0;
+  let done = 0, addedCount = 0, aiFailCount = 0, firstAiErr = '';
 
   // Read optional hints from the panel
   const hintBrand  = (document.getElementById('ai-hint-brand')?.value||'').trim();
@@ -1669,6 +1669,12 @@ window.analyzeAndAddRows = async function(){
       fnAI({ imageUrl: d.cover, brandHint: hintBrand||'', modelHint: hintModel||'' }),
       albumUrl ? fnFetch({ url: albumUrl, ...(_yupooPassword ? { password: _yupooPassword } : {}) }) : Promise.resolve(null),
     ]);
+
+    const aiErrMsg = aiRes.status === 'rejected'
+      ? (aiRes.reason && aiRes.reason.message ? aiRes.reason.message : 'errore sconosciuto')
+      : '';
+    if(aiErrMsg){ console.warn('AI analyze fallita per album '+id+':', aiErrMsg); aiFailCount++; if(!firstAiErr) firstAiErr = aiErrMsg; }
+    d.aiError = aiErrMsg;
 
     d.analysis = aiRes.status === 'fulfilled'
       ? aiRes.value.data
@@ -1694,8 +1700,15 @@ window.analyzeAndAddRows = async function(){
     if(stEl){
       const cnyFound = d.albumInfo?.supplierPriceCNY || d.supplierPrice?.value;
       const pHint = cnyFound ? ` · ¥${cnyFound}` : (d.albumInfo?.supplierPriceUSD ? ` · $${d.albumInfo.supplierPriceUSD}` : '');
-      stEl.textContent = (aiRes.status === 'fulfilled' ? '✅ ' : '⚠️ ') + (d.analysis.brand||'OK') + pHint;
-      stEl.style.color = aiRes.status === 'fulfilled' ? 'var(--led)' : '#FF4757';
+      if(aiRes.status === 'fulfilled'){
+        stEl.textContent = '✅ ' + (d.analysis.brand||'OK') + pHint;
+        stEl.style.color = 'var(--led)';
+        stEl.title = '';
+      } else {
+        stEl.textContent = '⚠️ AI: ' + aiErrMsg;
+        stEl.style.color = '#FF4757';
+        stEl.title = aiErrMsg;
+      }
     }
 
     done++;
@@ -1706,10 +1719,15 @@ window.analyzeAndAddRows = async function(){
     addedCount++;
   }
 
-  lbl.textContent = '✅ Completato! ' + addedCount + ' prodotti aggiunti. Imposta i prezzi e clicca SALVA TUTTO.';
+  if(aiFailCount){
+    lbl.innerHTML = '⚠️ ' + addedCount + ' aggiunti, ma <b style="color:#FF4757">' + aiFailCount + ' analisi AI fallite</b>.<br>Causa: <code style="color:#FF4757">' + firstAiErr.replace(/</g,'&lt;') + '</code>';
+    toast('⚠️ ' + aiFailCount + ' analisi AI fallite — vedi dettaglio errore');
+  } else {
+    lbl.textContent = '✅ Completato! ' + addedCount + ' prodotti aggiunti. Imposta i prezzi e clicca SALVA TUTTO.';
+    toast('🤖 ' + addedCount + ' prodotti AI aggiunti al form!');
+  }
   btn.disabled = false; btn.textContent = '✅ ' + addedCount + ' AGGIUNTI AL FORM';
   updateStats();
-  toast('🤖 ' + addedCount + ' prodotti AI aggiunti al form!');
   setTimeout(()=>{ document.getElementById('rows-container').scrollIntoView({behavior:'smooth',block:'start'}); }, 400);
 };
 
