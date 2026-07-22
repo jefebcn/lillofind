@@ -753,14 +753,14 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 ════════════════════════════ */
 .tip{
   display:inline-flex;align-items:center;justify-content:center;
-  width:16px;height:16px;border-radius:50%;
-  background:var(--g-dim);color:var(--g);
-  font-size:10px;font-weight:600;cursor:help;
+  width:15px;height:15px;border-radius:50%;
+  background:rgba(255,255,255,.05);color:var(--w3);
+  font-size:9px;font-weight:600;cursor:help;
   font-family:'Inter',sans-serif;letter-spacing:0;
-  user-select:none;flex-shrink:0;transition:background .15s;
-  position:relative;
+  user-select:none;flex-shrink:0;transition:background .15s,color .15s;
+  position:relative;opacity:.75;
 }
-.tip:hover{background:var(--g2);}
+.tip:hover{background:var(--g2);color:var(--g);opacity:1;}
 .tip::after{
   content:attr(data-tip);
   position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
@@ -1071,6 +1071,22 @@ textarea.lf-in{resize:vertical;min-height:80px;}
 
   /* ── Section title ── */
   .sec-title{font-size:34px;}
+
+  /* ── Centra le pagine (niente più spazio morto a destra) ── */
+  .pg{max-width:1240px;margin-left:auto;margin-right:auto;}
+
+  /* ── Header: niente logo duplicato (già nella sidebar) ── */
+  #mob-hdr .hdr-logo{display:none;}
+  #mob-hdr{justify-content:flex-end;}
+
+  /* ── Dashboard: layout a due colonne (bento) ── */
+  .dash-bento{
+    display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start;
+  }
+  /* I figli delle colonne mantengono i loro margin-bottom originali */
+  .dash-col--side{position:sticky;top:20px;}
+  /* Nella colonna principale il grafico crescita e le ciambelle restano pieni */
+  .dash-col--main .chart-wrap{height:280px;}
 }
 </style>
 </head>
@@ -1148,6 +1164,9 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <span class="notif-dot" id="notif-dot" style="display:none;"></span>
       </div>
     </div>
+
+    <div class="dash-bento">
+    <div class="dash-col dash-col--main">
 
     <!-- Balance hero -->
     <div class="balance-hero">
@@ -1304,6 +1323,9 @@ textarea.lf-in{resize:vertical;min-height:80px;}
       </div>
     </div>
 
+    </div><!-- /dash-col--main -->
+    <div class="dash-col dash-col--side">
+
     <!-- Rate table -->
     <div class="chart-card rate-section">
       <div class="rate-section-label">
@@ -1360,6 +1382,9 @@ textarea.lf-in{resize:vertical;min-height:80px;}
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
     </div>
+
+    </div><!-- /dash-col--side -->
+    </div><!-- /dash-bento -->
   </div>
 
   <!-- ════ INVEST ════ -->
