@@ -2139,21 +2139,31 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
         </div>
 
-        <!-- Shipping -->
-        <div id="ck-shipping-section" style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+        <!-- Contatti cliente (sempre obbligatori, anche per prodotti digitali) -->
+        <div id="ck-contact-section" style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
             <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">1</span>
-            <p class="bb" style="font-size:22px;">📦 Indirizzo di Spedizione</p>
+            <p class="bb" style="font-size:22px;">👤 Dati Cliente</p>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Nome *</label><input class="lf-in" id="ck-fname" placeholder="Mario"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Cognome *</label><input class="lf-in" id="ck-lname" placeholder="Rossi"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Email *</label><input class="lf-in" id="ck-email" placeholder="email@esempio.it" type="email" autocomplete="email"/></div>
+            <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Telefono *</label><input class="lf-in" id="ck-phone" placeholder="+39 333 000 0000" type="tel" autocomplete="tel"/></div>
+          </div>
+        </div>
+
+        <!-- Shipping (solo prodotti fisici) -->
+        <div id="ck-shipping-section" style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">2</span>
+            <p class="bb" style="font-size:22px;">📦 Indirizzo di Spedizione</p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
             <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Indirizzo *</label><input class="lf-in" id="ck-street" placeholder="Via Roma 1"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Città *</label><input class="lf-in" id="ck-city" placeholder="Milano"/></div>
             <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">CAP *</label><input class="lf-in" id="ck-zip" placeholder="20100" maxlength="5"/></div>
-            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Telefono</label><input class="lf-in" id="ck-phone" placeholder="+39 333 000 0000" type="tel"/></div>
-            <div style="display:flex;flex-direction:column;gap:5px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Paese</label>
+            <div style="display:flex;flex-direction:column;gap:5px;grid-column:span 2;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Paese</label>
               <select class="lf-in" id="ck-country"><option>Italia</option><option>San Marino</option><option>Svizzera</option><option>Altro</option></select>
             </div>
           </div>
@@ -4893,16 +4903,28 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(el){el.style.borderColor='';el.style.background='';}
     }
 
-    // ── 1. Validate shipping address (non-digital only) ─────
+    // ── 1. Dati cliente SEMPRE obbligatori (nome, cognome, telefono) ──
+    // anche per i prodotti digitali: servono per contattare/gestire l'ordine.
     const fname=document.getElementById('ck-fname')?.value.trim()||'';
     const lname=document.getElementById('ck-lname')?.value.trim()||'';
+    const phone=document.getElementById('ck-phone')?.value.trim()||'';
     const street=document.getElementById('ck-street')?.value.trim()||'';
     const city=document.getElementById('ck-city')?.value.trim()||'';
     const zip=document.getElementById('ck-zip')?.value.trim()||'';
+    let contactOk=true;
+    if(!fname){markErr('ck-fname');contactOk=false;}else clearErr('ck-fname');
+    if(!lname){markErr('ck-lname');contactOk=false;}else clearErr('ck-lname');
+    // Telefono: almeno 6 cifre (accetta +, spazi, trattini)
+    if(!phone||(phone.replace(/[^\d]/g,'').length<6)){markErr('ck-phone');contactOk=false;}else clearErr('ck-phone');
+    if(!contactOk){
+      showToast('⚠️ Compila nome, cognome e telefono.');
+      document.getElementById('ck-contact-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+
+    // ── 2. Indirizzo di spedizione (solo prodotti fisici) ────
     if(!allDigital){
       let addrOk=true;
-      if(!fname){markErr('ck-fname');addrOk=false;}else clearErr('ck-fname');
-      if(!lname){markErr('ck-lname');addrOk=false;}else clearErr('ck-lname');
       if(!street){markErr('ck-street');addrOk=false;}else clearErr('ck-street');
       if(!city){markErr('ck-city');addrOk=false;}else clearErr('ck-city');
       if(!zip||zip.length<4){markErr('ck-zip');addrOk=false;}else clearErr('ck-zip');
@@ -4921,7 +4943,6 @@ img{ -webkit-user-drag:none; user-select:none; }
     } else clearErr('ck-email');
 
     const _orderItems=[...cart];
-    const phone=document.getElementById('ck-phone')?.value.trim()||'—';
     const country=document.getElementById('ck-country')?.value||'Italia';
     const notes=document.getElementById('ck-notes')?.value.trim()||'';
     const _orderPayload={
