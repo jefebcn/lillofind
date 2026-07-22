@@ -1665,8 +1665,10 @@ window.analyzeAndAddRows = async function(){
 
     // Fetch AI analysis + album detail page in parallelo
     const albumUrl = _yupooHostname ? `https://${_yupooHostname}/albums/${id}` : null;
+    // De-proxy: manda all'AI l'immagine Yupoo reale, non l'URL del proxy (?url=…)
+    const aiImg = (d.cover && d.cover.includes('?url=')) ? decodeURIComponent(d.cover.split('?url=')[1].split('&')[0]) : d.cover;
     const [aiRes, detailRes] = await Promise.allSettled([
-      fnAI({ imageUrl: d.cover, brandHint: hintBrand||'', modelHint: hintModel||'' }),
+      fnAI({ imageUrl: aiImg, brandHint: hintBrand||'', modelHint: hintModel||'' }),
       albumUrl ? fnFetch({ url: albumUrl, ...(_yupooPassword ? { password: _yupooPassword } : {}) }) : Promise.resolve(null),
     ]);
 

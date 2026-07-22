@@ -2285,7 +2285,9 @@ waitFB(()=>{
     const btn=document.getElementById('qc-ai-btn'); btn.disabled=true;
     const prog=document.getElementById('qc-prog'); prog.style.display='block';
     const fnAI=lfCallable('yupooAnalyze');
-    const deproxy=(u)=>{ if(u&&u.includes('/proxyImage?url=')){ try{ return decodeURIComponent(u.split('?url=')[1].split('&')[0]); }catch(_){}} return u; };
+    // Estrae l'immagine reale da qualsiasi URL proxy (?url=<encoded>):
+    // sia /proxyImage?url=… sia yupoo-proxy.workers.dev/?url=…
+    const deproxy=(u)=>{ if(u&&u.includes('?url=')){ try{ return decodeURIComponent(u.split('?url=')[1].split('&')[0]); }catch(_){}} return u; };
 
     // ── Probe: prova UNA chiamata prima di lanciare l'intero batch ──
     prog.textContent='Prova AI su 1 prodotto...';
