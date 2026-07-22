@@ -2247,10 +2247,25 @@ waitFB(()=>{
     const btn=document.getElementById('qc-apply-btn'); btn.disabled=true;
     const prog=document.getElementById('qc-prog'); prog.style.display='block';
     let done=0, err=0;
-    for(const w of writes){
-      try{ await fb.updateDoc(fb.doc(fb.db,'products',w.id), w.upd); done++; }
-      catch(e){ err++; console.warn('qc write fallita',w.id,e&&e.code); }
-      if(done%10===0||done+err===writes.length){ btn.textContent=`Applicazione... ${done+err}/${writes.length}`; prog.textContent=`Salvati ${done}/${writes.length}...`; }
+    // Scrittura a BATCH (max 400/commit) — molto più veloce con migliaia di prodotti.
+    const CHUNK=400;
+    for(let i=0;i<writes.length;i+=CHUNK){
+      const slice=writes.slice(i,i+CHUNK);
+      try{
+        const batch=fb.writeBatch(fb.db);
+        for(const w of slice){ batch.update(fb.doc(fb.db,'products',w.id), w.upd); }
+        await batch.commit();
+        done+=slice.length;
+      }catch(e){
+        // Se il batch fallisce, ripiego su scritture singole per non perdere tutto
+        console.warn('qc batch fallito, retry singolo:',e&&e.code);
+        for(const w of slice){
+          try{ await fb.updateDoc(fb.doc(fb.db,'products',w.id), w.upd); done++; }
+          catch(e2){ err++; console.warn('qc write fallita',w.id,e2&&e2.code); }
+        }
+      }
+      btn.textContent=`Applicazione... ${done+err}/${writes.length}`;
+      prog.textContent=`Salvati ${done}/${writes.length}...`;
     }
     prog.textContent=`✅ ${done} prodotti corretti${err?` · ⚠️ ${err} errori`:''}.`;
     showToast(`✅ ${done} prodotti corretti${err?` (${err} errori)`:''}`);
@@ -2266,19 +2281,34 @@ waitFB(()=>{
     const ids=new Set([...document.querySelectorAll('.qc-row-chk:checked')].map(c=>c.dataset.id));
     const targets=_qcData.filter(r=>ids.has(r.id) && r.emptyDesc && r.imageUrl);
     if(!targets.length){ showToast('Nessun prodotto selezionato con descrizione vuota e immagine.'); return; }
-    if(!confirm(`Generare ${targets.length} descrizioni con l'AI? (richiede la chiave Anthropic sul Worker; ha un piccolo costo per immagine)`)) return;
+    if(!confirm(`Generare descrizioni AI per ${targets.length} prodotti?\n\nRichiede la chiave Anthropic sul Worker e ha un piccolo costo per immagine. Faccio prima una prova su 1 prodotto: se fallisce mi fermo subito.`)) return;
     const btn=document.getElementById('qc-ai-btn'); btn.disabled=true;
     const prog=document.getElementById('qc-prog'); prog.style.display='block';
     const fnAI=lfCallable('yupooAnalyze');
-    let done=0, ok=0, err=0, firstErr='';
-    for(const r of targets){
-      // De-proxy dell'immagine: l'AI sul Worker fa il fetch diretto
-      let img=r.imageUrl;
-      if(img.includes('/proxyImage?url=')) { try{ img=decodeURIComponent(img.split('?url=')[1].split('&')[0]); }catch(_){}}
+    const deproxy=(u)=>{ if(u&&u.includes('/proxyImage?url=')){ try{ return decodeURIComponent(u.split('?url=')[1].split('&')[0]); }catch(_){}} return u; };
+
+    // ── Probe: prova UNA chiamata prima di lanciare l'intero batch ──
+    prog.textContent='Prova AI su 1 prodotto...';
+    try{
+      const p0=targets[0];
+      const res0=await fnAI({ imageUrl:deproxy(p0.imageUrl), brandHint:p0.canonBrand||p0.brand||'', modelHint:p0.model||'' });
+      const desc0=res0&&res0.data&&res0.data.description?String(res0.data.description).trim():'';
+      if(desc0){ await fb.updateDoc(fb.doc(fb.db,'products',p0.id),{description:desc0}); p0.emptyDesc=false; }
+    }catch(e){
+      const msg=(e&&e.message)||'errore sconosciuto';
+      prog.innerHTML=`❌ AI non disponibile — <code style="color:#ff9a9a">${escH(msg)}</code><br><span style="color:var(--dim);font-size:10px;">Probabile: chiave ANTHROPIC_API_KEY non impostata sul Worker. Verifica su /diag. Le correzioni marchi/categorie/descrizioni base funzionano lo stesso senza AI.</span>`;
+      showToast('❌ AI non disponibile — vedi il motivo sotto i pulsanti');
+      btn.textContent='🤖 Genera descrizioni AI (mancanti)'; btn.disabled=false;
+      return;
+    }
+
+    // ── Probe ok → processa il resto ──
+    let done=1, ok=1, err=0, firstErr='';
+    for(let i=1;i<targets.length;i++){
+      const r=targets[i];
       try{
-        const res=await fnAI({ imageUrl:img, brandHint:r.canonBrand||r.brand||'', modelHint:r.model||'' });
-        const d=res&&res.data;
-        const desc=d&&d.description?String(d.description).trim():'';
+        const res=await fnAI({ imageUrl:deproxy(r.imageUrl), brandHint:r.canonBrand||r.brand||'', modelHint:r.model||'' });
+        const desc=res&&res.data&&res.data.description?String(res.data.description).trim():'';
         if(desc){ await fb.updateDoc(fb.doc(fb.db,'products',r.id), {description:desc}); r.emptyDesc=false; ok++; }
         else err++;
       }catch(e){ err++; if(!firstErr) firstErr=(e&&e.message)||'errore'; console.warn('qc AI desc fallita',r.id,e&&e.message); }
