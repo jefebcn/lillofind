@@ -276,6 +276,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
             <option value="all">Tutti gli ordini</option>
             <option value="pending">⏳ In attesa</option>
             <option value="confirmed">✅ Confermati</option>
+            <option value="expired">⏰ Scaduti / annullati</option>
           </select>
           <button class="btn-k" onclick="loadAdminOrders()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna</button>
         </div>
@@ -1220,6 +1221,27 @@ waitFB(()=>{
   }
 
 
+  // Dopo quante ore un ordine "in attesa" NON pagato (PayPal/bonifico) viene
+  // considerato scaduto e annullato automaticamente. La carta (Stripe) è già
+  // incassata alla creazione, quindi non scade mai.
+  const UNPAID_EXPIRY_HOURS = 48;
+
+  // Un ordine è "non pagato" se è ancora in attesa e il metodo è manuale
+  // (PayPal.me / bonifico): il pagamento va verificato a mano dall'admin.
+  function isUnpaidOrder(o){
+    return o.status === 'pending' && o.payment !== 'card';
+  }
+  function orderAgeHours(o){
+    return o.createdAt?.seconds ? (Date.now()/1000 - o.createdAt.seconds)/3600 : 0;
+  }
+  function orderAgeLabel(o){
+    const h = orderAgeHours(o);
+    if(!o.createdAt?.seconds) return '';
+    if(h < 1) return Math.max(1,Math.round(h*60))+' min fa';
+    if(h < 24) return Math.round(h)+'h fa';
+    return Math.round(h/24)+'g fa';
+  }
+
   window.loadAdminOrders = async function(){
     const fb = window.__fb;
     if(!fb) return;
@@ -1231,6 +1253,21 @@ waitFB(()=>{
       const q = fb.query(fb.collection(fb.db,'orders'), fb.orderBy('createdAt','desc'));
       const snap = await fb.getDocs(q);
       adminOrders = snap.docs.map(d => ({ id: d.id, _docId: d.id, ...d.data() }));
+
+      // Auto-annullamento: ordini non pagati più vecchi della soglia → 'expired'.
+      // Gira quando l'admin apre/aggiorna il pannello (niente cron/server richiesto).
+      const toExpire = adminOrders.filter(o => isUnpaidOrder(o) && orderAgeHours(o) > UNPAID_EXPIRY_HOURS);
+      if(toExpire.length){
+        for(const o of toExpire){
+          try{
+            await fb.updateDoc(fb.doc(fb.db,'orders',o._docId), {
+              status:'expired', paymentStatus:'unpaid', expiredAt: fb.serverTimestamp()
+            });
+            o.status='expired';
+          }catch(e){ console.warn('auto-expire fallito', o.orderId, e && e.code); }
+        }
+        showToast('⏰ '+toExpire.length+' ordine/i non pagati scaduti e annullati');
+      }
       // Arricchisci item senza immagine con imageUrl attuale dal catalogo
       const missingIds = new Set();
       adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(!i.img && i.id && !i.isDigital) missingIds.add(i.id); }));
@@ -1262,13 +1299,16 @@ waitFB(()=>{
     if(dashEl){
       const recent = adminOrders.slice(0,5);
       dashEl.innerHTML = recent.length ? recent.map(o=>{
-        const ip=o.status==='pending';
+        const exp=o.status==='expired'||o.status==='cancelled';
+        const up=isUnpaidOrder(o);
         const ts=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT'):'—';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid rgba(255,255,255,.07);gap:12px;flex-wrap:wrap;">
+        const dbStyle=exp?'background:rgba(230,57,70,.15);color:#ff8a8a;':up?'background:#e63946;color:#fff;':o.status==='pending'?'background:var(--led);color:#000;':'background:rgba(46,204,113,.15);color:#2ecc71;';
+        const dbLbl=exp?(o.status==='cancelled'?'ANNULLATO':'SCADUTO'):up?'NON PAGATO':o.status==='pending'?'IN ATTESA':'CONFERMATO';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid rgba(255,255,255,.07);gap:12px;flex-wrap:wrap;${exp?'opacity:.6;':''}">
           <div><p style="font-size:15px;font-weight:600;">${escH(o.name||'—')}</p><p style="font-size:12px;color:var(--dim);">${escH(o.email||'—')} · ${ts}</p></div>
           <div style="display:flex;align-items:center;gap:12px;">
             <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:24px;">€${(o.total||0).toFixed(2)}</span>
-            <span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;${ip?'background:var(--led);color:#000':'background:rgba(46,204,113,.15);color:#2ecc71;'}">${ip?'IN ATTESA':'CONFERMATO'}</span>
+            <span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;${dbStyle}">${dbLbl}</span>
           </div>
         </div>`;
       }).join('') : '<p style="font-size:13px;color:var(--dim);letter-spacing:.5px;">Nessun ordine.</p>';
@@ -1279,8 +1319,19 @@ waitFB(()=>{
     }
     list.innerHTML = filtered.map(o=>{
       const isPending = o.status === 'pending';
+      const isExpired = o.status === 'expired' || o.status === 'cancelled';
+      const unpaid = isUnpaidOrder(o);
       const ts = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000).toLocaleString('it-IT') : '—';
+      const age = orderAgeLabel(o);
       const payEmoji = {card:'💳',paypal:'🅿',bonifico:'🏦'}[o.payment]||'💳';
+      // Badge di stato: verde=confermato, rosso=NON PAGATO, grigio=scaduto
+      const statusBadge = isExpired
+        ? `<span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;background:#3a1f22;color:#ff8a8a;">⏰ ${o.status==='cancelled'?'ANNULLATO':'SCADUTO · NON PAGATO'}</span>`
+        : unpaid
+          ? `<span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;background:#e63946;color:#fff;">⚠️ NON PAGATO</span>`
+          : isPending
+            ? `<span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;background:var(--led);color:var(--k);">⏳ IN ATTESA</span>`
+            : `<span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;background:#e8f5e9;color:#2e7d32;">✅ CONFERMATO</span>`;
       const itemsHtml = (o.items||[]).map(i=>{
         const box = i.boxOption==='con_scatola'?' · 📦 Con Scatola':i.boxOption==='senza_scatola'?' · Senza Scatola':'';
         const imgRaw = i.img || i.imageUrl || '';
@@ -1313,14 +1364,14 @@ waitFB(()=>{
       }).join('');
       const orderJsonSafe = JSON.stringify(o).replace(/'/g,"\\'").replace(/"/g,'&quot;');
       return `
-      <div class="admin-order-card ${isPending?'pending':'confirmed'}">
+      <div class="admin-order-card ${isPending?'pending':'confirmed'}" style="${isExpired?'opacity:.55;':''}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
           <div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap;">
               <span class="bb" style="font-size:24px;">${o.orderId||'—'}</span>
-              <span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;${isPending?'background:var(--led);color:var(--k);':'background:#e8f5e9;color:#2e7d32;'}">${isPending?'⏳ IN ATTESA':'✅ CONFERMATO'}</span>
+              ${statusBadge}
             </div>
-            <p style="font-size:13px;color:var(--mid);">${ts}</p>
+            <p style="font-size:13px;color:var(--mid);">${ts}${age?' · '+age:''}</p>
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p class="bb" style="font-size:30px;">€${(o.total||0).toFixed(2)}</p>
@@ -1332,6 +1383,10 @@ waitFB(()=>{
             <p style="font-size:12px;color:var(--dim);margin-top:4px;">${payEmoji} ${o.payment||'—'}</p>
           </div>
         </div>
+        ${unpaid?`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.4);border-radius:4px;">
+          <span style="font-size:16px;">⚠️</span>
+          <p style="font-size:12px;color:#ff9a9a;line-height:1.5;">Pagamento <strong>da verificare manualmente</strong> (${o.payment==='paypal'?'PayPal':'bonifico'}). Non spedire finché non hai ricevuto l'importo. Conferma l'ordine solo dopo l'incasso — altrimenti scade automaticamente dopo ${UNPAID_EXPIRY_HOURS}h.</p>
+        </div>`:''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;padding:16px;background:rgba(255,255,255,.04);border-left:3px solid rgba(255,255,255,.15);">
           <div>
             <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Cliente</p>
@@ -1352,7 +1407,9 @@ waitFB(()=>{
         </div>
         ${o.notes?`<div style="font-size:13px;color:var(--mid);font-style:italic;margin-bottom:12px;">📝 ${escH(o.notes)}</div>`:''}
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-          ${isPending?`<button onclick="confirmAdminOrder('${o._docId}',this)" class="btn-led" style="padding:11px 22px;font-size:13px;">✅ Conferma Ordine</button>`:''}
+          ${isPending?`<button onclick="confirmAdminOrder('${o._docId}',this)" class="btn-led" style="padding:11px 22px;font-size:13px;">${unpaid?'✅ Pagamento ricevuto → Conferma':'✅ Conferma Ordine'}</button>`:''}
+          ${isPending?`<button onclick="cancelAdminOrder('${o._docId}',this)" class="btn-k" style="padding:11px 22px;font-size:13px;background:#3a1f22;color:#ff8a8a;">❌ Annulla</button>`:''}
+          ${isExpired?`<button onclick="reactivateAdminOrder('${o._docId}',this)" class="btn-k" style="padding:11px 22px;font-size:13px;">↩️ Riattiva</button>`:''}
           <button onclick="copyOrderMessage('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;background:#25D366;">📲 Messaggio WhatsApp</button>
           <button onclick="printOrderReceipt('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">🧾 Ricevuta</button>
           <button onclick="openQCPhotos('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📸 Foto QC${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?' ('+o.qcPhotos.length+')':''}</button>
@@ -1371,17 +1428,59 @@ waitFB(()=>{
       // Evita il Worker, che richiederebbe un service account non configurato.
       await fb.updateDoc(fb.doc(fb.db,'orders',docId), {
         status:'confirmed',
+        paymentStatus:'paid',
         confirmedAt: fb.serverTimestamp()
       });
       const idx = adminOrders.findIndex(o=>o._docId===docId);
-      if(idx>=0) adminOrders[idx].status='confirmed';
+      if(idx>=0){ adminOrders[idx].status='confirmed'; adminOrders[idx].paymentStatus='paid'; }
       renderAdminOrders();
-      showToast('✅ Ordine confermato!');
+      showToast('✅ Ordine confermato — pagamento registrato!');
     } catch(e){
       console.error('confirmAdminOrder:', e && e.code, e && e.message);
       showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')');
     }
     if(btn){ btn.textContent='✅ Conferma Ordine'; btn.disabled=false; }
+  };
+
+  // Annulla manualmente un ordine (es. pagamento mai arrivato).
+  window.cancelAdminOrder = async function(docId, btn){
+    const fb = window.__fb;
+    if(!docId) return;
+    if(!confirm('Annullare questo ordine? Verrà segnato come non pagato/annullato.')) return;
+    if(btn){ btn.textContent='...'; btn.disabled=true; }
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'orders',docId), {
+        status:'cancelled', paymentStatus:'unpaid', cancelledAt: fb.serverTimestamp()
+      });
+      const idx = adminOrders.findIndex(o=>o._docId===docId);
+      if(idx>=0){ adminOrders[idx].status='cancelled'; adminOrders[idx].paymentStatus='unpaid'; }
+      renderAdminOrders();
+      showToast('❌ Ordine annullato.');
+    } catch(e){
+      console.error('cancelAdminOrder:', e && e.code, e && e.message);
+      showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')');
+    }
+    if(btn){ btn.textContent='❌ Annulla'; btn.disabled=false; }
+  };
+
+  // Riporta "in attesa" un ordine scaduto/annullato (es. pagamento arrivato in ritardo).
+  window.reactivateAdminOrder = async function(docId, btn){
+    const fb = window.__fb;
+    if(!docId) return;
+    if(btn){ btn.textContent='...'; btn.disabled=true; }
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'orders',docId), {
+        status:'pending', reactivatedAt: fb.serverTimestamp()
+      });
+      const idx = adminOrders.findIndex(o=>o._docId===docId);
+      if(idx>=0) adminOrders[idx].status='pending';
+      renderAdminOrders();
+      showToast('↩️ Ordine riportato in attesa.');
+    } catch(e){
+      console.error('reactivateAdminOrder:', e && e.code, e && e.message);
+      showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')');
+    }
+    if(btn){ btn.textContent='↩️ Riattiva'; btn.disabled=false; }
   };
 
   // Costruisce il riepilogo testuale dell'ordine (per WhatsApp / copia)

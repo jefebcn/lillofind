@@ -5016,7 +5016,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       subtotal, shipping, discount, total,
       payment:payload.paymentMethod||'bonifico',
       lfpoints, isDigitalOrder:allDigital, deliveryType:allDigital?'digital':'physical',
-      status:'pending', createdAt:fb.serverTimestamp(),
+      status:'pending', paymentStatus:'unpaid', createdAt:fb.serverTimestamp(),
     };
     await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
     // Aggiorna spesa utente (i punti vengono accreditati alla conferma del pagamento)
