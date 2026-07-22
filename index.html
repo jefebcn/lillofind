@@ -4503,7 +4503,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   function saveCart(){localStorage.setItem('lf_cart',JSON.stringify(cart));}
   
   function updateCartBadge(){
-    const count=cart.reduce((s,i)=>s+i.qty,0);
+    // Gli abbonamenti digitali contano come 1 (qty = mesi, non pezzi)
+    const count=cart.reduce((s,i)=>s+(i.isDigital?1:i.qty),0);
     document.querySelectorAll('.cart-badge').forEach(b=>{
       b.textContent=count;
       b.style.display=count>0?'flex':'none';
@@ -4540,6 +4541,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       const _shoe=isShoeItem(item);
       const _box=_shoe?(item.boxOption||(item.category==='scarpe_box'?'con_scatola':'senza_scatola')):null;
       const _wkg=getProductWeight(item).toFixed(1);
+      const _months=item.qty; // per gli abbonamenti digitali qty = numero di mesi
+      const _mLbl=_months>1?_months+' mesi':'1 mese';
       const _boxHtml=_shoe?`<div style="display:flex;gap:4px;margin-top:5px;">
         <button onclick="setBoxOption(${idx},'con_scatola')" style="font-size:8px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='con_scatola'?'background:var(--k);color:var(--w);':'background:none;color:var(--k);'}">📦 Con Scatola</button>
         <button onclick="setBoxOption(${idx},'senza_scatola')" style="font-size:8px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='senza_scatola'?'background:var(--k);color:var(--w);':'background:none;color:var(--k);'}">Senza Scatola</button>
@@ -4560,16 +4563,20 @@ img{ -webkit-user-drag:none; user-select:none; }
               <p style="font-size:14px;font-weight:600;line-height:1.3;margin:2px 0;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`onclick="openProduct('${item.id}')"`:''}>
                 ${item.name}
               </p>
-              <p style="font-size:11px;color:var(--dim);">${item.size?`SZ ${item.size} · `:''}${_wkg} kg</p>
+              <p style="font-size:11px;color:var(--dim);">${item.isDigital?`€${item.price.toFixed(2)}/mese · <strong style="color:var(--k);">${_mLbl}</strong>`:`${item.size?`SZ ${item.size} · `:''}${_wkg} kg`}</p>
             </div>
-            <p class="bb" style="font-size:20px;flex-shrink:0;">€${(item.price*item.qty).toFixed(2)}</p>
+            <div style="text-align:right;flex-shrink:0;">
+              <p class="bb" style="font-size:20px;">€${(item.price*item.qty).toFixed(2)}</p>
+              ${item.isDigital&&_months>1?`<p style="font-size:10px;color:var(--dim);">€${item.price.toFixed(2)} × ${_months}</p>`:''}
+            </div>
           </div>
           ${_boxHtml}
           <p style="font-size:10px;color:var(--led);letter-spacing:.5px;font-weight:600;margin-top:6px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;">
             <div style="display:flex;align-items:center;gap:6px;">
+              ${item.isDigital?`<span style="font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-right:4px;">Durata</span>`:''}
               <button onclick="changeQty(${idx},-1)" style="width:34px;height:34px;border:1.5px solid var(--border-2);background:var(--card);border-radius:10px;cursor:pointer;font-size:16px;color:var(--k);">−</button>
-              <span style="font-size:14px;font-weight:600;min-width:22px;text-align:center;">${item.qty}</span>
+              <span style="font-size:14px;font-weight:600;min-width:${item.isDigital?'52px':'22px'};text-align:center;">${item.isDigital?_mLbl:item.qty}</span>
               <button onclick="changeQty(${idx},1)" style="width:34px;height:34px;border:1.5px solid var(--border-2);background:var(--card);border-radius:10px;cursor:pointer;font-size:16px;color:var(--k);">+</button>
             </div>
             <button onclick="removeCart(${idx})" style="font-size:12px;color:#c0503f;background:none;border:none;cursor:pointer;letter-spacing:.3px;font-weight:600;padding:6px;">Rimuovi</button>
@@ -4742,7 +4749,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <p style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${!i.isDigital?'cursor:pointer;text-decoration:underline;text-underline-offset:2px;':''}" ${!i.isDigital?`onclick="openProduct('${i.id}')"`:''}>
             ${i.name}
           </p>
-          <p style="font-size:10px;color:var(--mid);margin-top:1px;">${[i.size?'SZ '+i.size:'',i.color||'',i.boxOption==='con_scatola'?'📦 Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;'}</p>
+          <p style="font-size:10px;color:var(--mid);margin-top:1px;">${i.isDigital?('📧 Abbonamento · '+(i.qty>1?i.qty+' mesi':'1 mese')):([i.size?'SZ '+i.size:'',i.color||'',i.boxOption==='con_scatola'?'📦 Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;')}</p>
         </div>
         <span style="font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;">€${(i.price*i.qty).toFixed(2)}</span>
       </div>`).join('');
