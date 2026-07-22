@@ -1334,6 +1334,7 @@ waitFB(()=>{
             : `<span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;background:#e8f5e9;color:#2e7d32;">✅ CONFERMATO</span>`;
       const itemsHtml = (o.items||[]).map(i=>{
         const box = i.boxOption==='con_scatola'?' · 📦 Con Scatola':i.boxOption==='senza_scatola'?' · Senza Scatola':'';
+        const qtyLabel = i.isDigital ? (i.qty>1?i.qty+' mesi':'1 mese') : ('x'+i.qty);
         const imgRaw = i.img || i.imageUrl || '';
         const imgSrc = pImg(imgRaw);
         const lbDetails = [
@@ -1341,7 +1342,7 @@ waitFB(()=>{
           i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${escH(i.size)}` : '',
           i.color ? `<span style='color:#aaa'>Colore</span> &nbsp;${escH(i.color)}` : '',
           i.boxOption==='con_scatola' ? `<span style='color:#aaa'>Scatola</span> &nbsp;📦 Inclusa` : i.boxOption==='senza_scatola' ? `<span style='color:#aaa'>Scatola</span> &nbsp;Non inclusa` : '',
-          `<span style='color:#aaa'>Qtà</span> &nbsp;x${i.qty}`,
+          i.isDigital ? `<span style='color:#aaa'>Durata</span> &nbsp;${i.qty>1?i.qty+' mesi':'1 mese'}` : `<span style='color:#aaa'>Qtà</span> &nbsp;x${i.qty}`,
           `<span style='color:#aaa'>Prezzo unit.</span> &nbsp;€${(i.price||0).toFixed(2)}`,
           `<span style='color:#aaa'>Totale</span> &nbsp;<strong style='color:#fff'>€${((i.price||0)*i.qty).toFixed(2)}</strong>`,
         ].filter(Boolean).join('<br>');
@@ -1358,7 +1359,7 @@ waitFB(()=>{
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p style="font-size:16px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
-            <p style="font-size:13px;color:rgba(255,255,255,.55);">x${i.qty}</p>
+            <p style="font-size:13px;color:rgba(255,255,255,.55);">${qtyLabel}</p>
           </div>
         </div>`;
       }).join('');

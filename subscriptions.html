@@ -494,7 +494,7 @@ function saveCart(c){ localStorage.setItem('lf_cart', JSON.stringify(c)); }
 
 function updateCartBadge(){
   const cart = loadCart();
-  const count = cart.reduce((s,i)=>s+i.qty,0);
+  const count = cart.reduce((s,i)=>s+(i.isDigital?1:i.qty),0);
   const badge = document.getElementById('sub-cart-count');
   const lbl   = document.getElementById('sub-cart-lbl');
   if(badge){ badge.textContent=count; badge.style.display=count>0?'flex':'none'; }
@@ -525,6 +525,20 @@ function goToCart(){
   location.href='index.html?cart=1';
 }
 
+// ── Durata → aggiorna il totale mostrato sulla card ────
+function _subMonths(subId){
+  const sel = document.getElementById('dur-'+subId);
+  const m = sel ? parseInt(sel.value,10) : 1;
+  return (m && m>0) ? m : 1;
+}
+function updateSubTotal(subId){
+  const sub = SUBSCRIPTIONS.find(s=>s.id===subId);
+  if(!sub) return;
+  const months = _subMonths(subId);
+  const el = document.getElementById('tot-'+subId);
+  if(el) el.textContent = '€'+(sub.lillofind_price*months).toFixed(2);
+}
+
 // ── Add to cart ────────────────────────────────────────
 function addSubToCart(subId){
   if(!window.__subsUser){
@@ -533,9 +547,10 @@ function addSubToCart(subId){
   }
   const sub = SUBSCRIPTIONS.find(s=>s.id===subId);
   if(!sub) return;
+  const months = _subMonths(subId);
   const cart = loadCart();
   const idx = cart.findIndex(i=>i.id===subId);
-  if(idx>=0){ cart[idx].qty+=1; }
+  if(idx>=0){ cart[idx].qty = months; cart[idx].months = months; }
   else{
     cart.push({
       id:sub.id, name:sub.name,
@@ -543,12 +558,12 @@ function addSubToCart(subId){
       brand:'Lillo-Life',
       size:'', color:'', img:'',
       icon:sub.icon||'📱',
-      qty:1, isDigital:true, category:'Subscriptions'
+      qty:months, months:months, isDigital:true, category:'Subscriptions'
     });
   }
   saveCart(cart);
   updateCartBadge();
-  showCartConfirm(sub.name);
+  showCartConfirm(sub.name + ' — ' + months + (months>1?' mesi':' mese'));
 }
 
 // ── Render ─────────────────────────────────────────────
@@ -597,7 +612,22 @@ function renderSubs(cat){
         }).join('')}
       </ul>
       <div class="spots-badge">⚡ Solo ${spots} posti rimasti a questo prezzo</div>
-      <button class="sub-get-btn" onclick="addSubToCart('${s.id}')">Accedi Ora →</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 10px;padding:10px 12px;background:rgba(0,0,0,.04);border-radius:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label for="dur-${s.id}" style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);">Durata abbonamento</label>
+          <select id="dur-${s.id}" onchange="updateSubTotal('${s.id}')" style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px;border:1.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">
+            <option value="1">1 mese</option>
+            <option value="3">3 mesi</option>
+            <option value="6">6 mesi</option>
+            <option value="12">12 mesi</option>
+          </select>
+        </div>
+        <div style="text-align:right;">
+          <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);">Totale</p>
+          <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;line-height:1;"><span id="tot-${s.id}">€${s.lillofind_price.toFixed(2)}</span></p>
+        </div>
+      </div>
+      <button class="sub-get-btn" onclick="addSubToCart('${s.id}')">Aggiungi al carrello →</button>
     </div>`;
   }).join('');
 
