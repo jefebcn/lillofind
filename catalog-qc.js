@@ -50,8 +50,22 @@
     if (/cappell|beanie|berretto|bucket|cap\b|hat\b|visiera/.test(t)) return 'cappello';
     if (/borsa|bag|pochette|clutch|tote|zaino|marsupio|tracolla|shopper|speedy|baguette/.test(t)) return 'borsa';
     if (/maglia|maglione|cardigan|dolcevita|knit|pile|fleece|camicia/.test(t)) return 'felpa';
-    if (/occhial|cintura|portafogl|sciarpa|guant|calz|boxer|intimo|set\b|accessori|orolog|collana|bracciale/.test(t)) return 'accessori';
+    if (/occhial|cintura|portafogl|sciarpa|guant|calz|boxer|intimo|set\b|accessori|orolog|anello|anelli|braccial|collan|catenin|\bcatena\b|orecchin|ciondol|pendent|gioiell|spilla|piercing|perline|bigiotteri/.test(t)) return 'accessori';
     return '';
+  }
+
+  // Bigiotteria: bracciali, collane, anelli, catene, orecchini… → categoria
+  // "accessori" e taglia "Unica". Esclude le borse (che hanno categoria propria).
+  function isJewelry(p) {
+    var t = ((p.name || '') + ' ' + (p.model || '')).toLowerCase();
+    if (/\bborsa\b|\bbag\b|zaino|tracolla|shopper|marsupio|pochette|clutch|tote/.test(t)) return false;
+    return /anello|anelli|braccial|collan|catenin|\bcatena\b|orecchin|ciondol|pendent|gioiell|spilla|piercing|bigiotteri|perline/.test(t);
+  }
+
+  // Taglie di default per categoria: gli accessori/cappelli/borse sono taglia unica.
+  function defaultSizes(cat) {
+    if (cat === 'accessori' || cat === 'cappello' || cat === 'borsa') return ['Unica'];
+    return ['S', 'M', 'L', 'XL'];
   }
 
   var CAT_LABEL = {
@@ -96,7 +110,9 @@
     inferCategory: inferCategory,
     genDescription: genDescription,
     isGenericName: isGenericName,
+    isJewelry: isJewelry,
     defaultWeight: defaultWeight,
+    defaultSizes: defaultSizes,
     CAT_LABEL: CAT_LABEL
   };
 })();

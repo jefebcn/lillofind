@@ -968,7 +968,7 @@ window.saveAll=async function(){
     const colors=colorsRaw?colorsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
     // Shoe sizes (text field) hanno priorità sulle toggle
     const szTextField=document.getElementById('sz-text-'+id);
-    const sizes = szTextField && szTextField.value.trim()
+    let sizes = szTextField && szTextField.value.trim()
       ? szTextField.value.trim().split(/[\s,]+/).filter(Boolean)
       : getRowSizes(id);
     const rst=document.getElementById('rst-'+id);
@@ -980,7 +980,11 @@ window.saveAll=async function(){
       // (AI se presente, altrimenti template), peso spedizione dalla categoria.
       const QC = window.LFCatalog;
       const brand = QC ? QC.canonBrand(rowBrand) : rowBrand;
-      const category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
+      let category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
+      // Bigiotteria (bracciali, collane, anelli, catene…): categoria "accessori"
+      // e taglia "Unica" a prescindere da cosa ha dedotto l'AI.
+      if(QC && QC.isJewelry({name,model:rowModel})){ category='accessori'; sizes=['Unica']; }
+      else if(!sizes.length){ sizes = QC ? QC.defaultSizes(category) : ['S','M','L','XL']; }
       const aiDesc = (row.dataset.desc||'').trim();
       const description = aiDesc || (QC ? QC.genDescription({name,brand,model:rowModel,colors,category}) : '');
       const weightKg = QC ? QC.defaultWeight(category) : 0;
@@ -989,7 +993,7 @@ window.saveAll=async function(){
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand,model:rowModel,
         category,
-        sizes:sizes.length?sizes:['S','M','L','XL'],size:sizes.join(', '),
+        sizes:sizes.length?sizes:['Unica'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description,weightKg,
         createdAt:imp.serverTimestamp()
       });
@@ -1335,7 +1339,9 @@ window.saveCSV = async function(){
       // Arricchimento QC anche per l'import CSV
       const QC = window.LFCatalog;
       const csvBrand = QC ? QC.canonBrand(r.brand) : r.brand;
-      const csvCat = QC ? QC.inferCategory({name:r.nome,model:r.tipo}) : '';
+      let csvCat = QC ? QC.inferCategory({name:r.nome,model:r.tipo}) : '';
+      let csvSizes = r.taglie.length ? r.taglie : (QC ? QC.defaultSizes(csvCat) : ['S','M','L','XL']);
+      if(QC && QC.isJewelry({name:r.nome,model:r.tipo})){ csvCat='accessori'; csvSizes=['Unica']; }
       const csvDesc = QC ? QC.genDescription({name:r.nome,brand:csvBrand,model:r.tipo,colors:r.colori,category:csvCat}) : '';
       const csvWeight = QC ? QC.defaultWeight(csvCat) : 0;
       await imp.addDoc(imp.collection(imp.db,'products'),{
@@ -1344,8 +1350,8 @@ window.saveCSV = async function(){
         brand:       csvBrand,
         model:       r.tipo,
         category:    csvCat,
-        sizes:       r.taglie.length ? r.taglie : ['S','M','L','XL'],
-        size:        r.taglie.join(', '),
+        sizes:       csvSizes.length ? csvSizes : ['Unica'],
+        size:        csvSizes.join(', '),
         colors:      r.colori,
         imageUrl:    r.url,
         description: csvDesc,
