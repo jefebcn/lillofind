@@ -9,6 +9,9 @@
 <title>LilloFind — Importa Prodotti</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 
+<!-- Helper QC catalogo (window.LFCatalog): normalizza marchi, deduce categorie, genera descrizioni -->
+<script src="catalog-qc.js"></script>
+
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -972,13 +975,22 @@ window.saveAll=async function(){
 
     try{
       const rowModel=document.getElementById('rt-'+id)?.value||'';
+      // ── Arricchimento QC al salvataggio (niente più pulizia dopo) ──
+      // Marchio normalizzato, categoria dedotta se mancante, descrizione
+      // (AI se presente, altrimenti template), peso spedizione dalla categoria.
+      const QC = window.LFCatalog;
+      const brand = QC ? QC.canonBrand(rowBrand) : rowBrand;
+      const category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
+      const aiDesc = (row.dataset.desc||'').trim();
+      const description = aiDesc || (QC ? QC.genDescription({name,brand,model:rowModel,colors,category}) : '');
+      const weightKg = QC ? QC.defaultWeight(category) : 0;
       // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker,
       // che richiederebbe un service account non configurato.
       await imp.addDoc(imp.collection(imp.db,'products'),{
-        name,price,brand:rowBrand,model:rowModel,
-        category:rowCategory,
+        name,price,brand,model:rowModel,
+        category,
         sizes:sizes.length?sizes:['S','M','L','XL'],size:sizes.join(', '),
-        colors,imageUrl:imgUrl,description:'',weightKg:0,
+        colors,imageUrl:imgUrl,description,weightKg,
         createdAt:imp.serverTimestamp()
       });
       saved++; savedCount++;
@@ -1320,18 +1332,24 @@ window.saveCSV = async function(){
     lbl.textContent = 'Salvo ' + (i+1) + ' / ' + csvRows.length + ' — ' + r.nome;
     bar.style.width = Math.round(((i+1)/csvRows.length)*100) + '%';
     try{
+      // Arricchimento QC anche per l'import CSV
+      const QC = window.LFCatalog;
+      const csvBrand = QC ? QC.canonBrand(r.brand) : r.brand;
+      const csvCat = QC ? QC.inferCategory({name:r.nome,model:r.tipo}) : '';
+      const csvDesc = QC ? QC.genDescription({name:r.nome,brand:csvBrand,model:r.tipo,colors:r.colori,category:csvCat}) : '';
+      const csvWeight = QC ? QC.defaultWeight(csvCat) : 0;
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name:        r.nome,
         price:       r.prezzo,
-        brand:       r.brand,
+        brand:       csvBrand,
         model:       r.tipo,
-        category:    '',
+        category:    csvCat,
         sizes:       r.taglie.length ? r.taglie : ['S','M','L','XL'],
         size:        r.taglie.join(', '),
         colors:      r.colori,
         imageUrl:    r.url,
-        description: '',
-        weightKg:    0,
+        description: csvDesc,
+        weightKg:    csvWeight,
         createdAt:   imp.serverTimestamp()
       });
       saved++;
@@ -1742,6 +1760,7 @@ function addAnalyzedRow(d){
   div.dataset.imgUrl   = d.cover;
   div.dataset.brand    = d.analysis.brand    || '';
   div.dataset.category = d.analysis.category || '';
+  div.dataset.desc     = d.analysis.description || '';
 
   const name   = (d.analysis.name || d.albumInfo?.pageTitle || '').replace(/"/g,'&quot;');
   const colors = (d.analysis.colors || []).join(', ');
