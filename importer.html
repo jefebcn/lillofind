@@ -370,23 +370,23 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
     </div>
   </div>
 
-  <!-- 00b TAOBAO IMPORT -->
+  <!-- 00b TAOBAO / WEIDIAN IMPORT -->
   <div class="sec-wrap" id="taobao-sec">
-    <p class="sec-num">00 — Import da Taobao</p>
-    <p class="sec-title">🛒 TAOBAO <span style="color:var(--led);">+ AI</span></p>
+    <p class="sec-num">00 — Import da link prodotto</p>
+    <p class="sec-title">🛒 TAOBAO / WEIDIAN <span style="color:var(--led);">+ AI</span></p>
 
-    <!-- Nota su limitazioni Taobao -->
+    <!-- Nota su limitazioni -->
     <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:10px 14px;margin-bottom:16px;font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">
       <strong style="color:#666;letter-spacing:1px;">COME FUNZIONA</strong><br>
-      Incolla il link Taobao → il sistema prova a estrarre automaticamente foto, nome e prezzo.<br>
-      Se Taobao blocca la richiesta (frequente da IP europei), la riga viene creata vuota:<br>
+      Incolla i link (Taobao/Tmall, AliExpress o <span style="color:#888;">Weidian</span>) → il sistema estrae foto, nome e prezzo, poi l'AI riconosce brand/modello/colore.<br>
+      Se la fonte blocca la richiesta, la riga viene creata vuota:<br>
       <span style="color:#888;">1.</span> Apri il link nel browser &nbsp;
       <span style="color:#888;">2.</span> Copia l'URL dell'immagine principale (tasto destro → "Copia indirizzo immagine") &nbsp;
       <span style="color:#888;">3.</span> Incollalo nel campo URL della riga &nbsp;→&nbsp; <span style="color:var(--led);">l'AI analizzerà l'immagine automaticamente</span>
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start;">
-      <textarea class="lf-in" id="tb-urls" placeholder="https://e.tb.cn/h.iv...&#10;https://item.taobao.com/item.htm?id=...&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
+      <textarea class="lf-in" id="tb-urls" placeholder="https://weidian.com/item.html?itemID=...&#10;https://item.taobao.com/item.htm?id=...&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
       <button class="btn-led" id="tb-fetch-btn" onclick="fetchTaobaoItems()" style="white-space:nowrap;padding:14px 28px;align-self:flex-start;">CARICA →</button>
     </div>
 
@@ -1381,10 +1381,10 @@ window.saveCSV = async function(){
 // ══════════════════════════════════════════════════════════════════
 window.fetchTaobaoItems = async function(){
   const raw = (document.getElementById('tb-urls')?.value||'').trim();
-  if(!raw){ toast('⚠️ Incolla almeno un URL Taobao'); return; }
+  if(!raw){ toast('⚠️ Incolla almeno un URL (Taobao o Weidian)'); return; }
 
-  const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && (u.includes('taobao')||u.includes('tb.cn')||u.includes('tmall')||u.includes('aliexpress')));
-  if(!urls.length){ toast('⚠️ Nessun URL Taobao valido rilevato'); return; }
+  const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && (u.includes('taobao')||u.includes('tb.cn')||u.includes('tmall')||u.includes('aliexpress')||u.includes('weidian')||u.includes('koudai')));
+  if(!urls.length){ toast('⚠️ Nessun URL valido rilevato (Taobao/Tmall/AliExpress/Weidian)'); return; }
 
   const btn   = document.getElementById('tb-fetch-btn');
   const status = document.getElementById('tb-status');
@@ -1410,8 +1410,8 @@ window.fetchTaobaoItems = async function(){
     try{
       const res = await fnTB({ url });
       tbData = res.data;
-      // yupooFetch restituisce mode:'taobao' oppure il formato Yupoo standard
-      if(!tbData || tbData.mode !== 'taobao'){
+      // yupooFetch restituisce mode:'taobao' | 'weidian' oppure il formato Yupoo
+      if(!tbData || (tbData.mode !== 'taobao' && tbData.mode !== 'weidian')){
         lbl.textContent = `⚠️ Risposta inattesa per: ${url.slice(0,50)}`;
         done++; continue;
       }
@@ -1482,7 +1482,9 @@ function addTaobaoRow(tb, ai){
   const dbg = tb._debug || {};
   const missingData = !tb.title && !tb.images?.length && !tb.priceYuan;
   const partialData = !tb.title || !tb.images?.length || !tb.priceYuan;
-  const itemLink = tb.itemId ? `https://item.taobao.com/item.htm?id=${tb.itemId}` : (tb.sourceUrl || '');
+  const isWD = tb.mode === 'weidian';
+  const srcLabel = isWD ? 'Weidian' : 'Taobao';
+  const itemLink = tb.sourceUrl || (tb.itemId ? `https://item.taobao.com/item.htm?id=${tb.itemId}` : '');
   const debugHtml = partialData ? `
     <div style="background:#100800;border:1px solid #2a1800;padding:8px 12px;margin-bottom:8px;border-radius:2px;">
       <p style="font-size:9px;letter-spacing:2px;color:#c84;margin-bottom:4px;">
@@ -1492,7 +1494,7 @@ function addTaobaoRow(tb, ai){
         itemId: ${dbg.itemId||'non trovato'} · HTML: ${dbg.htmlLen||0} byte · Immagini: ${dbg.imgCount||0}
         ${dbg.htmlSource ? ` · Fonte: ${dbg.htmlSource.slice(0,50)}` : ''}
       </p>
-      ${itemLink ? `<p style="font-size:8px;"><a href="${itemLink}" target="_blank" style="color:#c84;text-decoration:none;">→ Apri pagina Taobao ↗</a> per copiare foto e dati</p>` : ''}
+      ${itemLink ? `<p style="font-size:8px;"><a href="${itemLink}" target="_blank" style="color:#c84;text-decoration:none;">→ Apri pagina ${srcLabel} ↗</a> per copiare foto e dati</p>` : ''}
       <p style="font-size:8px;color:#444;margin-top:3px;">Incolla URL immagine nel campo qui sotto, poi inserisci nome e prezzo</p>
     </div>` : '';
 
@@ -1511,7 +1513,7 @@ function addTaobaoRow(tb, ai){
         <p class="row-label">Nome Prodotto *</p>
         <input class="lf-in" id="rn-${id}" value="${name}" placeholder="Inserisci nome prodotto" style="font-size:12px;${!name?'border-color:#c84;':''}" oninput="this.style.borderColor=''"/>
         ${tb.shop?`<p style="font-size:8px;color:#252525;margin-top:3px;letter-spacing:1px;">Shop: ${tb.shop}</p>`:''}
-        ${tb.sourceUrl?`<p style="font-size:8px;margin-top:2px;"><a href="${tb.sourceUrl}" target="_blank" style="color:#333;text-decoration:none;font-family:monospace;">↗ Link Taobao</a></p>`:''}
+        ${tb.sourceUrl?`<p style="font-size:8px;margin-top:2px;"><a href="${tb.sourceUrl}" target="_blank" style="color:#333;text-decoration:none;font-family:monospace;">↗ Link ${srcLabel}</a></p>`:''}
       </div>
       <div>
         <p class="row-label">Prezzo € * <span style="font-size:8px;color:#444;">${priceHint}</span></p>

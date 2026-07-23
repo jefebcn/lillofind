@@ -206,8 +206,17 @@ export async function yupooFetch(data, _ctx) {
     || parsedUrl.hostname === 'taobao.com'
     || parsedUrl.hostname === 'tmall.com'
     || parsedUrl.hostname === 'aliexpress.com';
-  if (!parsedUrl.hostname.endsWith('.yupoo.com') && !isTaobao) {
-    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com, Taobao/Tmall o AliExpress sono permessi.');
+  const isWeidian = parsedUrl.hostname.endsWith('.weidian.com')
+    || parsedUrl.hostname === 'weidian.com'
+    || parsedUrl.hostname.endsWith('.koudai.com')
+    || parsedUrl.hostname === 'koudai.com';
+  if (!parsedUrl.hostname.endsWith('.yupoo.com') && !isTaobao && !isWeidian) {
+    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com, Taobao/Tmall, AliExpress o Weidian sono permessi.');
+  }
+
+  // ── BRANCH WEIDIAN ────────────────────────────────────────────
+  if (isWeidian) {
+    return await weidianFetch(url);
   }
 
   // ── BRANCH TAOBAO / ALIEXPRESS ────────────────────────────────
@@ -601,6 +610,129 @@ export async function yupooFetch(data, _ctx) {
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+// weidianFetch — estrae un prodotto da una pagina item Weidian
+// Ritorna lo stesso formato del branch Taobao (mode/title/images/prezzo)
+// così l'importer lo tratta con lo stesso flusso.
+// ════════════════════════════════════════════════════════════════
+async function weidianFetch(url) {
+  const UA_MOB = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1';
+  const UA_DESK = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+  const HDR_ZH = { 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,it;q=0.7', 'Accept': 'text/html,application/json,*/*;q=0.8' };
+
+  // itemID dalla URL
+  let itemId = '';
+  const m = url.match(/[?&]item[iI][dD]=(\d{5,})/) || url.match(/\/item\/(\d{5,})/) || url.match(/(\d{9,})/);
+  if (m) itemId = m[1];
+
+  const attempts = [];
+  if (itemId) {
+    // API JSON "thor" (se disponibile) — vari path noti, best-effort
+    const param = encodeURIComponent(JSON.stringify({ itemId: itemId }));
+    attempts.push({ url: `https://thor.weidian.com/detail/getItemInfo/1.0?param=${param}`, ua: UA_MOB, json: true });
+    attempts.push({ url: `https://thor.weidian.com/detailfast/getItemDetailPageInfo/1.0?param=${param}`, ua: UA_MOB, json: true });
+    attempts.push({ url: `https://weidian.com/item.html?itemID=${itemId}`, ua: UA_MOB });
+    attempts.push({ url: `https://weidian.com/item.html?itemID=${itemId}`, ua: UA_DESK });
+  }
+  attempts.push({ url, ua: UA_MOB });
+  attempts.push({ url, ua: UA_DESK });
+
+  let body = '', htmlSource = '', wasJson = false;
+  for (const att of attempts) {
+    if (body) break;
+    try {
+      const r = await fetch(att.url, { headers: { 'User-Agent': att.ua, ...HDR_ZH, 'Referer': 'https://weidian.com/' }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
+      if (!r.ok) continue;
+      const txt = await r.text();
+      if (att.json) {
+        // Risposta API: usiamo il JSON grezzo come testo per l'estrazione regex
+        if (txt.includes('itemName') || txt.includes('"price"') || txt.includes('geilicdn')) { body = txt; htmlSource = att.url; wasJson = true; }
+      } else {
+        const ok = txt.length > 1500 && (txt.includes('geilicdn') || txt.includes('og:image') || txt.includes('itemName') || txt.includes('"title"'));
+        if (ok) { body = txt; htmlSource = att.url; }
+      }
+    } catch (e) { /* prova il prossimo */ }
+  }
+
+  // ── Titolo ──
+  let title = '';
+  if (body) {
+    const ogT = body.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']{3,300})["']/i)
+             || body.match(/<meta[^>]+content=["']([^"']{3,300})["'][^>]*property=["']og:title["']/i);
+    if (ogT) title = ogT[1];
+    if (!title) {
+      const ps = [/"itemName"\s*:\s*"([^"]{3,200})"/, /"title"\s*:\s*"([^"]{3,200})"/, /"item_name"\s*:\s*"([^"]{3,200})"/];
+      for (const p of ps) { const mm = body.match(p); if (mm) { title = mm[1]; break; } }
+    }
+    if (!title) { const tM = body.match(/<title[^>]*>([^<]{3,300})<\/title>/i); if (tM) title = tM[1]; }
+  }
+  title = (title || '').replace(/[-–—|]?\s*(微店|weidian|Weidian).*$/gi, '').replace(/【[^】]*】/g, '').replace(/\\u[0-9a-f]{4}/gi, ' ').replace(/\s+/g, ' ').trim();
+
+  // ── Immagini (CDN geilicdn) ──
+  const imgSet = new Set();
+  if (body) {
+    const imgRe = /(?:https?:)?\/\/(?:[a-z0-9\-]+\.)?geilicdn\.com\/[^\s"'<>\\)]+?\.(?:jpg|jpeg|png|webp)/gi;
+    let mm;
+    while ((mm = imgRe.exec(body)) !== null && imgSet.size < 10) {
+      let u = mm[0]; if (u.startsWith('//')) u = 'https:' + u;
+      const clean = u.replace(/[?#!].*$/, '').replace(/@[^/]*$/, '');
+      if (!clean.includes('avatar') && !clean.includes('logo') && !clean.includes('icon') && clean.length > 30) imgSet.add(clean);
+    }
+    const ogI = body.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+             || body.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+    if (ogI && ogI[1]) { let u = ogI[1]; if (u.startsWith('//')) u = 'https:' + u; imgSet.add(u.replace(/[?#].*$/, '')); }
+  }
+  let images = [...imgSet].filter(u => u.length > 20).slice(0, 8);
+
+  // ── Prezzo (CNY) ── Weidian a volte esprime il prezzo in centesimi (fen)
+  let priceYuan = 0;
+  if (body) {
+    const ps = [
+      /"price"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/,
+      /"itemPrice"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/,
+      /"minPrice"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/,
+      /"sku_price"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/,
+      /¥\s*([\d]{1,6}(?:\.\d{1,2})?)/,
+    ];
+    for (const p of ps) {
+      const pm = body.match(p);
+      let v = pm ? parseFloat(pm[1]) : 0;
+      // Se sembra espresso in centesimi (intero grande e multiplo plausibile), converti
+      if (v > 2000 && Number.isInteger(v) && !pm[0].includes('.')) v = v / 100;
+      if (v > 0 && v < 100000) { priceYuan = Math.round(v * 100) / 100; break; }
+    }
+  }
+
+  // ── Re-upload della cover su imgbb (le immagini geilicdn possono bloccare l'hotlink) ──
+  let imgbbUrl = '';
+  const firstImg = images[0] || '';
+  if (firstImg) {
+    try {
+      const imgResp = await fetch(firstImg, { headers: { 'User-Agent': UA_DESK, 'Referer': 'https://weidian.com/', 'Accept': 'image/*' }, signal: AbortSignal.timeout(10000) });
+      if (imgResp.ok) {
+        const buf = Buffer.from(await imgResp.arrayBuffer());
+        const form = new URLSearchParams();
+        form.append('key', IMGBB_KEY);
+        form.append('image', buf.toString('base64'));
+        const ibRes = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form.toString(), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(15000) });
+        const ibJson = await ibRes.json();
+        if (ibJson.success) imgbbUrl = ibJson.data.url;
+      }
+    } catch (e) { console.warn('[WD] imgbb failed:', e.message); }
+  }
+
+  console.log(`[WD] itemId=${itemId} title="${title}" images=${images.length} price=${priceYuan} src=${htmlSource} len=${body.length}`);
+
+  return {
+    mode: 'weidian', itemId, title,
+    images: imgbbUrl ? [imgbbUrl, ...images.slice(1)] : images,
+    imgbbUrl, priceYuan,
+    priceEur: priceYuan > 0 ? Math.round(priceYuan * 0.13 * 100) / 100 : 0,
+    shop: '', sourceUrl: itemId ? `https://weidian.com/item.html?itemID=${itemId}` : url,
+    _debug: { bodyLen: body.length, htmlSource, wasJson, imgCount: images.length, itemId, hasTitle: !!title, hasImages: images.length > 0, hasPrice: priceYuan > 0, bodyPreview: body.slice(0, 300) },
+  };
 }
 
 // ════════════════════════════════════════════════════════════════
