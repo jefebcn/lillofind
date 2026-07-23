@@ -2123,7 +2123,7 @@ waitFB(()=>{
     if(/cappell|beanie|berretto|bucket|cap\b|hat\b|visiera/.test(t)) return 'cappello';
     if(/borsa|bag|pochette|clutch|tote|zaino|marsupio|tracolla|shopper|speedy|baguette/.test(t)) return 'borsa';
     if(/maglia|maglione|cardigan|dolcevita|knit|pile|fleece|camicia/.test(t)) return 'felpa';
-    if(/occhial|cintura|portafogl|sciarpa|guant|calz|boxer|intimo|set\b|accessori|orolog|collana|bracciale/.test(t)) return 'accessori';
+    if(/occhial|cintura|portafogl|sciarpa|guant|calz|boxer|intimo|set\b|accessori|orolog|anello|anelli|braccial|collan|catenin|\bcatena\b|orecchin|ciondol|pendent|gioiell|spilla|piercing|perline|bigiotteri/.test(t)) return 'accessori';
     return '';
   }
   const QC_CAT_LABEL={tshirt:'T-shirt',tshirt_branded:'Polo/T-shirt griffata',felpa:'Felpa',scarpe:'Scarpe',scarpe_box:'Scarpe (con box)',pantaloni:'Pantaloni',shorts:'Shorts',cappello:'Cappello',giacchetto:'Giacca',borsa:'Borsa',accessori:'Accessori'};
