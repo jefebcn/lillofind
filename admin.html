@@ -584,6 +584,17 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           </div>
         </div>
       </div>
+
+      <!-- ─── DIAGNOSTICA EMAIL (Resend) ─── -->
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Diagnostica Email (Resend)</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:16px;line-height:1.7;">Invia un'email di prova per verificare che Resend funzioni e che il dominio mittente sia verificato. Se fallisce, ti dice esattamente il motivo.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+          <input class="lf-in" id="mailtest-to" placeholder="destinatario (vuoto = admin)" style="flex:1;min-width:220px;"/>
+          <button class="btn-led" id="mailtest-btn" onclick="sendTestEmail()">Invia email di prova →</button>
+        </div>
+        <div id="mailtest-result" style="display:none;font-size:11px;line-height:1.8;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;"></div>
+      </div>
     </div>
 
   </main>
@@ -2322,6 +2333,32 @@ waitFB(()=>{
     showToast(`🤖 ${ok} descrizioni AI generate${err?` (${err} fallite)`:''}`);
     btn.textContent='🤖 Genera descrizioni AI (mancanti)'; btn.disabled=false;
     qcRenderTable(_qcFilter);
+  };
+
+// ══════════════════════════════════════════════════════════════════════
+// DIAGNOSTICA EMAIL (Resend)
+// ══════════════════════════════════════════════════════════════════════
+  window.sendTestEmail = async function(){
+    const btn=document.getElementById('mailtest-btn');
+    const out=document.getElementById('mailtest-result');
+    const to=(document.getElementById('mailtest-to')?.value||'').trim();
+    btn.disabled=true; btn.textContent='Invio...';
+    out.style.display='block'; out.innerHTML='⏳ Invio in corso...';
+    try{
+      const res=await lfCallable('sendTestEmail')({ to });
+      const d=res.data||{};
+      if(d.ok){
+        out.style.borderColor='rgba(46,204,113,.4)';
+        out.innerHTML='✅ <b style="color:#2ecc71">Email inviata!</b><br>Da: <code>'+escH(d.from||'')+'</code><br>A: <code>'+escH(d.to||'')+'</code>'+(d.id?'<br>ID: <code>'+escH(d.id)+'</code>':'')+'<br><span style="color:var(--dim)">'+escH(d.hint||'Controlla la casella (anche spam).')+'</span>';
+      } else {
+        out.style.borderColor='rgba(230,57,70,.4)';
+        out.innerHTML='❌ <b style="color:#ff8a8a">Invio fallito</b>'+(d.status?' (HTTP '+d.status+')':'')+'<br>Errore: <code style="color:#ff8a8a">'+escH(d.error||d.reason||'sconosciuto')+'</code><br><span style="color:#ffb86b">'+escH(d.hint||'')+'</span>';
+      }
+    }catch(e){
+      out.style.borderColor='rgba(230,57,70,.4)';
+      out.innerHTML='❌ Errore chiamata: <code style="color:#ff8a8a">'+escH((e&&e.message)||'sconosciuto')+'</code>';
+    }
+    btn.disabled=false; btn.textContent='Invia email di prova →';
   };
 
 // ══════════════════════════════════════════════════════════════════════

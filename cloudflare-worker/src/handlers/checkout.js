@@ -24,7 +24,7 @@ function stripeClient(env) {
   });
 }
 
-async function sendOrderNotification(order, resendKey) {
+async function sendOrderNotification(order, resendKey, fromAddr) {
   if (!resendKey) return;
   try {
     const itemsHtml = (order.items || []).map(i => {
@@ -36,7 +36,7 @@ async function sendOrderNotification(order, resendKey) {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'LilloFind Orders <onboarding@resend.dev>',
+        from: fromAddr || 'LilloFind Orders <onboarding@resend.dev>',
         to: [NOTIFY_EMAIL],
         subject: `🛍 Nuovo Ordine ${escHtml(order.orderId)} — €${order.total}`,
         html: `<h2>Nuovo Ordine: ${escHtml(order.orderId)}</h2>
@@ -197,11 +197,16 @@ export async function sendOrderEmail(data, { env, auth }) {
 </body></html>`;
 
   try {
-    await fetch('https://api.resend.com/emails', {
+    const cResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from, to: [to], subject: `Conferma ordine ${o.orderId || ''} — LilloFind`, html }),
     });
+    if (!cResp.ok) {
+      const errTxt = (await cResp.text()).slice(0, 300);
+      console.error('Resend conferma ordine FALLITA:', cResp.status, errTxt);
+      return { sent: false, status: cResp.status, reason: errTxt };
+    }
     // Notifica admin (best-effort)
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -212,6 +217,42 @@ export async function sendOrderEmail(data, { env, auth }) {
     return { sent: false, reason: e.message };
   }
   return { sent: true };
+}
+
+// ── sendTestEmail ───────────────────────────────────────────────
+// Diagnostica: invia una email di prova via Resend e restituisce la
+// risposta reale dell'API (status/id/errore). Serve a capire se il
+// dominio è verificato e se l'invio funziona. Auth: adminEmail.
+export async function sendTestEmail(data, { env }) {
+  if (!env.RESEND_API_KEY) return { ok: false, reason: 'RESEND_API_KEY non configurato sul Worker.' };
+  const to = String((data && data.to) || NOTIFY_EMAIL || '').trim();
+  const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
+  if (!to) return { ok: false, reason: 'Nessun destinatario.' };
+  let status = 0, body = '';
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from, to: [to],
+        subject: '✅ Test email — LilloFind',
+        html: '<div style="font-family:Arial,sans-serif"><h2>Test riuscito 🎉</h2><p>Se ricevi questa email, Resend è configurato correttamente e il dominio mittente funziona.</p><p style="color:#888;font-size:12px">Mittente: ' + escHtml(from) + '</p></div>',
+      }),
+    });
+    status = resp.status;
+    body = await resp.text();
+  } catch (e) {
+    return { ok: false, from, to, error: e.message };
+  }
+  let parsed = null; try { parsed = JSON.parse(body); } catch (_) {}
+  const ok = status >= 200 && status < 300;
+  return {
+    ok, status, from, to,
+    id: parsed && parsed.id ? parsed.id : null,
+    error: ok ? null : ((parsed && (parsed.message || parsed.name)) || body.slice(0, 300)),
+    hint: ok ? 'Email inviata: controlla la casella (anche spam).'
+             : (status === 403 || /domain/i.test(body) ? 'Il dominio del mittente non risulta VERIFICATO su Resend: aggiungi e verifica lillofind.shop (record DNS SPF/DKIM) nella dashboard Resend.' : 'Invio rifiutato da Resend — vedi campo error.'),
+  };
 }
 
 // ── createPaymentIntent ─────────────────────────────────────────
@@ -429,7 +470,7 @@ export async function validateOrder(data, { env, db, auth }) {
   } catch (e) { console.error('Errore aggiornamento utente (non critico):', e.message); }
 
   // Notifica email (fire-and-forget; non blocca la risposta)
-  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, env.RESEND_API_KEY);
+  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, env.RESEND_API_KEY, env.RESEND_FROM);
 
   return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints: paymentVerified ? lfpoints : 0, paymentMethod };
 }
