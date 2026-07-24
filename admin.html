@@ -2398,21 +2398,38 @@ waitFB(()=>{
       prog.innerHTML=`Trovati <b>${cands.length}</b> prodotti in <b>${stores.length}</b> store. Scansione album...`;
 
       const fnYP=lfCallable('yupooFetch');
-      const writes=[]; let matched=0, storeDone=0, storeErr=0;
+      const MAX_PAGES=120; // safety per store
+      const writes=[]; let matched=0, storeDone=0, storeErr=0, pagesTot=0;
       for(const store of stores){
         storeDone++;
-        try{
-          const res=await fnYP({ url:'https://'+store+'.x.yupoo.com/' });
+        const cands=byStore[store];
+        const need=new Set(cands.map(p=>ypHash(p.imageUrl)).filter(Boolean));
+        const hashToAid={}; const seenAids=new Set();
+        let page=1;
+        while(page<=MAX_PAGES && need.size>0){
+          let res;
+          try{ res=await fnYP({ url:'https://'+store+'.x.yupoo.com/?tab=gallery&page='+page }); }
+          catch(e){ storeErr++; console.warn('rebuild store/pagina fallita', store, page, e&&e.message); break; }
+          pagesTot++;
           const covers=(res.data&&res.data.albumCovers)||{};
-          const byHash={};
-          for(const aid in covers){ const h=ypHash(covers[aid]); if(h) byHash[h]=aid; }
-          for(const p of byStore[store]){
-            const aid=byHash[ypHash(p.imageUrl)];
-            if(aid){ writes.push({id:p.id, sourceUrl:'https://'+store+'.x.yupoo.com/albums/'+aid}); matched++; }
+          let newAlb=0;
+          for(const aid in covers){
+            if(seenAids.has(aid)) continue;
+            seenAids.add(aid); newAlb++;
+            const h=ypHash(covers[aid]);
+            if(h){ hashToAid[h]=aid; if(need.has(h)) need.delete(h); }
           }
-        }catch(e){ storeErr++; console.warn('rebuild store fallito', store, e&&e.message); }
-        prog.innerHTML=`Store ${storeDone}/${stores.length} · match trovati: <b style="color:var(--led)">${matched}</b>${storeErr?` · <span style="color:#ff9a9a">${storeErr} store non letti</span>`:''}`;
+          prog.innerHTML=`Store ${storeDone}/${stores.length} (<code>${escH(store)}</code>) · pag ${page} · album visti ${seenAids.size} · <b style="color:var(--led)">${matched+ (cands.length-need.size) }</b> match`;
+          if(newAlb===0) break; // fine elenco album per questo store
+          page++;
+        }
+        // Applica i match trovati per questo store
+        for(const p of cands){
+          const aid=hashToAid[ypHash(p.imageUrl)];
+          if(aid){ writes.push({id:p.id, sourceUrl:'https://'+store+'.x.yupoo.com/albums/'+aid}); matched++; }
+        }
       }
+      prog.innerHTML=`Scansione completata: ${pagesTot} pagine · <b style="color:var(--led)">${matched}</b> match. Salvataggio...`;
 
       if(!writes.length){ prog.innerHTML=`⚠️ Nessuna corrispondenza trovata (album non più presenti o store protetti). I prodotti restano col link allo store.`; btn.disabled=false; btn.textContent='Ricostruisci link album →'; return; }
 
