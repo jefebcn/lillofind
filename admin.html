@@ -2407,8 +2407,10 @@ waitFB(()=>{
         const hashToAid={}; const seenAids=new Set();
         let page=1;
         while(page<=MAX_PAGES && need.size>0){
+          // Pag 1 = URL nudo dello store (funziona di sicuro); dalla 2 in poi ?page=N
+          const pageUrl = page===1 ? ('https://'+store+'.x.yupoo.com/') : ('https://'+store+'.x.yupoo.com/?page='+page);
           let res;
-          try{ res=await fnYP({ url:'https://'+store+'.x.yupoo.com/?tab=gallery&page='+page }); }
+          try{ res=await fnYP({ url:pageUrl }); }
           catch(e){ storeErr++; console.warn('rebuild store/pagina fallita', store, page, e&&e.message); break; }
           pagesTot++;
           const covers=(res.data&&res.data.albumCovers)||{};
@@ -2431,7 +2433,7 @@ waitFB(()=>{
       }
       prog.innerHTML=`Scansione completata: ${pagesTot} pagine · <b style="color:var(--led)">${matched}</b> match. Salvataggio...`;
 
-      if(!writes.length){ prog.innerHTML=`⚠️ Nessuna corrispondenza trovata (album non più presenti o store protetti). I prodotti restano col link allo store.`; btn.disabled=false; btn.textContent='Ricostruisci link album →'; return; }
+      if(!writes.length){ prog.innerHTML=`⚠️ Nessuna corrispondenza trovata su <b>${pagesTot}</b> pagine scansionate (${stores.length} store).<br><span style="color:var(--dim)">Se hai visto solo 1 pagina per store, la paginazione Yupoo usa un parametro diverso — segnalamelo. Altrimenti gli album non sono più presenti o gli store sono protetti.</span>`; btn.disabled=false; btn.textContent='Ricostruisci link album →'; return; }
 
       // Scrittura a batch
       let saved=0;
