@@ -1330,17 +1330,20 @@ waitFB(()=>{
         }
         showToast('⏰ '+toExpire.length+' ordine/i non pagati scaduti e annullati');
       }
-      // Arricchisci item senza immagine con imageUrl attuale dal catalogo
+      // Arricchisci gli item con l'immagine attuale e il link alla fonte (album Yupoo)
       const missingIds = new Set();
-      adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(!i.img && i.id && !i.isDigital) missingIds.add(i.id); }));
+      adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(i.id && !i.isDigital && (!i.img || !i.sourceUrl)) missingIds.add(i.id); }));
       if(missingIds.size){
         try{
           const fetches = [...missingIds].map(id=>fb.getDoc(fb.doc(fb.db,'products',id)));
           const snaps = await Promise.all(fetches);
-          const imgMap = {};
-          snaps.forEach(s=>{ if(s.exists()) imgMap[s.id]=s.data().imageUrl||''; });
-          adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(!i.img && imgMap[i.id]) i.img=imgMap[i.id]; }));
-        }catch(e){ console.warn('Enrichimento immagini ordini fallito',e); }
+          const imgMap = {}, srcMap = {};
+          snaps.forEach(s=>{ if(s.exists()){ const d=s.data(); imgMap[s.id]=d.imageUrl||''; srcMap[s.id]=d.sourceUrl||''; } });
+          adminOrders.forEach(o=>(o.items||[]).forEach(i=>{
+            if(!i.img && imgMap[i.id]) i.img=imgMap[i.id];
+            if(!i.sourceUrl && srcMap[i.id]) i.sourceUrl=srcMap[i.id];
+          }));
+        }catch(e){ console.warn('Enrichimento ordini fallito',e); }
       }
       renderAdminOrders();
     } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
@@ -1399,7 +1402,10 @@ waitFB(()=>{
         const qtyLabel = i.isDigital ? (i.qty>1?i.qty+' mesi':'1 mese') : ('x'+i.qty);
         const imgRaw = i.img || i.imageUrl || '';
         const imgSrc = pImg(imgRaw);
-        const src = sourceLink(imgRaw);
+        // Link fonte: preferisci l'album esatto (salvato all'import), altrimenti ricava lo store dall'immagine
+        const src = i.sourceUrl
+          ? { url:i.sourceUrl, label:'album', site:/weidian|geilicdn/i.test(i.sourceUrl)?'Weidian':/taobao|tmall|aliexpress/i.test(i.sourceUrl)?'Taobao':'Yupoo', exact:true }
+          : sourceLink(imgRaw);
         const lbDetails = [
           i.brand ? `<span style='color:#aaa'>Brand</span> &nbsp;${escH(i.brand)}` : '',
           i.size  ? `<span style='color:#aaa'>Taglia</span> &nbsp;${escH(i.size)}` : '',
@@ -1419,7 +1425,7 @@ waitFB(()=>{
           <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${imgSrc?`onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"`:''}>
             <p style="font-size:15px;font-weight:600;line-height:1.3;margin-bottom:3px;">${escH(i.name||'—')}</p>
             <p style="font-size:13px;color:rgba(255,255,255,.55);">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
-            ${src && src.url ? `<a href="${src.url}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:11px;color:var(--led);text-decoration:none;">🔗 Fonte: ${escH(src.label)} (${src.site})</a>` : (src ? `<span style="display:inline-block;margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">🔗 Fonte: ${escH(src.label)}</span>` : '')}
+            ${src && src.url ? `<a href="${src.url}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:11px;color:var(--led);text-decoration:none;">🔗 Fonte: ${src.exact?'album esatto':escH(src.label)} (${src.site})</a>` : (src ? `<span style="display:inline-block;margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">🔗 Fonte: ${escH(src.label)}</span>` : '')}
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p style="font-size:16px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
