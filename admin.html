@@ -585,6 +585,16 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         </div>
       </div>
 
+      <!-- ─── RICOSTRUISCI LINK ALBUM ─── -->
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Ricostruisci link album (prodotti vecchi)</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:16px;line-height:1.7;">Per i prodotti già importati senza link all'album: scansiona gli store Yupoo, confronta le copertine con le immagini dei prodotti e salva il <strong>link all'album esatto</strong> dove trova corrispondenza. Best-effort — i non trovati restano col link allo store.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn-led" id="ral-btn" onclick="rebuildAlbumLinks()">Ricostruisci link album →</button>
+        </div>
+        <div id="ral-prog" style="display:none;font-size:11px;line-height:1.9;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;"></div>
+      </div>
+
       <!-- ─── DIAGNOSTICA EMAIL (Resend) ─── -->
       <div class="admin-card">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Diagnostica Email (Resend)</p>
@@ -2358,6 +2368,73 @@ waitFB(()=>{
     showToast(`🤖 ${ok} descrizioni AI generate${err?` (${err} fallite)`:''}`);
     btn.textContent='🤖 Genera descrizioni AI (mancanti)'; btn.disabled=false;
     qcRenderTable(_qcFilter);
+  };
+
+// ══════════════════════════════════════════════════════════════════════
+// RICOSTRUISCI LINK ALBUM (prodotti già importati)
+//   I prodotti usano come immagine la copertina dell'album. Scarico gli
+//   album di ogni store, faccio il match hash-copertina → id album e
+//   salvo sourceUrl sul prodotto.
+// ══════════════════════════════════════════════════════════════════════
+  function _deproxyRaw(u){ if(!u) return ''; let raw=u.startsWith('//')?'https:'+u:u; if(raw.includes('?url=')){ try{ raw=decodeURIComponent(raw.split('?url=')[1].split('&')[0]); }catch(_){} } return raw; }
+  function ypHash(u){ const raw=_deproxyRaw(u); const m=raw.match(/\/([a-z0-9]{6,})\/[a-z]*\.(?:jpg|jpeg|png|webp)/i); return m?m[1]:''; }
+  function ypStore(u){ const raw=_deproxyRaw(u); let m=raw.match(/photo\.yupoo\.com\/([^/]+)\//i); if(m)return m[1]; m=raw.match(/([a-z0-9_-]+)\.x\.yupoo\.com/i); return m?m[1]:''; }
+
+  window.rebuildAlbumLinks = async function(){
+    const fb=window.__fb;
+    const btn=document.getElementById('ral-btn');
+    const prog=document.getElementById('ral-prog');
+    btn.disabled=true; btn.textContent='Scansione...';
+    prog.style.display='block'; prog.innerHTML='⏳ Carico i prodotti...';
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'products')));
+      const prods=snap.docs.map(d=>({id:d.id,...d.data()}));
+      // Candidati: immagine Yupoo, senza sourceUrl, con hash e store estraibili
+      const cands=prods.filter(p=>!p.sourceUrl && ypStore(p.imageUrl) && ypHash(p.imageUrl));
+      if(!cands.length){ prog.innerHTML='✅ Nessun prodotto da ricostruire (o hanno già il link album).'; btn.disabled=false; btn.textContent='Ricostruisci link album →'; return; }
+      const byStore={};
+      cands.forEach(p=>{ const s=ypStore(p.imageUrl); (byStore[s]=byStore[s]||[]).push(p); });
+      const stores=Object.keys(byStore);
+      prog.innerHTML=`Trovati <b>${cands.length}</b> prodotti in <b>${stores.length}</b> store. Scansione album...`;
+
+      const fnYP=lfCallable('yupooFetch');
+      const writes=[]; let matched=0, storeDone=0, storeErr=0;
+      for(const store of stores){
+        storeDone++;
+        try{
+          const res=await fnYP({ url:'https://'+store+'.x.yupoo.com/' });
+          const covers=(res.data&&res.data.albumCovers)||{};
+          const byHash={};
+          for(const aid in covers){ const h=ypHash(covers[aid]); if(h) byHash[h]=aid; }
+          for(const p of byStore[store]){
+            const aid=byHash[ypHash(p.imageUrl)];
+            if(aid){ writes.push({id:p.id, sourceUrl:'https://'+store+'.x.yupoo.com/albums/'+aid}); matched++; }
+          }
+        }catch(e){ storeErr++; console.warn('rebuild store fallito', store, e&&e.message); }
+        prog.innerHTML=`Store ${storeDone}/${stores.length} · match trovati: <b style="color:var(--led)">${matched}</b>${storeErr?` · <span style="color:#ff9a9a">${storeErr} store non letti</span>`:''}`;
+      }
+
+      if(!writes.length){ prog.innerHTML=`⚠️ Nessuna corrispondenza trovata (album non più presenti o store protetti). I prodotti restano col link allo store.`; btn.disabled=false; btn.textContent='Ricostruisci link album →'; return; }
+
+      // Scrittura a batch
+      let saved=0;
+      for(let i=0;i<writes.length;i+=400){
+        const slice=writes.slice(i,i+400);
+        try{
+          const batch=fb.writeBatch(fb.db);
+          for(const w of slice){ batch.update(fb.doc(fb.db,'products',w.id), {sourceUrl:w.sourceUrl}); }
+          await batch.commit(); saved+=slice.length;
+        }catch(e){ for(const w of slice){ try{ await fb.updateDoc(fb.doc(fb.db,'products',w.id),{sourceUrl:w.sourceUrl}); saved++; }catch(_){}} }
+        prog.innerHTML=`💾 Salvataggio... ${saved}/${writes.length}`;
+      }
+      const notMatched=cands.length-matched;
+      prog.innerHTML=`✅ <b>${saved}</b> link album ricostruiti e salvati.${notMatched>0?`<br><span style="color:var(--dim)">${notMatched} prodotti senza corrispondenza (restano col link allo store).</span>`:''}${storeErr?`<br><span style="color:#ff9a9a">${storeErr} store non leggibili.</span>`:''}`;
+      showToast(`✅ ${saved} link album ricostruiti`);
+    }catch(e){
+      console.error('rebuildAlbumLinks:', e&&e.code, e&&e.message);
+      prog.innerHTML='❌ Errore: <code style="color:#ff8a8a">'+escH((e&&e.message)||'sconosciuto')+'</code>';
+    }
+    btn.disabled=false; btn.textContent='Ricostruisci link album →';
   };
 
 // ══════════════════════════════════════════════════════════════════════
