@@ -450,19 +450,39 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <h1 class="apg-title bb">Analytics</h1>
         <button class="btn-k" onclick="loadAnalytics()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna</button>
       </div>
-      <p style="font-size:11px;color:rgba(255,255,255,.4);margin:-8px 0 18px;line-height:1.7;">Presenza in tempo reale: chi è sul sito ora, chi ha visitato e quando, e quanto tempo passa in navigazione. Si aggiorna da solo ogni 15 secondi mentre sei su questa pagina.</p>
+      <p style="font-size:11px;color:rgba(255,255,255,.4);margin:-8px 0 18px;line-height:1.7;">Presenza in tempo reale: chi è sul sito ora, chi ha visitato e quando, e quanto tempo passa in navigazione. Si aggiorna da solo ogni 15 secondi. <span style="color:rgba(255,255,255,.3)">I dati partono da quando è stato attivato il tracciamento; le visite precedenti non sono disponibili.</span></p>
       <div class="astat-grid">
-        <div class="astat-card"><p class="astat-lbl">🟢 Online ora</p><p class="astat-val" id="an-live" style="color:#2ecc71;">—</p><p class="astat-sub" id="an-live-sub">ultimi 90 secondi</p></div>
-        <div class="astat-card"><p class="astat-lbl">Visitatori oggi</p><p class="astat-val" id="an-today">—</p><p class="astat-sub" id="an-today-sub">persone uniche</p></div>
-        <div class="astat-card"><p class="astat-lbl">Ultimi 7 giorni</p><p class="astat-val" id="an-week">—</p><p class="astat-sub">visitatori unici</p></div>
-        <div class="astat-card"><p class="astat-lbl">Durata media sessione</p><p class="astat-val" id="an-avg">—</p><p class="astat-sub">tempo di navigazione</p></div>
+        <div class="astat-card"><p class="astat-lbl">🟢 Online ora</p><p class="astat-val" id="an-live" style="color:#2ecc71;">—</p><p class="astat-sub">ultimi 90 secondi</p></div>
+        <div class="astat-card"><p class="astat-lbl">Visite oggi</p><p class="astat-val" id="an-visits-today">—</p><p class="astat-sub" id="an-today-sub">— visitatori unici</p></div>
+        <div class="astat-card"><p class="astat-lbl">Visite 7 giorni</p><p class="astat-val" id="an-visits-week">—</p><p class="astat-sub" id="an-week-sub">— visitatori unici</p></div>
+        <div class="astat-card"><p class="astat-lbl">Durata media sessione</p><p class="astat-val" id="an-avg" style="color:#f0c030;">—</p><p class="astat-sub">tempo di navigazione</p></div>
+      </div>
+      <div class="astat-grid" style="margin-top:-16px;">
+        <div class="astat-card"><p class="astat-lbl">Visitatori totali</p><p class="astat-val" id="an-total-visitors">—</p><p class="astat-sub">persone uniche mai viste</p></div>
+        <div class="astat-card"><p class="astat-lbl">Di ritorno</p><p class="astat-val" id="an-returning" style="color:#00c4ff;">—</p><p class="astat-sub">visitatori con più sessioni</p></div>
+        <div class="astat-card"><p class="astat-lbl">Registrati vs Ospiti</p><p class="astat-val" id="an-loggedsplit" style="font-size:26px;">—</p><p class="astat-sub">sessioni loggate / anonime</p></div>
+        <div class="astat-card"><p class="astat-lbl">Pagine viste (tot.)</p><p class="astat-val" id="an-pageviews">—</p><p class="astat-sub">sessioni totali registrate</p></div>
+      </div>
+      <div class="admin-card" style="margin-top:14px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Visite ultimi 14 giorni</p>
+        <div id="an-chart" style="display:flex;align-items:flex-end;gap:6px;height:150px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;" class="an-2col">
+        <div class="admin-card">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Dispositivi</p>
+          <div id="an-devices"><p style="font-size:11px;color:var(--dim);">—</p></div>
+        </div>
+        <div class="admin-card">
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Browser</p>
+          <div id="an-browsers"><p style="font-size:11px;color:var(--dim);">—</p></div>
+        </div>
       </div>
       <div class="admin-card" style="margin-top:14px;">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">🟢 Online adesso</p>
         <div id="an-live-list" style="display:flex;flex-direction:column;gap:8px;"><p style="font-size:11px;color:var(--dim);">Caricamento...</p></div>
       </div>
       <div class="admin-card" style="margin-top:14px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Sessioni recenti</p>
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Sessioni recenti <span style="color:rgba(255,255,255,.3);text-transform:none;letter-spacing:0;">· "Ospite" = visitatore non registrato</span></p>
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:11px;">
             <thead><tr style="text-align:left;border-bottom:2px solid rgba(255,255,255,.1);">
@@ -2574,20 +2594,80 @@ waitFB(()=>{
 
   function renderAnalytics(){
     const now=Date.now(), rows=_anAll;
+    const set=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
     const live=rows.filter(r=>now-anTsMs(r.lastSeen)<90000);
     const startToday=new Date(); startToday.setHours(0,0,0,0);
-    const vToday=new Set(), vWeek=new Set(); let durSum=0,durN=0;
+    const DAY=86400000;
+
+    // Aggregati
+    const vToday=new Set(), vWeek=new Set(), vAll=new Set();
+    const sessByVid={};
+    let visitsToday=0, visitsWeek=0, durSum=0, durN=0, logged=0, guests=0;
+    const devCount={'📱 Mobile':0,'💻 Desktop':0}, brCount={};
     rows.forEach(r=>{
-      const ls=anTsMs(r.lastSeen), st=anTsMs(r.startedAt);
-      if(ls>=startToday.getTime()) vToday.add(r.vid||r.id);
-      if(now-ls<7*86400000) vWeek.add(r.vid||r.id);
+      const ls=anTsMs(r.lastSeen), st=anTsMs(r.startedAt)||ls, vid=r.vid||r.id;
+      vAll.add(vid);
+      sessByVid[vid]=(sessByVid[vid]||0)+1;
+      if(ls>=startToday.getTime()){ vToday.add(vid); visitsToday++; }
+      if(now-ls<7*DAY){ vWeek.add(vid); visitsWeek++; }
       if(st && ls>st){ durSum+=(ls-st); durN++; }
+      if(r.email) logged++; else guests++;
+      const ua=(r.ua||'').toLowerCase();
+      if(/mobile|android|iphone|ipad|ipod/.test(ua)) devCount['📱 Mobile']++; else devCount['💻 Desktop']++;
+      let br='Altro';
+      if(/edg\//.test(ua))br='Edge'; else if(/chrome|crios/.test(ua))br='Chrome';
+      else if(/firefox|fxios/.test(ua))br='Firefox'; else if(/safari/.test(ua))br='Safari';
+      brCount[br]=(brCount[br]||0)+1;
     });
-    const set=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
-    set('an-live', live.length); set('an-today', vToday.size); set('an-week', vWeek.size);
+    const returning=Object.values(sessByVid).filter(n=>n>1).length;
+
+    set('an-live', live.length);
+    set('an-visits-today', visitsToday);
+    set('an-today-sub', vToday.size+' visitatori unici');
+    set('an-visits-week', visitsWeek);
+    set('an-week-sub', vWeek.size+' visitatori unici');
     set('an-avg', durN?anDur(durSum/durN):'—');
+    set('an-total-visitors', vAll.size);
+    set('an-returning', returning);
+    set('an-loggedsplit', logged+' / '+guests);
+    set('an-pageviews', rows.length);
+
     const badge=document.getElementById('analytics-live-badge');
     if(badge){ badge.textContent=live.length+' live'; badge.style.display=live.length>0?'inline-block':'none'; }
+
+    // ── Grafico visite ultimi 14 giorni ──
+    const chart=document.getElementById('an-chart');
+    if(chart){
+      const days=[]; for(let i=13;i>=0;i--){ const d=new Date(startToday.getTime()-i*DAY); days.push({d,n:0}); }
+      rows.forEach(r=>{ const st=anTsMs(r.startedAt)||anTsMs(r.lastSeen); for(const b of days){ if(st>=b.d.getTime() && st<b.d.getTime()+DAY){ b.n++; break; } } });
+      const max=Math.max(1,...days.map(b=>b.n));
+      chart.innerHTML=days.map(b=>{
+        const h=Math.round((b.n/max)*120);
+        const lbl=b.d.getDate()+'/'+(b.d.getMonth()+1);
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;height:100%;">
+          <span style="font-size:10px;color:${b.n?'var(--led)':'rgba(255,255,255,.25)'};font-weight:700;">${b.n||''}</span>
+          <div title="${lbl}: ${b.n} visite" style="width:100%;max-width:34px;height:${Math.max(3,h)}px;background:${b.n?'linear-gradient(180deg,var(--led),rgba(200,255,0,.35))':'rgba(255,255,255,.06)'};border-radius:4px 4px 0 0;"></div>
+          <span style="font-size:8px;color:rgba(255,255,255,.35);">${lbl}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Barre dispositivi / browser ──
+    const barBlock=(obj,el)=>{
+      const node=document.getElementById(el); if(!node) return;
+      const tot=Object.values(obj).reduce((a,b)=>a+b,0)||1;
+      const entries=Object.entries(obj).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
+      node.innerHTML=entries.length?entries.map(([k,n])=>{
+        const pct=Math.round(n/tot*100);
+        return `<div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>${escH(k)}</span><span style="color:var(--dim);">${n} · ${pct}%</span></div>
+          <div style="height:6px;background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--led);border-radius:999px;"></div></div>
+        </div>`;
+      }).join(''):'<p style="font-size:11px;color:var(--dim);">Nessun dato.</p>';
+    };
+    barBlock(devCount,'an-devices');
+    barBlock(brCount,'an-browsers');
+
     const who=r=>r.email?escH(r.email):(r.name?escH(r.name):'Ospite');
     const liveEl=document.getElementById('an-live-list');
     if(liveEl) liveEl.innerHTML = live.length ? live.map(r=>`
