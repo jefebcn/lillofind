@@ -223,6 +223,9 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <button class="anav-btn" data-pg="clienti" onclick="showAdminPg('clienti')">
         <span class="anav-icon">👥</span>Clienti
       </button>
+      <button class="anav-btn" data-pg="analytics" onclick="showAdminPg('analytics')">
+        <span class="anav-icon">📈</span>Analytics <span id="analytics-live-badge" style="display:none;margin-left:auto;background:#2ecc71;color:#04210f;font-size:9px;font-weight:800;padding:2px 8px;border-radius:999px;">0 live</span>
+      </button>
       <button class="anav-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')">
         <span class="anav-icon">🚚</span>Spedizioni
       </button>
@@ -436,6 +439,40 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
             <tbody id="users-tbody">
               <tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;">Clicca Aggiorna per caricare i clienti.</td></tr>
             </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PAGE: ANALYTICS / PRESENZA ─── -->
+    <div class="apg hidden" id="apg-analytics">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Analytics</h1>
+        <button class="btn-k" onclick="loadAnalytics()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna</button>
+      </div>
+      <p style="font-size:11px;color:rgba(255,255,255,.4);margin:-8px 0 18px;line-height:1.7;">Presenza in tempo reale: chi è sul sito ora, chi ha visitato e quando, e quanto tempo passa in navigazione. Si aggiorna da solo ogni 15 secondi mentre sei su questa pagina.</p>
+      <div class="astat-grid">
+        <div class="astat-card"><p class="astat-lbl">🟢 Online ora</p><p class="astat-val" id="an-live" style="color:#2ecc71;">—</p><p class="astat-sub" id="an-live-sub">ultimi 90 secondi</p></div>
+        <div class="astat-card"><p class="astat-lbl">Visitatori oggi</p><p class="astat-val" id="an-today">—</p><p class="astat-sub" id="an-today-sub">persone uniche</p></div>
+        <div class="astat-card"><p class="astat-lbl">Ultimi 7 giorni</p><p class="astat-val" id="an-week">—</p><p class="astat-sub">visitatori unici</p></div>
+        <div class="astat-card"><p class="astat-lbl">Durata media sessione</p><p class="astat-val" id="an-avg">—</p><p class="astat-sub">tempo di navigazione</p></div>
+      </div>
+      <div class="admin-card" style="margin-top:14px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">🟢 Online adesso</p>
+        <div id="an-live-list" style="display:flex;flex-direction:column;gap:8px;"><p style="font-size:11px;color:var(--dim);">Caricamento...</p></div>
+      </div>
+      <div class="admin-card" style="margin-top:14px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Sessioni recenti</p>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;">
+            <thead><tr style="text-align:left;border-bottom:2px solid rgba(255,255,255,.1);">
+              <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Chi</th>
+              <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Dispositivo</th>
+              <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Inizio</th>
+              <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Durata</th>
+              <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Stato</th>
+            </tr></thead>
+            <tbody id="an-tbody"><tr><td colspan="5" style="padding:16px 10px;color:var(--dim);font-size:10px;">Caricamento...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2501,7 +2538,78 @@ waitFB(()=>{
     if(name==='richieste') loadProductRequests();
     // Carica l'importer solo la prima volta che apri la sezione (lazy)
     if(name==='importa'){ const f=document.getElementById('importa-frame'); if(f && !f.getAttribute('src')) f.setAttribute('src','importer.html'); }
+    // Analytics: carica + auto-refresh solo mentre la sezione è aperta
+    if(name==='analytics'){ loadAnalytics(); startAnalyticsAuto(); } else { stopAnalyticsAuto(); }
   };
+
+// ══════════════════════════════════════════════════════════════════════
+// ANALYTICS / PRESENZA
+// ══════════════════════════════════════════════════════════════════════
+  let _anTimer=null, _anAll=[];
+  function anTsMs(v){ return v&&v.seconds?v.seconds*1000:(v&&v.toMillis?v.toMillis():0); }
+  function anDevice(ua){
+    ua=(ua||'').toLowerCase();
+    const mob=/mobile|android|iphone|ipad|ipod/.test(ua);
+    let br='Browser';
+    if(/edg\//.test(ua))br='Edge'; else if(/chrome|crios/.test(ua))br='Chrome';
+    else if(/firefox|fxios/.test(ua))br='Firefox'; else if(/safari/.test(ua))br='Safari';
+    let os='';
+    if(/iphone|ipad|ipod/.test(ua))os='iOS'; else if(/android/.test(ua))os='Android';
+    else if(/windows/.test(ua))os='Windows'; else if(/mac os/.test(ua))os='Mac'; else if(/linux/.test(ua))os='Linux';
+    return (mob?'📱 ':'💻 ')+br+(os?' · '+os:'');
+  }
+  function anDur(ms){ if(!ms||ms<0)return '—'; const s=Math.round(ms/1000); if(s<60)return s+'s'; const m=Math.floor(s/60); if(m<60)return m+'m '+(s%60)+'s'; const h=Math.floor(m/60); return h+'h '+(m%60)+'m'; }
+
+  window.loadAnalytics = async function(){
+    const fb=window.__fb; if(!fb) return;
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'sessions'), fb.orderBy('lastSeen','desc'), fb.limit(400)));
+      _anAll=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderAnalytics();
+    }catch(e){
+      console.warn('loadAnalytics', e&&e.message);
+      const tb=document.getElementById('an-tbody'); if(tb) tb.innerHTML='<tr><td colspan="5" style="padding:16px;color:#ff8a8a;font-size:10px;">Errore: '+escH((e&&e.message)||'')+'</td></tr>';
+    }
+  };
+
+  function renderAnalytics(){
+    const now=Date.now(), rows=_anAll;
+    const live=rows.filter(r=>now-anTsMs(r.lastSeen)<90000);
+    const startToday=new Date(); startToday.setHours(0,0,0,0);
+    const vToday=new Set(), vWeek=new Set(); let durSum=0,durN=0;
+    rows.forEach(r=>{
+      const ls=anTsMs(r.lastSeen), st=anTsMs(r.startedAt);
+      if(ls>=startToday.getTime()) vToday.add(r.vid||r.id);
+      if(now-ls<7*86400000) vWeek.add(r.vid||r.id);
+      if(st && ls>st){ durSum+=(ls-st); durN++; }
+    });
+    const set=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+    set('an-live', live.length); set('an-today', vToday.size); set('an-week', vWeek.size);
+    set('an-avg', durN?anDur(durSum/durN):'—');
+    const badge=document.getElementById('analytics-live-badge');
+    if(badge){ badge.textContent=live.length+' live'; badge.style.display=live.length>0?'inline-block':'none'; }
+    const who=r=>r.email?escH(r.email):(r.name?escH(r.name):'Ospite');
+    const liveEl=document.getElementById('an-live-list');
+    if(liveEl) liveEl.innerHTML = live.length ? live.map(r=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.22);border-radius:6px;flex-wrap:wrap;">
+        <div><span style="color:#2ecc71;">●</span> <b style="font-size:12px;">${who(r)}</b> <span style="font-size:10px;color:var(--dim);">${anDevice(r.ua)}</span></div>
+        <div style="font-size:10px;color:var(--dim);">${escH(r.page||'/')} · in navigazione da ${anDur(now-anTsMs(r.startedAt))}</div>
+      </div>`).join('') : '<p style="font-size:11px;color:var(--dim);">Nessuno online in questo momento.</p>';
+    const tb=document.getElementById('an-tbody');
+    if(tb) tb.innerHTML = rows.length ? rows.slice(0,120).map(r=>{
+      const ls=anTsMs(r.lastSeen), st=anTsMs(r.startedAt), online=now-ls<90000;
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,.06);">
+        <td style="padding:7px 10px;"><b style="font-size:11px;">${who(r)}</b>${(r.email&&r.name)?'<br><span style="font-size:9px;color:var(--dim);">'+escH(r.name)+'</span>':''}</td>
+        <td style="padding:7px 10px;font-size:10px;color:rgba(255,255,255,.6);">${anDevice(r.ua)}</td>
+        <td style="padding:7px 10px;font-size:10px;color:rgba(255,255,255,.6);">${st?new Date(st).toLocaleString('it-IT'):'—'}</td>
+        <td style="padding:7px 10px;font-size:11px;">${anDur((st&&ls>st)?ls-st:0)}</td>
+        <td style="padding:7px 10px;">${online?'<span style="color:#2ecc71;font-size:10px;">● online</span>':'<span style="color:var(--dim);font-size:10px;">offline</span>'}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" style="padding:16px;color:var(--dim);font-size:10px;">Nessuna sessione ancora. Apri il sito in un\'altra scheda per generare i primi dati.</td></tr>';
+  }
+
+  window.startAnalyticsAuto=function(){ stopAnalyticsAuto(); _anTimer=setInterval(()=>loadAnalytics(), 15000); };
+  window.stopAnalyticsAuto=function(){ if(_anTimer){ clearInterval(_anTimer); _anTimer=null; } };
 
   // ── Richieste prodotto ("non trovo prodotto") ──
   window.loadProductRequests = async function(){
