@@ -171,6 +171,18 @@ app.get('/proxyImage', async (c) => {
 // ── Health check ────────────────────────────────────────────────
 app.get('/', (c) => c.json({ ok: true, service: 'lillofind-worker' }));
 
+// ── Geo del visitatore (da Cloudflare, no servizi esterni) ──────
+// Usato dal tracker di presenza per sapere indicativamente da dove
+// arrivano i visitatori (livello paese/città, nessuna posizione precisa).
+app.get('/geo', (c) => {
+  const cf = (c.req.raw && c.req.raw.cf) || {};
+  return c.json({
+    country: cf.country || '',
+    city: cf.city || '',
+    region: cf.region || '',
+  });
+});
+
 // ── Diagnostica (pubblica, nessun dato sensibile) ───────────────
 // Verifica che i secret e l'accesso a Firestore siano configurati bene.
 // Utile subito dopo il deploy: GET /diag
