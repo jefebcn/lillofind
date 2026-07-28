@@ -64,6 +64,37 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
   }
+
+  // ── Presenza / analytics: registra la sessione su Firestore (heartbeat) ──
+  // Serve al pannello admin per sapere chi è online, chi visita e quanto naviga.
+  (function(){
+    function rid(n){ var s='',c='abcdefghijklmnopqrstuvwxyz0123456789'; for(var i=0;i<(n||14);i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
+    var vid; try{ vid=localStorage.getItem('lf_vid'); if(!vid){ vid='v_'+rid(); localStorage.setItem('lf_vid',vid); } }catch(_){ vid='v_'+rid(); }
+    var sid; try{ sid=sessionStorage.getItem('lf_sid'); }catch(_){}
+    var fresh=!sid; if(!sid){ sid='s_'+rid(); try{ sessionStorage.setItem('lf_sid',sid); }catch(_){} }
+    function cu(){ try{ return window.__fb && window.__fb.auth && window.__fb.auth.currentUser; }catch(_){ return null; } }
+    async function beat(create){
+      var f=window.__fb; if(!f||!f.setDoc) return;
+      try{
+        var u=cu();
+        var data={ vid:vid, sid:sid, lastSeen:f.serverTimestamp(),
+          uid: u?u.uid:'', email: (u&&u.email)?String(u.email).slice(0,190):'',
+          name: (u&&u.displayName)?String(u.displayName).slice(0,150):'',
+          page: (location.pathname+location.search).slice(0,290),
+          ua: (navigator.userAgent||'').slice(0,380) };
+        if(create) data.startedAt=f.serverTimestamp();
+        await f.setDoc(f.doc(f.db,'sessions',sid), data, { merge:true });
+      }catch(_){}
+    }
+    var started=false;
+    function start(){
+      if(started) return; started=true;
+      beat(fresh);
+      setInterval(function(){ if(document.visibilityState==='visible') beat(false); }, 30000);
+      document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') beat(false); });
+    }
+    var tries=0, iv=setInterval(function(){ if(window.__fb && window.__fb.setDoc){ clearInterval(iv); start(); } else if(++tries>80){ clearInterval(iv); } }, 250);
+  })();
 </script>
 <script src="https://js.stripe.com/v3/"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
