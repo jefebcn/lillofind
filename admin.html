@@ -467,6 +467,10 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Visite ultimi 14 giorni</p>
         <div id="an-chart" style="display:flex;align-items:flex-end;gap:6px;height:150px;"></div>
       </div>
+      <div class="admin-card" style="margin-top:14px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Provenienza (paese)</p>
+        <div id="an-countries"><p style="font-size:11px;color:var(--dim);">—</p></div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;" class="an-2col">
         <div class="admin-card">
           <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">Dispositivi</p>
@@ -487,12 +491,13 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           <table style="width:100%;border-collapse:collapse;font-size:11px;">
             <thead><tr style="text-align:left;border-bottom:2px solid rgba(255,255,255,.1);">
               <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Chi</th>
+              <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Luogo</th>
               <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Dispositivo</th>
               <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Inizio</th>
               <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Durata</th>
               <th style="padding:8px 10px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Stato</th>
             </tr></thead>
-            <tbody id="an-tbody"><tr><td colspan="5" style="padding:16px 10px;color:var(--dim);font-size:10px;">Caricamento...</td></tr></tbody>
+            <tbody id="an-tbody"><tr><td colspan="6" style="padding:16px 10px;color:var(--dim);font-size:10px;">Caricamento...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2579,6 +2584,10 @@ waitFB(()=>{
     return (mob?'📱 ':'💻 ')+br+(os?' · '+os:'');
   }
   function anDur(ms){ if(!ms||ms<0)return '—'; const s=Math.round(ms/1000); if(s<60)return s+'s'; const m=Math.floor(s/60); if(m<60)return m+'m '+(s%60)+'s'; const h=Math.floor(m/60); return h+'h '+(m%60)+'m'; }
+  function anFlag(cc){ cc=(cc||'').toUpperCase(); if(!/^[A-Z]{2}$/.test(cc)) return '🌐'; try{ return String.fromCodePoint(...[...cc].map(c=>127397+c.charCodeAt(0))); }catch(_){ return '🌐'; } }
+  const AN_COUNTRY={IT:'Italia',FR:'Francia',DE:'Germania',ES:'Spagna',GB:'Regno Unito',US:'USA',CH:'Svizzera',AT:'Austria',BE:'Belgio',NL:'Paesi Bassi',PT:'Portogallo',IE:'Irlanda',PL:'Polonia',RO:'Romania',GR:'Grecia',SE:'Svezia',NO:'Norvegia',DK:'Danimarca',FI:'Finlandia',CZ:'Cechia',HU:'Ungheria',HR:'Croazia',SI:'Slovenia',SK:'Slovacchia',BG:'Bulgaria',LU:'Lussemburgo',MT:'Malta',CA:'Canada',AU:'Australia',BR:'Brasile',AL:'Albania',RS:'Serbia',MK:'Macedonia',UA:'Ucraina',TR:'Turchia'};
+  function anCountryName(cc){ cc=(cc||'').toUpperCase(); return AN_COUNTRY[cc]||cc||'Sconosciuto'; }
+  function anLoc(r){ if(!r.country && !r.city) return '<span style="color:var(--dim)">—</span>'; return anFlag(r.country)+' '+(r.city?escH(r.city)+(r.country?', '+escH(r.country):''):anCountryName(r.country)); }
 
   window.loadAnalytics = async function(){
     const fb=window.__fb; if(!fb) return;
@@ -2603,8 +2612,9 @@ waitFB(()=>{
     const vToday=new Set(), vWeek=new Set(), vAll=new Set();
     const sessByVid={};
     let visitsToday=0, visitsWeek=0, durSum=0, durN=0, logged=0, guests=0;
-    const devCount={'📱 Mobile':0,'💻 Desktop':0}, brCount={};
+    const devCount={'📱 Mobile':0,'💻 Desktop':0}, brCount={}, ctryCount={};
     rows.forEach(r=>{
+      if(r.country){ const key=anFlag(r.country)+' '+anCountryName(r.country); ctryCount[key]=(ctryCount[key]||0)+1; }
       const ls=anTsMs(r.lastSeen), st=anTsMs(r.startedAt)||ls, vid=r.vid||r.id;
       vAll.add(vid);
       sessByVid[vid]=(sessByVid[vid]||0)+1;
@@ -2667,12 +2677,13 @@ waitFB(()=>{
     };
     barBlock(devCount,'an-devices');
     barBlock(brCount,'an-browsers');
+    barBlock(ctryCount,'an-countries');
 
     const who=r=>r.email?escH(r.email):(r.name?escH(r.name):'Ospite');
     const liveEl=document.getElementById('an-live-list');
     if(liveEl) liveEl.innerHTML = live.length ? live.map(r=>`
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.22);border-radius:6px;flex-wrap:wrap;">
-        <div><span style="color:#2ecc71;">●</span> <b style="font-size:12px;">${who(r)}</b> <span style="font-size:10px;color:var(--dim);">${anDevice(r.ua)}</span></div>
+        <div><span style="color:#2ecc71;">●</span> <b style="font-size:12px;">${who(r)}</b> <span style="font-size:10px;color:var(--dim);">${anLoc(r)} · ${anDevice(r.ua)}</span></div>
         <div style="font-size:10px;color:var(--dim);">${escH(r.page||'/')} · in navigazione da ${anDur(now-anTsMs(r.startedAt))}</div>
       </div>`).join('') : '<p style="font-size:11px;color:var(--dim);">Nessuno online in questo momento.</p>';
     const tb=document.getElementById('an-tbody');
@@ -2680,12 +2691,13 @@ waitFB(()=>{
       const ls=anTsMs(r.lastSeen), st=anTsMs(r.startedAt), online=now-ls<90000;
       return `<tr style="border-bottom:1px solid rgba(255,255,255,.06);">
         <td style="padding:7px 10px;"><b style="font-size:11px;">${who(r)}</b>${(r.email&&r.name)?'<br><span style="font-size:9px;color:var(--dim);">'+escH(r.name)+'</span>':''}</td>
+        <td style="padding:7px 10px;font-size:10px;color:rgba(255,255,255,.6);">${anLoc(r)}</td>
         <td style="padding:7px 10px;font-size:10px;color:rgba(255,255,255,.6);">${anDevice(r.ua)}</td>
         <td style="padding:7px 10px;font-size:10px;color:rgba(255,255,255,.6);">${st?new Date(st).toLocaleString('it-IT'):'—'}</td>
         <td style="padding:7px 10px;font-size:11px;">${anDur((st&&ls>st)?ls-st:0)}</td>
         <td style="padding:7px 10px;">${online?'<span style="color:#2ecc71;font-size:10px;">● online</span>':'<span style="color:var(--dim);font-size:10px;">offline</span>'}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="padding:16px;color:var(--dim);font-size:10px;">Nessuna sessione ancora. Apri il sito in un\'altra scheda per generare i primi dati.</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="padding:16px;color:var(--dim);font-size:10px;">Nessuna sessione ancora. Apri il sito in un\'altra scheda per generare i primi dati.</td></tr>';
   }
 
   window.startAnalyticsAuto=function(){ stopAnalyticsAuto(); _anTimer=setInterval(()=>loadAnalytics(), 15000); };

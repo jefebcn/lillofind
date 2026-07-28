@@ -73,6 +73,14 @@
     var sid; try{ sid=sessionStorage.getItem('lf_sid'); }catch(_){}
     var fresh=!sid; if(!sid){ sid='s_'+rid(); try{ sessionStorage.setItem('lf_sid',sid); }catch(_){} }
     function cu(){ try{ return window.__fb && window.__fb.auth && window.__fb.auth.currentUser; }catch(_){ return null; } }
+    var geo={country:'',city:''};
+    async function loadGeo(){
+      try{
+        var base=window.LF_WORKER_BASE; if(!base) return;
+        var r=await fetch(base+'/geo',{cache:'no-store'});
+        if(r.ok){ var g=await r.json(); geo={ country:(g.country||'').slice(0,8), city:(g.city||'').slice(0,60) }; }
+      }catch(_){}
+    }
     async function beat(create){
       var f=window.__fb; if(!f||!f.setDoc) return;
       try{
@@ -81,14 +89,16 @@
           uid: u?u.uid:'', email: (u&&u.email)?String(u.email).slice(0,190):'',
           name: (u&&u.displayName)?String(u.displayName).slice(0,150):'',
           page: (location.pathname+location.search).slice(0,290),
+          country: geo.country||'', city: geo.city||'',
           ua: (navigator.userAgent||'').slice(0,380) };
         if(create) data.startedAt=f.serverTimestamp();
         await f.setDoc(f.doc(f.db,'sessions',sid), data, { merge:true });
       }catch(_){}
     }
     var started=false;
-    function start(){
+    async function start(){
       if(started) return; started=true;
+      await loadGeo();
       beat(fresh);
       setInterval(function(){ if(document.visibilityState==='visible') beat(false); }, 30000);
       document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') beat(false); });
