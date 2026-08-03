@@ -3952,6 +3952,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       showToast('🗑 Prodotto eliminato');
       try{renderShop();}catch(_){}
       try{renderHomeProds();}catch(_){}
+      try{renderCarousel();}catch(_){}
       try{closeProd();}catch(_){}
     }catch(e){
       showToast('⚠️ Errore: '+(e.code||e.message||'riprova'));
@@ -4445,6 +4446,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             }
             ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;letter-spacing:2px;color:#fff;border:1px solid #fff;padding:2px 7px;">SOLD OUT</span></div>':''}
             ${isLow&&!isSoldOut?`<span style="position:absolute;top:6px;left:6px;background:#ff4500;color:#fff;font-size:8px;letter-spacing:1px;padding:2px 6px;">ULTIMI</span>`:''}
+            ${window._isAdmin?`<button onclick="event.stopPropagation();adminDeleteProduct('${p.id}')" title="Elimina prodotto" style="position:absolute;top:6px;right:6px;z-index:5;width:30px;height:30px;border:none;border-radius:8px;background:rgba(201,80,63,.95);color:#fff;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.3);">🗑</button>`:''}
             <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
               ${p.brand?`<p style="font-size:8px;color:rgba(200,255,0,.8);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
               <p style="font-size:10px;color:#fff;line-height:1.2;font-family:'Manrope',monospace;">${(p.name||'').length>22?(p.name||'').slice(0,22)+'…':p.name||''}</p>
