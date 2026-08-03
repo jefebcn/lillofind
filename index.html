@@ -4299,7 +4299,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       {label:'Cardigan', model:'Cardigan',   emoji:'🧶'},
       {label:'Cappelli', model:'Cappello',   emoji:'🧢'},
     ];
-    const imgMap={},cntMap={};
+    const imgsMap={},cntMap={};
     if(products&&products.length){
       products.forEach(p=>{
         const cls=classifyModel(p); // categoria reale dedotta dal nome/modello
@@ -4307,13 +4307,15 @@ img{ -webkit-user-drag:none; user-select:none; }
         CATS.forEach(c=>{
           if(cls===c.model){
             cntMap[c.model]=(cntMap[c.model]||0)+1;
-            if(!imgMap[c.model] && p.imageUrl) imgMap[c.model]=pImg(p.imageUrl);
+            if(p.imageUrl && p.soldOut!==true) (imgsMap[c.model]=imgsMap[c.model]||[]).push(pImg(p.imageUrl));
           }
         });
       });
     }
+    // Immagine casuale per categoria → ruota a ogni visita (sembra sempre aggiornato)
+    const pickImg=arr=>(arr&&arr.length)?arr[Math.floor(Math.random()*arr.length)]:'';
     el.innerHTML=CATS.map(c=>{
-      const img=imgMap[c.model]||'';
+      const img=pickImg(imgsMap[c.model]);
       const n=cntMap[c.model]||0;
       return `<div class="hcc" onclick="showPg('shop');resetFilters();setTimeout(()=>setFilter('model','${c.model}'),80)">
         <div class="hcc-ring">${img?`<img src="${img}" alt="${c.label}" loading="lazy" onerror="this.parentNode.innerHTML='<span class=hcc-emo>${c.emoji}</span>'">`:`<span class="hcc-emo">${c.emoji}</span>`}</div>
@@ -5374,7 +5376,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const ADMIN_EMAILS=['yishionvt@gmail.com','admin@lillofind.com'];
       const wasAdmin=window._isAdmin;
       window._isAdmin = !!(u && u.email && ADMIN_EMAILS.includes(u.email.trim().toLowerCase()));
-      if(window._isAdmin!==wasAdmin){ try{renderShop();}catch(_){} try{renderHomeProds();}catch(_){} }
+      if(window._isAdmin!==wasAdmin){ try{renderShop();}catch(_){} try{renderHomeProds();}catch(_){} try{renderCarousel();}catch(_){} }
       updateNav(u,udata); updateHomeDisplay();
       if(u){ try{ claimReferralRewards(); }catch(_){} try{ const cke=document.getElementById('ck-email'); if(cke && !cke.value && u.email) cke.value=u.email; }catch(_){} }
       // Re-render profile if it's already open (covers race condition on load)
