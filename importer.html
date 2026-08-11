@@ -991,11 +991,14 @@ window.saveAll=async function(){
       // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker,
       // che richiederebbe un service account non configurato.
       const sourceUrl = row.dataset.sourceUrl||'';
+      let images=[]; try{ images=JSON.parse(row.dataset.images||'[]'); }catch(_){}
+      images=[...new Set([imgUrl, ...images].filter(Boolean))].slice(0,8);
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand,model:rowModel,
         category,
         sizes:sizes.length?sizes:['Unica'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description,weightKg,
+        ...(images.length>1?{images}:{}),
         ...(sourceUrl?{sourceUrl}:{}),
         createdAt:imp.serverTimestamp()
       });
@@ -1460,6 +1463,7 @@ function addTaobaoRow(tb, ai){
   const coverImg = tb.images?.[0] || '';
   div.dataset.imgUrl = coverImg;
   div.dataset.sourceUrl = tb.sourceUrl || '';   // link alla pagina prodotto Taobao/Weidian
+  try { div.dataset.images = JSON.stringify([...new Set((tb.images||[]).filter(Boolean))].slice(0,8)); } catch(_){ div.dataset.images='[]'; }
 
   const brand   = ai?.brand || currentBrand || '';
   const rawName = ai?.name  || tb.title     || '';
@@ -1786,6 +1790,13 @@ function addAnalyzedRow(d){
   div.id = 'row-'+id;
   div.dataset.imgUrl   = d.cover;
   div.dataset.sourceUrl = d.sourceUrl || '';
+  // Galleria: cover + foto multiple dell'album (per la pagina prodotto)
+  try {
+    const _photos = ((d.albumInfo && Array.isArray(d.albumInfo.photos)) ? d.albumInfo.photos : [])
+      .filter(u => /photo\d?\.yupoo\.com|yunjifen/i.test(u));   // solo foto prodotto reali
+    const _gallery = [...new Set([d.cover, ..._photos].filter(Boolean))].slice(0, 8);
+    div.dataset.images = JSON.stringify(_gallery);
+  } catch(_){ div.dataset.images = '[]'; }
   div.dataset.brand    = d.analysis.brand    || '';
   div.dataset.category = d.analysis.category || '';
   div.dataset.desc     = d.analysis.description || '';
