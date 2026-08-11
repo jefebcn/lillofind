@@ -587,15 +587,33 @@ export async function yupooFetch(data, _ctx) {
     if (isAlbumPage) {
       const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/i);
       const pageTitle = titleM ? titleM[1].replace(/\s*[-|—].*$/, '').trim() : '';
+      // Nome prodotto: preferisci l'h1 descrittivo dell'album (es.
+      // "25-26 Juventus away player version shorts【ID:...】S-2XL 尤文…"),
+      // poi pulisci ID tra parentesi, CJK/fullwidth e range taglie.
+      const h1M = html.match(/<h1[^>]*>([^<]{6,220})<\/h1>/i);
+      let rawTitle = (h1M ? h1M[1] : (titleM ? titleM[1] : '')) || '';
+      const cleanName = rawTitle
+        .replace(/【[^】]*】|\[[^\]]*\]|（[^）]*）|\([^)]*\)/g, ' ')
+        .replace(/[　-〿一-鿿＀-￯]/g, ' ')
+        .replace(/\bID\s*[:：]?\s*\d+\b/gi, ' ')
+        .replace(/\b(XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL)(-(XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL))?\b/gi, ' ')
+        .replace(/[|｜/\\]+/g, ' ')
+        .replace(/\s+/g, ' ').trim();
       const bodyText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
       const sizeM = bodyText.match(/(?:size|sizes|尺码|尺寸)[：:\s]+([0-9][0-9\s.\/,]+)/i);
       const sizesRaw = sizeM ? sizeM[1].trim() : '';
       const shoeSizes = sizesRaw ? [...new Set(sizesRaw.split(/[\s,\/]+/).filter(s => /^\d{2}(\.\d)?$/.test(s)))] : [];
       const clothM = bodyText.match(/(?:size|sizes|尺码)[：:\s]+([A-Z]{1,3}(?:\s+[A-Z]{1,3})+)/i);
       const clothSizes = clothM ? clothM[1].split(/\s+/).filter(s => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].includes(s)) : [];
-      const cnyM = bodyText.match(/[¥￥]\s*(\d{1,5})/) || bodyText.match(/(\d{1,5})\s*(?:元|CNY|cny)/);
+      // Prezzo fornitore: prendi il prezzo BASE in CNY, ignorando gli
+      // add-on tipo "+ 15 CNY/pcs" (numero/personalizzazione).
+      let supplierPriceCNY = null;
+      const cnyAll = [...bodyText.matchAll(/(\+\s*)?(\d{1,5})\s*(?:元|CNY|cny|RMB|rmb)/g)];
+      const cnyBases = cnyAll.filter(m => !m[1]).map(m => parseInt(m[2], 10)).filter(v => v > 0 && v < 100000);
+      if (cnyBases.length) supplierPriceCNY = Math.max(...cnyBases);
+      else if (cnyAll.length) supplierPriceCNY = parseInt(cnyAll[0][2], 10);
+      if (supplierPriceCNY == null) { const y = bodyText.match(/[¥￥]\s*(\d{1,5})/); if (y) supplierPriceCNY = parseInt(y[1], 10); }
       const usdM = bodyText.match(/(\d{1,4})\s*\$/) || bodyText.match(/\$\s*(\d{1,4})/);
-      const supplierPriceCNY = cnyM ? parseInt(cnyM[1], 10) : null;
       const supplierPriceUSD = usdM ? parseInt(usdM[1], 10) : null;
       const photos = [];
       const photoRe2 = /(?:data-src|data-original|data-lazy|src)=["']((?:https?:)?\/\/[^"'>\s]+)["']/g;
@@ -604,7 +622,7 @@ export async function yupooFetch(data, _ctx) {
         const u = norm(pm2[1]);
         if (u && isImg(u) && !photos.includes(u)) photos.push(u);
       }
-      albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos };
+      albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos };
     }
 
     return { html, status: resp.status, albumCovers, albumPrices, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
