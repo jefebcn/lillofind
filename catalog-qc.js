@@ -37,6 +37,29 @@
       .split(' ').map(function (w) { return w ? w[0].toUpperCase() + w.slice(1) : w; }).join(' ');
   }
 
+  // Riconosce squadra di calcio o brand dal NOME (titolo album Yupoo).
+  // Per i kit calcio è la squadra il "brand" con cui filtra il cliente.
+  var TEAMS = [
+    ['Juventus', /juventus|\bjuve\b/i], ['AC Milan', /\bac ?milan\b|\bmilan\b/i], ['Inter', /\binter\b|internazionale/i],
+    ['Napoli', /napoli/i], ['Roma', /\bas ?roma\b|\broma\b/i], ['Lazio', /lazio/i], ['Atalanta', /atalanta/i],
+    ['Fiorentina', /fiorentina/i], ['Real Madrid', /real ?madrid/i], ['Barcelona', /barcelona|bar[çc]a\b|\bfcb\b/i],
+    ['Atletico Madrid', /atl[eé]tico/i], ['Manchester United', /man(chester)? ?united|\bman ?utd\b/i],
+    ['Manchester City', /man(chester)? ?city/i], ['Liverpool', /liverpool/i], ['Arsenal', /arsenal/i],
+    ['Chelsea', /chelsea/i], ['Tottenham', /tottenham|spurs/i], ['Bayern Munich', /bayern/i],
+    ['Borussia Dortmund', /dortmund|\bbvb\b/i], ['PSG', /\bpsg\b|paris ?saint/i], ['Ajax', /\bajax\b/i],
+    ['Marseille', /marseille|\bom\b/i], ['Newcastle', /newcastle/i], ['Aston Villa', /aston ?villa/i],
+    ['Portugal', /portugal/i], ['Argentina', /argentina/i], ['Brazil', /brazil|brasil/i], ['France', /\bfrance\b/i],
+    ['Germany', /\bgermany\b/i], ['Spain', /\bspain\b/i], ['England', /\bengland\b/i], ['Italy', /\bitaly\b|italia/i],
+  ];
+  function detectBrand(name) {
+    var t = (name || '');
+    for (var i = 0; i < TEAMS.length; i++) { if (TEAMS[i][1].test(t)) return TEAMS[i][0]; }
+    // Scan brand noti nel titolo (alias >=4 char per evitare falsi positivi)
+    var compact = t.toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (var k in BRAND_CANON) { if (k.length >= 4 && compact.indexOf(k) >= 0) return BRAND_CANON[k]; }
+    return '';
+  }
+
   // Deduce la categoria dal nome/modello. Ritorna '' se non deducibile.
   function inferCategory(p) {
     var t = ((p.name || '') + ' ' + (p.model || '')).toLowerCase();
@@ -107,6 +130,7 @@
 
   window.LFCatalog = {
     canonBrand: canonBrand,
+    detectBrand: detectBrand,
     inferCategory: inferCategory,
     genDescription: genDescription,
     isGenericName: isGenericName,

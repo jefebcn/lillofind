@@ -979,7 +979,10 @@ window.saveAll=async function(){
       // Marchio normalizzato, categoria dedotta se mancante, descrizione
       // (AI se presente, altrimenti template), peso spedizione dalla categoria.
       const QC = window.LFCatalog;
-      const brand = QC ? QC.canonBrand(rowBrand) : rowBrand;
+      // Marchio: prima prova a riconoscere squadra/brand dal titolo (es.
+      // "…Juventus…" → Juventus), altrimenti normalizza quello rilevato dall'AI.
+      const detected = QC ? QC.detectBrand(name) : '';
+      const brand = detected || (QC ? QC.canonBrand(rowBrand) : rowBrand);
       let category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
       // Bigiotteria (bracciali, collane, anelli, catene…): categoria "accessori"
       // e taglia "Unica" a prescindere da cosa ha dedotto l'AI.
