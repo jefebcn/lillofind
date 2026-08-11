@@ -434,10 +434,33 @@ export async function yupooFetch(data, _ctx) {
         redirect: 'follow',
       });
       html = await resp.text();
+      // Yupoo moderno: le pagine album richiedono ?uid=<owner> — senza il
+      // parametro rispondono 404 "页面未找到" (niente nome/prezzo). Se manca,
+      // riprova aggiungendo uid=1 (l'owner più comune degli store single-user).
+      if ((resp.status === 404 || /页面未找到/.test(html))
+          && /\/albums\/\w+/.test(parsedUrl.pathname) && !parsedUrl.searchParams.has('uid')) {
+        const retryUrl = url + (url.includes('?') ? '&' : '?') + 'uid=1';
+        authDebug.push(`album 404 senza uid → retry ${retryUrl}`);
+        const r2 = await fetch(retryUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/json,*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Referer': `https://${parsedUrl.hostname}/`,
+            ...(authCookieStr ? { 'Cookie': authCookieStr } : {}),
+          },
+          redirect: 'follow',
+        });
+        if (r2.ok) { resp = r2; html = await r2.text(); }
+      }
     }
 
     const albumCovers = {};
     const albumPrices = {};
+    // uid dell'owner dello store: gli href album sono "/albums/{id}?uid={N}".
+    // Serve al client per costruire URL album validi (senza uid → 404).
+    const uidM = html.match(/\/albums\/\w+\?uid=(\d+)/);
+    const albumUid = uidM ? uidM[1] : null;
     const norm = u => (!u ? null : u.startsWith('//') ? 'https:' + u : u);
     const isImg = u => u && (u.includes('yupoo') || u.includes('yunjifen') || /\.(jpg|jpeg|png|webp)/i.test(u));
 
@@ -645,7 +668,7 @@ export async function yupooFetch(data, _ctx) {
       albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos, priceCtx };
     }
 
-    return { html, status: resp.status, albumCovers, albumPrices, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
+    return { html, status: resp.status, albumCovers, albumPrices, albumInfo, albumUid, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
