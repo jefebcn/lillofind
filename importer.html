@@ -1753,11 +1753,13 @@ window.analyzeAndAddRows = async function(){
     if(nameEl) nameEl.textContent = d.analysis.name || d.albumInfo?.pageTitle || ('Album '+id.slice(-6));
     if(stEl){
       const cnyFound = d.albumInfo?.supplierPriceCNY || d.supplierPrice?.value;
-      const pHint = cnyFound ? ` · ¥${cnyFound}` : (d.albumInfo?.supplierPriceUSD ? ` · $${d.albumInfo.supplierPriceUSD}` : '');
+      const pHint = cnyFound ? ` · ¥${cnyFound}` : (d.albumInfo?.supplierPriceUSD ? ` · $${d.albumInfo.supplierPriceUSD}` : ' · prezzo?');
+      // Se il prezzo non è stato trovato, logga il contesto grezzo per capire il formato
+      if(!cnyFound && d.albumInfo?.priceCtx?.length) console.warn('[prezzo non trovato] album '+id+' →', d.albumInfo.priceCtx);
       if(aiRes.status === 'fulfilled'){
         stEl.textContent = '✅ ' + (d.analysis.brand||'OK') + pHint;
-        stEl.style.color = 'var(--led)';
-        stEl.title = '';
+        stEl.style.color = cnyFound ? 'var(--led)' : '#FFA502';
+        stEl.title = cnyFound ? '' : (d.albumInfo?.priceCtx?.join(' | ') || 'nessun prezzo nel testo album');
       } else {
         stEl.textContent = '⚠️ AI: ' + aiErrMsg;
         stEl.style.color = '#FF4757';
