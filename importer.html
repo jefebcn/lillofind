@@ -1790,7 +1790,10 @@ function addAnalyzedRow(d){
   div.dataset.category = d.analysis.category || '';
   div.dataset.desc     = d.analysis.description || '';
 
-  const name   = (d.analysis.name || d.albumInfo?.pageTitle || '').replace(/"/g,'&quot;');
+  // Nome: preferisci il titolo dell'album (descrittivo e affidabile, es.
+  // "25-26 Juventus away player version shorts") all'ipotesi AI dalla foto.
+  const albumName = (d.albumInfo?.name || '').trim();
+  const name   = ((albumName.length >= 6 ? albumName : (d.analysis.name || d.albumInfo?.pageTitle || '')) || '').replace(/"/g,'&quot;');
   const colors = (d.analysis.colors || []).join(', ');
   // Per le scarpe: tipo sempre Sneakers, taglie EU default, prezzo 50€, colori nascosti
   const isShoe     = ['scarpe','scarpe_box'].includes(d.analysis.category) || (d.albumInfo?.shoeSizes?.length > 0);
