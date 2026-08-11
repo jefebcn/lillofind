@@ -12,14 +12,19 @@ const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
 // Add-on personalizzazione maglie calcio — prezzi calcolati SEMPRE lato server
 // (mai fidarsi del prezzo del client). Deve restare allineato a index.html.
-const LF_PATCH_PRICE = 5;    // toppa/patch campionato
-const LF_NAMESET_PRICE = 8;  // stampa nome + numero
+// Rispecchia le 3 opzioni del fornitore: Badges, Player e Custom Name/Number.
+const LF_BADGES_PRICE = 5;   // toppe/badges campionato
+const LF_PLAYER_PRICE = 8;   // nome + numero giocatore ufficiale
+const LF_CUSTOM_PRICE = 12;  // nome + numero personalizzato
 function addonPriceOf(addons) {
   if (!addons || typeof addons !== 'object') return 0;
   let p = 0;
-  if (addons.patch) p += LF_PATCH_PRICE;
-  const hasName = (addons.name && String(addons.name).trim()) || (addons.number && String(addons.number).trim());
-  if (hasName) p += LF_NAMESET_PRICE;
+  if (addons.badges || addons.patch) p += LF_BADGES_PRICE; // patch = vecchio nome
+  if (addons.nameType === 'player') p += LF_PLAYER_PRICE;
+  else if (addons.nameType === 'custom') p += LF_CUSTOM_PRICE;
+  else if (!addons.nameType && ((addons.name && String(addons.name).trim()) || (addons.number && String(addons.number).trim()))) {
+    p += LF_PLAYER_PRICE; // retrocompatibilità col vecchio modello (nome/numero senza tipo)
+  }
   return p;
 }
 function addonSummaryOf(addons) {
@@ -27,8 +32,9 @@ function addonSummaryOf(addons) {
   const name = String(addons.name || '').trim().toUpperCase().replace(/[^A-Z0-9 .]/g, '').slice(0, 14);
   const num = String(addons.number || '').replace(/[^0-9]/g, '').slice(0, 2);
   const parts = [];
-  if (addons.patch) parts.push('Patch campionato');
-  if (name || num) parts.push('Stampa ' + [name, num].filter(Boolean).join(' '));
+  if (addons.badges || addons.patch) parts.push('Toppe campionato');
+  const typeLbl = addons.nameType === 'player' ? 'Giocatore' : addons.nameType === 'custom' ? 'Personalizzato' : ((name || num) ? 'Stampa' : '');
+  if (typeLbl) parts.push((typeLbl + ' ' + [name, num].filter(Boolean).join(' ')).trim());
   return parts.join(' · ');
 }
 

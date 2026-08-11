@@ -3727,8 +3727,11 @@ img{ -webkit-user-drag:none; user-select:none; }
   // già come "brand" all'import) o da parole chiave nel titolo. La squadra fa
   // da categoria navigabile (chip brand), e il modal offre gli add-on toppa +
   // stampa nome/numero, il sovrapprezzo del fornitore reso opzione cliente.
-  const LF_PATCH_PRICE=5;   // € per la toppa/patch campionato
-  const LF_NAMESET_PRICE=8; // € per la stampa nome + numero
+  // Add-on personalizzazione — rispecchiano le 3 opzioni del fornitore:
+  //  + Badges (+15 CNY) · + Player Name/Number (+15 CNY) · + Custom Name/Number (+25 CNY)
+  const LF_BADGES_PRICE=5;  // Toppa/Badges campionato
+  const LF_PLAYER_PRICE=8;  // Nome + numero di un giocatore ufficiale
+  const LF_CUSTOM_PRICE=12; // Nome + numero personalizzato (costa di più)
   const FOOTBALL_TEAMS=[
     ['Juventus',/juventus|\bjuve\b/i],['AC Milan',/\bac ?milan\b|\bmilan\b/i],['Inter',/\binter\b|internazionale/i],
     ['Napoli',/napoli/i],['Roma',/\bas ?roma\b|\broma\b/i],['Lazio',/lazio/i],['Atalanta',/atalanta/i],
@@ -4777,13 +4780,18 @@ img{ -webkit-user-drag:none; user-select:none; }
         <input id="picker-color-input" class="lf-in" placeholder="es. Nero, Bianco, Verde militare..."/>
       </div>`}
       ${window.isFootballKit(prod)?`<div style="margin-bottom:18px;border:1.5px solid rgba(200,255,0,.3);background:rgba(200,255,0,.03);padding:14px 16px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;color:var(--led);">⚽ Personalizza la maglia <span style="color:var(--dim);text-transform:none;letter-spacing:0;">(opzionale)</span></p>
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:12px;">
-          <input type="checkbox" id="addon-patch" onchange="updateAddonNote()" style="width:18px;height:18px;accent-color:var(--led);flex-shrink:0;"/>
-          <span style="font-size:12px;">Patch campionato <span style="color:var(--dim);">(Serie A, Champions…)</span> <strong>+€${LF_PATCH_PRICE.toFixed(0)}</strong></span>
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:var(--led);">⚽ Personalizza la maglia <span style="color:var(--dim);text-transform:none;letter-spacing:0;">(opzionale)</span></p>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:14px;">
+          <input type="checkbox" id="addon-badges" onchange="updateAddonNote()" style="width:18px;height:18px;accent-color:var(--led);flex-shrink:0;"/>
+          <span style="font-size:12px;">Toppe / Badges campionato <span style="color:var(--dim);">(Serie A, Champions…)</span> <strong>+€${LF_BADGES_PRICE.toFixed(0)}</strong></span>
         </label>
-        <p style="font-size:11px;color:var(--mid);margin-bottom:6px;">Stampa Nome + Numero <strong>+€${LF_NAMESET_PRICE.toFixed(0)}</strong></p>
-        <div style="display:flex;gap:8px;">
+        <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Stampa Nome + Numero</p>
+        <select id="addon-nametype" onchange="onAddonTypeChange()" class="lf-in" style="width:100%;margin-bottom:8px;cursor:pointer;">
+          <option value="">Nessuna stampa</option>
+          <option value="player">Nome giocatore ufficiale (+€${LF_PLAYER_PRICE.toFixed(0)})</option>
+          <option value="custom">Nome personalizzato (+€${LF_CUSTOM_PRICE.toFixed(0)})</option>
+        </select>
+        <div id="addon-name-fields" style="display:none;gap:8px;">
           <input id="addon-name" oninput="updateAddonNote()" class="lf-in" maxlength="14" placeholder="NOME (es. YILDIZ)" style="flex:1;text-transform:uppercase;"/>
           <input id="addon-number" oninput="updateAddonNote()" class="lf-in" maxlength="2" inputmode="numeric" placeholder="N°" style="width:64px;text-align:center;"/>
         </div>
@@ -4810,19 +4818,28 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
   // Legge gli add-on calcio dal modal → { addons, addonPrice, summary }
   function readAddons(){
-    const patchEl=document.getElementById('addon-patch');
-    if(!patchEl) return {addons:null,addonPrice:0,summary:''}; // blocco calcio non presente
-    const patch=!!patchEl.checked;
+    const badgesEl=document.getElementById('addon-badges');
+    const typeEl=document.getElementById('addon-nametype');
+    if(!badgesEl&&!typeEl) return {addons:null,addonPrice:0,summary:''}; // blocco calcio non presente
+    const badges=!!(badgesEl&&badgesEl.checked);
+    const nameType=(typeEl&&typeEl.value)||''; // '' | 'player' | 'custom'
     const pname=(document.getElementById('addon-name')?.value||'').trim().toUpperCase().replace(/[^A-Z0-9 .]/g,'').slice(0,14);
     const pnum=(document.getElementById('addon-number')?.value||'').replace(/[^0-9]/g,'').slice(0,2);
-    const hasNameSet=!!(pname||pnum);
     let addonPrice=0;
-    if(patch) addonPrice+=LF_PATCH_PRICE;
-    if(hasNameSet) addonPrice+=LF_NAMESET_PRICE;
-    if(!patch&&!hasNameSet) return {addons:null,addonPrice:0,summary:''};
-    const summary=[patch?'Patch campionato':'',hasNameSet?('Stampa '+[pname,pnum].filter(Boolean).join(' ')):''].filter(Boolean).join(' · ');
-    return {addons:{patch,name:pname,number:pnum},addonPrice,summary};
+    if(badges) addonPrice+=LF_BADGES_PRICE;
+    if(nameType==='player') addonPrice+=LF_PLAYER_PRICE;
+    else if(nameType==='custom') addonPrice+=LF_CUSTOM_PRICE;
+    if(!badges&&!nameType) return {addons:null,addonPrice:0,summary:''};
+    const typeLbl=nameType==='player'?'Giocatore':nameType==='custom'?'Personalizzato':'';
+    const summary=[badges?'Toppe campionato':'',typeLbl?(typeLbl+' '+[pname,pnum].filter(Boolean).join(' ')).trim():''].filter(Boolean).join(' · ');
+    return {addons:{badges,nameType,name:pname,number:pnum},addonPrice,summary};
   }
+  window.onAddonTypeChange=function(){
+    const t=document.getElementById('addon-nametype');
+    const f=document.getElementById('addon-name-fields');
+    if(f) f.style.display=(t&&t.value)?'flex':'none';
+    updateAddonNote();
+  };
   window.updateAddonNote=function(){
     const note=document.getElementById('picker-addon-note'); if(!note) return;
     const {addonPrice,summary}=readAddons();
