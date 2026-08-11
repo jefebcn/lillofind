@@ -406,10 +406,14 @@ export async function yupooFetch(data, _ctx) {
   if (password && typeof password === 'string' && password.trim().length > 0) {
     const pwd = password.trim();
     // Yupoo moderno (website 4.x): la protezione password è LATO CLIENT.
-    // Il server restituisce l'HTML sbloccato con gli album se si invia il
-    // cookie "indexlockcode=<password>" (in chiaro). Nessun POST/verify.
-    authCookieStr = `indexlockcode=${encodeURIComponent(pwd)}; language=zh-CN`;
-    authDebug.push(`gate moderno: set Cookie indexlockcode (password len ${pwd.length})`);
+    // Il server restituisce l'HTML sbloccato se si invia il cookie in chiaro.
+    // Due livelli di gate (vedi common.js): "indexlockcode" sblocca la lista
+    // categorie/album, "lockcode" sblocca la PAGINA del singolo album. Le pagine
+    // /albums/{id} protette restano bloccate (niente nome/prezzo) se manca
+    // "lockcode": impostiamo entrambi con la stessa password.
+    const pe = encodeURIComponent(pwd);
+    authCookieStr = `indexlockcode=${pe}; lockcode=${pe}; language=zh-CN`;
+    authDebug.push(`gate moderno: set Cookie indexlockcode+lockcode (password len ${pwd.length})`);
     console.log('[yupoo auth]', JSON.stringify(authDebug));
   }
 
@@ -612,7 +616,19 @@ export async function yupooFetch(data, _ctx) {
       const cnyBases = cnyAll.filter(m => !m[1]).map(m => parseInt(m[2], 10)).filter(v => v > 0 && v < 100000);
       if (cnyBases.length) supplierPriceCNY = Math.max(...cnyBases);
       else if (cnyAll.length) supplierPriceCNY = parseInt(cnyAll[0][2], 10);
+      // Simbolo ¥/￥ (es. "¥128", "￥ 128")
       if (supplierPriceCNY == null) { const y = bodyText.match(/[¥￥]\s*(\d{1,5})/); if (y) supplierPriceCNY = parseInt(y[1], 10); }
+      // Parole chiave cinesi: 价格/售价/价/单价/批发价 seguite da un numero
+      if (supplierPriceCNY == null) {
+        const kw = [...bodyText.matchAll(/(?:价格|售价|单价|批发价|价)\s*[:：]?\s*(\d{1,5})/g)]
+          .map(m => parseInt(m[1], 10)).filter(v => v >= 5 && v < 100000);
+        if (kw.length) supplierPriceCNY = Math.max(...kw);
+      }
+      // Ultima risorsa: un numero prezzo nel titolo album (es. "… 65" / "价65")
+      if (supplierPriceCNY == null && rawTitle) {
+        const tp = rawTitle.match(/(?:¥|￥|价格?|售价)\s*(\d{2,5})/) || rawTitle.match(/\b(\d{2,4})\s*(?:元|cny|rmb)\b/i);
+        if (tp) { const v = parseInt(tp[1], 10); if (v >= 5 && v < 100000) supplierPriceCNY = v; }
+      }
       const usdM = bodyText.match(/(\d{1,4})\s*\$/) || bodyText.match(/\$\s*(\d{1,4})/);
       const supplierPriceUSD = usdM ? parseInt(usdM[1], 10) : null;
       const photos = [];
@@ -622,7 +638,11 @@ export async function yupooFetch(data, _ctx) {
         const u = norm(pm2[1]);
         if (u && isImg(u) && !photos.includes(u)) photos.push(u);
       }
-      albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos };
+      // Diagnostica prezzo: piccoli estratti del testo che contengono cifre
+      // vicino a marcatori di valuta, per capire il formato se il parse fallisce.
+      const priceCtx = (bodyText.match(/.{0,14}\d{1,5}\s*(?:元|CNY|cny|RMB|rmb|[¥￥]|价格?|售价)/gi) || [])
+        .concat(bodyText.match(/(?:¥|￥|价格?|售价)\s*\d{1,5}/g) || []).slice(0, 6);
+      albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos, priceCtx };
     }
 
     return { html, status: resp.status, albumCovers, albumPrices, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
