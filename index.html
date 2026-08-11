@@ -3250,7 +3250,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function waitFB(cb){ window.__fb ? cb() : setTimeout(()=>waitFB(cb), 80); }
 
   // ── State ──────────────────────────────────────────────
-  let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:'',priceMin:null,priceMax:null};
+  let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,priceMin:null,priceMax:null};
   let user=null, udata=null, authTab='li';
   let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
 
@@ -3722,6 +3722,38 @@ img{ -webkit-user-drag:none; user-select:none; }
     return String(b).trim().replace(/\s+/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
   };
 
+  // ── Calcio: riconoscimento kit + squadra + add-on personalizzazione ──
+  // Le maglie da calcio sono riconosciute dalla squadra (che detectBrand mette
+  // già come "brand" all'import) o da parole chiave nel titolo. La squadra fa
+  // da categoria navigabile (chip brand), e il modal offre gli add-on toppa +
+  // stampa nome/numero, il sovrapprezzo del fornitore reso opzione cliente.
+  const LF_PATCH_PRICE=5;   // € per la toppa/patch campionato
+  const LF_NAMESET_PRICE=8; // € per la stampa nome + numero
+  const FOOTBALL_TEAMS=[
+    ['Juventus',/juventus|\bjuve\b/i],['AC Milan',/\bac ?milan\b|\bmilan\b/i],['Inter',/\binter\b|internazionale/i],
+    ['Napoli',/napoli/i],['Roma',/\bas ?roma\b|\broma\b/i],['Lazio',/lazio/i],['Atalanta',/atalanta/i],
+    ['Fiorentina',/fiorentina/i],['Real Madrid',/real ?madrid/i],['Barcelona',/barcelona|bar[çc]a\b|\bfcb\b/i],
+    ['Atletico Madrid',/atl[eé]tico/i],['Manchester United',/man(chester)? ?united|\bman ?utd\b/i],
+    ['Manchester City',/man(chester)? ?city/i],['Liverpool',/liverpool/i],['Arsenal',/arsenal/i],
+    ['Chelsea',/chelsea/i],['Tottenham',/tottenham|spurs/i],['Bayern Munich',/bayern/i],
+    ['Borussia Dortmund',/dortmund|\bbvb\b/i],['PSG',/\bpsg\b|paris ?saint/i],['Ajax',/\bajax\b/i],
+    ['Marseille',/marseille|\bom\b/i],['Newcastle',/newcastle/i],['Aston Villa',/aston ?villa/i],
+    ['Portugal',/portugal/i],['Argentina',/argentina/i],['Brazil',/brazil|brasil/i],['France',/\bfrance\b/i],
+    ['Germany',/\bgermany\b/i],['Spain',/\bspain\b/i],['England',/\bengland\b/i],['Italy',/\bitaly\b|italia/i],
+  ];
+  const FOOTBALL_KW=/\bjersey\b|\bkit\b|player version|fan version|maglia da calcio|football club|soccer|goalkeeper|\bhome\b.*\b(jersey|kit|shirt)|\baway\b.*\b(jersey|kit|shirt)|camiseta/i;
+  window.detectTeam=function(p){
+    const t=((p&&p.brand||'')+' '+(p&&p.name||'')+' '+(p&&p.model||''));
+    for(const [team,re] of FOOTBALL_TEAMS){ if(re.test(t)) return team; }
+    return '';
+  };
+  window.isFootballKit=function(p){
+    if(!p) return false;
+    if(typeof p.style==='string' && p.style.toLowerCase()==='calcio') return true;
+    if(window.detectTeam(p)) return true;
+    return FOOTBALL_KW.test(((p.name||'')+' '+(p.model||'')));
+  };
+
   function buildChips(){
     ['model','brand','size','color'].forEach(k=>{
       let html='', htmlMob='';
@@ -3792,7 +3824,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   window.resetFilters=function(){
-    filters={model:'',brand:'',size:'',style:'',color:'',gender:'',priceMin:null,priceMax:null};
+    filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,priceMin:null,priceMax:null};
     document.querySelectorAll('.chip[data-key],.chip[data-price],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()==='tutti'));
     document.querySelectorAll('.gtrio-btn[data-g]').forEach(b=>b.classList.toggle('active',b.dataset.g===''));
@@ -4274,6 +4306,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       (!filters.gender||p.gender===filters.gender)&&
       (filters.priceMin==null||((p.price||0)>=filters.priceMin&&(p.price||0)<=filters.priceMax))&&
       (!filters.style||(filters.style==='Sport'?isSportProduct(p):p.style===filters.style))&&
+      (!filters.football||isFootballKit(p))&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
     if(_sLoad) _sLoad.style.display='none';
@@ -4303,6 +4336,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const el=document.getElementById('home-cat-circles');
     if(!el) return;
     const CATS=[
+      {label:'Calcio',   model:'__calcio',  emoji:'⚽'},
       {label:'Sneakers', model:'Sneakers',  emoji:'👟'},
       {label:'T-Shirt',  model:'T-Shirt',   emoji:'👕'},
       {label:'Felpe',    model:'Felpa',      emoji:'🧥'},
@@ -4315,7 +4349,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     const imgsMap={},cntMap={};
     if(products&&products.length){
       products.forEach(p=>{
-        const cls=classifyModel(p); // categoria reale dedotta dal nome/modello
+        // La categoria "Calcio" raggruppa tutti i kit, a prescindere dal capo.
+        const cls=isFootballKit(p)?'__calcio':classifyModel(p);
         if(!cls) return;
         CATS.forEach(c=>{
           if(cls===c.model){
@@ -4325,12 +4360,17 @@ img{ -webkit-user-drag:none; user-select:none; }
         });
       });
     }
+    // Nascondi il cerchietto Calcio se non ci sono kit in catalogo
+    const cats=CATS.filter(c=>c.model!=='__calcio'||cntMap['__calcio']);
     // Immagine casuale per categoria → ruota a ogni visita (sembra sempre aggiornato)
     const pickImg=arr=>(arr&&arr.length)?arr[Math.floor(Math.random()*arr.length)]:'';
-    el.innerHTML=CATS.map(c=>{
+    el.innerHTML=cats.map(c=>{
       const img=pickImg(imgsMap[c.model]);
       const n=cntMap[c.model]||0;
-      return `<div class="hcc" onclick="showPg('shop');resetFilters();setTimeout(()=>setFilter('model','${c.model}'),80)">
+      const onclick=c.model==='__calcio'
+        ? "showPg('shop');resetFilters();setTimeout(()=>setFilter('football',true),80)"
+        : `showPg('shop');resetFilters();setTimeout(()=>setFilter('model','${c.model}'),80)`;
+      return `<div class="hcc" onclick="${onclick}">
         <div class="hcc-ring">${img?`<img src="${img}" alt="${c.label}" loading="lazy" onerror="this.parentNode.innerHTML='<span class=hcc-emo>${c.emoji}</span>'">`:`<span class="hcc-emo">${c.emoji}</span>`}</div>
         <span class="hcc-arrow">→</span>
         <span class="hcc-label">${c.label}${n?`<span class="hcc-count">${n}</span>`:''}</span>
@@ -4648,6 +4688,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             </div>
           </div>
           ${_boxHtml}
+          ${item.addonSummary?`<p style="font-size:10px;color:var(--mid);margin-top:5px;display:flex;align-items:center;gap:5px;"><span style="color:var(--led);">⚽</span>${item.addonSummary}${item.addonPrice?` <span style="color:var(--dim);">(+€${item.addonPrice.toFixed(0)})</span>`:''}</p>`:''}
           <p style="font-size:10px;color:var(--led);letter-spacing:.5px;font-weight:600;margin-top:6px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;">
             <div style="display:flex;align-items:center;gap:6px;">
@@ -4734,7 +4775,20 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>`:`<div style="margin-bottom:18px;">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Colore Desiderato</p>
         <input id="picker-color-input" class="lf-in" placeholder="es. Nero, Bianco, Verde militare..."/>
-      </div>`}`;
+      </div>`}
+      ${window.isFootballKit(prod)?`<div style="margin-bottom:18px;border:1.5px solid rgba(200,255,0,.3);background:rgba(200,255,0,.03);padding:14px 16px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;color:var(--led);">⚽ Personalizza la maglia <span style="color:var(--dim);text-transform:none;letter-spacing:0;">(opzionale)</span></p>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:12px;">
+          <input type="checkbox" id="addon-patch" onchange="updateAddonNote()" style="width:18px;height:18px;accent-color:var(--led);flex-shrink:0;"/>
+          <span style="font-size:12px;">Patch campionato <span style="color:var(--dim);">(Serie A, Champions…)</span> <strong>+€${LF_PATCH_PRICE.toFixed(0)}</strong></span>
+        </label>
+        <p style="font-size:11px;color:var(--mid);margin-bottom:6px;">Stampa Nome + Numero <strong>+€${LF_NAMESET_PRICE.toFixed(0)}</strong></p>
+        <div style="display:flex;gap:8px;">
+          <input id="addon-name" oninput="updateAddonNote()" class="lf-in" maxlength="14" placeholder="NOME (es. YILDIZ)" style="flex:1;text-transform:uppercase;"/>
+          <input id="addon-number" oninput="updateAddonNote()" class="lf-in" maxlength="2" inputmode="numeric" placeholder="N°" style="width:64px;text-align:center;"/>
+        </div>
+        <p id="picker-addon-note" style="font-size:11px;color:var(--led);margin-top:10px;display:none;"></p>
+      </div>`:''}`;
     document.getElementById('picker-selsize').textContent = '';
     document.getElementById('picker-selcolor').textContent = '';
     modal.classList.add('open');
@@ -4754,6 +4808,27 @@ img{ -webkit-user-drag:none; user-select:none; }
     const e=document.getElementById('col-err'); if(e) e.style.display='none';
     document.getElementById('picker-selcolor').textContent=c;
   };
+  // Legge gli add-on calcio dal modal → { addons, addonPrice, summary }
+  function readAddons(){
+    const patchEl=document.getElementById('addon-patch');
+    if(!patchEl) return {addons:null,addonPrice:0,summary:''}; // blocco calcio non presente
+    const patch=!!patchEl.checked;
+    const pname=(document.getElementById('addon-name')?.value||'').trim().toUpperCase().replace(/[^A-Z0-9 .]/g,'').slice(0,14);
+    const pnum=(document.getElementById('addon-number')?.value||'').replace(/[^0-9]/g,'').slice(0,2);
+    const hasNameSet=!!(pname||pnum);
+    let addonPrice=0;
+    if(patch) addonPrice+=LF_PATCH_PRICE;
+    if(hasNameSet) addonPrice+=LF_NAMESET_PRICE;
+    if(!patch&&!hasNameSet) return {addons:null,addonPrice:0,summary:''};
+    const summary=[patch?'Patch campionato':'',hasNameSet?('Stampa '+[pname,pnum].filter(Boolean).join(' ')):''].filter(Boolean).join(' · ');
+    return {addons:{patch,name:pname,number:pnum},addonPrice,summary};
+  }
+  window.updateAddonNote=function(){
+    const note=document.getElementById('picker-addon-note'); if(!note) return;
+    const {addonPrice,summary}=readAddons();
+    if(addonPrice>0){ note.style.display='block'; note.textContent='+ €'+addonPrice.toFixed(2)+' — '+summary; }
+    else { note.style.display='none'; note.textContent=''; }
+  };
   window.confirmAddToCart=function(){
     const prod=products.find(p=>p.id===_buyPid)||{id:_buyPid,price:_buyPrice};
     const sizes=prod.sizes&&prod.sizes.length?prod.sizes:(prod.size?[prod.size]:[]);
@@ -4772,13 +4847,17 @@ img{ -webkit-user-drag:none; user-select:none; }
       const e=document.getElementById('col-err'); if(e)e.style.display='block'; return;
     }
     const sz=_pickedSz||prod.size||'';
-    const existing=cart.find(i=>i.id===_buyPid&&i.size===sz&&i.color===finalColor);
+    const {addons,addonPrice,summary}=readAddons();
+    const unitPrice=_buyPrice+addonPrice;
+    // Gli articoli con personalizzazione (nome/numero) sono unici: mai unificati
+    const addonKey=addons?JSON.stringify(addons):'';
+    const existing=cart.find(i=>i.id===_buyPid&&i.size===sz&&i.color===finalColor&&(i.addonKey||'')===addonKey);
     if(existing){existing.qty++;}
-    else{cart.push({id:_buyPid,name:prod.name||'Prodotto',price:_buyPrice,brand:prod.brand||'',size:sz,color:finalColor,img:prod.imageUrl||'',qty:1,category:prod.category||'',weightKg:prod.weightKg||0});}
+    else{cart.push({id:_buyPid,name:prod.name||'Prodotto',price:unitPrice,brand:prod.brand||'',size:sz,color:finalColor,img:prod.imageUrl||'',qty:1,category:prod.category||'',weightKg:prod.weightKg||0,...(addons?{addons,addonPrice,addonKey,addonSummary:summary}:{})});}
     saveCart();updateCartBadge();
     document.getElementById('size-picker-modal').classList.remove('open');
     _pickedSz=''; _pickedCol='';
-    showToast(`🛒 Aggiunto! Taglia: ${sz||'—'} · Colore: ${finalColor||'—'}`);
+    showToast(`🛒 Aggiunto! Taglia: ${sz||'—'} · Colore: ${finalColor||'—'}${summary?' · '+summary:''}`);
   };
 
   let selectedPayment='card';
@@ -5030,7 +5109,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const country=document.getElementById('ck-country')?.value||'Italia';
     const notes=document.getElementById('ck-notes')?.value.trim()||'';
     const _orderPayload={
-      items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||'',boxOption:i.boxOption||''})),
+      items:_orderItems.map(i=>({id:i.id,qty:i.qty,size:i.size||'',color:i.color||'',boxOption:i.boxOption||'',...(i.addons?{addons:i.addons}:{})})),
       paymentMethod:selectedPayment||'card',
       shippingAddress:{street,city,zip,country},
       name:fname+' '+lname,
@@ -5048,7 +5127,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Apertura pagamento...';}
       try{
         const createPI=lfCallable('createPaymentIntent');
-        const piResult=await createPI({items:_orderItems.map(i=>({id:i.id,qty:i.qty}))});
+        const piResult=await createPI({items:_orderItems.map(i=>({id:i.id,qty:i.qty,...(i.addons?{addons:i.addons}:{})}))});
         const {clientSecret}=piResult.data;
         // Calcola totale per display modale
         const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
@@ -5117,7 +5196,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       name:payload.name||'', phone:payload.phone||'',
       address:payload.shippingAddress||{street:'',city:'',zip:'',country:'Italia'},
       notes:payload.notes||'',
-      items:items.map(i=>({id:i.id,name:i.name||'',price:i.price||0,brand:i.brand||'',category:i.category||'',boxOption:i.boxOption||'',qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||i.imageUrl||'',isDigital:!!i.isDigital})),
+      items:items.map(i=>({id:i.id,name:i.name||'',price:i.price||0,brand:i.brand||'',category:i.category||'',boxOption:i.boxOption||'',qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||i.imageUrl||'',isDigital:!!i.isDigital,...(i.addonSummary?{addonSummary:i.addonSummary,addonPrice:i.addonPrice||0}:{})})),
       subtotal, shipping, discount, total,
       payment:payload.paymentMethod||'bonifico',
       lfpoints, isDigitalOrder:allDigital, deliveryType:allDigital?'digital':'physical',
@@ -6115,12 +6194,13 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Reset all active chips/size-boxes/swatches first
     document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     // Reset all filters then apply the one requested
-    filters = {model:'',brand:'',size:'',style:'',color:''};
+    filters = {model:'',brand:'',size:'',style:'',color:'',football:false};
     if(type === 'brand') filters.brand = value;
     if(type === 'style') filters.style = value;
     if(type === 'model') filters.model = value;
     if(type === 'size')  filters.size  = value;
     if(type === 'color') filters.color = value;
+    if(type === 'football') filters.football = !!value;
     // Highlight the matching chip if visible
     document.querySelectorAll(`.chip[data-key="${type}"][data-val="${value}"],.size-box[data-key="${type}"][data-val="${value}"]`).forEach(c=>c.classList.add('on'));
     const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=value?'':'none';

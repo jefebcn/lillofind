@@ -10,6 +10,28 @@ import { getProductWeight, getShippingCost } from '../lib/shipping.js';
 
 const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
+// Add-on personalizzazione maglie calcio — prezzi calcolati SEMPRE lato server
+// (mai fidarsi del prezzo del client). Deve restare allineato a index.html.
+const LF_PATCH_PRICE = 5;    // toppa/patch campionato
+const LF_NAMESET_PRICE = 8;  // stampa nome + numero
+function addonPriceOf(addons) {
+  if (!addons || typeof addons !== 'object') return 0;
+  let p = 0;
+  if (addons.patch) p += LF_PATCH_PRICE;
+  const hasName = (addons.name && String(addons.name).trim()) || (addons.number && String(addons.number).trim());
+  if (hasName) p += LF_NAMESET_PRICE;
+  return p;
+}
+function addonSummaryOf(addons) {
+  if (!addons || typeof addons !== 'object') return '';
+  const name = String(addons.name || '').trim().toUpperCase().replace(/[^A-Z0-9 .]/g, '').slice(0, 14);
+  const num = String(addons.number || '').replace(/[^0-9]/g, '').slice(0, 2);
+  const parts = [];
+  if (addons.patch) parts.push('Patch campionato');
+  if (name || num) parts.push('Stampa ' + [name, num].filter(Boolean).join(' '));
+  return parts.join(' · ');
+}
+
 function escHtml(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -30,7 +52,8 @@ async function sendOrderNotification(order, resendKey, fromAddr) {
     const itemsHtml = (order.items || []).map(i => {
       const box = i.boxOption === 'con_scatola' ? '📦 Con Scatola' : i.boxOption === 'senza_scatola' ? 'Senza Scatola' : '—';
       const sizeBox = [i.size || '—', ['scarpe', 'scarpe_box'].includes(i.category || '') ? box : ''].filter(s => s && s !== '—').join(' / ') || '—';
-      return `<tr><td>${escHtml(i.name)}</td><td>${escHtml(i.brand || '—')}</td><td>${escHtml(sizeBox)}</td><td>x${escHtml(i.qty)}</td><td>€${(i.price * i.qty).toFixed(2)}</td></tr>`;
+      const addonRow = i.addonSummary ? `<tr><td colspan="5" style="font-size:12px;color:#8a6d00;background:#fbf7e6;padding:4px 8px;">⚽ Personalizzazione: ${escHtml(i.addonSummary)}</td></tr>` : '';
+      return `<tr><td>${escHtml(i.name)}</td><td>${escHtml(i.brand || '—')}</td><td>${escHtml(sizeBox)}</td><td>x${escHtml(i.qty)}</td><td>€${(i.price * i.qty).toFixed(2)}</td></tr>${addonRow}`;
     }).join('');
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -127,7 +150,7 @@ export async function sendOrderEmail(data, { env, auth }) {
   const itemsHtml = (o.items || []).map(i =>
     `<tr>
       <td style="padding:12px 0;border-bottom:1px solid #ece7db;font-size:14px;color:#23231f;">
-        <span style="font-weight:600;">${escHtml(i.name)}</span>${i.brand ? `<br><span style="font-size:12px;color:#8a8a80;">${escHtml(i.brand)}</span>` : ''}${i.size ? `<span style="font-size:12px;color:#8a8a80;"> · Taglia ${escHtml(i.size)}</span>` : ''}
+        <span style="font-weight:600;">${escHtml(i.name)}</span>${i.brand ? `<br><span style="font-size:12px;color:#8a8a80;">${escHtml(i.brand)}</span>` : ''}${i.size ? `<span style="font-size:12px;color:#8a8a80;"> · Taglia ${escHtml(i.size)}</span>` : ''}${i.addonSummary ? `<br><span style="font-size:12px;color:#8a6d00;">⚽ ${escHtml(i.addonSummary)}</span>` : ''}
       </td>
       <td style="padding:12px 8px;border-bottom:1px solid #ece7db;text-align:center;font-size:13px;color:#6b6b63;white-space:nowrap;">×${escHtml(i.qty)}</td>
       <td style="padding:12px 0;border-bottom:1px solid #ece7db;text-align:right;font-size:14px;font-weight:600;color:#23231f;white-space:nowrap;">€${((i.price || 0) * (i.qty || 1)).toFixed(2)}</td>
@@ -285,7 +308,7 @@ export async function createPaymentIntent(data, { env, db, auth }) {
     if (!snap.exists) throw new HttpsError('not-found', `Prodotto non trovato: ${prodItems[idx].id}`);
     const prod = snap.data();
     return {
-      price: prod.price || 0,
+      price: (prod.price || 0) + addonPriceOf(prodItems[idx].addons),
       category: prod.category || '',
       weightKg: prod.weightKg || prod.weight_kg || 0,
       boxOption: prodItems[idx].boxOption || '',
@@ -385,11 +408,14 @@ export async function validateOrder(data, { env, db, auth }) {
     if (!snap.exists) throw new HttpsError('not-found', `Prodotto non trovato: ${prodItems[idx].id}`);
     const prod = snap.data();
     const qty = prodItems[idx].qty;
+    const addonPrice = addonPriceOf(prodItems[idx].addons);
+    const addonSummary = addonSummaryOf(prodItems[idx].addons);
     return {
-      id: snap.id, name: prod.name || '', price: prod.price || 0, brand: prod.brand || '',
+      id: snap.id, name: prod.name || '', price: (prod.price || 0) + addonPrice, brand: prod.brand || '',
       category: prod.category || '', weightKg: prod.weightKg || prod.weight_kg || 0,
       boxOption: prodItems[idx].boxOption || '', qty, size: prodItems[idx].size || '',
       color: prodItems[idx].color || '', img: prod.imageUrl || '', isDigital: prod.isDigital || false,
+      ...(addonPrice ? { addonPrice, addonSummary } : {}),
     };
   });
 
