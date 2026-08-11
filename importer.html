@@ -1570,6 +1570,7 @@ function addTaobaoRow(tb, ai){
 // ══════════════════════════════════════════════════════════════════
 let yupooAlbumsData = {}; // albumId -> { cover, analysis, albumInfo }
 let _yupooHostname = ''; // es. woodtableguy888.x.yupoo.com
+let _yupooUid = null;    // uid owner store (per URL album validi: ?uid=N)
 
 let _yupooPassword = '';
 
@@ -1591,7 +1592,8 @@ window.fetchYupooAlbums = async function(){
     const imp = window.__imp;
     const fn = lfCallable('yupooFetch');
     const result = await fn({ url, ...(_yupooPassword ? { password: _yupooPassword } : {}) });
-    const { albumCovers, albumPrices = {} } = result.data;
+    const { albumCovers, albumPrices = {}, albumUid = null } = result.data;
+    _yupooUid = albumUid;   // owner uid: serve per URL album validi (?uid=N)
     const albumIds = Object.keys(albumCovers || {});
 
     if(!albumIds.length){
@@ -1719,7 +1721,7 @@ window.analyzeAndAddRows = async function(){
     if(stEl){ stEl.textContent = '🤖 Analisi AI + dettagli...'; stEl.style.color = '#aaa'; }
 
     // Fetch AI analysis + album detail page in parallelo
-    const albumUrl = _yupooHostname ? `https://${_yupooHostname}/albums/${id}` : null;
+    const albumUrl = _yupooHostname ? `https://${_yupooHostname}/albums/${id}${_yupooUid?`?uid=${_yupooUid}`:''}` : null;
     d.sourceUrl = albumUrl || '';   // link all'album Yupoo esatto (salvato sul prodotto)
     // De-proxy: manda all'AI l'immagine Yupoo reale, non l'URL del proxy (?url=…)
     const aiImg = (d.cover && d.cover.includes('?url=')) ? decodeURIComponent(d.cover.split('?url=')[1].split('&')[0]) : d.cover;
@@ -1791,6 +1793,46 @@ window.analyzeAndAddRows = async function(){
   setTimeout(()=>{ document.getElementById('rows-container').scrollIntoView({behavior:'smooth',block:'start'}); }, 400);
 };
 
+// Deduce il "Tipo" (uno dei MODELS) da categoria AI + parole chiave del nome.
+// L'AI spesso lascia vuoto il campo model, quindi non basta il match esatto:
+// usiamo categoria + keyword sul titolo album (più affidabile).
+function pickImporterModel(d, fullName){
+  const ai = d.analysis || {};
+  const exact = MODELS.find(m => m.toLowerCase() === (ai.model||'').toLowerCase());
+  if(exact) return exact;
+  const t = ((fullName||'') + ' ' + (ai.name||'') + ' ' + (ai.model||'') + ' ' + (ai.category||'')).toLowerCase();
+  const KW = [
+    ['Shorts',      /shorts|pantaloncin|\bshort\b/],
+    ['Jogger',      /jogger/],
+    ['Jeans',       /jeans|denim/],
+    ['Pants',       /pants|pantalon|trouser|leggings/],
+    ['Zip Hoodie',  /zip ?hoodie|full[- ]?zip/],
+    ['Hoodie',      /hoodie|cappuccio/],
+    ['Crewneck',    /crewneck|girocollo/],
+    ['Puffer',      /puffer|piumino|down jacket/],
+    ['Parka',       /parka/],
+    ['Bomber',      /bomber/],
+    ['Vest',        /\bvest\b|gilet|smanicat/],
+    ['Jacket',      /jacket|giacc|windbreaker|coach ?jacket|track ?jacket/],
+    ['Polo',        /\bpolo\b/],
+    ['Longsleeve',  /longsleeve|long[- ]sleeve|manica lunga/],
+    ['T-Shirt',     /t-?shirt|\btee\b|jersey|maglia|maglietta|camiseta|\bshirt\b/],
+    ['Beanie',      /beanie/],
+    ['Cap',         /\bcap\b|berretto|snapback/],
+    ['Hat',         /\bhat\b|bucket/],
+    ['Backpack',    /backpack|zaino/],
+    ['Belt',        /\bbelt\b|cintura/],
+    ['Wallet',      /wallet|portafogl/],
+    ['Bag',         /\bbag\b|borsa|tracolla|pouch|marsupio/],
+    ['Set Completo',/\bset\b|completo|tuta completa|tracksuit/],
+    ['Felpa',       /felpa|sweatshirt/],  // -> Crewneck sotto
+  ];
+  for(const [label,re] of KW){ if(re.test(t)) return label==='Felpa'?'Crewneck':label; }
+  const CAT = { tshirt:'T-Shirt', tshirt_branded:'Polo', felpa:'Crewneck', giacchetto:'Jacket',
+    pantaloni:'Pants', shorts:'Shorts', cappello:'Cap', borsa:'Bag', accessori:'Altro' };
+  return CAT[ai.category] || '';
+}
+
 function addAnalyzedRow(d){
   const id = rowId++;
   const container = document.getElementById('rows-container');
@@ -1817,7 +1859,7 @@ function addAnalyzedRow(d){
   const colors = (d.analysis.colors || []).join(', ');
   // Per le scarpe: tipo sempre Sneakers, taglie EU default, prezzo 50€, colori nascosti
   const isShoe     = ['scarpe','scarpe_box'].includes(d.analysis.category) || (d.albumInfo?.shoeSizes?.length > 0);
-  const modelMatch = isShoe ? 'Sneakers' : (MODELS.find(m => m.toLowerCase() === (d.analysis.model||'').toLowerCase()) || '');
+  const modelMatch = isShoe ? 'Sneakers' : pickImporterModel(d, name);
 
   const shoeSizes  = d.albumInfo?.shoeSizes  || [];
   const clothSizes = d.albumInfo?.clothSizes || [];
