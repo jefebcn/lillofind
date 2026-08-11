@@ -1594,6 +1594,21 @@ window.fetchYupooAlbums = async function(){
       status.textContent = '⚠️ ' + hint;
       if (dbg.authDebug?.length) console.log('[auth steps]', dbg.authDebug);
       console.log('[yupooFetch debug]', dbg);
+      // Mostra il log a schermo (copiabile) per diagnosticare l'auth password
+      try {
+        const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const summary = {
+          htmlLen: dbg.htmlLen, authOk: dbg.authOk,
+          albumIdsInHtml: dbg.albumIdsInHtml, apiUrlsInHtml: dbg.apiUrlsInHtml,
+          hasAlbumsPath: dbg.hasAlbumsPath, hrefCount: dbg.hrefCount,
+          nextDataInfo: dbg.nextDataInfo,
+        };
+        const txt = (dbg.authDebug || []).join('\n') + '\n\n--- debug ---\n' + JSON.stringify(summary, null, 1).slice(0, 2500);
+        let dEl = document.getElementById('yupoo-debug');
+        if (!dEl) { dEl = document.createElement('div'); dEl.id = 'yupoo-debug'; dEl.style.marginTop = '12px'; status.parentNode.insertBefore(dEl, status.nextSibling); }
+        dEl.innerHTML = '<p style="font-size:11px;color:#c84;margin-bottom:6px;">🔍 Log auth — <b>copia tutto e incollalo nel supporto</b> per farlo sistemare:</p>'
+          + '<textarea readonly onclick="this.select()" style="width:100%;min-height:180px;font-size:10px;line-height:1.5;font-family:monospace;background:#0a0a0a;color:#8fbf8f;border:1px solid #222;padding:8px;border-radius:4px;">' + esc(txt) + '</textarea>';
+      } catch(_){}
       btn.textContent = 'CARICA ALBUM →'; btn.disabled = false;
       return;
     }
