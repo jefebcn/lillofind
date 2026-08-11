@@ -59,6 +59,12 @@
     for (var k in BRAND_CANON) { if (k.length >= 4 && compact.indexOf(k) >= 0) return BRAND_CANON[k]; }
     return '';
   }
+  // True se il valore è il nome di una squadra di calcio (per taggare i kit).
+  function isFootballTeam(brandName) {
+    if (!brandName) return false;
+    for (var i = 0; i < TEAMS.length; i++) { if (TEAMS[i][0] === brandName) return true; }
+    return false;
+  }
 
   // Deduce la categoria dal nome/modello. Ritorna '' se non deducibile.
   function inferCategory(p) {
@@ -131,6 +137,7 @@
   window.LFCatalog = {
     canonBrand: canonBrand,
     detectBrand: detectBrand,
+    isFootballTeam: isFootballTeam,
     inferCategory: inferCategory,
     genDescription: genDescription,
     isGenericName: isGenericName,

@@ -983,6 +983,9 @@ window.saveAll=async function(){
       // "…Juventus…" → Juventus), altrimenti normalizza quello rilevato dall'AI.
       const detected = QC ? QC.detectBrand(name) : '';
       const brand = detected || (QC ? QC.canonBrand(rowBrand) : rowBrand);
+      // Kit calcio: se il brand rilevato è una squadra, tagga style='calcio'
+      // così lo storefront lo raggruppa nella categoria Calcio in modo robusto.
+      const isKit = !!(QC && QC.isFootballTeam(detected));
       let category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
       // Bigiotteria (bracciali, collane, anelli, catene…): categoria "accessori"
       // e taglia "Unica" a prescindere da cosa ha dedotto l'AI.
@@ -1001,6 +1004,7 @@ window.saveAll=async function(){
         category,
         sizes:sizes.length?sizes:['Unica'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description,weightKg,
+        ...(isKit?{style:'calcio'}:{}),
         ...(images.length>1?{images}:{}),
         ...(sourceUrl?{sourceUrl}:{}),
         createdAt:imp.serverTimestamp()
