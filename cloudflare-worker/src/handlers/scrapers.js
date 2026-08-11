@@ -404,11 +404,12 @@ export async function yupooFetch(data, _ctx) {
   // ── BRANCH YUPOO ──────────────────────────────────────────────
   let authCookieStr = '', authDebug = [], authHtml = null, authApiAlbums = null;
   if (password && typeof password === 'string' && password.trim().length > 0) {
-    const authResult = await yupooPasswordAuth(url, password.trim());
-    authCookieStr  = authResult.cookies   || '';
-    authDebug      = authResult.debug     || [];
-    authHtml       = authResult.html      || null;
-    authApiAlbums  = authResult.apiAlbums || null;
+    const pwd = password.trim();
+    // Yupoo moderno (website 4.x): la protezione password è LATO CLIENT.
+    // Il server restituisce l'HTML sbloccato con gli album se si invia il
+    // cookie "indexlockcode=<password>" (in chiaro). Nessun POST/verify.
+    authCookieStr = `indexlockcode=${encodeURIComponent(pwd)}; language=zh-CN`;
+    authDebug.push(`gate moderno: set Cookie indexlockcode (password len ${pwd.length})`);
     console.log('[yupoo auth]', JSON.stringify(authDebug));
   }
 
@@ -606,7 +607,7 @@ export async function yupooFetch(data, _ctx) {
       albumInfo = { pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos };
     }
 
-    return { html, status: resp.status, albumCovers, albumPrices, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null, authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
+    return { html, status: resp.status, albumCovers, albumPrices, albumInfo, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
