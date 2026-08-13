@@ -4,13 +4,18 @@
 <meta charset="UTF-8"/>
 <meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<!-- Cache-busting: pagina admin sempre fresca, così gli aggiornamenti si vedono senza svuotare la cache -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>LilloFind — Importa Prodotti</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 
-<!-- Helper QC catalogo (window.LFCatalog): normalizza marchi, deduce categorie, genera descrizioni -->
-<script src="catalog-qc.js"></script>
+<!-- Helper QC catalogo (window.LFCatalog): caricato con cache-bust dinamico
+     così eredita sempre l'ultima versione insieme all'HTML no-cache. -->
+<script>(function(){var s=document.createElement('script');s.src='catalog-qc.js?v='+Date.now();s.async=false;document.head.appendChild(s);})();</script>
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
