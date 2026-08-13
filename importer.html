@@ -1881,10 +1881,15 @@ function addAnalyzedRow(d){
   div.dataset.category = d.analysis.category || '';
   div.dataset.desc     = d.analysis.description || '';
 
-  // Nome: preferisci il titolo dell'album (descrittivo e affidabile, es.
-  // "25-26 Juventus away player version shorts") all'ipotesi AI dalla foto.
+  // Nome: il titolo album va bene per i kit ("25-26 Juventus away shorts") ma
+  // per molti fornitori è un codice interno ("0528 Enzoo Optical…"). Usa il
+  // titolo album SOLO se contiene un brand/squadra riconosciuto, altrimenti
+  // preferisci il nome AI descrittivo ("Occhiali da sole Cartier…").
   const albumName = (d.albumInfo?.name || '').trim();
-  const name   = ((albumName.length >= 6 ? albumName : (d.analysis.name || d.albumInfo?.pageTitle || '')) || '').replace(/"/g,'&quot;');
+  const aiName    = (d.analysis?.name || '').trim();
+  const _QC = window.LFCatalog;
+  const albumHasBrand = albumName.length >= 6 && !!(_QC && _QC.detectBrand(albumName));
+  const name   = ((albumHasBrand ? albumName : (aiName || albumName || d.albumInfo?.pageTitle || '')) || '').replace(/"/g,'&quot;');
   const colors = (d.analysis.colors || []).join(', ');
   // Per le scarpe: tipo sempre Sneakers, taglie EU default, prezzo 50€, colori nascosti
   const isShoe     = ['scarpe','scarpe_box'].includes(d.analysis.category) || (d.albumInfo?.shoeSizes?.length > 0);
