@@ -531,7 +531,13 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
           <span id="row-count-lbl" style="color:var(--dim);font-size:32px;"></span>
         </p>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:6px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:6px;border:1px solid var(--led);border-radius:4px;padding:3px 4px 3px 10px;background:rgba(200,255,0,.04);">
+          <span style="font-size:9px;letter-spacing:1px;color:var(--led);">PREZZO PER TUTTI €</span>
+          <input type="number" id="bulk-price" step="0.01" min="0" placeholder="49.90" class="lf-in" style="width:84px;font-size:13px;padding:6px 8px;"/>
+          <button class="btn-g" onclick="applyPriceAll(false)" title="Compila solo le righe senza prezzo">SOLO VUOTI</button>
+          <button class="btn-g" onclick="applyPriceAll(true)" title="Sovrascrive il prezzo di tutte le righe">TUTTI</button>
+        </div>
         <button class="btn-g" onclick="addRow()">+ RIGA</button>
         <button class="btn-g" onclick="for(let i=0;i<5;i++)addRow();updateStats();">+ 5 RIGHE</button>
         <button class="btn-red" onclick="clearDone()">🗑 RIMUOVI SALVATI</button>
@@ -927,6 +933,22 @@ window.toggleAllSizes=function(id){
   const t=document.querySelectorAll('#sz-'+id+' .sz-toggle');
   const allOn=[...t].every(x=>x.classList.contains('on'));
   t.forEach(x=>{ allOn?x.classList.remove('on'):x.classList.add('on'); });
+};
+
+// Applica un prezzo unico a tutte le righe (o solo a quelle senza prezzo).
+// Comodo quando il prezzo non viene rilevato: lo imposti una volta per tutti.
+window.applyPriceAll=function(overwrite){
+  const raw=document.getElementById('bulk-price')?.value;
+  const v=parseFloat(raw);
+  if(isNaN(v)||v<0){ toast('⚠️ Inserisci un prezzo valido'); return; }
+  const inputs=document.querySelectorAll('#rows-container input[id^="rp-"]');
+  if(!inputs.length){ toast('⚠️ Nessuna riga: analizza o aggiungi prodotti prima'); return; }
+  let n=0;
+  inputs.forEach(inp=>{
+    const cur=parseFloat(inp.value);
+    if(overwrite || isNaN(cur) || cur<=0){ inp.value=v.toFixed(2); inp.style.borderColor=''; n++; }
+  });
+  toast('✅ €'+v.toFixed(2)+' applicato a '+n+' righe'+(overwrite?'':' vuote'));
 };
 
 function getRowSizes(id){
