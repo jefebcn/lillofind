@@ -477,6 +477,11 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
             </div>
           </div>
           <p id="markup-preview" style="font-size:9px;color:#444;margin-top:8px;letter-spacing:.5px;">es. ¥128 CNY → €16.6 × 1.8 = <span style="color:var(--led);">€30</span></p>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px dashed #1a1a1a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:8px;color:var(--led);letter-spacing:1px;white-space:nowrap;">💶 PREZZO PREDEFINITO €</span>
+            <input type="number" id="default-price" step="0.01" min="0" placeholder="es. 39.90" class="lf-in" style="width:100px;font-size:13px;padding:8px 10px;" oninput="setDefaultPrice(this.value)"/>
+            <span style="font-size:9px;color:#555;letter-spacing:.3px;">usato quando il prezzo fornitore non viene rilevato — così tutti partono già con un prezzo</span>
+          </div>
         </div>
       </div>
 
@@ -1694,6 +1699,7 @@ function updateYupooSelCount(){
 }
 
 let _markupMult = 1.8;
+let _defaultPrice = 0; // prezzo di fallback quando il fornitore non è rilevato
 function _updateMarkupPreview(mult){
   const eur = Math.round(128 * 0.13 * 10) / 10; // ¥128 → €16.6
   const final = Math.round(eur * mult * 10) / 10;
@@ -1711,6 +1717,7 @@ window.setMarkupCustom = function(val){
   const v = parseFloat(val);
   if(!isNaN(v) && v >= 1){ _markupMult = v; document.querySelectorAll('.markup-chip').forEach(b=>b.classList.toggle('on', parseFloat(b.dataset.mult)===v)); _updateMarkupPreview(v); }
 };
+window.setDefaultPrice = function(val){ const v = parseFloat(val); _defaultPrice = (!isNaN(v) && v > 0) ? v : 0; };
 
 window.analyzeAndAddRows = async function(){
   const selected = [...document.querySelectorAll('.alb-card.on')];
@@ -1918,8 +1925,9 @@ function addAnalyzedRow(d){
 
   const priceDefault = supplierEUR
     ? Math.round(supplierEUR * markup * 10) / 10
-    : (isShoe ? Math.round(45 * markup / 1.8 * 10) / 10 : '');
-  const priceHint = supplierEUR ? `(${priceLabel} → €${supplierEUR.toFixed(0)} × ${markup})` : '';
+    : (_defaultPrice > 0 ? _defaultPrice : (isShoe ? Math.round(45 * markup / 1.8 * 10) / 10 : ''));
+  const priceHint = supplierEUR ? `(${priceLabel} → €${supplierEUR.toFixed(0)} × ${markup})`
+    : (_defaultPrice > 0 ? '(prezzo predefinito)' : '');
 
   div.innerHTML = `
     <div class="row-grid">
