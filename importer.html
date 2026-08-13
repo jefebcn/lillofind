@@ -704,6 +704,7 @@ const MODELS = [
   'Sneakers','Boots','Sandals','Slides',
   'Cap','Hat','Beanie',
   'Bag','Backpack','Belt','Wallet',
+  'Occhiali da Sole','Occhiali da Vista',
   'Set Completo','Altro',
 ];
 
@@ -1831,6 +1832,8 @@ function pickImporterModel(d, fullName){
   if(exact) return exact;
   const t = ((fullName||'') + ' ' + (ai.name||'') + ' ' + (ai.model||'') + ' ' + (ai.category||'')).toLowerCase();
   const KW = [
+    ['Occhiali da Vista', /occhiali da vista|montatura.*vista|eyeglass|optical frame|prescription/],
+    ['Occhiali da Sole',  /occhiali da sole|occhiali|sunglass|eyewear|\bshades\b/],
     ['Shorts',      /shorts|pantaloncin|\bshort\b/],
     ['Jogger',      /jogger/],
     ['Jeans',       /jeans|denim/],
