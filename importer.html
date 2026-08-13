@@ -1016,9 +1016,12 @@ window.saveAll=async function(){
       // "…Juventus…" → Juventus), altrimenti normalizza quello rilevato dall'AI.
       const detected = QC ? QC.detectBrand(name) : '';
       const brand = detected || (QC ? QC.canonBrand(rowBrand) : rowBrand);
-      // Kit calcio: se il brand rilevato è una squadra, tagga style='calcio'
-      // così lo storefront lo raggruppa nella categoria Calcio in modo robusto.
-      const isKit = !!(QC && QC.isFootballTeam(detected));
+      // Kit calcio: tagga style='calcio' se il brand è una squadra nota OPPURE
+      // se il nome è chiaramente una maglia/kit/nazionale (così anche squadre non
+      // in lista, es. "Capo Verde" indicata a mano, finiscono nella categoria
+      // Calcio e nella barra Squadre — raggruppate per brand).
+      const _kitKw = /\bjersey\b|\bkit\b|player version|fan version|nazionale|camiseta|maglia da calcio|football\s*(shirt|kit|jersey)|soccer/i;
+      const isKit = !!(QC && QC.isFootballTeam(detected)) || _kitKw.test((name||'')+' '+(rowModel||''));
       let category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
       // Bigiotteria (bracciali, collane, anelli, catene…): categoria "accessori"
       // e taglia "Unica" a prescindere da cosa ha dedotto l'AI.
@@ -1775,20 +1778,26 @@ window.analyzeAndAddRows = async function(){
       ? aiRes.value.data
       : { name: 'Prodotto '+id.slice(-6), brand: currentBrand||hintBrand||'', model:hintModel||'', category:'', colors:[] };
 
-    // If override is on: apply hints to brand/model when AI didn't recognize the product well
-    if(hintOverride && hintBrand){
-      const aiName = d.analysis.name || '';
-      const looksUnrecognized = !d.analysis.brand || aiName.toLowerCase().startsWith('album') || aiName.toLowerCase().startsWith('prodotto');
-      if(looksUnrecognized){
-        d.analysis.brand = hintBrand;
-        if(hintModel) d.analysis.model = hintModel;
-        if(!d.analysis.name || aiName.toLowerCase().startsWith('album') || aiName.toLowerCase().startsWith('prodotto'))
-          d.analysis.name = hintBrand + (hintModel ? ' ' + hintModel : '') + ' ' + id.slice(-6);
-      }
-    }
-
     if(detailRes.status === 'fulfilled' && detailRes.value?.data?.albumInfo){
       d.albumInfo = detailRes.value.data.albumInfo;
+    }
+
+    // Override brand/modello con l'hint dell'utente ("Forza sui non riconosciuti").
+    // L'AI spesso rileva il PRODUTTORE (es. "Capelli") invece della SQUADRA. Se
+    // l'utente ha indicato una squadra/brand e nel titolo non c'è un brand/squadra
+    // GIÀ noto (detectBrand), applichiamo l'hint — così "Capo Verde" vince.
+    if(hintOverride && hintBrand){
+      const _QC = window.LFCatalog;
+      const title = (d.albumInfo?.name || d.analysis?.name || '');
+      const known = _QC ? _QC.detectBrand(title) : '';
+      if(!known){
+        d.analysis.brand = hintBrand;
+        if(hintModel) d.analysis.model = hintModel;
+        // Se l'AI ha fallito del tutto (nome placeholder), costruisci un nome dall'hint
+        const an = (d.analysis.name || '').toLowerCase();
+        if(!d.analysis.name || an.startsWith('album') || an.startsWith('prodotto'))
+          d.analysis.name = hintBrand + (hintModel ? ' ' + hintModel : '') + ' ' + id.slice(-6);
+      }
     }
 
     if(nameEl) nameEl.textContent = d.analysis.name || d.albumInfo?.pageTitle || ('Album '+id.slice(-6));
