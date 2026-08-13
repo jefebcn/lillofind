@@ -2066,6 +2066,8 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <button onclick="document.getElementById('shop-search').value='';searchShop('');" class="btn-k" style="padding:0 14px;font-size:18px;flex-shrink:0;" title="Cancella ricerca">✕</button>
       </div>
+      <!-- Barra squadre: compare solo nella categoria Calcio, mostra le squadre in catalogo -->
+      <div id="football-teams-bar" style="display:none;margin-bottom:18px;"></div>
       <!-- Mobile filter drawer (portal, appended to body) -->
       <div id="s-load"><div class="pgrid" id="skel-grid"></div></div>
       <div id="s-grid" class="pgrid" style="display:none;"></div>
@@ -4295,11 +4297,37 @@ img{ -webkit-user-drag:none; user-select:none; }
     },{rootMargin:'800px 0px'});
     _shopSentinelObs.observe(sentinel);
   }
+  // Barra "Squadre" della categoria Calcio: elenca solo le squadre realmente
+  // presenti in catalogo (dal brand dei kit). Compare solo col filtro football.
+  function renderFootballTeamsBar(){
+    const bar=document.getElementById('football-teams-bar');
+    if(!bar) return;
+    if(!filters.football){ bar.style.display='none'; bar.innerHTML=''; return; }
+    // Conta i kit per squadra
+    const counts={};
+    products.forEach(p=>{ if(!isFootballKit(p)) return; const team=(canonBrand(p.brand)||detectTeam(p)||'').trim(); if(team) counts[team]=(counts[team]||0)+1; });
+    const teams=Object.keys(counts).sort((a,b)=>a.localeCompare(b));
+    const total=Object.values(counts).reduce((s,n)=>s+n,0);
+    if(!teams.length){ bar.style.display='none'; bar.innerHTML=''; return; }
+    const chip=(label,val,n,active)=>`<span onclick="setFootballTeam('${val.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;padding:8px 14px;border-radius:999px;font-size:12px;letter-spacing:.5px;border:1.5px solid ${active?'var(--led)':'var(--border-2)'};background:${active?'var(--led)':'transparent'};color:${active?'var(--k)':'var(--mid)'};font-weight:${active?'700':'500'};">${label}${n!=null?` <span style="opacity:.6;">${n}</span>`:''}</span>`;
+    bar.innerHTML=`<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">⚽ Squadre</p>
+      <div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;" class="hide-scrollbar">
+        ${chip('Tutte','',total,!filters.brand)}
+        ${teams.map(t=>chip(t,t,counts[t],filters.brand===t)).join('')}
+      </div>`;
+    bar.style.display='block';
+  }
+  window.setFootballTeam=function(team){
+    filters.brand = (filters.brand===team) ? '' : team;
+    renderShop();
+  };
+
   function _doRenderShop(){
     _sGrid  = _sGrid  || document.getElementById('s-grid');
     _sEmpty = _sEmpty || document.getElementById('s-empty');
     _sLoad  = _sLoad  || document.getElementById('s-load');
     _sCount = _sCount || document.getElementById('s-count');
+    try{ renderFootballTeamsBar(); }catch(_){}
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     _shopFiltered=products.filter(p=>
       (!filters.model||matchesModelFilter(p,filters.model))&&
