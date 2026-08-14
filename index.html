@@ -422,9 +422,16 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   #prod-modal .modal-box{max-height:100dvh!important;height:100dvh!important;max-width:100%!important;border-radius:0;}
   /* niente scroll annidato: la griglia non scrolla da sola */
   #prod-modal-grid{grid-template-columns:1fr!important;overflow:visible!important;max-height:none!important;}
-  /* immagine: si adatta alla larghezza, niente altezza forzata a 480px */
-  #prod-modal-grid > div:first-child{min-height:auto!important;max-height:44vh;}
-  #prod-modal-grid > div:first-child img{min-height:auto!important;height:auto!important;max-height:44vh;object-fit:contain;background:#f0f0f0;}
+  /* immagine: mostra il prodotto INTERO (contain), niente crop né altezza forzata.
+     La galleria aggiunge un div intermedio con min-height:420px e il main image ha
+     object-fit:cover inline → vanno annullati con !important su mobile. */
+  #prod-modal-grid > div:first-child{min-height:auto!important;max-height:none!important;}
+  #prod-modal-grid > div:first-child > div:first-child{min-height:0!important;height:auto!important;max-height:50vh!important;}
+  #prod-gallery-main,
+  #prod-modal-grid > div:first-child img:not(.pg-thumb){
+    min-height:0!important;height:auto!important;max-height:50vh!important;object-fit:contain!important;background:#f0f0f0;
+  }
+  #prod-modal-grid .pg-thumb{width:52px!important;height:52px!important;}
 }
 /* Nascondi il toast social-proof mentre il dettaglio prodotto è aperto (evita sovrapposizioni) */
 body.prod-open #sp-toast{display:none!important;}
