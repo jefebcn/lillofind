@@ -651,7 +651,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <div class="admin-card">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Ricostruisci link album (prodotti vecchi)</p>
         <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:16px;line-height:1.7;">Per i prodotti già importati senza link all'album: scansiona gli store Yupoo, confronta le copertine con le immagini dei prodotti e salva il <strong>link all'album esatto</strong> dove trova corrispondenza. Best-effort — i non trovati restano col link allo store.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+          <input id="ral-pass" placeholder="Password store (se protetto)" style="padding:9px 12px;font-size:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;width:220px;"/>
           <button class="btn-led" id="ral-btn" onclick="rebuildAlbumLinks()">Ricostruisci link album →</button>
         </div>
         <div id="ral-prog" style="display:none;font-size:11px;line-height:1.9;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;"></div>
@@ -2460,6 +2461,7 @@ waitFB(()=>{
       prog.innerHTML=`Trovati <b>${cands.length}</b> prodotti in <b>${stores.length}</b> store. Scansione album...`;
 
       const fnYP=lfCallable('yupooFetch');
+      const ralPass=(document.getElementById('ral-pass')?.value||'').trim();
       const MAX_PAGES=120; // safety per store
       const writes=[]; let matched=0, storeDone=0, storeErr=0, pagesTot=0;
       for(const store of stores){
@@ -2469,10 +2471,11 @@ waitFB(()=>{
         const hashToAid={}; const seenAids=new Set();
         let page=1;
         while(page<=MAX_PAGES && need.size>0){
-          // Pag 1 = URL nudo dello store (funziona di sicuro); dalla 2 in poi ?page=N
-          const pageUrl = page===1 ? ('https://'+store+'.x.yupoo.com/') : ('https://'+store+'.x.yupoo.com/?page='+page);
+          // Lista album completa con paginazione reale di Yupoo (la homepage
+          // mostra pochi album). Passa la password se lo store è protetto.
+          const pageUrl = 'https://'+store+'.x.yupoo.com/albums?tab=gallery&page='+page;
           let res;
-          try{ res=await fnYP({ url:pageUrl }); }
+          try{ res=await fnYP({ url:pageUrl, ...(ralPass?{password:ralPass}:{}) }); }
           catch(e){ storeErr++; console.warn('rebuild store/pagina fallita', store, page, e&&e.message); break; }
           pagesTot++;
           const covers=(res.data&&res.data.albumCovers)||{};
