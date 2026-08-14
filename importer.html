@@ -1038,7 +1038,7 @@ window.saveAll=async function(){
       // che richiederebbe un service account non configurato.
       const sourceUrl = row.dataset.sourceUrl||'';
       let images=[]; try{ images=JSON.parse(row.dataset.images||'[]'); }catch(_){}
-      images=[...new Set([imgUrl, ...images].filter(Boolean))].slice(0,8);
+      images=[...new Set([imgUrl, ...images].filter(Boolean))].slice(0,15);
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand,model:rowModel,
         category,
@@ -1891,11 +1891,18 @@ function addAnalyzedRow(d){
   div.id = 'row-'+id;
   div.dataset.imgUrl   = d.cover;
   div.dataset.sourceUrl = d.sourceUrl || '';
-  // Galleria: cover + foto multiple dell'album (per la pagina prodotto)
+  // Galleria: cover + tutte le foto dell'album (per la pagina prodotto).
+  // Dedup per ID foto (evita che la cover si ripeta in un'altra dimensione),
+  // fino a 15 immagini — gli album occhiali hanno molte varianti colore.
   try {
     const _photos = ((d.albumInfo && Array.isArray(d.albumInfo.photos)) ? d.albumInfo.photos : [])
       .filter(u => /photo\d?\.yupoo\.com|yunjifen/i.test(u));   // solo foto prodotto reali
-    const _gallery = [...new Set([d.cover, ..._photos].filter(Boolean))].slice(0, 8);
+    const _pid = u => ((String(u).match(/yupoo\.com\/[^/]+\/([0-9a-f]{6,})\//i)||[])[1]) || u;
+    const _seen = new Set(); const _gallery = [];
+    for (const u of [d.cover, ..._photos].filter(Boolean)) {
+      const k = _pid(u); if (_seen.has(k)) continue; _seen.add(k);
+      _gallery.push(u); if (_gallery.length >= 15) break;
+    }
     div.dataset.images = JSON.stringify(_gallery);
   } catch(_){ div.dataset.images = '[]'; }
   div.dataset.brand    = d.analysis.brand    || '';

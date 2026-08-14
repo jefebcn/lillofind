@@ -654,12 +654,25 @@ export async function yupooFetch(data, _ctx) {
       }
       const usdM = bodyText.match(/(\d{1,4})\s*\$/) || bodyText.match(/\$\s*(\d{1,4})/);
       const supplierPriceUSD = usdM ? parseInt(usdM[1], 10) : null;
+      // Foto prodotto dell'album: SOLO gli host foto reali (photo*.yupoo.com /
+      // yunjifen), escludendo loghi/icone del sito (s.yupoo.com). Deduplica per
+      // ID foto (Yupoo espone la stessa foto in small/medium/big/hash → una sola
+      // versione per hash) e normalizza a "medium". Limite alto: gli album
+      // occhiali hanno molte varianti colore, tutte utili in galleria.
       const photos = [];
+      const seenPid = new Set();
       const photoRe2 = /(?:data-src|data-original|data-lazy|src)=["']((?:https?:)?\/\/[^"'>\s]+)["']/g;
       let pm2;
-      while ((pm2 = photoRe2.exec(html)) !== null && photos.length < 8) {
-        const u = norm(pm2[1]);
-        if (u && isImg(u) && !photos.includes(u)) photos.push(u);
+      while ((pm2 = photoRe2.exec(html)) !== null && photos.length < 20) {
+        let u = norm(pm2[1]);
+        if (!u) continue;
+        if (!/\/\/photo[0-9]*\.yupoo\.com\//i.test(u) && !/yunjifen/i.test(u)) continue; // no loghi/icone
+        const idm = u.match(/yupoo\.com\/[^/]+\/([0-9a-f]{6,})\//i);
+        const pid = idm ? idm[1] : u;
+        if (seenPid.has(pid)) continue;
+        seenPid.add(pid);
+        u = u.replace(/\/(small|big|square|thumb|large|original)\.(jpe?g|png|webp)(\?|$)/i, '/medium.$2$3');
+        photos.push(u);
       }
       // Diagnostica prezzo: piccoli estratti del testo che contengono cifre
       // vicino a marcatori di valuta, per capire il formato se il parse fallisce.
