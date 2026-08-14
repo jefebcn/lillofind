@@ -1079,12 +1079,15 @@ window.saveAll=async function(){
       // "…Juventus…" → Juventus), altrimenti normalizza quello rilevato dall'AI.
       const detected = QC ? QC.detectBrand(name) : '';
       const brand = detected || (QC ? QC.canonBrand(rowBrand) : rowBrand);
-      // Kit calcio: tagga style='calcio' se il brand è una squadra nota OPPURE
-      // se il nome è chiaramente una maglia/kit/nazionale (così anche squadre non
-      // in lista, es. "Capo Verde" indicata a mano, finiscono nella categoria
-      // Calcio e nella barra Squadre — raggruppate per brand).
+      // Sport: tagga style='basket' (canotte NBA) o 'calcio' (maglie) dal brand
+      // squadra o da parole chiave, così finiscono nelle categorie Basket/Calcio
+      // e nelle barre Squadre (raggruppate per brand). Il basket ha priorità
+      // (una "jersey" NBA non deve finire nel calcio).
+      const _txt = (name||'')+' '+(rowModel||'');
+      const _basketKw = /canott|basket|\bnba\b|tank\s?top/i;
+      const isBasket = !!(QC && QC.isBasketTeam(detected)) || _basketKw.test(_txt);
       const _kitKw = /\bjersey\b|\bkit\b|player version|fan version|nazionale|camiseta|maglia da calcio|football\s*(shirt|kit|jersey)|soccer/i;
-      const isKit = !!(QC && QC.isFootballTeam(detected)) || _kitKw.test((name||'')+' '+(rowModel||''));
+      const isKit = !isBasket && (!!(QC && QC.isFootballTeam(detected)) || _kitKw.test(_txt));
       let category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
       // Taglia unica per articoli one-size: bigiotteria, accessori, cappelli,
       // borse e occhiali. Forza "Unica" a prescindere dai toggle taglia mostrati
@@ -1107,7 +1110,7 @@ window.saveAll=async function(){
         category,
         sizes:sizes.length?sizes:['Unica'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description,weightKg,
-        ...(isKit?{style:'calcio'}:{}),
+        ...(isBasket?{style:'basket'}:isKit?{style:'calcio'}:{}),
         ...(images.length>1?{images}:{}),
         ...(sourceUrl?{sourceUrl}:{}),
         createdAt:imp.serverTimestamp()

@@ -2066,8 +2066,8 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <button onclick="document.getElementById('shop-search').value='';searchShop('');" class="btn-k" style="padding:0 14px;font-size:18px;flex-shrink:0;" title="Cancella ricerca">✕</button>
       </div>
-      <!-- Barra squadre: compare solo nella categoria Calcio, mostra le squadre in catalogo -->
-      <div id="football-teams-bar" style="display:none;margin-bottom:18px;"></div>
+      <!-- Barra squadre: compare nelle categorie Calcio/Basket, mostra le squadre in catalogo -->
+      <div id="sport-teams-bar" style="display:none;margin-bottom:18px;"></div>
       <!-- Mobile filter drawer (portal, appended to body) -->
       <div id="s-load"><div class="pgrid" id="skel-grid"></div></div>
       <div id="s-grid" class="pgrid" style="display:none;"></div>
@@ -3252,7 +3252,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   function waitFB(cb){ window.__fb ? cb() : setTimeout(()=>waitFB(cb), 80); }
 
   // ── State ──────────────────────────────────────────────
-  let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,priceMin:null,priceMax:null};
+  let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,basket:false,priceMin:null,priceMax:null};
   let user=null, udata=null, authTab='li';
   let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
 
@@ -3305,7 +3305,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── Update active filter UI (tags + badge) ─────────────
   function updateFilterUI(){
     const labelMap={model:'Categoria',brand:'Marchio',size:'Taglia',color:'Colore',gender:'Genere',style:'Stile'};
-    const tags=Object.entries(filters).filter(([k,v])=>v && k!=='priceMin' && k!=='priceMax');
+    const tags=Object.entries(filters).filter(([k,v])=>v && !['priceMin','priceMax','football','basket'].includes(k));
     // Tags
     const tc=document.getElementById('fs-active-tags');
     if(tc){
@@ -3784,9 +3784,39 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
   window.isFootballKit=function(p){
     if(!p) return false;
-    if(typeof p.style==='string' && p.style.toLowerCase()==='calcio') return true;
+    const st=(typeof p.style==='string')?p.style.toLowerCase():'';
+    if(st==='basket') return false;   // il basket ha priorità
+    if(st==='calcio') return true;
+    if(window.isBasketball(p)) return false;
     if(window.detectTeam(p)) return true;
     return FOOTBALL_KW.test(((p.name||'')+' '+(p.model||'')));
+  };
+
+  // ── Basket: riconoscimento canotta + squadra NBA (categoria Basket) ──
+  const BASKET_TEAMS=[
+    ['Lakers',/lakers|\bl\.?a\.? lakers\b/i],['Celtics',/celtics|boston celt/i],['Warriors',/warriors|golden state/i],
+    ['Bulls',/\bbulls\b|chicago bull/i],['Heat',/miami heat|\bheat\b/i],['Knicks',/knicks|new york knick/i],
+    ['Nets',/brooklyn net|\bnets\b/i],['76ers',/76ers|sixers|philadelphia 76/i],['Bucks',/bucks|milwaukee buck/i],
+    ['Suns',/phoenix sun|\bsuns\b/i],['Mavericks',/mavericks|\bmavs\b|dallas mav/i],['Nuggets',/nuggets|denver nug/i],
+    ['Clippers',/clippers|\bclips\b/i],['Grizzlies',/grizzlies|memphis grizz/i],['Kings',/sacramento king|\bkings\b/i],
+    ['Pelicans',/pelicans|new orleans pel/i],['Timberwolves',/timberwolves|\bwolves\b|minnesota timber/i],
+    ['Thunder',/thunder|oklahoma city|\bokc\b/i],['Trail Blazers',/trail ?blazers|portland blazer|\bblazers\b/i],
+    ['Jazz',/utah jazz|\bjazz\b/i],['Rockets',/rockets|houston rock/i],['Spurs',/san antonio spur|\bspurs\b/i],
+    ['Pistons',/pistons|detroit pist/i],['Pacers',/pacers|indiana pac/i],['Cavaliers',/cavaliers|\bcavs\b|cleveland cav/i],
+    ['Raptors',/raptors|toronto rap/i],['Hawks',/atlanta hawk|\bhawks\b/i],['Hornets',/hornets|charlotte horn/i],
+    ['Magic',/orlando magic/i],['Wizards',/wizards|washington wiz/i],
+  ];
+  const BASKET_KW=/canott|basket|\bnba\b|tank\s?top/i;
+  window.detectBasketTeam=function(p){
+    const t=((p&&p.brand||'')+' '+(p&&p.name||'')+' '+(p&&p.model||''));
+    for(const [team,re] of BASKET_TEAMS){ if(re.test(t)) return team; }
+    return '';
+  };
+  window.isBasketball=function(p){
+    if(!p) return false;
+    if(typeof p.style==='string' && p.style.toLowerCase()==='basket') return true;
+    if(window.detectBasketTeam(p)) return true;
+    return BASKET_KW.test(((p.name||'')+' '+(p.model||'')));
   };
 
   function buildChips(){
@@ -3866,7 +3896,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   window.resetFilters=function(){
-    filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,priceMin:null,priceMax:null};
+    filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,basket:false,priceMin:null,priceMax:null};
     document.querySelectorAll('.chip[data-key],.chip[data-price],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()==='tutti'));
     document.querySelectorAll('.gtrio-btn[data-g]').forEach(b=>b.classList.toggle('active',b.dataset.g===''));
@@ -4346,27 +4376,30 @@ img{ -webkit-user-drag:none; user-select:none; }
     },{rootMargin:'800px 0px'});
     _shopSentinelObs.observe(sentinel);
   }
-  // Barra "Squadre" della categoria Calcio: elenca solo le squadre realmente
-  // presenti in catalogo (dal brand dei kit). Compare solo col filtro football.
-  function renderFootballTeamsBar(){
-    const bar=document.getElementById('football-teams-bar');
+  // Barra "Squadre" delle categorie sport (Calcio/Basket): elenca solo le
+  // squadre realmente presenti in catalogo (dal brand). Compare solo col
+  // relativo filtro attivo.
+  function renderSportTeamsBar(){
+    const bar=document.getElementById('sport-teams-bar');
     if(!bar) return;
-    if(!filters.football){ bar.style.display='none'; bar.innerHTML=''; return; }
-    // Conta i kit per squadra
+    let pred=null, emoji='';
+    if(filters.football){ pred=isFootballKit; emoji='⚽'; }
+    else if(filters.basket){ pred=isBasketball; emoji='🏀'; }
+    if(!pred){ bar.style.display='none'; bar.innerHTML=''; return; }
     const counts={};
-    products.forEach(p=>{ if(!isFootballKit(p)) return; const team=(canonBrand(p.brand)||detectTeam(p)||'').trim(); if(team) counts[team]=(counts[team]||0)+1; });
+    products.forEach(p=>{ if(!pred(p)) return; const team=(canonBrand(p.brand)||'').trim(); if(team) counts[team]=(counts[team]||0)+1; });
     const teams=Object.keys(counts).sort((a,b)=>a.localeCompare(b));
     const total=Object.values(counts).reduce((s,n)=>s+n,0);
     if(!teams.length){ bar.style.display='none'; bar.innerHTML=''; return; }
-    const chip=(label,val,n,active)=>`<span onclick="setFootballTeam('${val.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;padding:8px 14px;border-radius:999px;font-size:12px;letter-spacing:.5px;border:1.5px solid ${active?'var(--led)':'var(--border-2)'};background:${active?'var(--led)':'transparent'};color:${active?'var(--k)':'var(--mid)'};font-weight:${active?'700':'500'};">${label}${n!=null?` <span style="opacity:.6;">${n}</span>`:''}</span>`;
-    bar.innerHTML=`<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">⚽ Squadre</p>
+    const chip=(label,val,n,active)=>`<span onclick="setSportTeam('${val.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;padding:8px 14px;border-radius:999px;font-size:12px;letter-spacing:.5px;border:1.5px solid ${active?'var(--led)':'var(--border-2)'};background:${active?'var(--led)':'transparent'};color:${active?'var(--k)':'var(--mid)'};font-weight:${active?'700':'500'};">${label}${n!=null?` <span style="opacity:.6;">${n}</span>`:''}</span>`;
+    bar.innerHTML=`<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">${emoji} Squadre</p>
       <div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;" class="hide-scrollbar">
         ${chip('Tutte','',total,!filters.brand)}
         ${teams.map(t=>chip(t,t,counts[t],filters.brand===t)).join('')}
       </div>`;
     bar.style.display='block';
   }
-  window.setFootballTeam=function(team){
+  window.setSportTeam=function(team){
     filters.brand = (filters.brand===team) ? '' : team;
     renderShop();
   };
@@ -4376,7 +4409,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     _sEmpty = _sEmpty || document.getElementById('s-empty');
     _sLoad  = _sLoad  || document.getElementById('s-load');
     _sCount = _sCount || document.getElementById('s-count');
-    try{ renderFootballTeamsBar(); }catch(_){}
+    try{ renderSportTeamsBar(); }catch(_){}
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     _shopFiltered=products.filter(p=>
       (!filters.model||matchesModelFilter(p,filters.model))&&
@@ -4387,6 +4420,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       (filters.priceMin==null||((p.price||0)>=filters.priceMin&&(p.price||0)<=filters.priceMax))&&
       (!filters.style||(filters.style==='Sport'?isSportProduct(p):p.style===filters.style))&&
       (!filters.football||isFootballKit(p))&&
+      (!filters.basket||isBasketball(p))&&
       (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
     );
     if(_sLoad) _sLoad.style.display='none';
@@ -4417,6 +4451,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!el) return;
     const CATS=[
       {label:'Calcio',   model:'__calcio',  emoji:'⚽'},
+      {label:'Basket',   model:'__basket',  emoji:'🏀'},
       {label:'Sneakers', model:'Sneakers',  emoji:'👟'},
       {label:'T-Shirt',  model:'T-Shirt',   emoji:'👕'},
       {label:'Felpe',    model:'Felpa',      emoji:'🧥'},
@@ -4430,8 +4465,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     const imgsMap={},cntMap={};
     if(products&&products.length){
       products.forEach(p=>{
-        // La categoria "Calcio" raggruppa tutti i kit, a prescindere dal capo.
-        const cls=isFootballKit(p)?'__calcio':classifyModel(p);
+        // Le categorie sport raggruppano tutti i kit/canotte, a prescindere dal capo.
+        const cls=isBasketball(p)?'__basket':(isFootballKit(p)?'__calcio':classifyModel(p));
         if(!cls) return;
         CATS.forEach(c=>{
           if(cls===c.model){
@@ -4441,8 +4476,8 @@ img{ -webkit-user-drag:none; user-select:none; }
         });
       });
     }
-    // Nascondi il cerchietto Calcio se non ci sono kit in catalogo
-    const cats=CATS.filter(c=>c.model!=='__calcio'||cntMap['__calcio']);
+    // Nascondi i cerchietti Calcio/Basket se non ci sono articoli in catalogo
+    const cats=CATS.filter(c=>(c.model!=='__calcio'||cntMap['__calcio'])&&(c.model!=='__basket'||cntMap['__basket']));
     // Immagine casuale per categoria → ruota a ogni visita (sembra sempre aggiornato)
     const pickImg=arr=>(arr&&arr.length)?arr[Math.floor(Math.random()*arr.length)]:'';
     el.innerHTML=cats.map(c=>{
@@ -4450,6 +4485,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       const n=cntMap[c.model]||0;
       const onclick=c.model==='__calcio'
         ? "showPg('shop');resetFilters();setTimeout(()=>setFilter('football',true),80)"
+        : c.model==='__basket'
+        ? "showPg('shop');resetFilters();setTimeout(()=>setFilter('basket',true),80)"
         : `showPg('shop');resetFilters();setTimeout(()=>setFilter('model','${c.model}'),80)`;
       return `<div class="hcc" onclick="${onclick}">
         <div class="hcc-ring">${img?`<img src="${img}" alt="${c.label}" loading="lazy" onerror="this.parentNode.innerHTML='<span class=hcc-emo>${c.emoji}</span>'">`:`<span class="hcc-emo">${c.emoji}</span>`}</div>
@@ -6298,13 +6335,14 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Reset all active chips/size-boxes/swatches first
     document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
     // Reset all filters then apply the one requested
-    filters = {model:'',brand:'',size:'',style:'',color:'',football:false};
+    filters = {model:'',brand:'',size:'',style:'',color:'',football:false,basket:false};
     if(type === 'brand') filters.brand = value;
     if(type === 'style') filters.style = value;
     if(type === 'model') filters.model = value;
     if(type === 'size')  filters.size  = value;
     if(type === 'color') filters.color = value;
     if(type === 'football') filters.football = !!value;
+    if(type === 'basket') filters.basket = !!value;
     // Highlight the matching chip if visible
     document.querySelectorAll(`.chip[data-key="${type}"][data-val="${value}"],.size-box[data-key="${type}"][data-val="${value}"]`).forEach(c=>c.classList.add('on'));
     const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=value?'':'none';

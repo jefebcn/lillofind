@@ -51,9 +51,25 @@
     ['Portugal', /portugal/i], ['Argentina', /argentina/i], ['Brazil', /brazil|brasil/i], ['France', /\bfrance\b/i],
     ['Germany', /\bgermany\b/i], ['Spain', /\bspain\b/i], ['England', /\bengland\b/i], ['Italy', /\bitaly\b|italia/i],
   ];
+  // Squadre NBA (basket): come per il calcio, la squadra è il "brand" con cui
+  // filtra il cliente.
+  var NBA_TEAMS = [
+    ['Lakers', /lakers|\bl\.?a\.? lakers\b/i], ['Celtics', /celtics|boston celt/i], ['Warriors', /warriors|golden state/i],
+    ['Bulls', /\bbulls\b|chicago bull/i], ['Heat', /miami heat|\bheat\b/i], ['Knicks', /knicks|new york knick/i],
+    ['Nets', /brooklyn net|\bnets\b/i], ['76ers', /76ers|sixers|philadelphia 76/i], ['Bucks', /bucks|milwaukee buck/i],
+    ['Suns', /phoenix sun|\bsuns\b/i], ['Mavericks', /mavericks|\bmavs\b|dallas mav/i], ['Nuggets', /nuggets|denver nug/i],
+    ['Clippers', /clippers|\bclips\b/i], ['Grizzlies', /grizzlies|memphis grizz/i], ['Kings', /sacramento king|\bkings\b/i],
+    ['Pelicans', /pelicans|new orleans pel/i], ['Timberwolves', /timberwolves|\bwolves\b|minnesota timber/i],
+    ['Thunder', /thunder|oklahoma city|\bokc\b/i], ['Trail Blazers', /trail ?blazers|portland blazer|\bblazers\b/i],
+    ['Jazz', /utah jazz|\bjazz\b/i], ['Rockets', /rockets|houston rock/i], ['Spurs', /san antonio spur|\bspurs\b/i],
+    ['Pistons', /pistons|detroit pist/i], ['Pacers', /pacers|indiana pac/i], ['Cavaliers', /cavaliers|\bcavs\b|cleveland cav/i],
+    ['Raptors', /raptors|toronto rap/i], ['Hawks', /atlanta hawk|\bhawks\b/i], ['Hornets', /hornets|charlotte horn/i],
+    ['Magic', /orlando magic/i], ['Wizards', /wizards|washington wiz/i],
+  ];
   function detectBrand(name) {
     var t = (name || '');
     for (var i = 0; i < TEAMS.length; i++) { if (TEAMS[i][1].test(t)) return TEAMS[i][0]; }
+    for (var j = 0; j < NBA_TEAMS.length; j++) { if (NBA_TEAMS[j][1].test(t)) return NBA_TEAMS[j][0]; }
     // Scan brand noti nel titolo (alias >=4 char per evitare falsi positivi)
     var compact = t.toLowerCase().replace(/[^a-z0-9]/g, '');
     for (var k in BRAND_CANON) { if (k.length >= 4 && compact.indexOf(k) >= 0) return BRAND_CANON[k]; }
@@ -63,6 +79,12 @@
   function isFootballTeam(brandName) {
     if (!brandName) return false;
     for (var i = 0; i < TEAMS.length; i++) { if (TEAMS[i][0] === brandName) return true; }
+    return false;
+  }
+  // True se il valore è il nome di una squadra NBA (per taggare le canotte).
+  function isBasketTeam(brandName) {
+    if (!brandName) return false;
+    for (var i = 0; i < NBA_TEAMS.length; i++) { if (NBA_TEAMS[i][0] === brandName) return true; }
     return false;
   }
 
@@ -138,6 +160,7 @@
     canonBrand: canonBrand,
     detectBrand: detectBrand,
     isFootballTeam: isFootballTeam,
+    isBasketTeam: isBasketTeam,
     inferCategory: inferCategory,
     genDescription: genDescription,
     isGenericName: isGenericName,
