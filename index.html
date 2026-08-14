@@ -3627,6 +3627,34 @@ img{ -webkit-user-drag:none; user-select:none; }
     silver:'#c0c0c0',gold:'#ffd700',
   };
 
+  // ── Famiglie di colore ────────────────────────────────────────────
+  // Raggruppa le decine di sfumature (Blu Scuro/Navy/Royal/Elettrico…) in
+  // poche famiglie navigabili. Ordine dal più specifico al più generico.
+  const COLOR_FAMILIES=[
+    ['Nero','#111', /\bner|black/],
+    ['Bianco','#f4f4f4', /bianc|white|panna|avorio|crema|cream|latte|ecru/],
+    ['Bordeaux','#7b1e2b', /bordeaux|bordo|amarant|vinacc|granata|burgundy/],
+    ['Rosso','#e53e3e', /ross|red|scarlat|cremisi/],
+    ['Rosa','#f687b3', /\brosa|pink|fucsia|fuxia|magenta|cipria/],
+    ['Arancione','#ed8936', /arancio|orange|corallo|salmone|pesca|peach/],
+    ['Giallo','#ecc94b', /giall|yellow|senape|ocra|lime|fluo/],
+    ['Oro','#d4af37', /\boro\b|gold|dorat/],
+    ['Marrone','#8b5e3c', /marron|brown|cioccolat|moro|caffe|cammello|tabacco|cognac/],
+    ['Beige','#d4b896', /beige|sabbia|kaki|khaki|tortora|nude|nudo/],
+    ['Verde','#38a169', /verd|green|oliva|militar|menta|salvia|acqua|teal|smerald|petrol/],
+    ['Azzurro','#63b3ed', /azzurr|celeste|cielo|ciano|turches|acquamar|\bsky|light ?blue|blu chiar|carta da zucchero/],
+    ['Blu','#3182ce', /\bblu|blue|navy|denim|indaco|cobalto|royal|elettric|reale|marino|notte|jeans/],
+    ['Viola','#805ad5', /viol|purpl|lilla|lavanda|prugna|melanzana|glicine/],
+    ['Argento','#c0c0c0', /argent|silver/],
+    ['Grigio','#9aa2ad', /grig|grey|gray|fumo|perla|ghiaccio|antracite|piombo/],
+  ];
+  function colorFamily(name){
+    const t=(name||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    for(const [label,hex,re] of COLOR_FAMILIES){ if(re.test(t)) return {label,hex}; }
+    const raw=(name||'').trim();
+    return {label:raw, hex:COLOR_MAP[t]||'#888'}; // colore non mappato: resta com'è
+  }
+
   const MODEL_FILTERS=[
     {label:'Sneakers',       group:'👟 Calzature', aliases:['sneakers','sneaker','scarpe','scarpe_box']},
     {label:'T-Shirt',        group:'👕 Top',        aliases:['t-shirt','tshirt','t shirt']},
@@ -3793,13 +3821,17 @@ img{ -webkit-user-drag:none; user-select:none; }
         html=`<div class="size-box-grid">${vals.map(v=>`<div class="size-box" data-key="size" data-val="${v}" onclick="toggleF('size','${v}')">${v}</div>`).join('')}</div>`;
         htmlMob=html;
       } else if(k==='color'){
-        // Swatch compatti: nessuna etichetta per swatch (occupavano troppo spazio);
-        // il nome è nel tooltip (hover) e il colore attivo appare tra i filtri attivi.
-        const vals=[...new Set(products.map(p=>p.colors||[]).flat().filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-        html=`<div class="swatch-grid">${vals.map(v=>{
-          const col=COLOR_MAP[v.toLowerCase()]||'#888';
-          const light=/^#f/i.test(col)||col.toLowerCase()==='#fff'||col.toLowerCase()==='#ffffff';
-          return `<div class="swatch" data-key="color" data-val="${v}" title="${v}" onclick="toggleF('color','${v}')" style="background:${col};${light?'box-shadow:inset 0 0 0 1px #ccc;':''}"></div>`;
+        // Colori raggruppati in famiglie (Blu Scuro/Navy/Royal → "Blu") e swatch
+        // compatti senza etichetta: nome nel tooltip, famiglia attiva tra i filtri.
+        const fam={};
+        products.map(p=>p.colors||[]).flat().filter(Boolean).forEach(c=>{
+          const f=colorFamily(c); if(f.label && !fam[f.label]) fam[f.label]=f.hex;
+        });
+        const labels=Object.keys(fam).sort((a,b)=>a.localeCompare(b));
+        html=`<div class="swatch-grid">${labels.map(lbl=>{
+          const col=fam[lbl];
+          const light=/^#f/i.test(col);
+          return `<div class="swatch" data-key="color" data-val="${lbl}" title="${lbl}" onclick="toggleF('color','${lbl}')" style="background:${col};${light?'box-shadow:inset 0 0 0 1px #ccc;':''}"></div>`;
         }).join('')}</div>`;
         htmlMob=html;
       } else {
@@ -4338,7 +4370,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       (!filters.model||matchesModelFilter(p,filters.model))&&
       (!filters.brand||canonBrand(p.brand)===filters.brand)&&
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
-      (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>c.toLowerCase()===filters.color.toLowerCase()))||''+(p.color||'').toLowerCase()===filters.color.toLowerCase())&&
+      (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>colorFamily(c).label===filters.color))||colorFamily(p.color||'').label===filters.color)&&
       (!filters.gender||p.gender===filters.gender)&&
       (filters.priceMin==null||((p.price||0)>=filters.priceMin&&(p.price||0)<=filters.priceMax))&&
       (!filters.style||(filters.style==='Sport'?isSportProduct(p):p.style===filters.style))&&
