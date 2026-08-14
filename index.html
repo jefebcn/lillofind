@@ -3967,6 +3967,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       document.title=_defaultTitle;
       const ogt=document.querySelector('meta[property="og:title"]'); if(ogt) ogt.setAttribute('content','LILLOFIND — Drop Your Style');
       const ogi=document.querySelector('meta[property="og:image"]'); if(ogi) ogi.setAttribute('content','https://lillofind.shop/assets/og-image.jpg');
+      const _ld=document.getElementById('ld-product'); if(_ld) _ld.remove(); // rimuovi JSON-LD prodotto
       if(location.search.indexOf('p=')>-1) history.replaceState(null,'',location.pathname);
     }catch(_){}
   };
@@ -4062,8 +4063,18 @@ img{ -webkit-user-drag:none; user-select:none; }
     const inWish=wishlist.includes(p.id);
     // Galleria: usa le foto multiple se presenti, altrimenti la cover
     const _gimgs=[...new Set([...(Array.isArray(p.images)?p.images:[]), p.imageUrl].filter(Boolean))];
-    const _gmain=_gimgs.length?pImg(_gimgs[0]):'';
-    window._pg=_gimgs.map(pImg); window._pgi=0;
+    const _gmain=_gimgs.length?pImgHi(_gimgs[0]):'';
+    window._pg=_gimgs.map(pImgHi); window._pgi=0; // main/zoom in alta risoluzione
+    // SEO: dati strutturati Product (Google esegue il JS → rich result)
+    try{
+      let _ld=document.getElementById('ld-product');
+      if(!_ld){ _ld=document.createElement('script'); _ld.type='application/ld+json'; _ld.id='ld-product'; document.head.appendChild(_ld); }
+      _ld.textContent=JSON.stringify({'@context':'https://schema.org','@type':'Product',
+        name:p.name, image:_gmain||undefined, brand:p.brand?{'@type':'Brand',name:p.brand}:undefined,
+        description:(p.description||'').replace(/\s+/g,' ').slice(0,300)||undefined,
+        offers:{'@type':'Offer',price:(p.price||0).toFixed(2),priceCurrency:'EUR',
+          availability:p.soldOut?'https://schema.org/OutOfStock':'https://schema.org/InStock',url:location.href}});
+    }catch(_){}
     body.innerHTML=`
       <div style="display:grid;grid-template-columns:5fr 6fr;" id="prod-modal-grid">
         <div style="background:#f0f0f0;position:relative;display:flex;flex-direction:column;">
@@ -4646,6 +4657,15 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
       return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner);
     return u;
+  }
+  // Variante ad alta risoluzione per il modal/zoom: Yupoo espone small/medium/
+  // large — le card usano "small" (veloci), il modal "large" (nitido).
+  function pImgHi(url){
+    if(!url) return '';
+    let inner=url.startsWith('//')?'https:'+url:url;
+    if(inner.includes('?url=')) inner=decodeURIComponent(inner.split('?url=')[1].split('&')[0]);
+    inner=inner.replace(/\/(small|medium|square|thumb)\.(jpe?g|png|webp)(\?|$)/i,'/large.$2$3');
+    return pImg(inner);
   }
 
   // ── Cart — weight & shipping config ────────────────────
