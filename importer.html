@@ -19,13 +19,13 @@
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc,getDocs,updateDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import{getFunctions,httpsCallable}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
 const _impAuth=getAuth(app);
-window.__imp={db:getFirestore(app),auth:_impAuth,functions:getFunctions(app,'europe-west1'),httpsCallable,collection,addDoc,serverTimestamp,doc,getDoc,signInWithEmailAndPassword,onAuthStateChanged};
+window.__imp={db:getFirestore(app),auth:_impAuth,functions:getFunctions(app,'europe-west1'),httpsCallable,collection,addDoc,serverTimestamp,doc,getDoc,getDocs,updateDoc,signInWithEmailAndPassword,onAuthStateChanged};
 
 /* Backend Cloudflare Worker — vedi cloudflare-worker/README.md.
    ⚠️ Stesso URL impostato in firebase.js */
@@ -636,6 +636,19 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 
 </div>
 
+<!-- MANUTENZIONE: backfill gallerie prodotti già in catalogo -->
+<div style="max-width:1400px;margin:24px auto 90px;padding:0 24px;">
+  <div style="border:1px solid #1a1a1a;border-radius:8px;padding:16px 18px;background:#0c0c0c;">
+    <p class="sec-num" style="margin-bottom:4px;">🛠 Manutenzione</p>
+    <p style="font-size:12px;color:#888;margin-bottom:12px;">Backfill gallerie: per i prodotti già in catalogo che hanno il link all'album Yupoo (<code style="color:#666;">sourceUrl</code>) ma nessuna galleria, riscarica le foto dell'album e aggiorna <code style="color:#666;">images[]</code>. Se lo store richiede una password, mettila nel campo password Yupoo qui sopra.</p>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn-led" id="backfill-btn" onclick="backfillGalleries()" style="padding:12px 24px;font-size:12px;letter-spacing:2px;">🖼 BACKFILL GALLERIE</button>
+      <span id="backfill-status" style="font-size:12px;color:var(--dim);letter-spacing:.5px;"></span>
+    </div>
+    <div id="backfill-log" style="margin-top:10px;font-size:10px;font-family:monospace;color:#6a6a6a;max-height:180px;overflow-y:auto;"></div>
+  </div>
+</div>
+
 <!-- STATS BAR -->
 <div id="stats-bar">
   <div style="display:flex;align-items:center;gap:28px;">
@@ -960,6 +973,56 @@ window.applyPriceAll=function(overwrite){
     if(overwrite || isNaN(cur) || cur<=0){ inp.value=v.toFixed(2); inp.style.borderColor=''; n++; }
   });
   toast('✅ €'+v.toFixed(2)+' applicato a '+n+' righe'+(overwrite?'':' vuote'));
+};
+
+// Backfill gallerie: per i prodotti con sourceUrl album Yupoo ma senza galleria,
+// riscarica le foto dell'album (worker yupooFetch) e aggiorna images[].
+window.backfillGalleries = async function(){
+  const imp = window.__imp;
+  const btn = document.getElementById('backfill-btn');
+  const stEl = document.getElementById('backfill-status');
+  const logEl = document.getElementById('backfill-log');
+  if(!imp || !imp.getDocs || !imp.updateDoc){ toast('⚠️ Firebase non pronto — ricarica la pagina'); return; }
+  if(!(imp.auth && imp.auth.currentUser)){ toast('⚠️ Accedi come admin per il backfill'); return; }
+  const log = (m,c)=>{ if(logEl){ logEl.innerHTML += `<div style="color:${c||'#6a6a6a'}">${m}</div>`; logEl.scrollTop = logEl.scrollHeight; } };
+  const pid = u => ((String(u).match(/yupoo\.com\/[^/]+\/([0-9a-f]{6,})\//i)||[])[1]) || u;
+  const fnFetch = lfCallable('yupooFetch');
+  if(logEl) logEl.innerHTML='';
+  btn.disabled = true; btn.textContent = '⏳ Backfill…';
+  let targets = [];
+  try{
+    const snap = await imp.getDocs(imp.collection(imp.db,'products'));
+    snap.forEach(ds=>{
+      const p = ds.data();
+      const imgs = Array.isArray(p.images) ? p.images : [];
+      if(p.sourceUrl && /yupoo\.com\/albums\//i.test(p.sourceUrl) && imgs.length <= 1)
+        targets.push({ id: ds.id, sourceUrl: p.sourceUrl, imageUrl: p.imageUrl || '', name: p.name || ds.id });
+    });
+  }catch(e){ toast('⚠️ Lettura prodotti fallita: '+e.message); btn.disabled=false; btn.textContent='🖼 BACKFILL GALLERIE'; return; }
+  if(stEl) stEl.textContent = `${targets.length} prodotti da aggiornare…`;
+  log(`Trovati ${targets.length} prodotti con album e senza galleria.`, '#8fbf8f');
+  let updated=0, failed=0, done=0;
+  for(const p of targets){
+    try{
+      const res = await fnFetch({ url: p.sourceUrl, ...(_yupooPassword ? { password: _yupooPassword } : {}) });
+      const info = (res.data && res.data.albumInfo) || {};
+      const photos = (info.photos || []).filter(u => /photo\d?\.yupoo\.com|yunjifen/i.test(u));
+      const seen = new Set(); const gallery = [];
+      for(const u of [p.imageUrl, ...photos].filter(Boolean)){ const k=pid(u); if(seen.has(k)) continue; seen.add(k); gallery.push(u); if(gallery.length>=15) break; }
+      if(gallery.length > 1){
+        await imp.updateDoc(imp.doc(imp.db,'products',p.id), { images: gallery });
+        updated++; log(`✅ ${(p.name||'').slice(0,44)} → ${gallery.length} foto`, '#8fbf8f');
+      } else {
+        log(`— ${(p.name||'').slice(0,44)} → nessuna foto extra`, '#888');
+      }
+    }catch(e){ failed++; log(`❌ ${(p.name||'').slice(0,44)} → ${e.message||'errore'}`, '#c86'); }
+    done++;
+    if(stEl) stEl.textContent = `${done}/${targets.length} · ${updated} aggiornati · ${failed} errori`;
+    await new Promise(r=>setTimeout(r, 400)); // rate-limit verso Yupoo
+  }
+  btn.disabled=false; btn.textContent='🖼 BACKFILL GALLERIE';
+  if(stEl) stEl.textContent = `✅ Completato: ${updated} aggiornati, ${failed} errori su ${targets.length}.`;
+  toast(`Backfill: ${updated} gallerie aggiunte`);
 };
 
 function getRowSizes(id){
