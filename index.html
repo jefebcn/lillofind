@@ -3922,7 +3922,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const delBtn='';
     const badgeBase='position:absolute;top:12px;left:12px;font-size:10px;letter-spacing:.5px;padding:4px 10px;font-weight:700;z-index:3;border-radius:999px;';
     const stockBadge=isSoldOut
-      ?`<span style="${badgeBase}background:var(--k);color:#fff;">Esaurito</span>`
+      ?'' /* overlay centrale "ESAURITO" sull'immagine → niente badge ridondante */
       :isNew?`<span style="${badgeBase}background:var(--led);color:#fff;">Novità</span>`
       :isLowStock?`<span style="${badgeBase}background:#c9603f;color:#fff;">Solo ${stockNum} rimasti</span>`
       :(p.style?`<span style="${badgeBase}background:var(--accent-soft);color:var(--led);">${p.style}</span>`:'');
@@ -3930,7 +3930,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     const rating=(4.5+(pidHash%5)/10).toFixed(1);
     return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.75':''}" onclick="openProduct('${p.id}')">
       <div style="aspect-ratio:1/1;background:#efece4;overflow:hidden;position:relative;">
-        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#c3bfb4;letter-spacing:2px;">NO IMG</div>`}
+        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;${isSoldOut?'filter:grayscale(.6);':''}" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#c3bfb4;letter-spacing:2px;">NO IMG</div>`}
+        ${isSoldOut?`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;"><span style="background:var(--k);color:#fff;font-size:11px;letter-spacing:3px;padding:8px 18px;border-radius:999px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.35);">ESAURITO</span></div>`:''}
         ${stockBadge}
         ${delBtn}
         <button class="wish-btn ${inWish?'active':''}" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;top:10px;right:10px;width:36px;height:36px;background:rgba(255,255,255,.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:50%;box-shadow:var(--shadow-sm);">${inWish?'❤️':'♡'}</button>
