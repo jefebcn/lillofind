@@ -652,6 +652,18 @@ export async function yupooFetch(data, _ctx) {
         const tp = rawTitle.match(/(?:¥|￥|价格?|售价)\s*(\d{2,5})/) || rawTitle.match(/\b(\d{2,4})\s*(?:元|cny|rmb)\b/i);
         if (tp) { const v = parseInt(tp[1], 10); if (v >= 5 && v < 100000) supplierPriceCNY = v; }
       }
+      // Prezzo assente nel testo ma l'album linka un prodotto Weidian
+      // (es. "Weidian link : https://weidian.com/item.html?itemID=…"): apri il
+      // link e leggi il prezzo da lì (in yuan), che poi il client converte.
+      let priceFromWeidian = false;
+      if (supplierPriceCNY == null) {
+        const wdM = html.match(/https?:\/\/(?:[a-z0-9.\-]*\.)?weidian\.com\/item\.html\?item[iI][dD]=\d+/i)
+                 || html.match(/https?:\/\/(?:[a-z0-9.\-]*\.)?(?:weidian|koudai)\.com\/[^\s"'<>]*?item[iI][dD]=\d+/i);
+        if (wdM) {
+          try { const wp = await weidianPriceCNY(wdM[0]); if (wp && wp > 0) { supplierPriceCNY = wp; priceFromWeidian = true; } }
+          catch (e) { /* best-effort */ }
+        }
+      }
       const usdM = bodyText.match(/(\d{1,4})\s*\$/) || bodyText.match(/\$\s*(\d{1,4})/);
       const supplierPriceUSD = usdM ? parseInt(usdM[1], 10) : null;
       // Foto prodotto dell'album: SOLO gli host foto reali (photo*.yupoo.com /
@@ -678,7 +690,7 @@ export async function yupooFetch(data, _ctx) {
       // vicino a marcatori di valuta, per capire il formato se il parse fallisce.
       const priceCtx = (bodyText.match(/.{0,14}\d{1,5}\s*(?:元|CNY|cny|RMB|rmb|[¥￥]|价格?|售价)/gi) || [])
         .concat(bodyText.match(/(?:¥|￥|价格?|售价)\s*\d{1,5}/g) || []).slice(0, 6);
-      albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos, priceCtx };
+      albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos, priceCtx, priceFromWeidian };
     }
 
     return { html, status: resp.status, albumCovers, albumPrices, albumInfo, albumUid, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
@@ -808,6 +820,38 @@ async function weidianFetch(url) {
     shop: '', sourceUrl: itemId ? `https://weidian.com/item.html?itemID=${itemId}` : url,
     _debug: { bodyLen: body.length, htmlSource, wasJson, imgCount: images.length, itemId, hasTitle: !!title, hasImages: images.length > 0, hasPrice: priceYuan > 0, bodyPreview: body.slice(0, 300) },
   };
+}
+
+// Legge SOLO il prezzo (CNY) da una pagina prodotto Weidian. Usato come
+// fallback quando un album Yupoo non ha il prezzo nel testo ma linka Weidian.
+async function weidianPriceCNY(itemUrl) {
+  const UA_MOB = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1';
+  const HDR_ZH = { 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8', 'Accept': 'text/html,application/json,*/*;q=0.8' };
+  const idm = itemUrl.match(/item[iI][dD]=(\d{5,})/) || itemUrl.match(/(\d{9,})/);
+  const itemId = idm ? idm[1] : '';
+  const urls = [];
+  if (itemId) {
+    const param = encodeURIComponent(JSON.stringify({ itemId }));
+    urls.push(`https://thor.weidian.com/detail/getItemInfo/1.0?param=${param}`);
+    urls.push(`https://weidian.com/item.html?itemID=${itemId}`);
+  }
+  urls.push(itemUrl);
+  const PS = [/"price"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/, /"itemPrice"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/, /"minPrice"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/, /"sku_price"\s*:\s*"?([\d]+(?:\.\d{1,2})?)"?/, /[¥￥]\s*([\d]{1,6}(?:\.\d{1,2})?)/];
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, { headers: { 'User-Agent': UA_MOB, ...HDR_ZH, 'Referer': 'https://weidian.com/' }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+      if (!r.ok) continue;
+      const txt = await r.text();
+      for (const p of PS) {
+        const pm = txt.match(p);
+        if (!pm) continue;
+        let v = parseFloat(pm[1]);
+        if (v > 2000 && Number.isInteger(v) && !pm[0].includes('.')) v = v / 100; // centesimi → yuan
+        if (v > 0 && v < 100000) return Math.round(v);
+      }
+    } catch (e) { /* prova il prossimo */ }
+  }
+  return null;
 }
 
 // ════════════════════════════════════════════════════════════════
