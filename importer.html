@@ -1023,9 +1023,13 @@ window.saveAll=async function(){
       const _kitKw = /\bjersey\b|\bkit\b|player version|fan version|nazionale|camiseta|maglia da calcio|football\s*(shirt|kit|jersey)|soccer/i;
       const isKit = !!(QC && QC.isFootballTeam(detected)) || _kitKw.test((name||'')+' '+(rowModel||''));
       let category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
-      // Bigiotteria (bracciali, collane, anelli, catene…): categoria "accessori"
-      // e taglia "Unica" a prescindere da cosa ha dedotto l'AI.
+      // Taglia unica per articoli one-size: bigiotteria, accessori, cappelli,
+      // borse e occhiali. Forza "Unica" a prescindere dai toggle taglia mostrati
+      // nella riga (gli occhiali non hanno XS–XXL).
+      const _oneSize = ['accessori','cappello','borsa'].includes(category)
+        || /occhial|sunglass|eyewear/i.test((name||'')+' '+(rowModel||''));
       if(QC && QC.isJewelry({name,model:rowModel})){ category='accessori'; sizes=['Unica']; }
+      else if(_oneSize){ sizes=['Unica']; }
       else if(!sizes.length){ sizes = QC ? QC.defaultSizes(category) : ['S','M','L','XL']; }
       const aiDesc = (row.dataset.desc||'').trim();
       const description = aiDesc || (QC ? QC.genDescription({name,brand,model:rowModel,colors,category}) : '');
@@ -1910,6 +1914,8 @@ function addAnalyzedRow(d){
   const colors = (d.analysis.colors || []).join(', ');
   // Per le scarpe: tipo sempre Sneakers, taglie EU default, prezzo 50€, colori nascosti
   const isShoe     = ['scarpe','scarpe_box'].includes(d.analysis.category) || (d.albumInfo?.shoeSizes?.length > 0);
+  // One-size (accessori, cappelli, borse, occhiali): mostra solo "Unica"
+  const isOneSize  = ['accessori','cappello','borsa'].includes(d.analysis.category) || /occhial|sunglass|eyewear/i.test(name);
   const modelMatch = isShoe ? 'Sneakers' : pickImporterModel(d, name);
 
   const shoeSizes  = d.albumInfo?.shoeSizes  || [];
@@ -1982,7 +1988,7 @@ function addAnalyzedRow(d){
         ` : `
           <p class="row-label">Taglie <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button></p>
           <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
-            ${SIZES_ALL.map(s=>`<span class="sz-toggle ${clothSizes.includes(s)?'on':'on'}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
+            ${SIZES_ALL.map(s=>`<span class="sz-toggle ${isOneSize ? (s==='Unica'?'on':'') : 'on'}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
           </div>
         `}
       </div>
