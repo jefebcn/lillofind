@@ -1840,9 +1840,16 @@ waitFB(()=>{
     if(!creds.length){ showToast('Inserisci almeno login o password.'); return; }
     const btn=document.getElementById('cred-save'); if(btn){ btn.disabled=true; btn.textContent='Salvataggio…'; }
     try{
+      const o=adminOrders.find(x=>x._docId===docId)||{};
       await fb.updateDoc(fb.doc(fb.db,'orders',docId),{ credentials:creds, credentialsDelivered:true, credentialsAt: fb.serverTimestamp() });
       const idx=adminOrders.findIndex(x=>x._docId===docId); if(idx>=0){ adminOrders[idx].credentials=creds; adminOrders[idx].credentialsDelivered=true; }
       document.getElementById('cred-modal')?.remove(); renderAdminOrders(); showToast('✅ Credenziali salvate — visibili nel profilo del cliente');
+      // Email automatica al cliente (fire-and-forget)
+      if(o.email){
+        lfCallable('sendCredentialsEmail')({ email:o.email, name:o.name||'', orderId:o.orderId||'', credentials:creds })
+          .then(r=>{ const sent=r&&r.data&&r.data.sent; showToast(sent?('📧 Email inviata a '+o.email):('⚠️ Email non inviata ('+((r&&r.data&&r.data.reason)||'errore')+')')); })
+          .catch(e=>{ showToast('⚠️ Email non inviata ('+((e&&e.message)||'errore')+')'); });
+      }
     }catch(e){ console.error('cred save',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); if(btn){ btn.disabled=false; btn.textContent='Salva e invia al cliente'; } }
   };
 

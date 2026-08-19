@@ -2728,6 +2728,19 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
       </div>
 
+      <!-- ── I MIEI ABBONAMENTI (credenziali digitali) — sempre visibile ── -->
+      <div id="my-subs-wrap" style="margin-bottom:20px;">
+        <div style="border:2px solid var(--led);border-radius:14px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.08);">
+          <div style="display:flex;align-items:center;gap:9px;padding:14px 16px;background:#0a0a0a;">
+            <span style="font-size:17px;">🔑</span>
+            <p class="slbl" style="color:var(--led);font-size:11px;margin:0;">I Miei Abbonamenti</p>
+          </div>
+          <div id="my-subs-list" style="padding:16px;background:#fff;">
+            <p style="font-size:12px;color:var(--dim);line-height:1.6;text-align:center;padding:8px 4px;">Caricamento…</p>
+          </div>
+        </div>
+      </div>
+
       <!-- ── DATI ACCOUNT ── -->
       <div style="border:1.5px solid #e8e8e8;margin-bottom:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e8e8e8;background:#fafafa;">
@@ -2756,17 +2769,6 @@ img{ -webkit-user-drag:none; user-select:none; }
           <p style="font-size:22px;margin-bottom:5px;">📍</p>
           <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Manrope',monospace;">Indirizzi</p>
         </button>
-      </div>
-
-      <!-- ── I MIEI ABBONAMENTI (credenziali digitali) ── -->
-      <div id="my-subs-wrap" style="display:none;margin-top:24px;">
-        <div style="border:2px solid var(--led);border-radius:14px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.08);">
-          <div style="display:flex;align-items:center;gap:9px;padding:14px 16px;background:#0a0a0a;">
-            <span style="font-size:17px;">🔑</span>
-            <p class="slbl" style="color:var(--led);font-size:11px;margin:0;">I Miei Abbonamenti</p>
-          </div>
-          <div id="my-subs-list" style="padding:14px 16px;background:#fff;"></div>
-        </div>
       </div>
 
       <!-- Order history -->
@@ -5553,22 +5555,24 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>`;
   }
+  const _subsEmpty='<div style="text-align:center;padding:14px 8px;"><p style="font-size:30px;margin-bottom:8px;">🔐</p><p style="font-size:13px;font-weight:600;color:var(--k);margin-bottom:4px;">Nessun abbonamento attivo</p><p style="font-size:12px;color:var(--dim);line-height:1.6;">Qui troverai le credenziali dei tuoi abbonamenti (Netflix, Spotify, ChatGPT…) subito dopo l\'acquisto, con data di inizio, scadenza e tempo rimanente.</p></div>';
   async function renderMySubscriptions(){
     const wrap=document.getElementById('my-subs-wrap');
     const list=document.getElementById('my-subs-list');
-    if(!wrap||!list||!user||!window.__fb) return;
+    if(!wrap||!list) return;
+    wrap.style.display='block'; // sempre visibile: il cliente sa dove cercarle
+    if(!user||!window.__fb){ list.innerHTML=_subsEmpty; return; }
     const fb=window.__fb;
     try{
       const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(30));
       const snap=await fb.getDocs(q);
       const creds=[];
       snap.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password)) creds.push(c); }); });
-      if(!creds.length){ wrap.style.display='none'; list.innerHTML=''; return; }
+      if(!creds.length){ list.innerHTML=_subsEmpty; return; }
       // Attivi prima, poi in scadenza, poi scaduti
       creds.sort((a,b)=>subDates(a.startISO,a.months).remDays - subDates(b.startISO,b.months).remDays).reverse();
-      wrap.style.display='block';
       list.innerHTML=creds.map(subCardHTML).join('');
-    }catch(e){ console.warn('subs',e&&e.code); wrap.style.display='none'; }
+    }catch(e){ console.warn('subs',e&&e.code); list.innerHTML=_subsEmpty; }
   }
   window.renderMySubscriptions=renderMySubscriptions;
 

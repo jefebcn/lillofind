@@ -226,6 +226,7 @@ app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 
 app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
 // Email conferma ordine al cliente (utente autenticato)
 app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 'required' }));
+app.post('/sendCredentialsEmail', callable(checkout.sendCredentialsEmail, { auth: 'adminEmail' }));
 // Diagnostica invio email (admin via allowlist email)
 app.post('/sendTestEmail',       callable(checkout.sendTestEmail,       { auth: 'adminEmail' }));
 // Scraper (admin via allowlist email — non richiede FIREBASE_SERVICE_ACCOUNT)
