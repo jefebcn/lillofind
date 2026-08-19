@@ -2758,6 +2758,17 @@ img{ -webkit-user-drag:none; user-select:none; }
         </button>
       </div>
 
+      <!-- ── I MIEI ABBONAMENTI (credenziali digitali) ── -->
+      <div id="my-subs-wrap" style="display:none;margin-top:24px;">
+        <div style="border:2px solid var(--led);border-radius:14px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.08);">
+          <div style="display:flex;align-items:center;gap:9px;padding:14px 16px;background:#0a0a0a;">
+            <span style="font-size:17px;">🔑</span>
+            <p class="slbl" style="color:var(--led);font-size:11px;margin:0;">I Miei Abbonamenti</p>
+          </div>
+          <div id="my-subs-list" style="padding:14px 16px;background:#fff;"></div>
+        </div>
+      </div>
+
       <!-- Order history -->
       <div style="border-top:2px solid var(--k);padding-top:24px;margin-top:28px;">
         <p class="slbl" style="margin-bottom:16px;">Storico Ordini</p>
@@ -5484,6 +5495,86 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
   window.renderOrderHistory=renderOrderHistory;
 
+  // ── I MIEI ABBONAMENTI — credenziali digitali con date e tempo rimanente ──
+  function subDates(startISO, months){
+    const start = startISO ? new Date(startISO+'T00:00:00') : new Date();
+    const end = new Date(start); end.setMonth(end.getMonth() + (parseInt(months)||1));
+    const now = new Date(), msDay = 86400000;
+    const totalDays = Math.max(1, Math.round((end-start)/msDay));
+    const remDays = Math.ceil((end-now)/msDay);
+    const elapsed = Math.max(0, Math.min(totalDays, Math.round((now-start)/msDay)));
+    const pct = Math.max(0, Math.min(100, Math.round(elapsed/totalDays*100)));
+    return { start, end, totalDays, remDays: Math.max(0, remDays), pct, expired: remDays<=0 };
+  }
+  window.lfCopy=function(v){ try{ navigator.clipboard.writeText(v); showToast('Copiato ✓'); }catch(_){ showToast('Copia non riuscita'); } };
+  window.lfRevealPwd=function(btn){
+    const row=btn.closest('.cred-row'); if(!row) return;
+    const p=row.querySelector('[data-pwd]'); if(!p) return;
+    const real=p.getAttribute('data-pwd');
+    if(p.dataset.shown==='1'){ p.textContent='••••••••'; p.dataset.shown='0'; btn.textContent='👁'; }
+    else{ p.textContent=real; p.dataset.shown='1'; btn.textContent='🙈'; }
+  };
+  function credRow(label, value, isPwd){
+    if(!value) return '';
+    const safe=String(value).replace(/'/g,"\\'").replace(/</g,'&lt;');
+    const attr=String(value).replace(/"/g,'&quot;');
+    const disp=isPwd?'••••••••':String(value).replace(/</g,'&lt;');
+    return `<div class="cred-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fafafa;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;">
+      <div style="min-width:0;">
+        <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:1px;">${label}</p>
+        <p style="font-size:13px;font-family:'IBM Plex Mono',monospace;word-break:break-all;" ${isPwd?`data-pwd="${attr}" data-shown="0"`:''}>${disp}</p>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        ${isPwd?`<button onclick="lfRevealPwd(this)" style="border:1px solid #ddd;background:none;border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;">👁</button>`:''}
+        <button onclick="lfCopy('${safe}')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:5px 9px;font-size:10px;letter-spacing:1px;cursor:pointer;">COPIA</button>
+      </div>
+    </div>`;
+  }
+  function subCardHTML(c){
+    const s=subDates(c.startISO, c.months);
+    const fmt=d=>d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+    const barColor=s.expired?'#c0503f':(s.remDays<=7?'#e0952f':'#66a80f');
+    const statusLbl=s.expired?'Scaduto':(s.remDays<=7?('Scade tra '+s.remDays+'g'):(s.remDays+' giorni rimasti'));
+    const svc=(c.service||'Abbonamento').replace(/</g,'&lt;');
+    return `<div style="border:1px solid #e8e8e8;border-radius:12px;padding:14px;margin-bottom:12px;background:#fff;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+        <p style="font-size:15px;font-weight:700;">${svc}</p>
+        <span style="font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:${s.expired?'#fbe9e6':'rgba(102,168,15,.12)'};color:${barColor};font-weight:700;white-space:nowrap;">${statusLbl}</span>
+      </div>
+      <div style="display:grid;gap:8px;">
+        ${credRow('Email / Login', c.login, false)}
+        ${credRow('Password', c.password, true)}
+        ${c.profile?credRow('Profilo', c.profile, false):''}
+        ${c.note?`<p style="font-size:11px;color:var(--mid);line-height:1.5;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:8px 10px;">📝 ${String(c.note).replace(/</g,'&lt;')}</p>`:''}
+      </div>
+      <div style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:5px;">
+          <span>Inizio <strong style="color:var(--k);">${fmt(s.start)}</strong></span>
+          <span>Fine <strong style="color:var(--k);">${fmt(s.end)}</strong></span>
+        </div>
+        <div style="height:7px;background:#eee;border-radius:999px;overflow:hidden;"><div style="height:100%;width:${s.pct}%;background:${barColor};transition:width .4s;"></div></div>
+      </div>
+    </div>`;
+  }
+  async function renderMySubscriptions(){
+    const wrap=document.getElementById('my-subs-wrap');
+    const list=document.getElementById('my-subs-list');
+    if(!wrap||!list||!user||!window.__fb) return;
+    const fb=window.__fb;
+    try{
+      const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(30));
+      const snap=await fb.getDocs(q);
+      const creds=[];
+      snap.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password)) creds.push(c); }); });
+      if(!creds.length){ wrap.style.display='none'; list.innerHTML=''; return; }
+      // Attivi prima, poi in scadenza, poi scaduti
+      creds.sort((a,b)=>subDates(a.startISO,a.months).remDays - subDates(b.startISO,b.months).remDays).reverse();
+      wrap.style.display='block';
+      list.innerHTML=creds.map(subCardHTML).join('');
+    }catch(e){ console.warn('subs',e&&e.code); wrap.style.display='none'; }
+  }
+  window.renderMySubscriptions=renderMySubscriptions;
+
   window.claimReward=async function(label){
     if(!user||!udata){showToast('Accedi per riscattare.');return;}
     const fb=window.__fb;
@@ -5623,6 +5714,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(u && document.getElementById('pg-profile')?.classList.contains('on')){
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
         if(typeof renderOrderHistory==='function') renderOrderHistory();
+        if(typeof renderMySubscriptions==='function') renderMySubscriptions();
       }
       if(!products.length) ensureProducts();
     });
@@ -6310,6 +6402,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         if(s.exists()) udata={...udata,...s.data()};
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
         if(typeof renderOrderHistory==='function') renderOrderHistory();
+        if(typeof renderMySubscriptions==='function') renderMySubscriptions();
       }).catch(()=>{
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();
       });
