@@ -248,6 +248,52 @@ export async function sendOrderEmail(data, { env, auth }) {
   return { sent: true };
 }
 
+// ── sendCredentialsEmail ────────────────────────────────────────
+// Invia al cliente le credenziali degli abbonamenti (Netflix/Spotify…),
+// con data inizio/fine. Auth: adminEmail (lo scatena l'admin al salvataggio).
+export async function sendCredentialsEmail(data, { env }) {
+  if (!env.RESEND_API_KEY) return { sent: false, reason: 'no_key' };
+  const to = (data && data.email) || '';
+  if (!to) return { sent: false, reason: 'no_email' };
+  const creds = Array.isArray(data.credentials) ? data.credentials.filter(c => c && (c.login || c.password)) : [];
+  if (!creds.length) return { sent: false, reason: 'no_creds' };
+  const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
+  const name = ((data.name || '').split(' ')[0]) || '';
+  const fmt = (iso, addMonths) => {
+    try { const d = new Date((iso || '') + 'T00:00:00'); if (isNaN(d)) return '—'; if (addMonths) d.setMonth(d.getMonth() + addMonths); return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }); }
+    catch (e) { return '—'; }
+  };
+  const blocks = creds.map(c => {
+    const months = parseInt(c.months, 10) || 1;
+    const row = (l, v, red) => v ? `<tr><td style="padding:8px 0;font-size:12px;color:#8a8a80;">${escHtml(l)}</td><td style="padding:8px 0;text-align:right;font-family:'Courier New',monospace;font-size:14px;color:${red ? '#e5484d' : '#23231f'};font-weight:600;word-break:break-all;">${escHtml(v)}</td></tr>` : '';
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f3;border:1px solid #e7e2d8;border-radius:12px;margin-bottom:14px;">
+      <tr><td style="padding:16px 18px;">
+        <div style="font-size:16px;font-weight:700;color:#23231f;margin-bottom:6px;">🔑 ${escHtml(c.service || 'Abbonamento')}</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${row('Nome utente', c.login)}${row("Parola d'ordine", c.password, true)}${c.profile ? row('Profilo', c.profile) : ''}</table>
+        ${c.note ? `<div style="margin-top:10px;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:8px 10px;font-size:12px;color:#6b6b63;">📝 ${escHtml(c.note)}</div>` : ''}
+        <div style="margin-top:10px;font-size:12px;color:#6b6b63;">Inizio <b style="color:#23231f;">${fmt(c.startISO)}</b> · Fine <b style="color:#23231f;">${fmt(c.startISO, months)}</b> · Durata ${months} ${months > 1 ? 'mesi' : 'mese'}</div>
+      </td></tr>
+    </table>`;
+  }).join('');
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f2ec;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;padding:24px 12px;font-family:'Helvetica Neue',Arial,sans-serif;"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border:1px solid #e7e2d8;border-radius:16px;overflow:hidden;">
+  <tr><td style="background:#23231f;padding:26px 32px;text-align:center;"><div style="font-size:26px;font-weight:800;letter-spacing:4px;color:#f5f2ec;">LILLOFIND</div><div style="font-size:10px;letter-spacing:3px;color:#99a074;text-transform:uppercase;margin-top:4px;">I tuoi abbonamenti</div></td></tr>
+  <tr><td style="padding:30px 32px 8px;"><h1 style="font-size:22px;color:#23231f;margin:0 0 6px;">Ciao ${escHtml(name)}! 🔑</h1><p style="font-size:14px;color:#6b6b63;line-height:1.6;margin:0;">Ecco le credenziali dei tuoi abbonamenti${data.orderId ? ' (ordine <b>' + escHtml(data.orderId) + '</b>)' : ''}. Le ritrovi sempre nel tuo profilo sul sito, nella sezione <b>I Miei Abbonamenti</b>.</p></td></tr>
+  <tr><td style="padding:18px 32px 0;">${blocks}</td></tr>
+  <tr><td style="padding:8px 32px 30px;"><a href="https://lillofind.shop/" style="display:inline-block;background:#C8FF00;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:999px;">Vai al mio profilo →</a><p style="font-size:11px;color:#a8a89e;margin-top:16px;line-height:1.6;">Tieni riservate queste credenziali. Per assistenza, rispondi a questa email.</p></td></tr>
+</table></td></tr></table></body></html>`;
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, subject: '🔑 Le tue credenziali abbonamento — LilloFind', html }),
+    });
+    if (!resp.ok) { const t = await resp.text().catch(() => ''); return { sent: false, reason: 'resend_' + resp.status, detail: t.slice(0, 200) }; }
+    return { sent: true };
+  } catch (e) { return { sent: false, reason: 'exception', detail: (e && e.message) || '' }; }
+}
+
 // ── sendTestEmail ───────────────────────────────────────────────
 // Diagnostica: invia una email di prova via Resend e restituisce la
 // risposta reale dell'API (status/id/errore). Serve a capire se il
