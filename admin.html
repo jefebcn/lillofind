@@ -1557,6 +1557,7 @@ waitFB(()=>{
           <button onclick="copyOrderMessage('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;background:#25D366;">📲 Messaggio WhatsApp</button>
           <button onclick="printOrderReceipt('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">🧾 Ricevuta</button>
           <button onclick="openQCPhotos('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📸 Foto QC${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?' ('+o.qcPhotos.length+')':''}</button>
+          ${((o.items||[]).some(i=>i.isDigital)||o.isDigitalOrder)?`<button onclick="openCredentials('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;background:#2a2350;color:#c9b8ff;">🔑 Credenziali${o.credentialsDelivered?' ✓':''}</button>`:''}
           <button onclick="sendTrackingFromOrder('${(o.email||'').replace(/'/g,"\\'")}','${(o.name||'').replace(/'/g,"\\'")}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📦 Assegna Tracking</button>
         </div>
       </div>`;
@@ -1788,6 +1789,61 @@ waitFB(()=>{
         box.remove(); renderAdminOrders(); showToast('✅ Foto QC salvate ('+all.length+')');
       }catch(e){ console.error('QC save:',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
     };
+  };
+
+  // ── Credenziali abbonamenti digitali: inserimento per il cliente ──
+  window.openCredentials = function(docId){
+    const o = adminOrders.find(x=>x._docId===docId);
+    if(!o){ showToast('⚠️ Ordine non trovato.'); return; }
+    const digital = (o.items||[]).filter(i=>i.isDigital);
+    if(!digital.length){ showToast('Nessun abbonamento digitale in questo ordine.'); return; }
+    const existing = Array.isArray(o.credentials) ? o.credentials : [];
+    const today = new Date().toISOString().slice(0,10);
+    const box=document.createElement('div'); box.id='cred-modal';
+    box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
+    box.onclick=function(e){ if(e.target===box) box.remove(); };
+    const fld=(lbl,id,val,ph,type)=>'<div style="margin-bottom:8px;"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:3px;">'+lbl+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+String(val==null?'':val).replace(/"/g,'&quot;')+'" placeholder="'+(ph||'')+'" style="width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:8px;padding:9px 10px;font-size:13px;"/></div>';
+    const blocks = digital.map((it, idx)=>{
+      const ex = existing.find(c=>c.itemId && c.itemId===it.id) || existing[idx] || {};
+      const months = ex.months || it.qty || 1;
+      const start = ex.startISO || today;
+      return '<div style="border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px;margin-bottom:12px;">'
+        +'<p style="font-size:13px;font-weight:700;margin-bottom:10px;color:#c9b8ff;">'+escH(it.name||('Abbonamento '+(idx+1)))+' · '+(it.qty>1?it.qty+' mesi':'1 mese')+'</p>'
+        +fld('Servizio','cr-svc-'+idx, ex.service||it.name, 'Netflix, Spotify…')
+        +fld('Email / Login','cr-login-'+idx, ex.login, 'account@email.com')
+        +fld('Password','cr-pass-'+idx, ex.password, 'password')
+        +fld('Profilo (opz.)','cr-prof-'+idx, ex.profile, 'es. Profilo 2 · PIN 1234')
+        +fld('Note (opz.)','cr-note-'+idx, ex.note, 'istruzioni per il cliente')
+        +'<div style="display:flex;gap:10px;"><div style="flex:1;">'+fld('Data inizio','cr-start-'+idx, start, '', 'date')+'</div><div style="width:90px;">'+fld('Mesi','cr-mon-'+idx, months, '', 'number')+'</div></div>'
+        +'</div>';
+    }).join('');
+    box.innerHTML='<div style="background:#141414;color:#fff;max-width:520px;width:100%;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);margin:auto;">'
+      +'<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center;"><strong>🔑 Credenziali — '+(o.orderId||'')+'</strong><span onclick="document.getElementById(\'cred-modal\').remove()" style="cursor:pointer;font-size:20px;opacity:.6;">×</span></div>'
+      +'<div style="padding:18px 20px;">'
+      +'<p style="font-size:12px;color:#aaa;margin-bottom:12px;">Inserisci le credenziali per ogni abbonamento. Il cliente le vedrà nel suo profilo con data inizio/fine e tempo rimanente.</p>'
+      + blocks
+      +'<button id="cred-save" style="width:100%;background:var(--led);color:#fff;border:none;padding:12px;border-radius:999px;font-weight:700;cursor:pointer;">Salva e invia al cliente</button>'
+      +'</div></div>';
+    document.body.appendChild(box);
+    document.getElementById('cred-save').onclick=function(){ window.saveCredentials(docId, digital); };
+  };
+  window.saveCredentials = async function(docId, digital){
+    const fb=window.__fb;
+    const g=id=>(document.getElementById(id)?.value||'').trim();
+    const creds = digital.map((it,idx)=>({
+      itemId: it.id||'', service: g('cr-svc-'+idx)||it.name||'',
+      login: g('cr-login-'+idx), password: g('cr-pass-'+idx),
+      profile: g('cr-prof-'+idx), note: g('cr-note-'+idx),
+      startISO: g('cr-start-'+idx) || new Date().toISOString().slice(0,10),
+      months: parseInt(g('cr-mon-'+idx),10) || it.qty || 1,
+    })).filter(c=>c.login||c.password);
+    if(!creds.length){ showToast('Inserisci almeno login o password.'); return; }
+    const btn=document.getElementById('cred-save'); if(btn){ btn.disabled=true; btn.textContent='Salvataggio…'; }
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'orders',docId),{ credentials:creds, credentialsDelivered:true, credentialsAt: fb.serverTimestamp() });
+      const idx=adminOrders.findIndex(x=>x._docId===docId); if(idx>=0){ adminOrders[idx].credentials=creds; adminOrders[idx].credentialsDelivered=true; }
+      document.getElementById('cred-modal')?.remove(); renderAdminOrders(); showToast('✅ Credenziali salvate — visibili nel profilo del cliente');
+    }catch(e){ console.error('cred save',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); if(btn){ btn.disabled=false; btn.textContent='Salva e invia al cliente'; } }
   };
 
   window.sendTrackingFromOrder = function(email, name){
