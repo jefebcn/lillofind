@@ -2929,6 +2929,7 @@ waitFB(()=>{
 
   window.loadUsersPage=async function(){
     _usersLoaded=true;
+    const fb=window.__fb;
     const tbody=document.getElementById('users-tbody');
     const statGrid=document.getElementById('users-stat-grid');
     if(!tbody) return;
