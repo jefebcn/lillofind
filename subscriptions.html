@@ -357,6 +357,23 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 <!-- CARDS GRID -->
 <div class="sub-grid" id="subs-grid"></div>
 
+<style>
+  #kg-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;gap:14px!important;}
+  .kg-card{border:1px solid #232323;border-radius:14px;background:#141414;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,border-color .15s;cursor:default;}
+  .kg-card:hover{transform:translateY(-3px);border-color:#3a3a3a;}
+  .kg-cover{position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .kg-cover .kg-glyph{position:absolute;top:8px;right:10px;font-size:20px;opacity:.9;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+  .kg-cover .kg-mark{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1.5px;color:rgba(255,255,255,.96);text-shadow:0 3px 12px rgba(0,0,0,.5);text-align:center;padding:0 8px;line-height:.95;white-space:nowrap;max-width:100%;overflow:hidden;}
+  .kg-ribbon{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;background:var(--dg1);color:#0a0a0a;padding:3px 7px;border-radius:5px;font-weight:700;}
+  .kg-body{padding:11px 12px 12px;display:flex;flex-direction:column;gap:7px;flex:1;}
+  .kg-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13.5px;color:#fff;line-height:1.25;min-height:34px;}
+  .kg-meta{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8a8a8a;letter-spacing:.3px;}
+  .kg-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:4px;}
+  .kg-price{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;color:var(--dg1);}
+  .kg-cart{width:34px;height:34px;flex-shrink:0;border:none;border-radius:9px;background:var(--dg1);color:#0a0a0a;font-size:18px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .kg-cart:hover{filter:brightness(1.05);}
+  .kg-hero{border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(120deg,#12210f 0%,#0f0f0f 55%),radial-gradient(circle at 85% 20%,rgba(200,255,0,.22),transparent 45%);padding:22px 24px;margin-bottom:16px;border:1px solid #223a12;}
+</style>
 <!-- ═══ CATALOGO DIGITALE (ANTEPRIMA — Kinguin) ═══ -->
 <section id="kg-section" style="max-width:1180px;margin:40px auto 0;padding:0 22px;">
   <div style="border:1.5px solid #2a2a2a;border-radius:16px;background:#0f0f0f;overflow:hidden;">
@@ -718,7 +735,18 @@ const KINGUIN_PREVIEW = {
   ]
 };
 const KG_ICON = { 'Giochi':'🎮','Abbonamenti':'♾️','Carte Regalo':'💳','Software':'💻','Oggetti In-Game':'🪙','DLC & Espansioni':'🧩' };
-const KG_PLATCOL = { Steam:'#1b2838', Epic:'#2a2a2a', 'EA App':'#ff4747', GOG:'#7d2ae8', Xbox:'#107c10', PlayStation:'#0070d1', Nintendo:'#e60012', 'Battle.net':'#00aeff', Rockstar:'#fcaf17', Ubisoft:'#0084ff', Windows:'#0078d4', Microsoft:'#0078d4', Riot:'#d13639', Rockstar:'#fcaf17', Roblox:'#e2231a', Android:'#3ddc84', Apple:'#555', PC:'#444' };
+// piattaforma → gradiente cover + wordmark (mimica lo storefront)
+const KG_PLAT = {
+  Steam:['linear-gradient(150deg,#2a475e,#0f1b26)','STEAM'], Epic:['linear-gradient(150deg,#3a3a3a,#0e0e0e)','EPIC'],
+  'EA App':['linear-gradient(150deg,#ff5b5b,#8f0000)','EA APP'], GOG:['linear-gradient(150deg,#9b4dff,#3d1379)','GOG'],
+  Xbox:['linear-gradient(150deg,#1aa11a,#064006)','XBOX'], PlayStation:['linear-gradient(150deg,#1a86e6,#00306e)','PLAYSTATION'],
+  Nintendo:['linear-gradient(150deg,#ff2233,#8a000c)','NINTENDO'], 'Battle.net':['linear-gradient(150deg,#1ab5ff,#004b8f)','BATTLE.NET'],
+  Rockstar:['linear-gradient(150deg,#ffc23d,#c47a00)','ROCKSTAR'], Ubisoft:['linear-gradient(150deg,#2a97ff,#003c82)','UBISOFT'],
+  Windows:['linear-gradient(150deg,#2f97ff,#004e8c)','WINDOWS'], Microsoft:['linear-gradient(150deg,#2f97ff,#004e8c)','MICROSOFT'],
+  Riot:['linear-gradient(150deg,#e5484d,#7d1417)','RIOT'], Roblox:['linear-gradient(150deg,#ff4a3d,#9c0f00)','ROBLOX'],
+  Android:['linear-gradient(150deg,#38d16b,#0d6b2f)','GOOGLE PLAY'], Apple:['linear-gradient(150deg,#8a8a8a,#2a2a2a)','APP STORE'],
+  PC:['linear-gradient(150deg,#4a4a4a,#151515)','PC']
+};
 let _kgCat = Object.keys(KINGUIN_PREVIEW)[0];
 function renderKinguin(){
   const tabs=document.getElementById('kg-tabs'), grid=document.getElementById('kg-grid');
@@ -727,18 +755,30 @@ function renderKinguin(){
     const on=c===_kgCat;
     return `<button onclick="kgTab('${c.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;border:1.5px solid ${on?'var(--dg1)':'#2a2a2a'};background:${on?'var(--dg1)':'transparent'};color:${on?'#0a0a0a':'#bbb'};">${KG_ICON[c]||''} ${c} <span style="opacity:.6;">${KINGUIN_PREVIEW[c].length}</span></button>`;
   }).join('');
+  const glyph=KG_ICON[_kgCat]||'🎮';
   grid.innerHTML=KINGUIN_PREVIEW[_kgCat].map(([name,plat])=>{
-    const col=KG_PLATCOL[plat]||'#333';
-    const badge=plat?`<span style="font-size:9px;letter-spacing:.5px;color:#fff;background:${col};padding:3px 8px;border-radius:6px;font-family:'IBM Plex Mono',monospace;">${plat}</span>`:'';
+    const pc=KG_PLAT[plat]||['linear-gradient(150deg,#3a3a3a,#111)', (plat||'').toUpperCase()||'DIGITAL'];
     const nm=name.replace(/</g,'&lt;'), nmJs=name.replace(/'/g,"\\'");
-    return `<div style="border:1px solid #232323;border-radius:12px;background:#141414;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:120px;">
-      <div style="font-size:26px;line-height:1;">${KG_ICON[_kgCat]||'🎮'}</div>
-      <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;line-height:1.25;flex:1;">${nm}</p>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        ${badge||'<span></span>'}
-        <span style="font-size:10px;color:#888;font-family:'IBM Plex Mono',monospace;">su richiesta</span>
+    const region = (_kgCat==='Carte Regalo'||_kgCat==='Abbonamenti') ? 'Codice · GLOBALE'
+                 : (_kgCat==='Software') ? 'Licenza · GLOBALE'
+                 : (_kgCat==='Oggetti In-Game') ? 'Ricarica · GLOBALE' : 'Chiave · GLOBALE';
+    const meta = (plat?plat+' · ':'') + region;
+    const mk = pc[1]||'DIGITAL';
+    const mfs = mk.length>9 ? 22 : (mk.length>6 ? 28 : 34); // scala il wordmark per non uscire dai bordi
+    return `<div class="kg-card">
+      <div class="kg-cover" style="background:${pc[0]}">
+        <span class="kg-ribbon">In arrivo</span>
+        <span class="kg-glyph">${glyph}</span>
+        <span class="kg-mark" style="font-size:${mfs}px;">${mk}</span>
       </div>
-      <button onclick="requestKinguin('${nmJs}','${_kgCat.replace(/'/g,"\\'")}')" style="width:100%;background:transparent;border:1.5px solid var(--dg1);color:var(--dg1);border-radius:8px;padding:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">RICHIEDI →</button>
+      <div class="kg-body">
+        <p class="kg-title">${nm}</p>
+        <p class="kg-meta">${meta}</p>
+        <div class="kg-foot">
+          <span class="kg-price">Su richiesta</span>
+          <button class="kg-cart" title="Richiedi" onclick="requestKinguin('${nmJs}','${_kgCat.replace(/'/g,"\\'")}')">＋</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
