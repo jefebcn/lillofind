@@ -276,49 +276,23 @@ app.get('/tmdb', async (c) => {
 });
 
 // ════════════════════════════════════════════════════════════════
-// "Cosa guardare" SENZA API KEY — dati/immagini 100% ufficiali:
-//   • Serie TV → TVMaze (api.tvmaze.com, nessuna chiave)
-//   • Film     → classifica ufficiale Apple (iTunes RSS, nessuna chiave)
-// Nessun contenuto piratato: solo metadati, copertine e link ufficiali.
+// "Cosa guardare" SENZA API KEY — serie TV via TVMaze (api.tvmaze.com).
+// Nessuna chiave, nessun contenuto piratato: solo metadati, copertine e
+// link ufficiali. (Le classifiche film Apple non sono raggiungibili
+// dall'edge Cloudflare → sezione basata su TVMaze.)
 // Forma normalizzata verso il frontend:
-//   { id, type:'movie'|'tv', title, year, poster, rating, genres:[], overview, link }
+//   { id, type:'tv', title, year, poster, rating, genres:[], overview, link }
 // ════════════════════════════════════════════════════════════════
 const WATCH_TTL = 'public, max-age=1800, s-maxage=86400';
 // Bump per invalidare la cache edge quando cambia la logica/normalizzazione.
-const WATCH_VER = '2';
+const WATCH_VER = '3';
 async function fetchJSON(url, ms, extraHeaders) {
   const headers = { Accept: 'application/json', ...(extraHeaders || {}) };
   const r = await fetch(url, { headers, signal: AbortSignal.timeout(ms || 12000) });
   if (!r.ok) throw new Error('upstream ' + r.status);
   return r.json();
 }
-// Apple può rifiutare le richieste "server-to-server" prive di User-Agent
-// di browser (403). Inviamo header realistici per la classifica film.
-const APPLE_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'application/json,text/javascript,*/*;q=0.8',
-  'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
-};
 function stripHtml(h) { return String(h || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
-function appleImgUpscale(u) { return String(u || '').replace(/\/\d+x\d+bb\.(png|jpe?g)/i, '/450x675bb.$1'); }
-function normMovieFromApple(e) {
-  const imgs = e['im:image'] || [];
-  const rd = (e['im:releaseDate'] && (e['im:releaseDate'].attributes?.label || e['im:releaseDate'].label)) || '';
-  const year = (String(rd).match(/(\d{4})/) || [])[1] || '';
-  const link = (e.id && e.id.label)
-    || (Array.isArray(e.link) ? e.link[0]?.attributes?.href : e.link?.attributes?.href) || '';
-  return {
-    id: (e.id && e.id.label) || link,
-    type: 'movie',
-    title: (e['im:name'] && e['im:name'].label) || (e.title && e.title.label) || '',
-    year,
-    poster: appleImgUpscale(imgs.length ? imgs[imgs.length - 1].label : ''),
-    rating: null,
-    genres: (e.category && e.category.attributes && e.category.attributes.label) ? [e.category.attributes.label] : [],
-    overview: (e.summary && e.summary.label ? e.summary.label : '').trim(),
-    link,
-  };
-}
 function normTvFromTvmaze(s) {
   if (!s) return null;
   return {
@@ -333,16 +307,20 @@ function normTvFromTvmaze(s) {
     link: s.officialSite || s.url || '',
   };
 }
-async function appleTopMovies(limit) {
-  const f = await fetchJSON(`https://itunes.apple.com/it/rss/topmovies/limit=${Math.min(limit || 30, 50)}/json`, 12000, APPLE_HEADERS);
-  const entries = (f.feed && f.feed.entry) || [];
-  return entries.map(normMovieFromApple).filter(x => x.title && x.poster);
+// Bacino di serie da più pagine indice TVMaze (nessuna chiave).
+async function tvmazePool() {
+  const pages = await Promise.all([0, 1, 2, 3].map(p => fetchJSON(`https://api.tvmaze.com/shows?page=${p}`).catch(() => [])));
+  return pages.flat();
 }
 async function tvmazePopular() {
-  const pages = await Promise.all([0, 1, 2].map(p => fetchJSON(`https://api.tvmaze.com/shows?page=${p}`).catch(() => [])));
-  const all = pages.flat();
+  const all = await tvmazePool();
   all.sort((a, b) => (b.weight || 0) - (a.weight || 0));
-  return all.slice(0, 40).map(normTvFromTvmaze).filter(x => x && x.title && x.poster);
+  return all.slice(0, 48).map(normTvFromTvmaze).filter(x => x && x.title && x.poster);
+}
+async function tvmazeTop() {
+  const all = (await tvmazePool()).filter(s => s.rating && s.rating.average);
+  all.sort((a, b) => b.rating.average - a.rating.average);
+  return all.slice(0, 48).map(normTvFromTvmaze).filter(x => x && x.title && x.poster);
 }
 async function tvmazeSearch(q) {
   const arr = await fetchJSON(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(String(q).slice(0, 80))}`);
@@ -386,14 +364,8 @@ app.get('/watch', async (c) => {
       return send({ results }, 'no-store');
     }
     let out;
-    if (kind === 'movies') out = { results: await appleTopMovies(30) };
-    else if (kind === 'tv') out = { results: await tvmazePopular() };
-    else { // trending: interleava film e serie
-      const [m, t] = await Promise.all([appleTopMovies(20).catch(() => []), tvmazePopular().catch(() => [])]);
-      const res = []; const n = Math.max(m.length, t.length);
-      for (let i = 0; i < n; i++) { if (m[i]) res.push(m[i]); if (t[i]) res.push(t[i]); }
-      out = { results: res.slice(0, 40) };
-    }
+    if (kind === 'top') out = { results: await tvmazeTop() };
+    else out = { results: await tvmazePopular() }; // trending / tv / default
     const r = send(out);
     if (cacheable && out.results && out.results.length) c.executionCtx.waitUntil(cache.put(cacheKey, r.clone()));
     return r;

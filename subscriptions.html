@@ -439,7 +439,7 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 </section>
 </div><!-- /view-catalog -->
 
-<!-- ═══ VIEW 3 · COSA GUARDARE (TMDB — dati e immagini ufficiali) ═══ -->
+<!-- ═══ VIEW 3 · COSA GUARDARE (TVMaze — dati e immagini ufficiali) ═══ -->
 <div class="dg-view" id="view-watch">
 <style>
   #cw-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
@@ -467,13 +467,14 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
   <div style="border:1.5px solid #2a2a2a;border-radius:16px;background:#0f0f0f;overflow:hidden;">
     <div style="padding:22px 24px;border-bottom:1px solid #1e1e1e;">
       <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:8px;">🍿 Cosa Guardare</p>
-      <h2 class="bb" style="font-size:34px;line-height:1;color:#fff;">Film &amp; Serie del momento</h2>
-      <p style="font-size:12px;color:#9a9a9a;line-height:1.7;max-width:580px;margin-top:8px;font-family:'Inter',sans-serif;">Le uscite e i titoli del momento — con trama, voti, cast e link ufficiali. Trovi il servizio giusto? <b style="color:#ccc;">Attiva l'abbonamento</b> qui sopra e risparmia. <span style="color:#666;">Dati e immagini: TVMaze &amp; Apple — nessun contenuto ospitato.</span></p>
+      <h2 class="bb" style="font-size:34px;line-height:1;color:#fff;">Serie TV da vedere</h2>
+      <p style="font-size:12px;color:#9a9a9a;line-height:1.7;max-width:580px;margin-top:8px;font-family:'Inter',sans-serif;">Le serie più viste e meglio votate — con trama, cast, generi e voti. Trovi il servizio giusto? <b style="color:#ccc;">Attiva l'abbonamento</b> qui sopra e risparmia. <span style="color:#666;">Dati e immagini: TVMaze — nessun contenuto ospitato.</span></p>
       <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <div id="cw-tabs" style="display:flex;gap:8px;overflow-x:auto;flex:1;min-width:170px;-webkit-overflow-scrolling:touch;"></div>
-        <input id="cw-search" type="text" autocomplete="off" placeholder="🔍 Cerca un titolo…" oninput="cwSearchDebounced(this.value)" style="background:#141414;border:1.5px solid #2a2a2a;color:#fff;border-radius:999px;padding:9px 15px;font-size:12px;font-family:'Inter',sans-serif;width:210px;max-width:60vw;outline:none;"/>
+        <input id="cw-search" type="text" autocomplete="off" placeholder="🔍 Cerca una serie…" oninput="cwSearchDebounced(this.value)" style="background:#141414;border:1.5px solid #2a2a2a;color:#fff;border-radius:999px;padding:9px 15px;font-size:12px;font-family:'Inter',sans-serif;width:210px;max-width:60vw;outline:none;"/>
       </div>
     </div>
+    <div id="cw-genre-row" style="display:none;padding:12px 24px 0;flex-wrap:wrap;gap:7px;"></div>
     <div id="cw-grid" style="padding:16px 24px 26px;display:grid;gap:14px;min-height:120px;"></div>
   </div>
 </section>
@@ -886,10 +887,12 @@ window.requestKinguin=function(name, cat){
   }
 };
 
-// ── COSA GUARDARE (senza API key: TVMaze per le serie, classifica Apple per i film) ──
+// ── COSA GUARDARE (senza API key — serie TV via TVMaze) ──
 const CW_BASE = (window.LF_WORKER_BASE || 'https://lillofind.conti9708.workers.dev');
-const CW_TABS = [['trending','🔥 Di tendenza'],['movies','🎬 Film'],['tv','📺 Serie TV']];
+const CW_TABS = [['trending','🔥 Popolari'],['top','⭐ Più votate'],['genres','🎭 Per genere']];
 let _cwTab = 'trending';
+let _cwGenre = null;   // genere selezionato nel tab "Per genere"
+let _cwPool = null;    // cache locale del bacino serie per il filtro generi
 const cwEsc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 async function cwApi(kind, extra){
@@ -905,30 +908,49 @@ function cwTabs(){
   el.innerHTML = CW_TABS.map(([k,l])=>`<button class="cw-tab${k===_cwTab?' on':''}" onclick="cwTab('${k}')">${l}</button>`).join('');
 }
 function cwCardHTML(x){
-  const isTv = x.type==='tv';
-  const kindLbl = isTv?'Serie':'Film';
   const rate = x.rating ? '★ '+Number(x.rating).toFixed(1) : '';
   const cover = x.poster
-    ? `<img class="cw-poster" loading="lazy" src="${cwEsc(x.poster)}" alt="${cwEsc(x.title)}" onerror="this.outerHTML='<div class=\\'cw-fallback\\'>${isTv?'📺':'🎬'}</div>'"/>`
-    : `<div class="cw-fallback">${isTv?'📺':'🎬'}</div>`;
-  return `<div class="cw-card" data-type="${x.type}" data-id="${cwEsc(x.id)}" data-link="${cwEsc(x.link||'')}" onclick="cwGo(this)">
-    <span class="cw-kind">${kindLbl}</span>${rate?`<span class="cw-rate">${rate}</span>`:''}
+    ? `<img class="cw-poster" loading="lazy" src="${cwEsc(x.poster)}" alt="${cwEsc(x.title)}" onerror="this.outerHTML='<div class=\\'cw-fallback\\'>📺</div>'"/>`
+    : `<div class="cw-fallback">📺</div>`;
+  const g = (x.genres&&x.genres[0]) ? x.genres[0] : '';
+  return `<div class="cw-card" data-id="${cwEsc(x.id)}" onclick="cwDetail('tv',this.dataset.id)">
+    <span class="cw-kind">Serie</span>${rate?`<span class="cw-rate">${rate}</span>`:''}
     ${cover}
-    <div class="cw-cap"><p class="cw-name">${cwEsc(x.title)}</p><p class="cw-year">${cwEsc(x.year||'—')}</p></div>
+    <div class="cw-cap"><p class="cw-name">${cwEsc(x.title)}</p><p class="cw-year">${cwEsc(x.year||'—')}${g?' · '+cwEsc(g):''}</p></div>
   </div>`;
 }
-// Serie → dettaglio nel modal; Film → si apre la scheda ufficiale Apple
-window.cwGo=function(el){
-  const t=el.dataset.type, id=el.dataset.id, link=el.dataset.link;
-  if(t==='tv' && id) cwDetail('tv', id);
-  else if(link) window.open(link,'_blank','noopener');
-};
 function cwFilter(list){ return (list||[]).filter(x=>x && x.poster); }
+
+// Costruisce la riga di chip dei generi (dal bacino popolari) e filtra la griglia.
+function cwRenderGenres(){
+  const row=document.getElementById('cw-genre-row'); const grid=document.getElementById('cw-grid');
+  if(!row||!grid) return;
+  const counts={};
+  (_cwPool||[]).forEach(x=>(x.genres||[]).forEach(g=>{counts[g]=(counts[g]||0)+1;}));
+  const genres=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,10);
+  if(!genres.length){ row.style.display='none'; grid.innerHTML='<p class="cw-spin">Generi non disponibili al momento.</p>'; return; }
+  if(!_cwGenre || !genres.includes(_cwGenre)) _cwGenre=genres[0];
+  row.style.display='flex';
+  row.innerHTML=genres.map(g=>`<button onclick="cwPickGenre('${cwEsc(g).replace(/'/g,"\\'")}')" style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;padding:6px 13px;border-radius:999px;cursor:pointer;border:1.5px solid ${g===_cwGenre?'var(--dg1)':'#2a2a2a'};background:${g===_cwGenre?'var(--dg1)':'transparent'};color:${g===_cwGenre?'#0a0a0a':'#bbb'};">${cwEsc(g)}</button>`).join('');
+  const list=(_cwPool||[]).filter(x=>(x.genres||[]).includes(_cwGenre));
+  grid.innerHTML = list.length ? list.slice(0,24).map(cwCardHTML).join('') : '<p class="cw-spin">Nessuna serie per questo genere.</p>';
+}
+window.cwPickGenre=function(g){ _cwGenre=g; cwRenderGenres(); };
+
 async function renderWatch(kind){
   const grid=document.getElementById('cw-grid'); if(!grid) return;
-  grid.innerHTML='<p class="cw-spin">Carico i titoli del momento…</p>';
+  const row=document.getElementById('cw-genre-row');
+  if(kind==='genres'){
+    grid.innerHTML='<p class="cw-spin">Carico i generi…</p>';
+    if(!_cwPool){ const d=await cwApi('trending'); _cwPool=cwFilter(d.results); }
+    cwRenderGenres();
+    return;
+  }
+  if(row) row.style.display='none';
+  grid.innerHTML='<p class="cw-spin">Carico le serie…</p>';
   const d=await cwApi(kind);
   const list=cwFilter(d.results);
+  if(kind==='trending' && list.length) _cwPool=list; // riusa per il filtro generi
   if(!list.length){
     grid.innerHTML='<p class="cw-spin">Nessun titolo trovato al momento. Riprova più tardi.</p>';
     return;
@@ -943,13 +965,14 @@ async function cwSearch(q){
   q=(q||'').trim();
   if(!q){ cwTabs(); renderWatch(_cwTab); return; }
   const grid=document.getElementById('cw-grid'); if(!grid) return;
+  const row=document.getElementById('cw-genre-row'); if(row) row.style.display='none';
   document.querySelectorAll('#cw-tabs .cw-tab').forEach(b=>b.classList.remove('on'));
   grid.innerHTML='<p class="cw-spin">Cerco “'+cwEsc(q)+'”…</p>';
   const d=await cwApi('search',{q});
   const list=cwFilter(d.results);
   grid.innerHTML = list.length
     ? list.slice(0,24).map(cwCardHTML).join('')
-    : '<p class="cw-spin">Nessuna serie trovata per “'+cwEsc(q)+'”. (La ricerca copre le serie TV.)</p>';
+    : '<p class="cw-spin">Nessuna serie trovata per “'+cwEsc(q)+'”.</p>';
 }
 
 window.cwClose=function(){ const m=document.getElementById('cw-modal'); if(m){ m.classList.remove('on'); const sh=document.getElementById('cw-sheet'); if(sh) sh.innerHTML=''; } document.body.style.overflow=''; };
