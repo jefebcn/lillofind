@@ -118,6 +118,69 @@ function fromFsFields(fields) {
 // Estrae l'id documento dal "name" REST (.../documents/products/ABC → ABC)
 function docId(name) { return name ? name.split('/').pop() : ''; }
 
+// ── Costruzione di structuredQuery (per :runQuery) ──────────────
+
+// Operatori supportati → nomi dell'API REST
+const QUERY_OPS = {
+  '==': 'EQUAL',
+  '!=': 'NOT_EQUAL',
+  '<': 'LESS_THAN',
+  '<=': 'LESS_THAN_OR_EQUAL',
+  '>': 'GREATER_THAN',
+  '>=': 'GREATER_THAN_OR_EQUAL',
+  'array-contains': 'ARRAY_CONTAINS',
+  'in': 'IN',
+  'array-contains-any': 'ARRAY_CONTAINS_ANY',
+};
+
+// Percorso REST completo di un documento (serve per i cursori su __name__)
+export function docPath(projectId, collection, id) {
+  return `projects/${projectId}/databases/(default)/documents/${collection}/${id}`;
+}
+
+// Un valore di cursore: {__ref} diventa una reference, il resto passa dal codec
+function cursorValue(v) {
+  if (v && typeof v === 'object' && typeof v.__ref === 'string') {
+    return { referenceValue: v.__ref };
+  }
+  return toFsValue(v);
+}
+
+// Costruisce lo structuredQuery.
+//   where:      [[campo, op, valore], ...]  (in AND fra loro)
+//   orderBy:    [[campo, 'asc'|'desc'], ...]
+//   startAfter: [valore, ...] allineato a orderBy; {__ref} per __name__
+export function buildStructuredQuery(collection, opts = {}) {
+  const { where = [], orderBy = [], limit, startAfter } = opts;
+
+  const filters = where
+    .filter(w => Array.isArray(w) && w.length === 3)
+    .map(([field, op, value]) => {
+      const mapped = QUERY_OPS[op];
+      if (!mapped) throw new Error('Operatore query non supportato: ' + op);
+      return { fieldFilter: { field: { fieldPath: field }, op: mapped, value: toFsValue(value) } };
+    });
+
+  const q = { from: [{ collectionId: collection }] };
+
+  if (filters.length === 1) q.where = filters[0];
+  else if (filters.length > 1) q.where = { compositeFilter: { op: 'AND', filters } };
+
+  if (orderBy.length) {
+    q.orderBy = orderBy.map(([field, dir]) => ({
+      field: { fieldPath: field },
+      direction: String(dir || 'asc').toLowerCase() === 'desc' ? 'DESCENDING' : 'ASCENDING',
+    }));
+  }
+  if (typeof limit === 'number' && limit > 0) q.limit = limit;
+
+  // startAt + before:false ≡ lo "startAfter" dell'SDK client
+  if (Array.isArray(startAfter) && startAfter.length) {
+    q.startAt = { values: startAfter.map(cursorValue), before: false };
+  }
+  return q;
+}
+
 // ════════════════════════════════════════════════════════════════
 // Firestore: classe di accesso
 // ════════════════════════════════════════════════════════════════
@@ -212,6 +275,23 @@ export class Firestore {
     return out;
   }
 
+  // Query con filtri/ordinamento/limite lato server.
+  // listAll scarica l'intera collection: per cataloghi che crescono
+  // serve questo, altrimenti ogni pagina costa l'intero dataset.
+  // → array di { id, ...data }
+  async runQuery(collection, opts = {}) {
+    const resp = await fetch(`${this.base}:runQuery`, {
+      method: 'POST',
+      headers: await this._headers(),
+      body: JSON.stringify({ structuredQuery: buildStructuredQuery(collection, opts) }),
+    });
+    if (!resp.ok) throw new Error(`Firestore runQuery: ${resp.status} ${await resp.text()}`);
+    const rows = await resp.json();
+    return (rows || [])
+      .filter(r => r && r.document)
+      .map(r => ({ id: docId(r.document.name), ...fromFsFields(r.document.fields || {}) }));
+  }
+
   // Diagnostica: verifica token service account + raggiungibilità Firestore.
   // Non espone dati sensibili (solo un conteggio approssimativo).
   async ping() {
@@ -269,4 +349,4 @@ export class Firestore {
   }
 }
 
-export { toFsFields, fromFsFields };
+export { toFsValue, fromFsValue, toFsFields, fromFsFields };

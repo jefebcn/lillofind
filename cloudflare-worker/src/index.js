@@ -12,6 +12,8 @@ import { HttpsError } from './lib/errors.js';
 import * as admin from './handlers/admin.js';
 import * as checkout from './handlers/checkout.js';
 import * as scrapers from './handlers/scrapers.js';
+import * as stream from './handlers/stream.js';
+import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
 
@@ -375,6 +377,135 @@ app.get('/watch', async (c) => {
 });
 
 // ════════════════════════════════════════════════════════════════
+// Catalogo streaming — letture pubbliche
+//
+// Sono GET e non callable di proposito: una POST non passa da
+// caches.default, e il catalogo è esattamente il tipo di risposta
+// che conviene servire dal bordo. Nessuna di queste risposte
+// contiene URL riproducibili: quelli escono solo da /streamPlay.
+// ════════════════════════════════════════════════════════════════
+const STREAM_TTL = 'public, max-age=300, s-maxage=900';
+// Bump per invalidare la cache edge quando cambia la normalizzazione.
+const STREAM_VER = '1';
+
+app.get('/stream', async (c) => {
+  const kind = c.req.query('kind') || 'home';
+  const q = c.req.query('q') || '';
+  // La ricerca non si cachea: cambia a ogni tasto premuto.
+  const cacheable = !(kind === 'browse' && q.trim());
+
+  const cache = caches.default;
+  const _ck = new URL(c.req.url); _ck.searchParams.set('_sv', STREAM_VER);
+  const cacheKey = new Request(_ck.toString(), { method: 'GET' });
+  if (cacheable) { const hit = await cache.match(cacheKey); if (hit && hit.ok) return new Response(hit.body, hit); }
+
+  const send = (obj, status, ttl) => new Response(JSON.stringify(obj), {
+    status: status || 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': ttl || (cacheable ? STREAM_TTL : 'no-store'),
+    },
+  });
+
+  try {
+    const db = new Firestore(c.env);
+    let out;
+    if (kind === 'title') out = await stream.titleBySlug(db, c.req.query('slug') || '');
+    else if (kind === 'browse') out = await stream.browse(db, {
+      type: c.req.query('type') || '',
+      genre: c.req.query('genre') || '',
+      year: c.req.query('year') || '',
+      q,
+    });
+    else out = await stream.home(db);
+
+    const r = send(out);
+    if (cacheable) c.executionCtx.waitUntil(cache.put(cacheKey, r.clone()));
+    return r;
+  } catch (e) {
+    const code = e && e.code === 'not-found' ? 404 : e && e.code === 'invalid-argument' ? 400 : 500;
+    if (code === 500) console.error('stream:', e && e.stack);
+    // Degrado morbido come /watch: la pagina mostra lo stato vuoto,
+    // non una schermata di errore.
+    return send({ error: (e && e.code) || 'stream-failed', results: [], hero: [], rows: [] }, code, 'no-store');
+  }
+});
+
+// ── Proxy del manifest HLS ──────────────────────────────────────
+//
+// Le origini esterne spesso non espongono header CORS utilizzabili da
+// hls.js. Proxiamo SOLO il manifest, riscrivendo i riferimenti in
+// assoluto: i segmenti (migliaia di richieste) restano sull'origine e
+// non consumano la quota del Worker.
+//
+// Come /proxyImage, la protezione è l'allowlist degli host: mai un
+// relay aperto. Il gate di accesso è /streamPlay, non questo endpoint.
+app.get('/streamManifest', async (c) => {
+  const url = c.req.query('u');
+  if (!url) return c.text('Missing u', 400);
+  if (!isAllowedSource(url)) return c.text('Host not allowed', 403);
+
+  const cache = caches.default;
+  const _ck = new URL(c.req.url); _ck.searchParams.set('_sv', STREAM_VER);
+  const cacheKey = new Request(_ck.toString(), { method: 'GET' });
+  const hit = await cache.match(cacheKey);
+  if (hit && hit.ok) return new Response(hit.body, hit);
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8',
+    'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
+  };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  try {
+    let upstream = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        upstream = await fetch(url, { headers, signal: AbortSignal.timeout(12000) });
+      } catch (fe) {
+        if (attempt < 2) { await sleep(350 * (attempt + 1)); continue; }
+        throw fe;
+      }
+      if (upstream.ok) break;
+      if ((upstream.status >= 500 || upstream.status === 429) && attempt < 2) {
+        await sleep(350 * (attempt + 1));
+        continue;
+      }
+      break;
+    }
+    if (!upstream || !upstream.ok) {
+      return new Response('Upstream error', {
+        status: (upstream && upstream.status) || 502,
+        headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
+    // Le playlist annidate tornano da qui (stesso problema CORS);
+    // i segmenti no.
+    const self = new URL(c.req.url);
+    const proxied = (abs) => `${self.origin}/streamManifest?u=${encodeURIComponent(abs)}`;
+    const body = rewriteManifest(await upstream.text(), upstream.url || url, proxied);
+
+    const resp = new Response(body, {
+      headers: {
+        'Content-Type': 'application/vnd.apple.mpegurl',
+        'Cache-Control': 'public, max-age=120, s-maxage=300',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+    c.executionCtx.waitUntil(cache.put(cacheKey, resp.clone()));
+    return resp;
+  } catch (e) {
+    return new Response('Fetch error', {
+      status: 502,
+      headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
 // Endpoint callable (POST /<nomeFunzione>)
 // ════════════════════════════════════════════════════════════════
 // Lettura admin
@@ -401,6 +532,17 @@ app.post('/sendTestEmail',       callable(checkout.sendTestEmail,       { auth: 
 app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'adminEmail' }));
 app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'adminEmail' }));
 app.post('/uploadImage',  callable(scrapers.uploadImage,  { auth: 'adminEmail' }));
+
+// Streaming: la riproduzione è l'unico punto da cui esce un URL
+// riproducibile, quindi è l'unica rotta del catalogo dietro login.
+app.post('/streamPlay',       callable(stream.play,       { auth: 'required' }));
+
+app.post('/streamSaveTitle',   callable(stream.saveTitle,   { auth: 'adminEmail' }));
+app.post('/streamDeleteTitle', callable(stream.deleteTitle, { auth: 'adminEmail' }));
+app.post('/streamAdminList',   callable(stream.adminList,   { auth: 'adminEmail' }));
+app.post('/streamAdminTitle',  callable(stream.adminTitle,  { auth: 'adminEmail' }));
+app.post('/streamSaveHome',    callable(stream.saveHome,    { auth: 'adminEmail' }));
+app.post('/streamImportMeta',  callable(stream.importMeta,  { auth: 'adminEmail' }));
 
 export default app;
 
