@@ -112,7 +112,7 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 .sub-filter-bar{
   display:flex;gap:8px;flex-wrap:wrap;
   padding:18px 24px;border-bottom:1.5px solid #e0e0e0;
-  background:#fafafa;position:sticky;top:60px;z-index:50;
+  background:#fafafa;position:relative;z-index:1;
 }
 .sub-filt{
   font-family:'IBM Plex Mono',monospace;font-size:10px;
@@ -346,6 +346,31 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
   </div>
 </section>
 
+<!-- ═══ VIEW SWITCHER (sticky) ═══ -->
+<style>
+  .dg-nav{position:sticky;top:60px;z-index:200;background:var(--k);border-bottom:1px solid #1c1c1c;display:flex;gap:6px;padding:10px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .dg-nav::-webkit-scrollbar{display:none;}
+  .dg-nav-inner{display:flex;gap:6px;margin:0 auto;}
+  .dg-tab{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;padding:10px 18px;border-radius:999px;border:1.5px solid #2a2a2a;background:transparent;color:#bbb;transition:background .16s,color .16s,border-color .16s;}
+  .dg-tab:hover{border-color:#3f3f3f;color:#eee;}
+  .dg-tab.on{background:var(--dg1);border-color:var(--dg1);color:#0a0a0a;}
+  .dg-tab .dg-ic{font-size:15px;}
+  .dg-tab .dg-ct{font-family:'IBM Plex Mono',monospace;font-size:9px;opacity:.6;}
+  .dg-tab.on .dg-ct{opacity:.75;}
+  .dg-view{display:none;}
+  .dg-view.on{display:block;animation:dgFade .28s ease;}
+  @keyframes dgFade{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+</style>
+<nav class="dg-nav" id="dg-nav">
+  <div class="dg-nav-inner">
+    <button class="dg-tab on" data-view="subs"    onclick="showDG('subs')"><span class="dg-ic">🎬</span> Abbonamenti</button>
+    <button class="dg-tab"    data-view="catalog" onclick="showDG('catalog')"><span class="dg-ic">🎮</span> Catalogo</button>
+    <button class="dg-tab"    data-view="watch"   onclick="showDG('watch')"><span class="dg-ic">🍿</span> Cosa Guardare</button>
+  </div>
+</nav>
+
+<!-- ═══ VIEW 1 · ABBONAMENTI ═══ -->
+<div class="dg-view on" id="view-subs">
 <!-- FILTER BAR -->
 <div class="sub-filter-bar">
   <button class="sub-filt active" data-cat="All" onclick="filterSubs('All',this)">Tutti</button>
@@ -357,6 +382,29 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 <!-- CARDS GRID -->
 <div class="sub-grid" id="subs-grid"></div>
 
+<!-- SAVINGS CALCULATOR (parte di Abbonamenti) -->
+<div class="savings-calc">
+  <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:8px;">Risparmio Annuale</p>
+  <h3>Calcolatore di Risparmio</h3>
+  <p style="font-size:11px;color:var(--mid);line-height:1.8;margin:10px 0 20px;font-family:'Inter',sans-serif;">Seleziona i servizi e scopri quanto risparmi in un anno scegliendo Lillofind rispetto ai prezzi ufficiali.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;" id="calc-checkboxes"></div>
+  <div class="savings-result" id="savings-result">
+    <div>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:4px;">Risparmio annuale stimato</p>
+      <p id="savings-amount" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,6vw,64px);line-height:1;color:var(--led);">€0.00</p>
+    </div>
+    <div style="text-align:right;">
+      <p style="font-size:10px;color:#aaa;margin-bottom:4px;">Prezzo pieno / anno</p>
+      <p id="savings-full" style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-decoration:line-through;color:#666;">€0.00</p>
+      <p style="font-size:10px;color:#aaa;margin-top:4px;">Con Lillofind / anno</p>
+      <p id="savings-lillo" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--w);">€0.00</p>
+    </div>
+  </div>
+</div>
+</div><!-- /view-subs -->
+
+<!-- ═══ VIEW 2 · CATALOGO DIGITALE ═══ -->
+<div class="dg-view" id="view-catalog">
 <style>
   #kg-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;gap:14px!important;}
   .kg-card{border:1px solid #232323;border-radius:14px;background:#141414;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,border-color .15s;cursor:default;}
@@ -389,8 +437,10 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
     <div id="kg-grid" style="padding:16px 24px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;"></div>
   </div>
 </section>
+</div><!-- /view-catalog -->
 
-<!-- ═══ COSA GUARDARE (TMDB — dati e immagini ufficiali) ═══ -->
+<!-- ═══ VIEW 3 · COSA GUARDARE (TMDB — dati e immagini ufficiali) ═══ -->
+<div class="dg-view" id="view-watch">
 <style>
   #cw-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
   .cw-card{border:1px solid #232323;border-radius:12px;background:#141414;overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s;position:relative;}
@@ -427,27 +477,8 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
     <div id="cw-grid" style="padding:16px 24px 26px;display:grid;gap:14px;min-height:120px;"></div>
   </div>
 </section>
+</div><!-- /view-watch -->
 <div id="cw-modal" onclick="if(event.target===this)cwClose()"><div class="cw-sheet" id="cw-sheet"></div></div>
-
-<!-- SAVINGS CALCULATOR -->
-<div class="savings-calc">
-  <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:8px;">Risparmio Annuale</p>
-  <h3>Calcolatore di Risparmio</h3>
-  <p style="font-size:11px;color:var(--mid);line-height:1.8;margin:10px 0 20px;font-family:'Inter',sans-serif;">Seleziona i servizi e scopri quanto risparmi in un anno scegliendo Lillofind rispetto ai prezzi ufficiali.</p>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;" id="calc-checkboxes"></div>
-  <div class="savings-result" id="savings-result">
-    <div>
-      <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:4px;">Risparmio annuale stimato</p>
-      <p id="savings-amount" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,6vw,64px);line-height:1;color:var(--led);">€0.00</p>
-    </div>
-    <div style="text-align:right;">
-      <p style="font-size:10px;color:#aaa;margin-bottom:4px;">Prezzo pieno / anno</p>
-      <p id="savings-full" style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-decoration:line-through;color:#666;">€0.00</p>
-      <p style="font-size:10px;color:#aaa;margin-top:4px;">Con Lillofind / anno</p>
-      <p id="savings-lillo" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--w);">€0.00</p>
-    </div>
-  </div>
-</div>
 
 <!-- FOOTER STRIP -->
 <footer style="background:var(--k);color:var(--w);padding:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid #1a1a1a;">
@@ -969,11 +1000,28 @@ async function cwDetail(type,id){
 }
 window.cwDetail=cwDetail;
 
+// ── DIGITAL GEAR — commutatore di viste ────────────────
+const _dgInit = { catalog:false, watch:false };
+window.showDG = function(view){
+  view = ['subs','catalog','watch'].includes(view) ? view : 'subs';
+  document.querySelectorAll('.dg-view').forEach(v=>v.classList.remove('on'));
+  const el = document.getElementById('view-'+view); if(el) el.classList.add('on');
+  document.querySelectorAll('.dg-tab').forEach(t=>t.classList.toggle('on', t.dataset.view===view));
+  // Init "pesante" (rete) solo alla prima apertura della vista
+  if(view==='catalog' && !_dgInit.catalog){ _dgInit.catalog=true; renderKinguin(); }
+  if(view==='watch'   && !_dgInit.watch){   _dgInit.watch=true;   cwTabs(); renderWatch('trending'); }
+  try{ history.replaceState(null,'','#'+view); }catch(_){}
+  // Se si è già scrollati oltre la nav, riporta all'inizio della vista
+  const nav=document.getElementById('dg-nav');
+  if(nav){ const y=nav.getBoundingClientRect().top+window.scrollY-60; if(window.scrollY>y+2) window.scrollTo({top:y,behavior:'smooth'}); }
+};
+// back/forward del browser e modifica manuale dell'hash → cambia vista
+window.addEventListener('hashchange', function(){ const v=(location.hash||'').replace('#',''); if(['subs','catalog','watch'].includes(v)) showDG(v); });
+
 // ── Init ───────────────────────────────────────────────
 renderSubs('All');
-renderKinguin();
-cwTabs();
-renderWatch('trending');
+const _dgStart = (location.hash||'').replace('#','');
+showDG(['catalog','watch'].includes(_dgStart) ? _dgStart : 'subs');
 </script>
 </body>
 </html>
