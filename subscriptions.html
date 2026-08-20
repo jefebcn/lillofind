@@ -23,9 +23,11 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app = initializeApp(cfg);
 const auth = getAuth(app);
+window.__subsFb = { db:getFirestore(app), collection, addDoc, serverTimestamp };
 window.__subsAuth = auth;
 window.__subsUser = null;
 onAuthStateChanged(auth, u => {
@@ -355,6 +357,22 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 <!-- CARDS GRID -->
 <div class="sub-grid" id="subs-grid"></div>
 
+<!-- ═══ CATALOGO DIGITALE (ANTEPRIMA — Kinguin) ═══ -->
+<section id="kg-section" style="max-width:1180px;margin:40px auto 0;padding:0 22px;">
+  <div style="border:1.5px solid #2a2a2a;border-radius:16px;background:#0f0f0f;overflow:hidden;">
+    <div style="padding:22px 24px;border-bottom:1px solid #1e1e1e;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+      <div>
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:8px;">🎮 Catalogo Digitale · Anteprima</p>
+        <h2 class="bb" style="font-size:34px;line-height:1;color:#fff;">Giochi · Gift Card · Software</h2>
+        <p style="font-size:12px;color:#9a9a9a;line-height:1.7;max-width:560px;margin-top:8px;font-family:'Inter',sans-serif;">Migliaia di prodotti digitali in arrivo. Questa è un'<b style="color:#ccc;">anteprima</b> del catalogo: prezzi e consegna automatica al lancio. Nel frattempo puoi già <b style="color:#ccc;">richiedere</b> un prodotto e te lo procuriamo.</p>
+      </div>
+      <span style="flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#0a0a0a;background:var(--dg1);padding:6px 12px;border-radius:999px;height:fit-content;">In arrivo</span>
+    </div>
+    <div id="kg-tabs" style="display:flex;gap:8px;overflow-x:auto;padding:14px 24px 4px;-webkit-overflow-scrolling:touch;"></div>
+    <div id="kg-grid" style="padding:16px 24px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;"></div>
+  </div>
+</section>
+
 <!-- SAVINGS CALCULATOR -->
 <div class="savings-calc">
   <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:8px;">Risparmio Annuale</p>
@@ -670,8 +688,80 @@ function filterSubs(cat, btn){
   if(params.has('cart')) goToCart();
 })();
 
+// ── CATALOGO DIGITALE (Anteprima Kinguin) ──────────────
+const KINGUIN_PREVIEW = {
+  'Giochi': [
+    ['EA Sports FC 25','EA App'],['Cyberpunk 2077','GOG'],['Elden Ring','Steam'],['Grand Theft Auto V','Rockstar'],
+    ['Red Dead Redemption 2','Steam'],['Hogwarts Legacy','Steam'],["Baldur's Gate 3",'Steam'],['NBA 2K25','Steam'],
+    ['Call of Duty: MW III','Battle.net'],['Minecraft','Microsoft'],['The Witcher 3','GOG'],['EA Sports UFC 5','PlayStation']
+  ],
+  'Abbonamenti': [
+    ['Xbox Game Pass Ultimate','Xbox'],['PlayStation Plus','PlayStation'],['EA Play','Xbox'],['Xbox Live Gold','Xbox'],
+    ['Nintendo Switch Online','Nintendo'],['Discord Nitro','PC'],['Ubisoft+','Ubisoft']
+  ],
+  'Carte Regalo': [
+    ['Steam Wallet','Steam'],['PlayStation Network Card','PlayStation'],['Xbox Gift Card','Xbox'],['Google Play','Android'],
+    ['App Store & iTunes','Apple'],['Amazon Gift Card',''],['Razer Gold',''],['Nintendo eShop','Nintendo'],
+    ['Netflix Gift Card',''],['Roblox Gift Card','']
+  ],
+  'Software': [
+    ['Windows 11 Pro','Windows'],['Windows 10 Pro','Windows'],['Microsoft Office 2021','Microsoft'],['Microsoft 365','Microsoft'],
+    ['NordVPN','PC'],['ESET Internet Security','PC'],['Norton 360','PC'],['Kaspersky','PC']
+  ],
+  'Oggetti In-Game': [
+    ['Roblox Robux','Roblox'],['Fortnite V-Bucks','Epic'],['EA FC Points','EA App'],['Apex Legends Coins','EA App'],
+    ['Valorant Points','Riot'],['GTA V Shark Card','Rockstar'],['Call of Duty Points','Battle.net'],['League of Legends RP','Riot']
+  ],
+  'DLC & Espansioni': [
+    ['Cyberpunk 2077: Phantom Liberty','GOG'],['Elden Ring: Shadow of the Erdtree','Steam'],['The Witcher 3: Blood and Wine','GOG'],
+    ['The Sims 4 — Espansioni','EA App'],['Euro Truck Simulator 2 DLC','Steam'],['Arma 3 DLC Bundle','Steam']
+  ]
+};
+const KG_ICON = { 'Giochi':'🎮','Abbonamenti':'♾️','Carte Regalo':'💳','Software':'💻','Oggetti In-Game':'🪙','DLC & Espansioni':'🧩' };
+const KG_PLATCOL = { Steam:'#1b2838', Epic:'#2a2a2a', 'EA App':'#ff4747', GOG:'#7d2ae8', Xbox:'#107c10', PlayStation:'#0070d1', Nintendo:'#e60012', 'Battle.net':'#00aeff', Rockstar:'#fcaf17', Ubisoft:'#0084ff', Windows:'#0078d4', Microsoft:'#0078d4', Riot:'#d13639', Rockstar:'#fcaf17', Roblox:'#e2231a', Android:'#3ddc84', Apple:'#555', PC:'#444' };
+let _kgCat = Object.keys(KINGUIN_PREVIEW)[0];
+function renderKinguin(){
+  const tabs=document.getElementById('kg-tabs'), grid=document.getElementById('kg-grid');
+  if(!tabs||!grid) return;
+  tabs.innerHTML=Object.keys(KINGUIN_PREVIEW).map(c=>{
+    const on=c===_kgCat;
+    return `<button onclick="kgTab('${c.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;border:1.5px solid ${on?'var(--dg1)':'#2a2a2a'};background:${on?'var(--dg1)':'transparent'};color:${on?'#0a0a0a':'#bbb'};">${KG_ICON[c]||''} ${c} <span style="opacity:.6;">${KINGUIN_PREVIEW[c].length}</span></button>`;
+  }).join('');
+  grid.innerHTML=KINGUIN_PREVIEW[_kgCat].map(([name,plat])=>{
+    const col=KG_PLATCOL[plat]||'#333';
+    const badge=plat?`<span style="font-size:9px;letter-spacing:.5px;color:#fff;background:${col};padding:3px 8px;border-radius:6px;font-family:'IBM Plex Mono',monospace;">${plat}</span>`:'';
+    const nm=name.replace(/</g,'&lt;'), nmJs=name.replace(/'/g,"\\'");
+    return `<div style="border:1px solid #232323;border-radius:12px;background:#141414;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:120px;">
+      <div style="font-size:26px;line-height:1;">${KG_ICON[_kgCat]||'🎮'}</div>
+      <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;line-height:1.25;flex:1;">${nm}</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        ${badge||'<span></span>'}
+        <span style="font-size:10px;color:#888;font-family:'IBM Plex Mono',monospace;">su richiesta</span>
+      </div>
+      <button onclick="requestKinguin('${nmJs}','${_kgCat.replace(/'/g,"\\'")}')" style="width:100%;background:transparent;border:1.5px solid var(--dg1);color:var(--dg1);border-radius:8px;padding:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;">RICHIEDI →</button>
+    </div>`;
+  }).join('');
+}
+window.kgTab=function(c){ _kgCat=c; renderKinguin(); };
+window.requestKinguin=function(name, cat){
+  const email = (window.__subsUser&&window.__subsUser.email) || (prompt('La tua email (ti avvisiamo appena disponibile):')||'').trim();
+  if(!email){ return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ if(window.showToast) showToast('Email non valida'); else alert('Email non valida'); return; }
+  const fb=window.__subsFb;
+  const payload={ type:'kinguin_request', product:name, category:cat, email, source:'digital_gear_preview', status:'new' };
+  if(fb){
+    payload.createdAt=fb.serverTimestamp();
+    fb.addDoc(fb.collection(fb.db,'product_requests'), payload)
+      .then(()=>{ if(window.showToast) showToast('✅ Richiesta inviata: '+name); else alert('Richiesta inviata: '+name); })
+      .catch(()=>{ location.href='mailto:info@lillofind.shop?subject='+encodeURIComponent('Richiesta: '+name)+'&body='+encodeURIComponent('Vorrei richiedere: '+name+' ('+cat+')\nEmail: '+email); });
+  } else {
+    location.href='mailto:info@lillofind.shop?subject='+encodeURIComponent('Richiesta: '+name)+'&body='+encodeURIComponent('Vorrei richiedere: '+name+' ('+cat+')');
+  }
+};
+
 // ── Init ───────────────────────────────────────────────
 renderSubs('All');
+renderKinguin();
 </script>
 </body>
 </html>
