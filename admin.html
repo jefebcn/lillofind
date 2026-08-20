@@ -1875,6 +1875,14 @@ waitFB(()=>{
       openUserCreds(uid, email, name, existing);
     }catch(e){ console.error('userCreds find',e&&e.code); showToast('⚠️ Errore ricerca ('+((e&&e.code)||'')+')'); }
   };
+  // Apre il modal credenziali direttamente dalla tabella Clienti, pre-compilato
+  // con le credenziali già salvate sul profilo (così l'admin può rivederle/modificarle).
+  window.openUserCredsFromTable = function(email){
+    email=(email||'').toLowerCase();
+    const u=(_allUsersData||[]).find(x=>(x.email||'').toLowerCase()===email);
+    if(!u||!u.uid){ showToast('⚠️ Cliente senza profilo registrato.'); return; }
+    openUserCreds(u.uid, u.email, u.name||'', Array.isArray(u.subs)?u.subs:[]);
+  };
   window.openUserCreds = function(uid, email, name, existing){
     const box=document.createElement('div'); box.id='uc-modal';
     box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
@@ -1919,6 +1927,8 @@ waitFB(()=>{
     const btn=document.getElementById('uc-save'); if(btn){ btn.disabled=true; btn.textContent='Salvataggio…'; }
     try{
       await fb.updateDoc(fb.doc(fb.db,'users',st.uid), { subscriptions:creds, subscriptionsAt: fb.serverTimestamp() });
+      // Aggiorna la cache locale così la tabella Clienti mostra subito il conteggio.
+      try{ const u=(_allUsersData||[]).find(x=>(x.email||'').toLowerCase()===(st.email||'').toLowerCase()); if(u){ u.subs=creds; u.uid=st.uid; } if(_usersLoaded && typeof renderUsersTable==='function') filterUsersTable(); }catch(_){}
       document.getElementById('uc-modal')?.remove(); showToast('✅ Credenziali salvate sul profilo di '+st.email);
       if(st.email){ lfCallable('sendCredentialsEmail')({ email:st.email, name:st.name||'', orderId:'', credentials:creds })
         .then(r=>{ const sent=r&&r.data&&r.data.sent; showToast(sent?('📧 Email inviata a '+st.email):('⚠️ Email non inviata')); }).catch(()=>{}); }
@@ -2933,7 +2943,7 @@ waitFB(()=>{
       adminOrders.forEach(o=>{
         const email=(o.email||'').toLowerCase();
         if(!email) return;
-        if(!userMap[email]) userMap[email]={email,name:o.name||'',orders:0,total:0,lastTs:0,lastDate:'—'};
+        if(!userMap[email]) userMap[email]={email,name:o.name||'',uid:'',subs:[],orders:0,total:0,lastTs:0,lastDate:'—'};
         userMap[email].orders++;
         userMap[email].total+=(o.total||0);
         const ts=o.createdAt?.seconds||0;
@@ -2942,6 +2952,18 @@ waitFB(()=>{
           userMap[email].lastDate=ts?new Date(ts*1000).toLocaleDateString('it-IT'):'—';
         }
       });
+      // Unisci i profili registrati (collection users): aggiunge uid + credenziali
+      // salvate e include anche i clienti che non hanno mai ordinato sul sito.
+      try{
+        const usnap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
+        usnap.forEach(d=>{
+          const u=d.data()||{}; const email=(u.email||'').toLowerCase(); if(!email) return;
+          if(!userMap[email]) userMap[email]={email,name:u.name||'',uid:'',subs:[],orders:0,total:0,lastTs:0,lastDate:'—'};
+          userMap[email].uid=d.id;
+          if(!userMap[email].name) userMap[email].name=u.name||'';
+          if(Array.isArray(u.subscriptions)) userMap[email].subs=u.subscriptions;
+        });
+      }catch(_){ /* se le regole bloccano la lettura, mostra comunque i clienti da ordini */ }
       _allUsersData=Object.values(userMap).sort((a,b)=>b.total-a.total);
       const totalSpent=_allUsersData.reduce((s,u)=>s+u.total,0);
       const vipCount=_allUsersData.filter(u=>u.total>=200).length;
@@ -2969,6 +2991,14 @@ waitFB(()=>{
         ?'<span class="user-badge vip">VIP</span>'
         :u.orders===1?'<span class="user-badge new">NUOVO</span>':'';
       const safeEmail=u.email.replace(/'/g,"\\'");
+      const nSubs=Array.isArray(u.subs)?u.subs.length:0;
+      const credLabel=nSubs?('🔑 Credenziali · '+nSubs):'🔑 Credenziali';
+      const credStyle=nSubs
+        ?'font-size:9px;padding:5px 10px;background:rgba(200,255,0,.14);border:1px solid rgba(200,255,0,.4);color:var(--led);cursor:pointer;font-family:\'Manrope\',sans-serif;letter-spacing:1px;white-space:nowrap;'
+        :'font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:\'Manrope\',sans-serif;letter-spacing:1px;white-space:nowrap;';
+      const credBtn=u.uid
+        ?`<button onclick="openUserCredsFromTable('${safeEmail}')" style="${credStyle}">${credLabel}</button>`
+        :`<button title="Il cliente non ha un profilo registrato: non è possibile salvare credenziali sul suo account." disabled style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.25);cursor:not-allowed;font-family:'Manrope',sans-serif;letter-spacing:1px;white-space:nowrap;">🔑 No profilo</button>`;
       return `<tr>
         <td>
           <div style="font-size:12px;font-weight:500;">${escH(u.email)}</div>
@@ -2978,7 +3008,10 @@ waitFB(()=>{
         <td style="color:var(--led);font-family:'Bricolage Grotesque',sans-serif;font-size:20px;">€${u.total.toFixed(2)}</td>
         <td style="font-size:10px;color:var(--dim);">${u.lastDate}</td>
         <td>${badge}</td>
-        <td><button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Manrope',sans-serif;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button></td>
+        <td style="white-space:nowrap;">
+          <button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Manrope',sans-serif;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button>
+          ${credBtn}
+        </td>
       </tr>`;
     }).join('');
   }
