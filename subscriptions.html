@@ -390,6 +390,45 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
   </div>
 </section>
 
+<!-- ═══ COSA GUARDARE (TMDB — dati e immagini ufficiali) ═══ -->
+<style>
+  #cw-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+  .cw-card{border:1px solid #232323;border-radius:12px;background:#141414;overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s;position:relative;}
+  .cw-card:hover{transform:translateY(-3px);border-color:var(--dg1);}
+  .cw-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#1c1c1c;}
+  .cw-fallback{width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#242424,#111);color:#666;font-size:26px;}
+  .cw-kind{position:absolute;top:7px;left:7px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;background:rgba(0,0,0,.72);color:#fff;padding:3px 7px;border-radius:5px;backdrop-filter:blur(2px);}
+  .cw-rate{position:absolute;top:7px;right:7px;font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;background:rgba(0,0,0,.72);color:var(--dg1);padding:3px 7px;border-radius:5px;backdrop-filter:blur(2px);}
+  .cw-cap{padding:9px 10px 11px;}
+  .cw-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12.5px;color:#fff;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .cw-year{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8a8a8a;margin-top:3px;}
+  .cw-tab{cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;border:1.5px solid #2a2a2a;background:transparent;color:#bbb;}
+  .cw-tab.on{border-color:var(--dg1);background:var(--dg1);color:#0a0a0a;}
+  #cw-modal{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.82);display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  #cw-modal.on{display:flex;}
+  .cw-sheet{background:#111;border:1px solid #262626;border-radius:16px;max-width:720px;width:100%;margin:auto;overflow:hidden;position:relative;}
+  .cw-x{position:absolute;top:12px;right:14px;z-index:3;background:rgba(0,0,0,.55);border:none;color:#fff;font-size:22px;width:34px;height:34px;border-radius:50%;cursor:pointer;line-height:1;}
+  .cw-prov{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .cw-prov img{width:42px;height:42px;border-radius:9px;object-fit:cover;border:1px solid #2a2a2a;}
+  .cw-cta{display:inline-block;background:var(--dg1);color:#0a0a0a;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;padding:11px 18px;border-radius:10px;text-decoration:none;border:none;cursor:pointer;}
+  .cw-spin{grid-column:1/-1;text-align:center;color:#777;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:40px 0;}
+</style>
+<section id="cw-section" style="max-width:1180px;margin:40px auto 0;padding:0 22px;">
+  <div style="border:1.5px solid #2a2a2a;border-radius:16px;background:#0f0f0f;overflow:hidden;">
+    <div style="padding:22px 24px;border-bottom:1px solid #1e1e1e;">
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:8px;">🍿 Cosa Guardare</p>
+      <h2 class="bb" style="font-size:34px;line-height:1;color:#fff;">Film &amp; Serie del momento</h2>
+      <p style="font-size:12px;color:#9a9a9a;line-height:1.7;max-width:580px;margin-top:8px;font-family:'Inter',sans-serif;">Le uscite e i titoli più visti — con trama, voti, trailer e <b style="color:#ccc;">dove guardarli</b>. Trovi il servizio giusto? <b style="color:#ccc;">Attiva l'abbonamento</b> qui sopra e risparmia. <span style="color:#666;">Dati e immagini © TMDB.</span></p>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div id="cw-tabs" style="display:flex;gap:8px;overflow-x:auto;flex:1;min-width:170px;-webkit-overflow-scrolling:touch;"></div>
+        <input id="cw-search" type="text" autocomplete="off" placeholder="🔍 Cerca un titolo…" oninput="cwSearchDebounced(this.value)" style="background:#141414;border:1.5px solid #2a2a2a;color:#fff;border-radius:999px;padding:9px 15px;font-size:12px;font-family:'Inter',sans-serif;width:210px;max-width:60vw;outline:none;"/>
+      </div>
+    </div>
+    <div id="cw-grid" style="padding:16px 24px 26px;display:grid;gap:14px;min-height:120px;"></div>
+  </div>
+</section>
+<div id="cw-modal" onclick="if(event.target===this)cwClose()"><div class="cw-sheet" id="cw-sheet"></div></div>
+
 <!-- SAVINGS CALCULATOR -->
 <div class="savings-calc">
   <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:8px;">Risparmio Annuale</p>
@@ -816,9 +855,125 @@ window.requestKinguin=function(name, cat){
   }
 };
 
+// ── COSA GUARDARE (TMDB via Worker) ────────────────────
+const CW_BASE = (window.LF_WORKER_BASE || 'https://lillofind.conti9708.workers.dev');
+const CW_TABS = [['trending','🔥 Di tendenza'],['movies','🎬 Film'],['tv','📺 Serie TV']];
+let _cwTab = 'trending';
+const cwEsc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const cwImg = (p,size) => p ? 'https://image.tmdb.org/t/p/'+(size||'w342')+p : '';
+const cwYear = x => (x.release_date||x.first_air_date||'').slice(0,4);
+const cwKind = x => (x.media_type==='tv'||x.first_air_date) ? 'tv' : 'movie';
+const cwName = x => x.title || x.name || 'Senza titolo';
+
+async function cwApi(kind, extra){
+  const u = new URL(CW_BASE + '/tmdb');
+  u.searchParams.set('kind', kind);
+  if(extra) for(const k in extra) u.searchParams.set(k, extra[k]);
+  try{ const r = await fetch(u.toString(), {cache:'no-store'}); return await r.json(); }
+  catch(_){ return { error:'network', results:[] }; }
+}
+
+function cwTabs(){
+  const el=document.getElementById('cw-tabs'); if(!el) return;
+  el.innerHTML = CW_TABS.map(([k,l])=>`<button class="cw-tab${k===_cwTab?' on':''}" onclick="cwTab('${k}')">${l}</button>`).join('');
+}
+function cwCardHTML(x){
+  const kind=cwKind(x), name=cwName(x), poster=cwImg(x.poster_path,'w342');
+  const rate=x.vote_average? '★ '+Number(x.vote_average).toFixed(1) : '';
+  const kindLbl = kind==='tv'?'Serie':'Film';
+  const cover = poster
+    ? `<img class="cw-poster" loading="lazy" src="${poster}" alt="${cwEsc(name)}" onerror="this.outerHTML='<div class=\\'cw-fallback\\'>🎬</div>'"/>`
+    : `<div class="cw-fallback">🎬</div>`;
+  return `<div class="cw-card" onclick="cwDetail('${kind}',${x.id})">
+    <span class="cw-kind">${kindLbl}</span>${rate?`<span class="cw-rate">${rate}</span>`:''}
+    ${cover}
+    <div class="cw-cap"><p class="cw-name">${cwEsc(name)}</p><p class="cw-year">${cwYear(x)||'—'}</p></div>
+  </div>`;
+}
+function cwFilter(list){
+  return (list||[]).filter(x=>x && (x.media_type?['movie','tv'].includes(x.media_type):true) && (x.poster_path||x.backdrop_path));
+}
+async function renderWatch(kind){
+  const grid=document.getElementById('cw-grid'); if(!grid) return;
+  grid.innerHTML='<p class="cw-spin">Carico i titoli del momento…</p>';
+  const d=await cwApi(kind);
+  const list=cwFilter(d.results);
+  if(!list.length){
+    const soon = d.error==='tmdb-not-configured';
+    grid.innerHTML=`<p class="cw-spin">${soon?'🍿 Sezione in arrivo — presto qui i film e le serie del momento.':'Nessun titolo trovato al momento. Riprova più tardi.'}</p>`;
+    return;
+  }
+  grid.innerHTML=list.slice(0,24).map(cwCardHTML).join('');
+}
+window.cwTab=function(k){ _cwTab=k; const s=document.getElementById('cw-search'); if(s) s.value=''; cwTabs(); renderWatch(k); };
+
+let _cwSearchT;
+window.cwSearchDebounced=function(q){ clearTimeout(_cwSearchT); _cwSearchT=setTimeout(()=>cwSearch(q),350); };
+async function cwSearch(q){
+  q=(q||'').trim();
+  if(!q){ cwTabs(); renderWatch(_cwTab); return; }
+  const grid=document.getElementById('cw-grid'); if(!grid) return;
+  document.querySelectorAll('#cw-tabs .cw-tab').forEach(b=>b.classList.remove('on'));
+  grid.innerHTML='<p class="cw-spin">Cerco “'+cwEsc(q)+'”…</p>';
+  const d=await cwApi('search',{q});
+  const list=cwFilter(d.results);
+  grid.innerHTML = list.length ? list.slice(0,24).map(cwCardHTML).join('') : '<p class="cw-spin">Nessun risultato per “'+cwEsc(q)+'”.</p>';
+}
+
+window.cwClose=function(){ const m=document.getElementById('cw-modal'); if(m){ m.classList.remove('on'); const sh=document.getElementById('cw-sheet'); if(sh) sh.innerHTML=''; } document.body.style.overflow=''; };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') cwClose(); });
+
+async function cwDetail(type,id){
+  const modal=document.getElementById('cw-modal'), sheet=document.getElementById('cw-sheet');
+  if(!modal||!sheet) return;
+  modal.classList.add('on'); document.body.style.overflow='hidden';
+  sheet.innerHTML='<button class="cw-x" onclick="cwClose()">×</button><p class="cw-spin">Carico…</p>';
+  const d=await cwApi('detail',{type,id});
+  if(!d || d.error || !d.id){ sheet.innerHTML='<button class="cw-x" onclick="cwClose()">×</button><p class="cw-spin">Dettagli non disponibili.</p>'; return; }
+  const name=cwName(d), year=cwYear(d);
+  const backdrop=cwImg(d.backdrop_path,'w780')||cwImg(d.poster_path,'w780');
+  const genres=(d.genres||[]).map(g=>g.name).slice(0,4);
+  const rate=d.vote_average?Number(d.vote_average).toFixed(1):'';
+  const runtime=d.runtime?d.runtime+' min':(d.number_of_seasons?d.number_of_seasons+' stagioni':'');
+  // trailer YouTube ufficiale
+  const vids=(d.videos&&d.videos.results)||[];
+  const tr=vids.find(v=>v.site==='YouTube'&&v.type==='Trailer')||vids.find(v=>v.site==='YouTube');
+  // provider "dove guardarlo" (JustWatch via TMDB) — regione IT
+  const wp=(d['watch/providers']&&d['watch/providers'].results&&d['watch/providers'].results.IT)||{};
+  const flat=(wp.flatrate||[]).slice(0,8);
+  const jwLink=wp.link||'';
+  const provHTML = flat.length
+    ? `<div style="margin-top:18px;"><p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg1);margin-bottom:9px;">📍 Dove guardarlo (Italia)</p>
+        <div class="cw-prov">${flat.map(p=>`<img src="${cwImg(p.logo_path,'w92')}" alt="${cwEsc(p.provider_name)}" title="${cwEsc(p.provider_name)}"/>`).join('')}</div>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button class="cw-cta" onclick="cwClose();document.getElementById('subs-grid').scrollIntoView({behavior:'smooth'});">Attiva l'abbonamento →</button>
+          ${jwLink?`<a href="${cwEsc(jwLink)}" target="_blank" rel="noopener" style="font-size:11px;color:#888;text-decoration:underline;">Tutte le opzioni</a>`:''}
+        </div></div>`
+    : `<div style="margin-top:18px;"><p style="font-size:12px;color:#888;">Disponibilità in streaming non disponibile per l'Italia al momento.</p>
+        <button class="cw-cta" style="margin-top:10px;" onclick="cwClose();document.getElementById('subs-grid').scrollIntoView({behavior:'smooth'});">Vedi gli abbonamenti →</button></div>`;
+  const trailerHTML = tr
+    ? `<div style="margin-top:16px;border-radius:12px;overflow:hidden;aspect-ratio:16/9;background:#000;"><iframe width="100%" height="100%" style="border:0;display:block;" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(tr.key)}" title="Trailer" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`
+    : '';
+  sheet.innerHTML=`<button class="cw-x" onclick="cwClose()">×</button>
+    ${backdrop?`<div style="position:relative;aspect-ratio:16/9;background:#000;"><img src="${backdrop}" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.85;"/><div style="position:absolute;inset:0;background:linear-gradient(to top,#111,transparent 55%);"></div></div>`:''}
+    <div style="padding:${backdrop?'4px':'22px'} 24px 24px;">
+      <h3 class="bb" style="font-size:26px;color:#fff;line-height:1.1;margin-bottom:6px;">${cwEsc(name)}${year?` <span style="color:#777;font-weight:400;">(${year})</span>`:''}</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#9a9a9a;margin-bottom:12px;">
+        <span style="color:${type==='tv'?'#59c1ff':'#ffb454'};text-transform:uppercase;letter-spacing:1px;">${type==='tv'?'Serie TV':'Film'}</span>
+        ${rate?`<span style="color:var(--dg1);">★ ${rate}/10</span>`:''}${runtime?`<span>• ${cwEsc(runtime)}</span>`:''}${genres.length?`<span>• ${cwEsc(genres.join(' · '))}</span>`:''}
+      </div>
+      ${d.overview?`<p style="font-size:13px;color:#cfcfcf;line-height:1.7;font-family:'Inter',sans-serif;">${cwEsc(d.overview)}</p>`:''}
+      ${trailerHTML}
+      ${provHTML}
+    </div>`;
+}
+window.cwDetail=cwDetail;
+
 // ── Init ───────────────────────────────────────────────
 renderSubs('All');
 renderKinguin();
+cwTabs();
+renderWatch('trending');
 </script>
 </body>
 </html>
