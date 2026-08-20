@@ -1190,6 +1190,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button onclick="showPg('shop');closeDrawer();setTimeout(()=>setFilter('style','Sport'),80)" class="drawer-link">🏅 Sport</button>
         <button onclick="closeDrawer();lfInstall()" class="drawer-link">📲 Installa app</button>
         <button onclick="closeDrawer();openReferral()" class="drawer-link">🎁 Invita un amico</button>
+        <button onclick="showPg('group');closeDrawer();" class="drawer-link">🚚 Spedizione di Gruppo</button>
 
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="location.href='subscriptions.html';" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
@@ -2538,6 +2539,83 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
   </section>
 
+</div>
+
+<style>
+  #pg-group .glbl{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:10px 0 4px;}
+  #pg-group .lf-in{margin-bottom:2px;}
+  #pg-group .g-vis{flex:1;border:1.5px solid #e0e0e0;background:#fff;border-radius:8px;padding:9px 8px;font-size:11px;cursor:pointer;transition:all .15s;font-family:'Manrope',sans-serif;}
+  #pg-group .g-vis.on{border-color:var(--k);background:var(--k);color:#fff;}
+  @media(max-width:720px){ #pg-group .group-grid{grid-template-columns:1fr!important;} }
+</style>
+<!-- ════════════════════════════════════════════════════════
+     SPEDIZIONE DI GRUPPO
+════════════════════════════════════════════════════════ -->
+<div id="pg-group" class="pg">
+  <div class="led-strip"></div>
+  <div style="max-width:1100px;margin:0 auto;padding:32px 20px 80px;">
+    <p class="slbl" style="color:var(--led2);margin-bottom:8px;">Risparmia sulla spedizione</p>
+    <h1 class="bb" style="font-size:clamp(34px,7vw,60px);line-height:.95;margin-bottom:10px;">Spedizione di Gruppo</h1>
+    <p style="font-size:14px;color:var(--mid);line-height:1.7;max-width:640px;">Mettetevi d'accordo in più persone: un solo pacco, una sola spedizione, meno costi per tutti. Crea un gruppo o uniscitene a uno esistente.</p>
+
+    <div style="border:1.5px solid #f0d98a;background:#fffaeb;border-radius:12px;padding:14px 16px;margin:20px 0;display:flex;gap:10px;align-items:flex-start;">
+      <span style="font-size:18px;flex-shrink:0;">⚠️</span>
+      <p style="font-size:12.5px;color:#7a5e12;line-height:1.6;">Il pacco <strong>non viene diviso</strong>: arriva <strong>un unico collo a un solo destinatario</strong> (l'host del gruppo), che poi distribuisce agli altri. Consigliato <strong>solo tra persone che si conoscono</strong> e si fidano.</p>
+    </div>
+
+    <div id="group-auth-note" style="display:none;border:1.5px solid #e8e8e8;border-radius:12px;padding:18px;text-align:center;margin-bottom:22px;">
+      <p style="font-size:13px;color:var(--mid);margin-bottom:12px;">Accedi per creare o unirti a un gruppo.</p>
+      <button class="btn-led" onclick="showPg('auth')">Accedi / Registrati →</button>
+    </div>
+
+    <div id="group-app" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;" class="group-grid">
+        <!-- CREA -->
+        <div style="border:1.5px solid #e8e8e8;border-radius:14px;padding:18px;">
+          <p class="slbl" style="margin-bottom:14px;">➕ Crea un gruppo</p>
+          <label class="glbl">Titolo</label>
+          <input id="g-title" class="lf-in" placeholder="es. Ordine Milano — fine mese" maxlength="80"/>
+          <label class="glbl">Zona / Città</label>
+          <input id="g-area" class="lf-in" placeholder="es. Milano, Roma Nord…" maxlength="60"/>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;"><label class="glbl">Scadenza adesioni</label><input id="g-deadline" type="date" class="lf-in"/></div>
+            <div style="width:120px;"><label class="glbl">Max persone</label><input id="g-max" type="number" min="2" max="30" value="6" class="lf-in"/></div>
+          </div>
+          <label class="glbl">Note (opzionale)</label>
+          <textarea id="g-note" class="lf-in" placeholder="Punto di ritrovo, regole, orari…" style="min-height:56px;resize:vertical;"></textarea>
+          <label class="glbl">Visibilità</label>
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <button type="button" id="g-vis-public" class="g-vis on" onclick="setGroupVis('public')">🌐 Pubblico (in bacheca)</button>
+            <button type="button" id="g-vis-private" class="g-vis" onclick="setGroupVis('private')">🔒 Privato (solo codice)</button>
+          </div>
+          <button class="btn-led" style="width:100%;" onclick="createGroup()">Crea gruppo →</button>
+        </div>
+        <!-- UNISCITI CON CODICE + I MIEI GRUPPI -->
+        <div>
+          <div style="border:1.5px solid #e8e8e8;border-radius:14px;padding:18px;margin-bottom:16px;">
+            <p class="slbl" style="margin-bottom:12px;">🔑 Unisciti con codice</p>
+            <div style="display:flex;gap:8px;">
+              <input id="g-code" class="lf-in" placeholder="CODICE (es. LF7K2A)" maxlength="10" style="text-transform:uppercase;letter-spacing:2px;margin:0;"/>
+              <button class="btn-k" style="flex-shrink:0;padding:0 18px;" onclick="joinByCode()">Unisciti</button>
+            </div>
+          </div>
+          <div style="border:1.5px solid #e8e8e8;border-radius:14px;padding:18px;">
+            <p class="slbl" style="margin-bottom:12px;">👥 I miei gruppi</p>
+            <div id="group-mine"><p style="font-size:12px;color:var(--dim);">Caricamento…</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BACHECA -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <p class="slbl" style="margin:0;">🌐 Bacheca — gruppi aperti</p>
+          <button class="btn-g" style="padding:7px 14px;font-size:10px;" onclick="renderGroupPage()">🔄 Aggiorna</button>
+        </div>
+        <div id="group-board"><p style="font-size:12px;color:var(--dim);">Caricamento…</p></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
@@ -5576,6 +5654,132 @@ img{ -webkit-user-drag:none; user-select:none; }
   }
   window.renderMySubscriptions=renderMySubscriptions;
 
+  // ── SPEDIZIONE DI GRUPPO ──────────────────────────────────────────
+  let _groupVis='public';
+  window.setGroupVis=function(v){ _groupVis=v; document.getElementById('g-vis-public')?.classList.toggle('on',v==='public'); document.getElementById('g-vis-private')?.classList.toggle('on',v==='private'); };
+  function _gCode(){ let s=''; const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; for(let i=0;i<6;i++) s+=A[Math.floor(Math.random()*A.length)]; return 'LF'+s; }
+  function _esc(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function _isMember(g){ return user && Array.isArray(g.members) && g.members.some(m=>m.uid===user.uid); }
+  function groupCardHTML(g, ctx){
+    const deadline=g.deadline?new Date(g.deadline+'T00:00:00'):null;
+    const dl=deadline?deadline.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    const expired=deadline?deadline < new Date(new Date().toDateString()):false;
+    const n=(g.members||[]).length, max=g.maxPeople||30;
+    const full=n>=max;
+    const isHost=user&&g.hostUid===user.uid;
+    const mem=_isMember(g);
+    const closed=g.status==='closed'||expired;
+    const membersList=(g.members||[]).map(m=>_esc(m.name||'Utente')).join(', ');
+    let action='';
+    if(isHost) action=`<button class="btn-g" style="padding:8px 14px;font-size:10px;" onclick="closeGroup('${g.id}')">${g.status==='closed'?'Riapri':'Chiudi gruppo'}</button>`;
+    else if(mem) action=`<button class="btn-g" style="padding:8px 14px;font-size:10px;color:#c0503f;border-color:#e6c3bd;" onclick="leaveGroup('${g.id}')">Esci</button>`;
+    else if(closed) action=`<span style="font-size:10px;color:var(--dim);">Chiuso</span>`;
+    else if(full) action=`<span style="font-size:10px;color:var(--dim);">Al completo</span>`;
+    else action=`<button class="btn-led" style="padding:8px 16px;font-size:10px;" onclick="joinGroup('${g.id}')">Unisciti</button>`;
+    return `<div style="border:1px solid #e8e8e8;border-radius:12px;padding:14px 15px;margin-bottom:10px;background:#fff;${closed?'opacity:.7;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="min-width:0;">
+          <p style="font-size:15px;font-weight:700;line-height:1.2;">${_esc(g.title||'Gruppo')} ${g.visibility==='private'?'🔒':''}</p>
+          <p style="font-size:11px;color:var(--mid);margin-top:3px;">📍 ${_esc(g.area||'—')} · 👥 ${n}/${max} · ⏳ entro ${dl}</p>
+          ${g.note?`<p style="font-size:11px;color:var(--dim);margin-top:5px;line-height:1.5;">${_esc(g.note)}</p>`:''}
+          ${(isHost||mem)?`<p style="font-size:10px;color:var(--dim);margin-top:6px;">Host: <strong>${_esc(g.hostName||'—')}</strong>${membersList?' · Membri: '+membersList:''}</p>`:''}
+          ${(isHost||mem)?`<p style="font-size:11px;color:var(--k);margin-top:6px;">Codice: <strong style="letter-spacing:1px;font-family:'IBM Plex Mono',monospace;">${_esc(g.code||'')}</strong> <button onclick="lfCopy('${(g.code||'').replace(/'/g,"")}')" style="border:none;background:none;cursor:pointer;color:var(--led2);font-size:10px;text-decoration:underline;">copia</button></p>`:''}
+        </div>
+        <div style="flex-shrink:0;text-align:right;">${action}</div>
+      </div>
+    </div>`;
+  }
+  async function renderGroupPage(){
+    const app=document.getElementById('group-app'), note=document.getElementById('group-auth-note');
+    if(!app||!note) return;
+    if(!user){ app.style.display='none'; note.style.display='block'; return; }
+    note.style.display='none'; app.style.display='block';
+    if(!document.getElementById('g-deadline').value){ const d=new Date(); d.setDate(d.getDate()+7); document.getElementById('g-deadline').value=d.toISOString().slice(0,10); }
+    const fb=window.__fb; if(!fb) return;
+    const mine=document.getElementById('group-mine'), board=document.getElementById('group-board');
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'groupOrders'),fb.orderBy('createdAt','desc'),fb.limit(60)));
+      const groups=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const myG=groups.filter(g=>g.hostUid===user.uid||_isMember(g));
+      const boardG=groups.filter(g=>g.visibility==='public'&&g.status!=='closed'&&!(g.hostUid===user.uid||_isMember(g)));
+      mine.innerHTML=myG.length?myG.map(g=>groupCardHTML(g,'mine')).join(''):'<p style="font-size:12px;color:var(--dim);">Non fai ancora parte di nessun gruppo. Creane uno o unisciti con un codice.</p>';
+      board.innerHTML=boardG.length?boardG.map(g=>groupCardHTML(g,'board')).join(''):'<p style="font-size:12px;color:var(--dim);">Nessun gruppo pubblico aperto al momento. Crea il primo! 🚀</p>';
+    }catch(e){ console.warn('group',e&&e.code); mine.innerHTML='<p style="font-size:12px;color:#c00;">Errore nel caricamento.</p>'; }
+  }
+  window.renderGroupPage=renderGroupPage;
+  window.createGroup=async function(){
+    if(!user){ showPg('auth'); return; }
+    const fb=window.__fb; if(!fb) return;
+    const title=(document.getElementById('g-title').value||'').trim();
+    const area=(document.getElementById('g-area').value||'').trim();
+    const deadline=document.getElementById('g-deadline').value||'';
+    const maxPeople=Math.max(2,Math.min(30,parseInt(document.getElementById('g-max').value)||6));
+    const noteTxt=(document.getElementById('g-note').value||'').trim().slice(0,300);
+    if(!title){ showToast('Dai un titolo al gruppo.'); return; }
+    if(!area){ showToast('Indica una zona/città.'); return; }
+    const hostName=(udata&&udata.name)||user.displayName||(user.email||'').split('@')[0]||'Host';
+    try{
+      await fb.addDoc(fb.collection(fb.db,'groupOrders'),{
+        code:_gCode(), title, area, deadline, note:noteTxt, maxPeople,
+        visibility:_groupVis, status:'open',
+        hostUid:user.uid, hostName,
+        members:[{uid:user.uid,name:hostName,joinedAt:Date.now()}],
+        createdAt:fb.serverTimestamp()
+      });
+      ['g-title','g-area','g-note'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+      showToast('✅ Gruppo creato! Condividi il codice con i tuoi amici.');
+      renderGroupPage();
+    }catch(e){ console.error('createGroup',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+  };
+  async function _joinGroupDoc(g){
+    const fb=window.__fb;
+    if(_isMember(g)){ showToast('Sei già in questo gruppo.'); return; }
+    if(g.status==='closed'){ showToast('Questo gruppo è chiuso.'); return; }
+    if((g.members||[]).length>=(g.maxPeople||30)){ showToast('Gruppo al completo.'); return; }
+    const hostName=(udata&&udata.name)||user.displayName||(user.email||'').split('@')[0]||'Utente';
+    const members=[...(g.members||[]),{uid:user.uid,name:hostName,joinedAt:Date.now()}];
+    await fb.updateDoc(fb.doc(fb.db,'groupOrders',g.id),{members});
+    showToast('✅ Ti sei unito al gruppo!'); renderGroupPage();
+  }
+  window.joinGroup=async function(id){
+    if(!user){ showPg('auth'); return; }
+    const fb=window.__fb;
+    try{ const s=await fb.getDoc(fb.doc(fb.db,'groupOrders',id)); if(!s.exists()){ showToast('Gruppo non trovato.'); return; } await _joinGroupDoc({id,...s.data()}); }
+    catch(e){ console.error('join',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+  };
+  window.joinByCode=async function(){
+    if(!user){ showPg('auth'); return; }
+    const fb=window.__fb;
+    const code=(document.getElementById('g-code').value||'').trim().toUpperCase();
+    if(!code){ showToast('Inserisci un codice.'); return; }
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'groupOrders'),fb.where('code','==',code),fb.limit(1)));
+      if(snap.empty){ showToast('Nessun gruppo con questo codice.'); return; }
+      const d=snap.docs[0]; await _joinGroupDoc({id:d.id,...d.data()});
+      document.getElementById('g-code').value='';
+    }catch(e){ console.error('joinCode',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+  };
+  window.leaveGroup=async function(id){
+    if(!user) return; const fb=window.__fb;
+    try{
+      const s=await fb.getDoc(fb.doc(fb.db,'groupOrders',id)); if(!s.exists()) return;
+      const g=s.data();
+      if(g.hostUid===user.uid){ showToast('Sei l\'host: usa "Chiudi gruppo".'); return; }
+      const members=(g.members||[]).filter(m=>m.uid!==user.uid);
+      await fb.updateDoc(fb.doc(fb.db,'groupOrders',id),{members});
+      showToast('Sei uscito dal gruppo.'); renderGroupPage();
+    }catch(e){ console.error('leave',e&&e.code); showToast('⚠️ Errore'); }
+  };
+  window.closeGroup=async function(id){
+    if(!user) return; const fb=window.__fb;
+    try{
+      const s=await fb.getDoc(fb.doc(fb.db,'groupOrders',id)); if(!s.exists()) return;
+      const g=s.data(); if(g.hostUid!==user.uid){ showToast('Solo l\'host può farlo.'); return; }
+      await fb.updateDoc(fb.doc(fb.db,'groupOrders',id),{status:g.status==='closed'?'open':'closed'});
+      showToast(g.status==='closed'?'Gruppo riaperto.':'Gruppo chiuso.'); renderGroupPage();
+    }catch(e){ console.error('close',e&&e.code); showToast('⚠️ Errore'); }
+  };
+
   window.claimReward=async function(label){
     if(!user||!udata){showToast('Accedi per riscattare.');return;}
     const fb=window.__fb;
@@ -6396,6 +6600,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.showPg=function(id){
     _origShowPg(id);
     if(id==='cart'){setTimeout(()=>{renderCart();if(typeof showQCOption==='function')showQCOption();},80);}
+    if(id==='group'){setTimeout(()=>{ if(typeof renderGroupPage==='function') renderGroupPage(); },60);}
     if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');initStripeElements();},50);}
     if(id==='profile'&&user&&window.__fb){
       // Re-fetch fresh user data from Firestore every time profile is opened

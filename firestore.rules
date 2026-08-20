@@ -83,6 +83,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Spedizione di gruppo — utenti loggati leggono i gruppi (bacheca pubblica
+    // + join via codice); l'host crea (con sé come host) ed è l'unico a cambiare
+    // i campi diversi da "members"; chiunque loggato può unirsi/uscire (modifica
+    // solo il campo members). Cap dimensioni per limitare abusi.
+    match /groupOrders/{id} {
+      allow read:   if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.keys().size() <= 16
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120
+        && request.resource.data.members is list && request.resource.data.members.size() <= 30;
+      allow update: if signedIn()
+        && request.resource.data.members is list && request.resource.data.members.size() <= 30
+        && request.resource.data.hostUid == resource.data.hostUid
+        && (
+             request.auth.uid == resource.data.hostUid
+             || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+           );
+      allow delete: if isAdmin() || (signedIn() && resource.data.hostUid == request.auth.uid);
+    }
+
     // Recensioni prodotto — lettura pubblica; scrittura solo utenti loggati
     // (una recensione per il proprio account); modifica/eliminazione admin.
     match /reviews/{id} {
