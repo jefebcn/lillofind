@@ -233,6 +233,9 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <span class="anav-icon">📩</span>Richieste
         <span class="anav-badge" id="req-nav-badge" style="display:none;"></span>
       </button>
+      <button class="anav-btn" data-pg="stream" onclick="showAdminPg('stream')">
+        <span class="anav-icon">🎬</span>Catalogo Stream
+      </button>
       <button class="anav-btn" data-pg="ai" onclick="showAdminPg('ai')">
         <span class="anav-icon">🤖</span>Strumenti AI
       </button>
@@ -586,6 +589,72 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
     </div>
 
     <!-- ─── PAGE: STRUMENTI AI ─── -->
+    <!-- ══ Catalogo Stream ══════════════════════════════════════ -->
+    <div class="apg hidden" id="apg-stream">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">🎬 Catalogo Stream</h1>
+        <a href="stream.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,255,0,.08);border:1px solid var(--led);padding:9px 16px;text-decoration:none;font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:1px;color:var(--led);">Apri il catalogo →</a>
+      </div>
+
+      <!-- Editor titolo -->
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;" id="sv-form-lbl">Nuovo titolo</p>
+
+        <!-- Import metadati -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;">
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:200px;">
+            <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Precompila da TVMaze / iTunes</label>
+            <input class="lf-in" id="sv-imp-q" placeholder="es. Nosferatu" onkeydown="if(event.key==='Enter')svImport()"/>
+          </div>
+          <button class="btn-g" onclick="svImport()">Cerca metadati</button>
+        </div>
+        <div id="sv-imp-res" style="display:none;margin-bottom:18px;"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="grid-1-mob">
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Titolo *</label><input class="lf-in" id="sv-title" placeholder="es. Nosferatu"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Tipo</label>
+            <select class="lf-in" id="sv-type" onchange="svRenderSubforms()"><option value="movie">Film</option><option value="series">Serie TV</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Anno</label><input class="lf-in" id="sv-year" placeholder="1922"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Durata (min)</label><input class="lf-in" id="sv-runtime" type="number" placeholder="94"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Generi (virgola)</label><input class="lf-in" id="sv-genres" placeholder="Horror, Muto"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Visibilità</label>
+            <select class="lf-in" id="sv-vis"><option value="public">Pubblico</option><option value="unlisted">Non elencato</option></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Poster (URL)</label><input class="lf-in" id="sv-poster" placeholder="https://…"/></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Backdrop (URL)</label><input class="lf-in" id="sv-backdrop" placeholder="https://…"/></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:16px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Trama</label>
+          <textarea class="lf-in" id="sv-overview" rows="3" placeholder="Sinossi…"></textarea>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:11px;color:rgba(255,255,255,.6);">
+          <input type="checkbox" id="sv-featured"/> In evidenza nell'hero della home
+        </label>
+
+        <!-- Sorgenti / episodi -->
+        <div id="sv-subforms" style="margin-top:22px;"></div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;">
+          <button class="btn-led" onclick="svSave()">Salva titolo ✓</button>
+          <button class="btn-g" onclick="svReset()">Nuovo / annulla</button>
+          <span id="sv-editing" style="font-size:10px;color:var(--dim);align-self:center;"></span>
+        </div>
+        <p style="font-size:10px;color:rgba(255,255,255,.35);margin-top:12px;line-height:1.7;">
+          Le sorgenti sono accettate solo da host in allowlist e in https (archive.org, wikimedia, …).
+          Un URL fuori lista viene rifiutato dal server: è la stessa difesa che impedisce di trasformare il Worker in un relay aperto.
+        </p>
+      </div>
+
+      <!-- Elenco -->
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Titoli in catalogo</p>
+        <div id="sv-list" style="overflow-x:auto;"><p style="font-size:11px;color:var(--dim);">Carico…</p></div>
+      </div>
+    </div>
+
     <div class="apg hidden" id="apg-ai">
       <div class="apg-hdr">
         <h1 class="apg-title bb">Strumenti AI</h1>
@@ -2713,6 +2782,7 @@ waitFB(()=>{
     if(name==='importa'){ const f=document.getElementById('importa-frame'); if(f && !f.getAttribute('src')) f.setAttribute('src','importer.html'); }
     // Analytics: carica + auto-refresh solo mentre la sezione è aperta
     if(name==='analytics'){ loadAnalytics(); startAnalyticsAuto(); } else { stopAnalyticsAuto(); }
+    if(name==='stream'){ svAdminLoad(); }
   };
 
 // ══════════════════════════════════════════════════════════════════════
@@ -3050,5 +3120,233 @@ waitFB(()=>{
     <div id="admin-lb-details" style="font-size:12px;line-height:2;color:#ccc;"></div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     Catalogo Stream — gestione titoli, sorgenti ed episodi
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+let _svEditId = '';
+let _svLoaded = false;
+
+const svEsc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const svCall = (name, data) => window.lfCallable(name)(data||{});
+
+// ── Elenco ─────────────────────────────────────────────────────
+window.svAdminLoad = async function(){
+  const box = document.getElementById('sv-list');
+  if(!_svLoaded) svRenderSubforms();
+  _svLoaded = true;
+  box.innerHTML = '<p style="font-size:11px;color:var(--dim);">Carico…</p>';
+  try{
+    const { data } = await svCall('streamAdminList');
+    const rows = (data && data.results) || [];
+    if(!rows.length){
+      box.innerHTML = '<p style="font-size:11px;color:var(--dim);">Nessun titolo ancora. Creane uno qui sopra.</p>';
+      return;
+    }
+    box.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="text-align:left;color:var(--dim);font-size:9px;letter-spacing:1px;text-transform:uppercase;">
+        <th style="padding:8px 6px;"></th><th style="padding:8px 6px;">Titolo</th><th>Tipo</th><th>Anno</th><th>Stato</th><th></th>
+      </tr></thead><tbody>
+      ${rows.map(t=>`<tr style="border-top:1px solid rgba(255,255,255,.07);">
+        <td style="padding:8px 6px;">${t.posterUrl?`<img src="${svEsc(t.posterUrl)}" style="width:34px;height:50px;object-fit:cover;border-radius:4px;"/>`:''}</td>
+        <td style="padding:8px 6px;">${svEsc(t.title)}<br/><span style="color:var(--dim);font-size:9px;">/${svEsc(t.slug)}</span></td>
+        <td>${t.type==='series'?'📺 Serie':'🎬 Film'}</td>
+        <td>${svEsc(t.year||'—')}</td>
+        <td>${t.visibility==='unlisted'?'<span style="color:#e0a24c;">Non elencato</span>':'Pubblico'}${t.featured?' · ★':''}</td>
+        <td style="text-align:right;white-space:nowrap;">
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="svEdit('${svEsc(t.id)}')">Modifica</button>
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="svDelete('${svEsc(t.id)}','${svEsc(t.title)}')">Elimina</button>
+        </td></tr>`).join('')}
+      </tbody></table>`;
+  }catch(e){
+    box.innerHTML = `<p style="font-size:11px;color:#e06c5c;">⚠️ ${svEsc(e.message||'Errore')}</p>`;
+  }
+};
+
+// ── Sotto-form: sorgenti (film) oppure episodi (serie) ─────────
+window.svRenderSubforms = function(){
+  const type = document.getElementById('sv-type').value;
+  const box = document.getElementById('sv-subforms');
+  if(type === 'movie'){
+    box.innerHTML = `<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Sorgenti video</p>
+      <div id="sv-src-list"></div>
+      <button class="btn-g" style="font-size:9px;padding:6px 12px;margin-top:8px;" onclick="svAddSrc()">+ Aggiungi sorgente</button>`;
+    document.getElementById('sv-src-list').innerHTML = '';
+    svAddSrc();
+  } else {
+    box.innerHTML = `<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Episodi</p>
+      <div id="sv-ep-list"></div>
+      <button class="btn-g" style="font-size:9px;padding:6px 12px;margin-top:8px;" onclick="svAddEp()">+ Aggiungi episodio</button>`;
+    document.getElementById('sv-ep-list').innerHTML = '';
+    svAddEp();
+  }
+};
+
+window.svAddSrc = function(v){
+  v = v || {};
+  const row = document.createElement('div');
+  row.className = 'sv-src';
+  row.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `<input class="lf-in sv-src-url" style="flex:2;min-width:220px;" placeholder="https://archive.org/…  (.m3u8 oppure .mp4)" value="${svEsc(v.url||'')}"/>
+    <input class="lf-in sv-src-label" style="flex:1;min-width:110px;" placeholder="Etichetta" value="${svEsc(v.label||'')}"/>
+    <button class="btn-g" style="font-size:9px;padding:6px 10px;" onclick="this.parentNode.remove()">×</button>`;
+  document.getElementById('sv-src-list').appendChild(row);
+};
+
+window.svAddEp = function(v){
+  v = v || {};
+  const src = (v.sources && v.sources[0]) || {};
+  const row = document.createElement('div');
+  row.className = 'sv-ep';
+  row.style.cssText = 'display:grid;grid-template-columns:64px 64px 1fr 2fr auto;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `<input class="lf-in sv-ep-s" type="number" min="1" placeholder="St." value="${svEsc(v.season||1)}"/>
+    <input class="lf-in sv-ep-n" type="number" min="1" placeholder="Ep." value="${svEsc(v.number||1)}"/>
+    <input class="lf-in sv-ep-t" placeholder="Titolo episodio" value="${svEsc(v.title||'')}"/>
+    <input class="lf-in sv-ep-u" placeholder="URL sorgente" value="${svEsc(src.url||'')}"/>
+    <button class="btn-g" style="font-size:9px;padding:6px 10px;" onclick="this.parentNode.remove()">×</button>`;
+  document.getElementById('sv-ep-list').appendChild(row);
+};
+
+// ── Import metadati ────────────────────────────────────────────
+window.svImport = async function(){
+  const q = document.getElementById('sv-imp-q').value.trim();
+  if(!q) return showToast('Scrivi cosa cercare.');
+  const type = document.getElementById('sv-type').value;
+  const box = document.getElementById('sv-imp-res');
+  box.style.display = 'block';
+  box.innerHTML = '<p style="font-size:11px;color:var(--dim);">Cerco…</p>';
+  try{
+    const { data } = await svCall('streamImportMeta', { q, type });
+    const rows = (data && data.results) || [];
+    if(!rows.length){ box.innerHTML = '<p style="font-size:11px;color:var(--dim);">Nessun risultato.</p>'; return; }
+    window._svImp = rows;
+    box.innerHTML = `<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;">
+      ${rows.map((r,i)=>`<div onclick="svUseMeta(${i})" style="flex-shrink:0;width:104px;cursor:pointer;text-align:center;">
+        ${r.posterUrl?`<img src="${svEsc(r.posterUrl)}" style="width:104px;aspect-ratio:2/3;object-fit:cover;border-radius:6px;"/>`:'<div style="width:104px;aspect-ratio:2/3;background:rgba(255,255,255,.06);border-radius:6px;"></div>'}
+        <p style="font-size:10px;margin-top:5px;line-height:1.3;">${svEsc(r.title)}</p>
+        <p style="font-size:9px;color:var(--dim);">${svEsc(r.year||'')}</p>
+      </div>`).join('')}</div>`;
+  }catch(e){
+    box.innerHTML = `<p style="font-size:11px;color:#e06c5c;">⚠️ ${svEsc(e.message||'Errore')}</p>`;
+  }
+};
+
+window.svUseMeta = function(i){
+  const r = (window._svImp||[])[i]; if(!r) return;
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el && v) el.value = v; };
+  set('sv-title', r.title);
+  set('sv-year', r.year);
+  set('sv-overview', r.overview);
+  set('sv-poster', r.posterUrl);
+  set('sv-genres', (r.genres||[]).join(', '));
+  if(r.runtime) set('sv-runtime', r.runtime);
+  showToast('✅ Metadati compilati — controllali prima di salvare.');
+};
+
+// ── Salvataggio ────────────────────────────────────────────────
+function svCollect(){
+  const type = document.getElementById('sv-type').value;
+  const val = id => (document.getElementById(id)?.value || '').trim();
+  const payload = {
+    id: _svEditId || undefined,
+    type,
+    title: val('sv-title'),
+    year: val('sv-year'),
+    overview: val('sv-overview'),
+    posterUrl: val('sv-poster'),
+    backdropUrl: val('sv-backdrop'),
+    genres: val('sv-genres').split(',').map(x=>x.trim()).filter(Boolean),
+    runtime: Number(val('sv-runtime')) || 0,
+    visibility: val('sv-vis'),
+    featured: document.getElementById('sv-featured').checked,
+  };
+  if(type === 'movie'){
+    payload.sources = [...document.querySelectorAll('.sv-src')].map(r=>({
+      url: r.querySelector('.sv-src-url').value.trim(),
+      label: r.querySelector('.sv-src-label').value.trim(),
+    })).filter(x=>x.url);
+  } else {
+    payload.episodes = [...document.querySelectorAll('.sv-ep')].map(r=>{
+      const u = r.querySelector('.sv-ep-u').value.trim();
+      return {
+        season: Number(r.querySelector('.sv-ep-s').value) || 0,
+        number: Number(r.querySelector('.sv-ep-n').value) || 0,
+        title: r.querySelector('.sv-ep-t').value.trim(),
+        sources: u ? [{ url: u }] : [],
+      };
+    }).filter(e=>e.season && e.number);
+  }
+  return payload;
+}
+
+window.svSave = async function(){
+  const p = svCollect();
+  if(!p.title) return showToast('⚠️ Il titolo è obbligatorio.');
+  try{
+    const { data } = await svCall('streamSaveTitle', p);
+    showToast(`✅ Salvato — /${data.slug}${data.episodes?' · '+data.episodes+' episodi':''}`);
+    svReset();
+    svAdminLoad();
+  }catch(e){
+    showToast('⚠️ ' + (e.message || 'Salvataggio non riuscito'));
+  }
+};
+
+window.svEdit = async function(id){
+  try{
+    const { data: t } = await svCall('streamAdminTitle', { id });
+    _svEditId = id;
+    const set = (i,v)=>{ const el=document.getElementById(i); if(el) el.value = v==null?'':v; };
+    set('sv-title', t.title); set('sv-year', t.year); set('sv-overview', t.overview);
+    set('sv-poster', t.posterUrl); set('sv-backdrop', t.backdropUrl);
+    set('sv-genres', (t.genres||[]).join(', ')); set('sv-runtime', t.runtime||'');
+    set('sv-vis', t.visibility || 'public');
+    document.getElementById('sv-type').value = t.type || 'movie';
+    document.getElementById('sv-featured').checked = !!t.featured;
+
+    svRenderSubforms();
+    if(t.type === 'movie'){
+      document.getElementById('sv-src-list').innerHTML = '';
+      (t.sources||[]).forEach(svAddSrc);
+      if(!(t.sources||[]).length) svAddSrc();
+    } else {
+      document.getElementById('sv-ep-list').innerHTML = '';
+      (t.episodes||[]).forEach(svAddEp);
+      if(!(t.episodes||[]).length) svAddEp();
+    }
+    document.getElementById('sv-form-lbl').textContent = 'Modifica titolo';
+    document.getElementById('sv-editing').textContent = 'Stai modificando: ' + (t.title||'');
+    document.getElementById('apg-stream').scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    showToast('⚠️ ' + (e.message || 'Caricamento non riuscito'));
+  }
+};
+
+window.svDelete = async function(id, title){
+  if(!confirm(`Eliminare “${title}”? Spariscono anche episodi e sorgenti collegate.`)) return;
+  try{
+    await svCall('streamDeleteTitle', { id });
+    showToast('Titolo eliminato.');
+    if(_svEditId === id) svReset();
+    svAdminLoad();
+  }catch(e){
+    showToast('⚠️ ' + (e.message || 'Eliminazione non riuscita'));
+  }
+};
+
+window.svReset = function(){
+  _svEditId = '';
+  ['sv-title','sv-year','sv-overview','sv-poster','sv-backdrop','sv-genres','sv-runtime','sv-imp-q'].forEach(i=>{
+    const el = document.getElementById(i); if(el) el.value = '';
+  });
+  document.getElementById('sv-featured').checked = false;
+  document.getElementById('sv-vis').value = 'public';
+  document.getElementById('sv-imp-res').style.display = 'none';
+  document.getElementById('sv-form-lbl').textContent = 'Nuovo titolo';
+  document.getElementById('sv-editing').textContent = '';
+  svRenderSubforms();
+};
+</script>
 </body>
 </html>

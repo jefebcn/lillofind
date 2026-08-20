@@ -114,5 +114,43 @@ service cloud.firestore {
         && request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
       allow update, delete: if isAdmin();
     }
+
+    // ── Catalogo streaming ──────────────────────────────────────
+    // Vetrina pubblica: il browser legge Firestore direttamente, quindi
+    // i metadati sono in chiaro per tutti. Scrittura solo admin.
+    match /titles/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /episodes/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Sorgenti riproducibili — CHIUSE A OGNI CLIENT, di proposito.
+    // Sono l'unica cosa che separa la vetrina dal contenuto: se fossero
+    // leggibili, chiunque potrebbe estrarre gli URL con una query dal
+    // browser e il login di /streamPlay non servirebbe a niente.
+    // Il Worker vi accede col service account, che non passa da qui.
+    match /title_sources/{id} {
+      allow read, write: if false;
+    }
+
+    // Composizione della home (hero e righe dei caroselli)
+    match /stream_config/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Punto di visione — ognuno scrive e legge solo il proprio
+    match /progress/{uid}/items/{id} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Watchlist — stessa regola
+    match /watchlist/{uid}/items/{id} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
   }
 }

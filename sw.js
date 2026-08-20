@@ -4,8 +4,8 @@
    - Asset statici same-origin: CACHE-FIRST con aggiornamento in background
    - Richieste cross-origin (Firestore, Worker, Stripe, Yupoo): mai toccate
 */
-const CACHE = 'lillofind-v2';
-const STATIC = ['/', '/index.html', '/manifest.json', '/style.css',
+const CACHE = 'lillofind-v3';
+const STATIC = ['/', '/index.html', '/stream.html', '/manifest.json', '/style.css',
   '/firebase.js', '/icon-192.png', '/icon-512.png', '/assets/og-image.jpg'];
 
 self.addEventListener('install', (e) => {
