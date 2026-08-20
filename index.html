@@ -5704,6 +5704,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       const snap=await fb.getDocs(q);
       const creds=[];
       snap.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password)) creds.push(c); }); });
+      // Credenziali aggiunte dall'admin direttamente sul profilo (clienti senza ordine)
+      if(udata && Array.isArray(udata.subscriptions)) udata.subscriptions.forEach(c=>{ if(c&&(c.login||c.password)) creds.push(c); });
       if(!creds.length){ list.innerHTML=_subsEmpty; return; }
       // Attivi prima, poi in scadenza, poi scaduti
       creds.sort((a,b)=>subDates(a.startISO,a.months).remDays - subDates(b.startISO,b.months).remDays).reverse();

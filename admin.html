@@ -419,6 +419,14 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <div class="astat-card astat-skeleton"></div>
         <div class="astat-card astat-skeleton"></div>
       </div>
+      <div class="admin-card" style="border-left:3px solid #2a2350;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#c9b8ff;margin-bottom:4px;">🔑 Credenziali cliente (senza ordine)</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:14px;line-height:1.7;">Per un cliente <strong>registrato</strong> che ha già un abbonamento ma non ha ordinato dal sito: inserisci l'email del suo account e aggiungi le credenziali. Le vedrà nel suo profilo, in <strong>I Miei Abbonamenti</strong>.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <input id="uc-email" class="lf-in" placeholder="email account cliente" style="flex:1;min-width:220px;padding:9px 12px;"/>
+          <button class="btn-led" onclick="openUserCredsByEmail()" style="padding:11px 22px;font-size:12px;">Cerca &amp; inserisci →</button>
+        </div>
+      </div>
       <div class="admin-card">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
           <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Lista Clienti</p>
@@ -1851,6 +1859,70 @@ waitFB(()=>{
           .catch(e=>{ showToast('⚠️ Email non inviata ('+((e&&e.message)||'errore')+')'); });
       }
     }catch(e){ console.error('cred save',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); if(btn){ btn.disabled=false; btn.textContent='Salva e invia al cliente'; } }
+  };
+
+  // ── Credenziali cliente SENZA ordine: salvate sul profilo utente ──
+  window.openUserCredsByEmail = async function(){
+    const fb=window.__fb;
+    const email=(document.getElementById('uc-email')?.value||'').trim().toLowerCase();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showToast('Inserisci una email valida'); return; }
+    showToast('🔎 Cerco il cliente…');
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
+      let uid=null,name='',existing=[];
+      snap.forEach(d=>{ const u=d.data(); if((u.email||'').toLowerCase()===email){ uid=d.id; name=u.name||''; existing=Array.isArray(u.subscriptions)?u.subscriptions:[]; } });
+      if(!uid){ showToast('⚠️ Nessun cliente registrato con questa email.'); return; }
+      openUserCreds(uid, email, name, existing);
+    }catch(e){ console.error('userCreds find',e&&e.code); showToast('⚠️ Errore ricerca ('+((e&&e.code)||'')+')'); }
+  };
+  window.openUserCreds = function(uid, email, name, existing){
+    const box=document.createElement('div'); box.id='uc-modal';
+    box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
+    box.onclick=function(e){ if(e.target===box) box.remove(); };
+    box.innerHTML='<div style="background:#141414;color:#fff;max-width:520px;width:100%;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);margin:auto;">'
+      +'<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center;"><strong>🔑 Credenziali — '+escH(email)+'</strong><span onclick="document.getElementById(\'uc-modal\').remove()" style="cursor:pointer;font-size:20px;opacity:.6;">×</span></div>'
+      +'<div style="padding:18px 20px;"><div id="uc-blocks"></div>'
+      +'<button onclick="ucAddBlock()" class="btn-k" style="width:100%;margin-bottom:12px;padding:10px;font-size:12px;">+ Aggiungi abbonamento</button>'
+      +'<button id="uc-save" class="btn-led" style="width:100%;padding:12px;font-size:13px;">Salva e invia al cliente</button></div></div>';
+    document.body.appendChild(box);
+    window.__ucState={uid,email,name,n:0};
+    const blocks=(existing&&existing.length)?existing:[{}];
+    blocks.forEach(b=>ucAddBlock(b));
+    document.getElementById('uc-save').onclick=function(){ saveUserCreds(); };
+  };
+  window.ucAddBlock=function(ex){
+    ex=(ex && typeof ex==='object' && !ex.isTrusted) ? ex : {}; // ignora l'Event del click
+    const idx=window.__ucState.n++;
+    const today=new Date().toISOString().slice(0,10);
+    const fld=(lbl,id,val,ph,type)=>'<div style="margin-bottom:8px;"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:3px;">'+lbl+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+String(val==null?'':val).replace(/"/g,'&quot;')+'" placeholder="'+(ph||'')+'" style="width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:8px;padding:9px 10px;font-size:13px;"/></div>';
+    const html='<div id="ucb-'+idx+'" style="border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px;margin-bottom:12px;position:relative;">'
+      +'<button onclick="document.getElementById(\'ucb-'+idx+'\').remove()" title="Rimuovi" style="position:absolute;top:6px;right:8px;background:none;border:none;color:#c86;cursor:pointer;font-size:18px;line-height:1;">×</button>'
+      +fld('Servizio','uc-svc-'+idx, ex.service, 'Netflix, Spotify…')
+      +fld('Nome utente / Email','uc-login-'+idx, ex.login, 'account@email.com')
+      +fld('Password','uc-pass-'+idx, ex.password, 'password')
+      +fld('Profilo (opz.)','uc-prof-'+idx, ex.profile, 'es. Profilo 2 · PIN 1234')
+      +fld('Note (opz.)','uc-note-'+idx, ex.note, 'istruzioni')
+      +'<div style="display:flex;gap:10px;"><div style="flex:1;">'+fld('Data inizio','uc-start-'+idx, ex.startISO||today, '', 'date')+'</div><div style="width:90px;">'+fld('Mesi','uc-mon-'+idx, ex.months||1, '', 'number')+'</div></div>'
+      +'</div>';
+    document.getElementById('uc-blocks').insertAdjacentHTML('beforeend', html);
+  };
+  window.saveUserCreds=async function(){
+    const fb=window.__fb, st=window.__ucState; if(!st) return;
+    const g=id=>(document.getElementById(id)?.value||'').trim();
+    const creds=[];
+    document.querySelectorAll('#uc-blocks > div').forEach(div=>{
+      const idx=div.id.replace('ucb-','');
+      const c={ service:g('uc-svc-'+idx), login:g('uc-login-'+idx), password:g('uc-pass-'+idx), profile:g('uc-prof-'+idx), note:g('uc-note-'+idx), startISO:g('uc-start-'+idx)||new Date().toISOString().slice(0,10), months:parseInt(g('uc-mon-'+idx),10)||1 };
+      if(c.login||c.password) creds.push(c);
+    });
+    if(!creds.length){ showToast('Inserisci almeno login o password.'); return; }
+    const btn=document.getElementById('uc-save'); if(btn){ btn.disabled=true; btn.textContent='Salvataggio…'; }
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'users',st.uid), { subscriptions:creds, subscriptionsAt: fb.serverTimestamp() });
+      document.getElementById('uc-modal')?.remove(); showToast('✅ Credenziali salvate sul profilo di '+st.email);
+      if(st.email){ lfCallable('sendCredentialsEmail')({ email:st.email, name:st.name||'', orderId:'', credentials:creds })
+        .then(r=>{ const sent=r&&r.data&&r.data.sent; showToast(sent?('📧 Email inviata a '+st.email):('⚠️ Email non inviata')); }).catch(()=>{}); }
+    }catch(e){ console.error('saveUserCreds',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'')+')'); if(btn){ btn.disabled=false; btn.textContent='Salva e invia al cliente'; } }
   };
 
   window.sendTrackingFromOrder = function(email, name){
