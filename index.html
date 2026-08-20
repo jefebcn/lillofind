@@ -2542,8 +2542,9 @@ img{ -webkit-user-drag:none; user-select:none; }
 </div>
 
 <style>
-  #pg-group .glbl{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:10px 0 4px;}
+  .glbl{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:10px 0 4px;}
   #pg-group .lf-in{margin-bottom:2px;}
+  #team-req-modal .lf-in{margin-bottom:2px;}
   #pg-group .g-vis{flex:1;border:1.5px solid #e0e0e0;background:#fff;border-radius:8px;padding:9px 8px;font-size:11px;cursor:pointer;transition:all .15s;font-family:'Manrope',sans-serif;}
   #pg-group .g-vis.on{border-color:var(--k);background:var(--k);color:#fff;}
   @media(max-width:720px){ #pg-group .group-grid{grid-template-columns:1fr!important;} }
@@ -4484,19 +4485,76 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(filters.football){ pred=isFootballKit; emoji='⚽'; }
     else if(filters.basket){ pred=isBasketball; emoji='🏀'; }
     if(!pred){ bar.style.display='none'; bar.innerHTML=''; return; }
+    const sport=filters.basket?'basket':'calcio';
     const counts={};
     products.forEach(p=>{ if(!pred(p)) return; const team=(canonBrand(p.brand)||'').trim(); if(team) counts[team]=(counts[team]||0)+1; });
     const teams=Object.keys(counts).sort((a,b)=>a.localeCompare(b));
     const total=Object.values(counts).reduce((s,n)=>s+n,0);
-    if(!teams.length){ bar.style.display='none'; bar.innerHTML=''; return; }
     const chip=(label,val,n,active)=>`<span onclick="setSportTeam('${val.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;padding:8px 14px;border-radius:999px;font-size:12px;letter-spacing:.5px;border:1.5px solid ${active?'var(--led)':'var(--border-2)'};background:${active?'var(--led)':'transparent'};color:${active?'var(--k)':'var(--mid)'};font-weight:${active?'700':'500'};">${label}${n!=null?` <span style="opacity:.6;">${n}</span>`:''}</span>`;
-    bar.innerHTML=`<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">${emoji} Squadre</p>
-      <div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;" class="hide-scrollbar">
-        ${chip('Tutte','',total,!filters.brand)}
-        ${teams.map(t=>chip(t,t,counts[t],filters.brand===t)).join('')}
+    const chipsHtml = teams.length
+      ? `<div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:10px;" class="hide-scrollbar">${chip('Tutte','',total,!filters.brand)}${teams.map(t=>chip(t,t,counts[t],filters.brand===t)).join('')}</div>`
+      : '';
+    // Banner "richiedi squadra" — sempre presente nella sezione sport
+    const reqBanner=`<div onclick="openTeamRequest('${sport}')" style="cursor:pointer;display:flex;align-items:center;gap:12px;border:1.5px dashed var(--led);background:rgba(200,255,0,.06);border-radius:12px;padding:12px 15px;">
+        <span style="font-size:20px;flex-shrink:0;">🔎</span>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:13px;font-weight:700;color:var(--k);">Non trovi la tua squadra?</p>
+          <p style="font-size:11px;color:var(--mid);">Richiedila: squadra, anno, divisa, categoria e personalizzazione — la troviamo noi.</p>
+        </div>
+        <span class="bb" style="font-size:11px;letter-spacing:1px;background:var(--led);color:var(--k);padding:8px 14px;border-radius:999px;white-space:nowrap;">RICHIEDI →</span>
       </div>`;
+    bar.innerHTML=`<p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">${emoji} Squadre</p>${chipsHtml}${reqBanner}`;
     bar.style.display='block';
   }
+  window.openTeamRequest=function(sport){
+    const isB=sport==='basket';
+    const kits=isB?['Home','Away','Statement/City','Retro','Altro']:['Home','Away','Third','Goalkeeper','Retro','Altro'];
+    const cats=isB?['Canotta','Canotta + Short','Tuta','Felpa','Kids','Altro']:['Maglia','Maglia + Short','Tuta','Giacca/Windbreaker','Kids','Altro'];
+    const emailPre=(user&&user.email)||'';
+    const box=document.createElement('div'); box.id='team-req-modal';
+    box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
+    box.onclick=e=>{ if(e.target===box) box.remove(); };
+    const opt=a=>a.map(x=>`<option value="${x}">${x}</option>`).join('');
+    box.innerHTML=`<div style="background:#fff;color:var(--k);max-width:460px;width:100%;border-radius:16px;overflow:hidden;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">
+      <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+        <strong style="font-size:15px;">${isB?'🏀':'⚽'} Richiedi una squadra</strong>
+        <span onclick="document.getElementById('team-req-modal').remove()" style="cursor:pointer;font-size:22px;opacity:.5;">×</span>
+      </div>
+      <div style="padding:18px 20px;">
+        <p style="font-size:12px;color:var(--mid);margin-bottom:14px;line-height:1.5;">Dicci cosa cerchi: la reperiamo e ti avvisiamo appena disponibile.</p>
+        <label class="glbl">Nome squadra *</label>
+        <input id="tr-team" class="lf-in" placeholder="${isB?'es. Lakers, Celtics…':'es. Napoli, Real Madrid…'}" maxlength="60"/>
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;"><label class="glbl">Anno / Stagione</label><input id="tr-year" class="lf-in" placeholder="es. 2025-26" maxlength="20"/></div>
+          <div style="flex:1;"><label class="glbl">Divisa</label><select id="tr-kit" class="lf-in">${opt(kits)}</select></div>
+        </div>
+        <label class="glbl">Categoria</label>
+        <select id="tr-cat" class="lf-in">${opt(cats)}</select>
+        <label class="glbl">Personalizzazione (opzionale)</label>
+        <input id="tr-perso" class="lf-in" placeholder="es. Nome + numero (YILDIZ 10), patch…" maxlength="80"/>
+        <label class="glbl">La tua email *</label>
+        <input id="tr-email" class="lf-in" placeholder="dove ti avvisiamo" value="${emailPre.replace(/"/g,'&quot;')}"/>
+        <button class="btn-led" style="width:100%;margin-top:14px;" onclick="submitTeamRequest('${sport}')">Invia richiesta →</button>
+      </div>
+    </div>`;
+    document.body.appendChild(box);
+    setTimeout(()=>document.getElementById('tr-team')?.focus(),50);
+  };
+  window.submitTeamRequest=async function(sport){
+    const g=id=>(document.getElementById(id)?.value||'').trim();
+    const team=g('tr-team'), email=g('tr-email');
+    if(!team){ showToast('Inserisci il nome della squadra.'); return; }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showToast('Inserisci una email valida.'); return; }
+    const fb=window.__fb; if(!fb){ showToast('Riprova tra poco.'); return; }
+    const payload={ type:'team_request', sport, team, year:g('tr-year'), kit:g('tr-kit'), category:g('tr-cat'),
+      personalization:g('tr-perso'), email, uid:(user&&user.uid)||'', status:'new', createdAt:fb.serverTimestamp() };
+    try{
+      await fb.addDoc(fb.collection(fb.db,'product_requests'), payload);
+      document.getElementById('team-req-modal')?.remove();
+      showToast('✅ Richiesta inviata! Ti avvisiamo appena disponibile.');
+      try{ lfTrack('team_request',{sport,team}); }catch(_){}
+    }catch(e){ console.error('teamReq',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+  };
   window.setSportTeam=function(team){
     filters.brand = (filters.brand===team) ? '' : team;
     renderShop();
@@ -5779,6 +5837,29 @@ img{ -webkit-user-drag:none; user-select:none; }
       showToast(g.status==='closed'?'Gruppo riaperto.':'Gruppo chiuso.'); renderGroupPage();
     }catch(e){ console.error('close',e&&e.code); showToast('⚠️ Errore'); }
   };
+  // Annuncio "novità Spedizione di Gruppo" — una volta per browser, all'accesso.
+  window.closeGroupPromo=function(go){ try{ localStorage.setItem('lf_promo_group','1'); }catch(_){}; document.getElementById('group-promo')?.remove(); if(go===true){ try{ showPg('group'); }catch(_){} } };
+  (function groupPromo(){
+    try{ if(localStorage.getItem('lf_promo_group')) return; }catch(_){ return; }
+    setTimeout(function(){
+      try{ if(localStorage.getItem('lf_promo_group')) return; }catch(_){ return; }
+      if(document.getElementById('group-promo')||document.body.classList.contains('prod-open')) return;
+      const box=document.createElement('div'); box.id='group-promo';
+      box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      box.onclick=function(e){ if(e.target===box) window.closeGroupPromo(); };
+      box.innerHTML='<div style="background:#0a0a0a;color:#fff;max-width:420px;width:100%;border-radius:18px;overflow:hidden;border:2px solid var(--led);box-shadow:0 20px 60px rgba(0,0,0,.5);">'
+        +'<div style="padding:28px 26px 22px;text-align:center;">'
+        +'<div style="font-size:40px;margin-bottom:10px;">🚚</div>'
+        +'<p class="bb" style="font-size:12px;letter-spacing:3px;color:var(--led);text-transform:uppercase;margin-bottom:8px;">Novità</p>'
+        +'<h2 class="bb" style="font-size:30px;line-height:1.05;margin-bottom:12px;">Spedizione di Gruppo</h2>'
+        +'<p style="font-size:13px;color:#c9c9c4;line-height:1.6;margin-bottom:6px;">Ordina in gruppo con amici e <b style="color:#fff;">risparmiate sulla spedizione</b>: un solo pacco, una sola spedizione.</p>'
+        +'<p style="font-size:11px;color:#8a8a86;line-height:1.5;margin-bottom:20px;">⚠️ Il pacco arriva a <b style="color:#c9c9c4;">un solo destinatario</b> (non viene diviso) — consigliato tra persone che si conoscono.</p>'
+        +'<button class="btn-led" style="width:100%;margin-bottom:10px;" onclick="closeGroupPromo(true)">Scopri come funziona →</button>'
+        +'<button onclick="closeGroupPromo()" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;text-decoration:underline;">Più tardi</button>'
+        +'</div></div>';
+      document.body.appendChild(box);
+    }, 1600);
+  })();
 
   window.claimReward=async function(label){
     if(!user||!udata){showToast('Accedi per riscattare.');return;}
