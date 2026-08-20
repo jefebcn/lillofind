@@ -276,6 +276,122 @@ app.get('/tmdb', async (c) => {
 });
 
 // ════════════════════════════════════════════════════════════════
+// "Cosa guardare" SENZA API KEY — dati/immagini 100% ufficiali:
+//   • Serie TV → TVMaze (api.tvmaze.com, nessuna chiave)
+//   • Film     → classifica ufficiale Apple (iTunes RSS, nessuna chiave)
+// Nessun contenuto piratato: solo metadati, copertine e link ufficiali.
+// Forma normalizzata verso il frontend:
+//   { id, type:'movie'|'tv', title, year, poster, rating, genres:[], overview, link }
+// ════════════════════════════════════════════════════════════════
+const WATCH_TTL = 'public, max-age=1800, s-maxage=86400';
+async function fetchJSON(url, ms) {
+  const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(ms || 12000) });
+  if (!r.ok) throw new Error('upstream ' + r.status);
+  return r.json();
+}
+function stripHtml(h) { return String(h || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+function appleImgUpscale(u) { return String(u || '').replace(/\/\d+x\d+bb\.(png|jpe?g)/i, '/450x675bb.$1'); }
+function normMovieFromApple(e) {
+  const imgs = e['im:image'] || [];
+  const rd = (e['im:releaseDate'] && (e['im:releaseDate'].attributes?.label || e['im:releaseDate'].label)) || '';
+  const year = (String(rd).match(/(\d{4})/) || [])[1] || '';
+  const link = (e.id && e.id.label)
+    || (Array.isArray(e.link) ? e.link[0]?.attributes?.href : e.link?.attributes?.href) || '';
+  return {
+    id: (e.id && e.id.label) || link,
+    type: 'movie',
+    title: (e['im:name'] && e['im:name'].label) || (e.title && e.title.label) || '',
+    year,
+    poster: appleImgUpscale(imgs.length ? imgs[imgs.length - 1].label : ''),
+    rating: null,
+    genres: (e.category && e.category.attributes && e.category.attributes.label) ? [e.category.attributes.label] : [],
+    overview: (e.summary && e.summary.label ? e.summary.label : '').trim(),
+    link,
+  };
+}
+function normTvFromTvmaze(s) {
+  if (!s) return null;
+  return {
+    id: String(s.id),
+    type: 'tv',
+    title: s.name || '',
+    year: (s.premiered || '').slice(0, 4),
+    poster: (s.image && (s.image.original || s.image.medium)) || '',
+    rating: (s.rating && s.rating.average) || null,
+    genres: s.genres || [],
+    overview: stripHtml(s.summary),
+    link: s.officialSite || s.url || '',
+  };
+}
+async function appleTopMovies(limit) {
+  const f = await fetchJSON(`https://itunes.apple.com/it/rss/topmovies/limit=${Math.min(limit || 30, 50)}/json`);
+  const entries = (f.feed && f.feed.entry) || [];
+  return entries.map(normMovieFromApple).filter(x => x.title && x.poster);
+}
+async function tvmazePopular() {
+  const pages = await Promise.all([0, 1, 2].map(p => fetchJSON(`https://api.tvmaze.com/shows?page=${p}`).catch(() => [])));
+  const all = pages.flat();
+  all.sort((a, b) => (b.weight || 0) - (a.weight || 0));
+  return all.slice(0, 40).map(normTvFromTvmaze).filter(x => x && x.title && x.poster);
+}
+async function tvmazeSearch(q) {
+  const arr = await fetchJSON(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(String(q).slice(0, 80))}`);
+  return (arr || []).map(r => normTvFromTvmaze(r.show)).filter(x => x && x.title && x.poster);
+}
+async function tvmazeDetail(id) {
+  const clean = String(id).replace(/[^0-9]/g, '').slice(0, 10);
+  const s = await fetchJSON(`https://api.tvmaze.com/shows/${clean}?embed[]=cast`);
+  const item = normTvFromTvmaze(s) || {};
+  item.cast = (((s._embedded && s._embedded.cast) || []).slice(0, 8))
+    .map(c => ({ name: c.person && c.person.name, char: c.character && c.character.name, img: (c.person && c.person.image && c.person.image.medium) || '' }))
+    .filter(c => c.name);
+  item.network = (s.network && s.network.name) || (s.webChannel && s.webChannel.name) || '';
+  item.status = s.status || '';
+  item.premiered = s.premiered || '';
+  item.ended = s.ended || '';
+  return item;
+}
+app.get('/watch', async (c) => {
+  const kind = c.req.query('kind') || 'trending';
+  const q = c.req.query('q') || '';
+  const type = c.req.query('type');
+  const id = c.req.query('id');
+  const cache = caches.default;
+  const cacheable = kind !== 'search';
+  const cacheKey = new Request(new URL(c.req.url).toString(), { method: 'GET' });
+  if (cacheable) { const hit = await cache.match(cacheKey); if (hit) return new Response(hit.body, hit); }
+  const send = (obj, ttl) => new Response(JSON.stringify(obj), {
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': ttl || (cacheable ? WATCH_TTL : 'no-store') },
+  });
+  try {
+    if (kind === 'detail') {
+      const out = (type === 'tv' && id) ? await tvmazeDetail(id) : { error: 'no-detail' };
+      const r = send(out, 'public, max-age=3600, s-maxage=86400');
+      if (cacheable && out && out.id) c.executionCtx.waitUntil(cache.put(cacheKey, r.clone()));
+      return r;
+    }
+    if (kind === 'search') {
+      const results = q.trim() ? await tvmazeSearch(q) : [];
+      return send({ results }, 'no-store');
+    }
+    let out;
+    if (kind === 'movies') out = { results: await appleTopMovies(30) };
+    else if (kind === 'tv') out = { results: await tvmazePopular() };
+    else { // trending: interleava film e serie
+      const [m, t] = await Promise.all([appleTopMovies(20).catch(() => []), tvmazePopular().catch(() => [])]);
+      const res = []; const n = Math.max(m.length, t.length);
+      for (let i = 0; i < n; i++) { if (m[i]) res.push(m[i]); if (t[i]) res.push(t[i]); }
+      out = { results: res.slice(0, 40) };
+    }
+    const r = send(out);
+    if (cacheable && out.results && out.results.length) c.executionCtx.waitUntil(cache.put(cacheKey, r.clone()));
+    return r;
+  } catch (e) {
+    return send({ error: 'watch-fetch-failed', results: [] }, 'no-store');
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
 // Endpoint callable (POST /<nomeFunzione>)
 // ════════════════════════════════════════════════════════════════
 // Lettura admin
