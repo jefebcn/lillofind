@@ -284,11 +284,21 @@ app.get('/tmdb', async (c) => {
 //   { id, type:'movie'|'tv', title, year, poster, rating, genres:[], overview, link }
 // ════════════════════════════════════════════════════════════════
 const WATCH_TTL = 'public, max-age=1800, s-maxage=86400';
-async function fetchJSON(url, ms) {
-  const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(ms || 12000) });
+// Bump per invalidare la cache edge quando cambia la logica/normalizzazione.
+const WATCH_VER = '2';
+async function fetchJSON(url, ms, extraHeaders) {
+  const headers = { Accept: 'application/json', ...(extraHeaders || {}) };
+  const r = await fetch(url, { headers, signal: AbortSignal.timeout(ms || 12000) });
   if (!r.ok) throw new Error('upstream ' + r.status);
   return r.json();
 }
+// Apple può rifiutare le richieste "server-to-server" prive di User-Agent
+// di browser (403). Inviamo header realistici per la classifica film.
+const APPLE_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json,text/javascript,*/*;q=0.8',
+  'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
+};
 function stripHtml(h) { return String(h || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
 function appleImgUpscale(u) { return String(u || '').replace(/\/\d+x\d+bb\.(png|jpe?g)/i, '/450x675bb.$1'); }
 function normMovieFromApple(e) {
@@ -324,7 +334,7 @@ function normTvFromTvmaze(s) {
   };
 }
 async function appleTopMovies(limit) {
-  const f = await fetchJSON(`https://itunes.apple.com/it/rss/topmovies/limit=${Math.min(limit || 30, 50)}/json`);
+  const f = await fetchJSON(`https://itunes.apple.com/it/rss/topmovies/limit=${Math.min(limit || 30, 50)}/json`, 12000, APPLE_HEADERS);
   const entries = (f.feed && f.feed.entry) || [];
   return entries.map(normMovieFromApple).filter(x => x.title && x.poster);
 }
@@ -358,7 +368,8 @@ app.get('/watch', async (c) => {
   const id = c.req.query('id');
   const cache = caches.default;
   const cacheable = kind !== 'search';
-  const cacheKey = new Request(new URL(c.req.url).toString(), { method: 'GET' });
+  const _ckUrl = new URL(c.req.url); _ckUrl.searchParams.set('_wv', WATCH_VER);
+  const cacheKey = new Request(_ckUrl.toString(), { method: 'GET' });
   if (cacheable) { const hit = await cache.match(cacheKey); if (hit) return new Response(hit.body, hit); }
   const send = (obj, ttl) => new Response(JSON.stringify(obj), {
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': ttl || (cacheable ? WATCH_TTL : 'no-store') },
