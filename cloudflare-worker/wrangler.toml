@@ -19,4 +19,6 @@ RESEND_FROM = "LilloFind <noreply@lillofind.shop>"
 #   RESEND_API_KEY           → chiave Resend per email ordini
 #   ANTHROPIC_API_KEY        → chiave Anthropic per yupooAnalyze
 #   FIREBASE_SERVICE_ACCOUNT → JSON completo del service account (una riga)
+#   TMDB_API_KEY             → API key v3 di TMDB per la sezione "Cosa guardare"
+#                              (gratis: themoviedb.org → Settings → API → API Key v3)
 # ───────────────────────────────────────────────────────────────

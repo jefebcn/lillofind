@@ -195,6 +195,7 @@ app.get('/diag', async (c) => {
       STRIPE_SECRET_KEY: !!env.STRIPE_SECRET_KEY,
       RESEND_API_KEY: !!env.RESEND_API_KEY,
       ANTHROPIC_API_KEY: !!env.ANTHROPIC_API_KEY,
+      TMDB_API_KEY: !!env.TMDB_API_KEY,
     },
     firestore: { reachable: false },
   };
@@ -204,6 +205,74 @@ app.get('/diag', async (c) => {
     out.firestore = { reachable: false, error: e.message };
   }
   return c.json(out);
+});
+
+// ════════════════════════════════════════════════════════════════
+// TMDB — "Cosa guardare" (GET pubblico, cacheable)
+// Proxy verso The Movie Database. La chiave resta lato server (secret
+// TMDB_API_KEY) e non viene mai esposta al browser. Solo percorsi in
+// whitelist: nessun open-proxy. Dati/immagini 100% ufficiali e legali.
+// ════════════════════════════════════════════════════════════════
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+// Costruisce SOLO percorsi TMDB consentiti a partire da parametri semplici.
+function tmdbPath(kind, q) {
+  const L = 'language=it-IT';
+  switch (kind) {
+    case 'trending': return `/trending/all/week?${L}`;
+    case 'movies':   return `/movie/popular?${L}&region=IT`;
+    case 'tv':       return `/tv/popular?${L}`;
+    case 'search': {
+      const query = (q.q || '').slice(0, 120);
+      if (!query.trim()) return null;
+      return `/search/multi?${L}&include_adult=false&query=${encodeURIComponent(query)}`;
+    }
+    case 'detail': {
+      const type = q.type === 'tv' ? 'tv' : 'movie';
+      const id = String(q.id || '').replace(/[^0-9]/g, '').slice(0, 12);
+      if (!id) return null;
+      return `/${type}/${id}?${L}&append_to_response=videos,watch/providers,credits`;
+    }
+    default: return null;
+  }
+}
+app.get('/tmdb', async (c) => {
+  const env = c.env;
+  const kind = c.req.query('kind') || 'trending';
+  const path = tmdbPath(kind, { q: c.req.query('q'), type: c.req.query('type'), id: c.req.query('id') });
+  if (!path) return c.json({ error: 'invalid-request', results: [] }, 400);
+  // Senza chiave configurata: rispondi in modo "morbido" così il frontend
+  // mostra lo stato "presto disponibile" invece di un errore.
+  if (!env.TMDB_API_KEY) {
+    return c.json({ error: 'tmdb-not-configured', results: [] },
+      200, { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
+  }
+  const upstream = `${TMDB_BASE}${path}${path.includes('?') ? '&' : '?'}api_key=${env.TMDB_API_KEY}`;
+
+  // Cache (non per la ricerca). La chiave di cache è l'URL pubblico (senza api_key).
+  const cacheable = kind !== 'search';
+  const cache = caches.default;
+  const cacheKey = new Request(new URL(c.req.url).toString(), { method: 'GET' });
+  if (cacheable) {
+    const hit = await cache.match(cacheKey);
+    if (hit) return new Response(hit.body, hit);
+  }
+  try {
+    const r = await fetch(upstream, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(12000) });
+    const body = await r.text();
+    const resp = new Response(body, {
+      status: r.status,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': cacheable ? 'public, max-age=1800, s-maxage=3600' : 'no-store',
+      },
+    });
+    if (cacheable && r.ok) c.executionCtx.waitUntil(cache.put(cacheKey, resp.clone()));
+    return resp;
+  } catch (e) {
+    return c.json({ error: 'tmdb-fetch-failed', results: [] },
+      502, { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' });
+  }
 });
 
 // ════════════════════════════════════════════════════════════════
