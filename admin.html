@@ -601,12 +601,13 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
             <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Ricevuta (immagine)</label>
             <input type="file" id="cost-file" accept="image/*" style="font-size:12px;color:#ccc;"/>
           </div>
-          <div style="width:130px;">
+          <div style="width:150px;">
             <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Tasso USD→EUR</label>
-            <input type="number" id="cost-fx" value="0.92" step="0.01" min="0.1" oninput="recalcCosts()" style="width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:8px;padding:9px 10px;font-size:13px;"/>
+            <input type="number" id="cost-fx" value="0.92" step="0.001" min="0.1" oninput="recalcCosts()" style="width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:8px;padding:9px 10px;font-size:13px;"/>
           </div>
           <button class="btn-led" id="cost-analyze-btn" onclick="analyzeReceipt()" style="padding:11px 22px;font-size:12px;">Analizza ricevuta →</button>
         </div>
+        <p id="cost-fx-hint" style="font-size:11px;color:var(--dim);margin-top:10px;">Carico i tassi di cambio aggiornati…</p>
         <p id="cost-status" style="font-size:11px;color:var(--dim);margin-top:12px;min-height:14px;"></p>
       </div>
       <div id="cost-results"></div>
@@ -1228,12 +1229,16 @@ waitFB(()=>{
     wrap.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
       // Lettura diretta Firestore — non richiede FIREBASE_SERVICE_ACCOUNT sul Worker
-      const [usersSnap, ordersSnap] = await Promise.all([
+      const [usersSnap, ordersSnap, productsSnap] = await Promise.all([
         fb.getDocs(fb.collection(fb.db, 'users')),
         fb.getDocs(fb.collection(fb.db, 'orders')),
+        fb.getDocs(fb.collection(fb.db, 'products')),
       ]);
       const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Mappa costi per calcolare il profitto (costo salvato sul prodotto).
+      const costMap = {};
+      productsSnap.docs.forEach(d => { const c = d.data().costEUR; if (typeof c === 'number') costMap[d.id] = c; });
 
       const now = Date.now(), ms30d = 30*24*60*60*1000, cutoff30d = now - ms30d;
       const d0 = new Date(), startOfMonth = new Date(d0.getFullYear(), d0.getMonth(), 1).getTime();
@@ -1252,6 +1257,7 @@ waitFB(()=>{
       topSpenders.sort((a,b)=>b.spent-a.spent);
 
       let totalOrders=0,pendingOrders=0,confirmedOrders=0,totalRevenue=0,monthlyRevenue=0,totalShipping=0,itemsSold=0;
+      let profitTotal=0,profitMonth=0,costedPhysItems=0,totalPhysItems=0;
       const productSales={};
       for(const o of orders){
         totalOrders++;
@@ -1261,6 +1267,13 @@ waitFB(()=>{
         if(cMs&&cMs>=startOfMonth) monthlyRevenue+=rev;
         usersWithOrders.add(o.uid||'');
         (o.items||[]).forEach(i=>{ const qty=i.qty||1; itemsSold+=qty; const k=i.name||'Unknown'; productSales[k]=(productSales[k]||0)+qty; });
+        // Profitto: solo ordini confermati, articoli fisici con costo salvato.
+        if(o.status==='confirmed'){
+          let op=0;
+          (o.items||[]).forEach(i=>{ if(i.isDigital) return; const qty=i.qty||1; totalPhysItems+=qty; const c=costMap[i.id]; if(c!=null){ costedPhysItems+=qty; op+=((i.price||0)-c)*qty; } });
+          profitTotal+=op;
+          if(cMs&&cMs>=startOfMonth) profitMonth+=op;
+        }
       }
       const topProducts=Object.entries(productSales).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([name,qty])=>({name,qty}));
 
@@ -1300,11 +1313,13 @@ waitFB(()=>{
           ${card('📦','Ordini Totali', o.total, `⏳ ${o.pending} in attesa · ✅ ${o.confirmed} confermati`)}
           ${card('🧾','Articoli Venduti', s.itemsSold, '')}
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;" class="stats-grid">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;" class="stats-grid">
+          ${card('📈','Profitto Stimato', '€'+profitTotal.toFixed(2), `${costedPhysItems}/${totalPhysItems} art. con costo${profitMonth?` · €${profitMonth.toFixed(2)} questo mese`:''}`, profitTotal>=0?'#1a7a4a':'#c0392b')}
           ${card('💶','Revenue Totale', '€'+r.total.toFixed(2), '', '#1a7a4a')}
           ${card('📅','Revenue Questo Mese', '€'+r.monthly.toFixed(2), '', '#1a7a4a')}
           ${card('🚚','Totale Spedizioni', '€'+r.shipping.toFixed(2), '')}
         </div>
+        ${totalPhysItems && costedPhysItems<totalPhysItems ? `<p style="font-size:12px;color:var(--dim);margin:-14px 0 24px;">ℹ️ Il profitto considera solo gli articoli con costo salvato (${costedPhysItems} di ${totalPhysItems}). Aggiungi i costi in <b>Costi & Margini</b> per un dato completo.</p>` : ''}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:28px;">
           <!-- Tier utenti -->
@@ -2759,7 +2774,35 @@ waitFB(()=>{
 // ══════════════════════════════════════════════════════════════════════
   let _costRows = [];
 
-  function costFx(){ const v=parseFloat(document.getElementById('cost-fx')?.value); return (v>0&&v<10)?v:0.92; }
+  function costFx(){ const v=parseFloat(document.getElementById('cost-fx')?.value); return (v>0&&v<10)?v:(_fxRates.usdEur||0.92); }
+  // Tassi di cambio reali (via Worker /fx, keyless). Corregge il vecchio 0,92 fisso.
+  let _fxRates = { usdEur:null, usdCny:null, cnyEur:null, updated:null };
+  let _fxLoaded = false;
+  async function loadFxRates(){
+    const hint=document.getElementById('cost-fx-hint');
+    if(_fxLoaded){ return; }
+    try{
+      const base=window.LF_WORKER_BASE||'';
+      const r=await fetch(base+'/fx',{cache:'no-store'});
+      const j=await r.json();
+      if(j&&j.ok&&j.usdEur){
+        _fxRates=j; _fxLoaded=true;
+        const fxEl=document.getElementById('cost-fx');
+        // Prefill col tasso reale solo se l'utente non l'ha già cambiato dal default.
+        if(fxEl && (fxEl.value==='0.92'||fxEl.value==='')){ fxEl.value=(+j.usdEur).toFixed(4); recalcCosts(); }
+        const d=j.updated?(' · agg. '+String(j.updated).replace(/ GMT.*$/,'')):'';
+        if(hint) hint.innerHTML='🟢 Tassi reali: <b>1 USD = '+(+j.usdEur).toFixed(4)+' EUR</b>'+(j.usdCny?(' · 1 USD = '+(+j.usdCny).toFixed(3)+' CNY'):'')+(j.cnyEur?(' · 1 CNY = '+(+j.cnyEur).toFixed(4)+' EUR'):'')+d+'. Modificabile.';
+      } else if(hint){ hint.textContent='⚠️ Tassi live non disponibili: uso il tasso nel campo (modificabile).'; }
+    }catch(_){ if(hint) hint.textContent='⚠️ Tassi live non disponibili: uso il tasso nel campo (modificabile).'; }
+  }
+  // Costo € della riga: se c'è il prezzo in $ dell'agente → USD→EUR;
+  // altrimenti (manca il $) ripiega sugli RMB col tasso CNY→EUR reale.
+  function rowCostEUR(r, fx){
+    const usd=(+r.unitPriceUsd||0)+(+r.unitFreightUsd||0);
+    if(usd>0) return usd*fx;
+    if(r.rmb && _fxRates.cnyEur) return ((+r.rmb||0)+(+r.freightRmb||0))*_fxRates.cnyEur;
+    return 0;
+  }
   // Chiave di abbinamento: cifre itemID/id dal link, o ultimo numero (album Yupoo)
   function costItemKey(url){
     if(!url) return '';
@@ -2801,7 +2844,7 @@ waitFB(()=>{
   };
 
   function costRowHTML(r,i,fx){
-    const cost=((+r.unitPriceUsd||0)+(+r.unitFreightUsd||0))*fx;
+    const cost=rowCostEUR(r,fx);
     const prod=r.pid?adminCatalogProducts.find(p=>p.id===r.pid):null;
     const sell=prod?(parseFloat(prod.price)||null):null;
     const margin=sell!=null?sell-cost:null;
@@ -2844,7 +2887,7 @@ waitFB(()=>{
   function updateRowComputed(i){
     const r=_costRows[i]; if(!r) return; const fx=costFx();
     const tr=document.querySelector('#cost-results tr[data-i="'+i+'"]'); if(!tr) return;
-    const cost=((+r.unitPriceUsd||0)+(+r.unitFreightUsd||0))*fx;
+    const cost=rowCostEUR(r,fx);
     const prod=r.pid?adminCatalogProducts.find(p=>p.id===r.pid):null;
     const sell=prod?(parseFloat(prod.price)||null):null;
     const margin=sell!=null?sell-cost:null;
@@ -2867,12 +2910,12 @@ waitFB(()=>{
     if(!r||!r.pid){ showToast('Abbina prima un prodotto.'); return false; }
     const fx=costFx();
     const costUsd=(+r.unitPriceUsd||0)+(+r.unitFreightUsd||0);
-    const costEUR=+(costUsd*fx).toFixed(2);
+    const costEUR=+(rowCostEUR(r,fx)).toFixed(2);
     try{
       await fb.updateDoc(fb.doc(fb.db,'products',r.pid),{
         costEUR, costUsd:+costUsd.toFixed(2),
         costUnitPriceUsd:+(+r.unitPriceUsd||0).toFixed(2), costUnitFreightUsd:+(+r.unitFreightUsd||0).toFixed(2),
-        costFx:fx, costUpdatedAt:fb.serverTimestamp()
+        costFx:fx, costFxDate:(_fxRates&&_fxRates.updated)||null, costUpdatedAt:fb.serverTimestamp()
       });
       const p=adminCatalogProducts.find(x=>x.id===r.pid); if(p){ p.costEUR=costEUR; p.costUsd=+costUsd.toFixed(2); }
       r.saved=true;
@@ -2902,7 +2945,7 @@ waitFB(()=>{
     }
     if(name==='clienti' && !_usersLoaded) loadUsersPage();
     if(name==='richieste') loadProductRequests();
-    if(name==='costi' && !adminCatalogProducts.length){ try{ loadAdminCatalog(); }catch(_){} }
+    if(name==='costi'){ if(!adminCatalogProducts.length){ try{ loadAdminCatalog(); }catch(_){} } try{ loadFxRates(); }catch(_){} }
     // Carica l'importer solo la prima volta che apri la sezione (lazy)
     if(name==='importa'){ const f=document.getElementById('importa-frame'); if(f && !f.getAttribute('src')) f.setAttribute('src','importer.html'); }
     // Analytics: carica + auto-refresh solo mentre la sezione è aperta
