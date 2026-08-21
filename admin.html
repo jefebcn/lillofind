@@ -2889,9 +2889,28 @@ waitFB(()=>{
           <th style="padding:8px 6px;">#</th><th>Prodotto</th><th>Prezzo $</th><th>Sped. $</th><th>Costo €</th><th>Vendita €</th><th>Margine</th><th></th>
         </tr></thead>
         <tbody>${_costRows.map((r,i)=>costRowHTML(r,i,fx)).join('')}</tbody>
+        <tfoot><tr style="border-top:2px solid rgba(255,255,255,.18);font-weight:700;">
+          <td colspan="2" style="padding:12px 6px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);">Totale ricevuta</td>
+          <td id="cost-tot-price" style="padding-top:12px;">$0.00</td>
+          <td id="cost-tot-ship" style="padding-top:12px;">$0.00</td>
+          <td id="cost-tot-cost" style="padding-top:12px;color:var(--led);font-size:15px;">€0.00</td>
+          <td colspan="3"></td>
+        </tr></tfoot>
       </table>
-      <p style="font-size:10px;color:#666;margin-top:12px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Il margine usa il prezzo di vendita del prodotto abbinato.</p>
+      <p id="cost-tot-summary" style="font-size:12px;color:#ccc;margin-top:14px;font-weight:600;"></p>
+      <p style="font-size:10px;color:#666;margin-top:6px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Confronta il <b>totale merce + spedizione</b> qui sopra con il totale della ricevuta dell'agente. Il margine usa il prezzo di vendita del prodotto abbinato.</p>
     </div>`;
+    updateCostTotals();
+  }
+  // Somma le colonne (come mostrate) per verificare col totale della ricevuta.
+  function updateCostTotals(){
+    const fx=costFx(); let tP=0,tS=0,tC=0;
+    _costRows.forEach(r=>{ tP+=(+r.unitPriceUsd||0); tS+=(+r.unitFreightUsd||0); tC+=rowCostEUR(r,fx); });
+    const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+    set('cost-tot-price','$'+tP.toFixed(2));
+    set('cost-tot-ship','$'+tS.toFixed(2));
+    set('cost-tot-cost','€'+tC.toFixed(2));
+    set('cost-tot-summary','🧾 Totale ricevuta: merce $'+tP.toFixed(2)+' + spedizione $'+tS.toFixed(2)+' = $'+(tP+tS).toFixed(2)+'  →  €'+tC.toFixed(2)+' (tasso '+fx.toFixed(4)+')');
   }
   function updateRowComputed(i){
     const r=_costRows[i]; if(!r) return; const fx=costFx();
@@ -2906,8 +2925,8 @@ waitFB(()=>{
     if(tds[5]) tds[5].textContent=sell!=null?'€'+sell.toFixed(2):'—';
     if(tds[6]){ tds[6].textContent=margin==null?'—':('€'+margin.toFixed(2)+(pct!=null?(' · '+pct+'%'):'')); tds[6].style.color=margin==null?'#888':(margin>=0?'#2ecc71':'#ff5555'); }
   }
-  window.costEdit=function(i,field,val){ const r=_costRows[i]; if(!r) return; r[field]=parseFloat(val)||0; updateRowComputed(i); };
-  window.recalcCosts=function(){ _costRows.forEach((_,i)=>updateRowComputed(i)); };
+  window.costEdit=function(i,field,val){ const r=_costRows[i]; if(!r) return; r[field]=parseFloat(val)||0; updateRowComputed(i); updateCostTotals(); };
+  window.recalcCosts=function(){ _costRows.forEach((_,i)=>updateRowComputed(i)); updateCostTotals(); };
   window.costSetPid=function(i,pid){
     const r=_costRows[i]; if(!r) return; r.pid=pid;
     updateRowComputed(i);
