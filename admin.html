@@ -2782,6 +2782,7 @@ waitFB(()=>{
 // COSTI & MARGINI — ricevuta agente (immagine) → costo/margine per prodotto
 // ══════════════════════════════════════════════════════════════════════
   let _costRows = [];
+  let _costSummary = null;   // riepilogo totali letti dalla ricevuta
 
   function costFx(){ const v=parseFloat(document.getElementById('cost-fx')?.value); return (v>0&&v<10)?v:(_fxRates.usdEur||0.92); }
   // Tassi di cambio reali (via Worker /fx, keyless). Corregge il vecchio 0,92 fisso.
@@ -2844,6 +2845,7 @@ waitFB(()=>{
       const imageBase64=dataUrl.slice(comma+1);
       const resp=await lfCallable('parseQuotation')({ imageBase64, mediaType });
       const rows=(resp&&resp.data&&Array.isArray(resp.data.rows))?resp.data.rows:[];
+      _costSummary=(resp&&resp.data&&resp.data.summary)||null;
       _costRows=rows.map(r=>{ const prod=costFindProduct(r); return {...r, pid:prod?prod.id:'', matched:!!prod}; });
       const nMatch=_costRows.filter(r=>r.matched).length;
       status.textContent='✅ '+_costRows.length+' righe lette · '+nMatch+' abbinate automaticamente. Correggi se serve, poi salva.';
@@ -2898,7 +2900,8 @@ waitFB(()=>{
         </tr></tfoot>
       </table>
       <p id="cost-tot-summary" style="font-size:12px;color:#ccc;margin-top:14px;font-weight:600;"></p>
-      <p style="font-size:10px;color:#666;margin-top:6px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Confronta il <b>totale merce + spedizione</b> qui sopra con il totale della ricevuta dell'agente. Il margine usa il prezzo di vendita del prodotto abbinato.</p>
+      <div id="cost-compare" style="margin-top:12px;font-size:12px;line-height:1.9;"></div>
+      <p style="font-size:10px;color:#666;margin-top:8px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Il margine usa il prezzo di vendita del prodotto abbinato.</p>
     </div>`;
     updateCostTotals();
   }
@@ -2910,7 +2913,27 @@ waitFB(()=>{
     set('cost-tot-price','$'+tP.toFixed(2));
     set('cost-tot-ship','$'+tS.toFixed(2));
     set('cost-tot-cost','€'+tC.toFixed(2));
-    set('cost-tot-summary','🧾 Totale ricevuta: merce $'+tP.toFixed(2)+' + spedizione $'+tS.toFixed(2)+' = $'+(tP+tS).toFixed(2)+'  →  €'+tC.toFixed(2)+' (tasso '+fx.toFixed(4)+')');
+    set('cost-tot-summary','🧾 Calcolato dalle righe: merce $'+tP.toFixed(2)+' + spedizione $'+tS.toFixed(2)+' = $'+(tP+tS).toFixed(2)+'  →  €'+tC.toFixed(2)+' (tasso '+fx.toFixed(4)+')');
+    // Confronto col totale scritto sulla ricevuta.
+    const cmpEl=document.getElementById('cost-compare'); if(!cmpEl) return;
+    const s=_costSummary;
+    const has = s && (s.totalUsd!=null || s.goodsUsd!=null || s.estFreightUsd!=null);
+    if(!has){ cmpEl.innerHTML='<span style="color:#888;">Totale della ricevuta non rilevato dall\'immagine — confronto non disponibile.</span>'; return; }
+    const line=(label,comp,rec)=>{
+      if(rec==null) return '<div style="color:#aaa;">'+label+': calcolato <b>$'+comp.toFixed(2)+'</b> · ricevuta —</div>';
+      const diff=comp-rec, ok=Math.abs(diff)<=1.0, col=ok?'#2ecc71':'#e0952f';
+      return '<div>'+label+': calcolato <b style="color:#fff;">$'+comp.toFixed(2)+'</b> · ricevuta <b style="color:#fff;">$'+rec.toFixed(2)+'</b> <span style="color:'+col+';font-weight:700;">'+(ok?'✓':'⚠️ diff $'+diff.toFixed(2))+'</span></div>';
+    };
+    const disc=s.discountUsd||0;
+    const net=tP+tS-disc;
+    let html='<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🔎 Confronto col totale sulla ricevuta</p>';
+    html+=line('Merce', tP, s.goodsUsd);
+    html+=line('Spedizione', tS, s.estFreightUsd);
+    if(disc) html+='<div style="color:#aaa;">Sconto ricevuta: −$'+disc.toFixed(2)+' → totale calcolato al netto $'+net.toFixed(2)+'</div>';
+    html+=line('TOTALE', net, s.totalUsd);
+    const money=v=>(v<0?'−$'+Math.abs(v).toFixed(2):'$'+v.toFixed(2));
+    if(s.receivedUsd!=null||s.balanceUsd!=null) html+='<div style="color:#888;margin-top:4px;">'+(s.receivedUsd!=null?('Pagato: '+money(s.receivedUsd)):'')+(s.balanceUsd!=null?('  ·  Saldo: '+money(s.balanceUsd)):'')+'</div>';
+    cmpEl.innerHTML=html;
   }
   function updateRowComputed(i){
     const r=_costRows[i]; if(!r) return; const fx=costFx();
