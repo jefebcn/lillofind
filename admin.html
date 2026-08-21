@@ -3245,7 +3245,14 @@ waitFB(()=>{
           if(Array.isArray(u.subscriptions)) userMap[email].subs=u.subscriptions;
         });
       }catch(_){ /* se le regole bloccano la lettura, mostra comunque i clienti da ordini */ }
-      _allUsersData=Object.values(userMap).sort((a,b)=>b.total-a.total);
+      // Ordina per PROFITTO: prima i clienti con profitto calcolato (desc),
+      // poi quelli senza dati di costo, ordinati per spesa.
+      _allUsersData=Object.values(userMap).sort((a,b)=>{
+        const ap=a.costOrders>0, bp=b.costOrders>0;
+        if(ap!==bp) return ap ? -1 : 1;
+        if(ap&&bp) return b.profit-a.profit;
+        return b.total-a.total;
+      });
       const totalSpent=_allUsersData.reduce((s,u)=>s+u.total,0);
       const vipCount=_allUsersData.filter(u=>u.total>=200).length;
       if(statGrid) statGrid.innerHTML=[
