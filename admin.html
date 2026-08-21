@@ -610,6 +610,14 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <p id="cost-fx-hint" style="font-size:11px;color:var(--dim);margin-top:10px;">Carico i tassi di cambio aggiornati…</p>
         <p id="cost-status" style="font-size:11px;color:var(--dim);margin-top:12px;min-height:14px;"></p>
       </div>
+      <div class="admin-card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Ricalcolo massivo</p>
+          <p style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;max-width:560px;">Aggiorna il <b>costo €</b> di tutti i prodotti col <b>tasso USD→EUR attuale</b> (usa il costo in $ già memorizzato). Utile per i prodotti salvati con un tasso vecchio.</p>
+          <p id="cost-recalc-status" style="font-size:11px;color:var(--dim);margin-top:8px;min-height:14px;"></p>
+        </div>
+        <button class="btn-k" id="cost-recalc-btn" onclick="recalcAllSavedCosts()" style="padding:11px 20px;font-size:12px;white-space:nowrap;">🔄 Ricalcola tutti i costi</button>
+      </div>
       <div id="cost-results"></div>
     </div>
 
@@ -2929,6 +2937,34 @@ waitFB(()=>{
     if(!idxs.length){ showToast('Nessuna riga abbinata da salvare.'); return; }
     let ok=0; for(const i of idxs){ if(await saveCostRow(i)) ok++; }
     showToast('✅ Salvati '+ok+'/'+idxs.length+' costi sui prodotti.');
+  };
+
+  // Ricalcola il costo € di TUTTI i prodotti col tasso USD→EUR attuale,
+  // partendo dal costo in $ già salvato (costUsd). Non tocca i prodotti senza costo.
+  window.recalcAllSavedCosts = async function(){
+    const fb=window.__fb;
+    const status=document.getElementById('cost-recalc-status');
+    const btn=document.getElementById('cost-recalc-btn');
+    try{ await loadFxRates(); }catch(_){}                 // assicura il tasso reale nel campo
+    if(!adminCatalogProducts.length){ if(status) status.textContent='Carico il catalogo…'; try{ await loadAdminCatalog(); }catch(_){} }
+    const fx=costFx();
+    const targets=adminCatalogProducts.filter(p=> typeof p.costUsd==='number' && p.costUsd>0);
+    if(!targets.length){ if(status) status.textContent='Nessun prodotto con costo in $ salvato da ricalcolare.'; return; }
+    if(!confirm('Ricalcolare il costo € di '+targets.length+' prodotti col tasso attuale ('+fx.toFixed(4)+' USD→EUR)?')) return;
+    if(btn){ btn.disabled=true; btn.textContent='Ricalcolo…'; }
+    let updated=0, same=0, errN=0;
+    for(const p of targets){
+      const newEUR=+(p.costUsd*fx).toFixed(2);
+      if(Math.abs((p.costEUR||0)-newEUR)<0.005){ same++; continue; }
+      try{
+        await fb.updateDoc(fb.doc(fb.db,'products',p.id), { costEUR:newEUR, costFx:fx, costFxDate:(_fxRates&&_fxRates.updated)||null, costUpdatedAt:fb.serverTimestamp() });
+        p.costEUR=newEUR; updated++;
+      }catch(e){ console.error('recalc',p.id,e&&e.code); errN++; }
+    }
+    if(status) status.textContent='✅ Aggiornati '+updated+' prodotti'+(same?(' · '+same+' già corretti'):'')+(errN?(' · '+errN+' errori'):'')+' (tasso '+fx.toFixed(4)+').';
+    showToast('✅ Ricalcolati '+updated+' costi col tasso '+fx.toFixed(4));
+    if(btn){ btn.disabled=false; btn.textContent='🔄 Ricalcola tutti i costi'; }
+    try{ if(typeof renderAdminCatalog==='function') renderAdminCatalog(); }catch(_){}
   };
 
   window.showAdminPg = function(name){
