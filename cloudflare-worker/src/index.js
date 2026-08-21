@@ -401,6 +401,7 @@ app.post('/sendTestEmail',       callable(checkout.sendTestEmail,       { auth: 
 app.post('/yupooFetch',   callable(scrapers.yupooFetch,   { auth: 'adminEmail' }));
 app.post('/yupooAnalyze', callable(scrapers.yupooAnalyze, { auth: 'adminEmail' }));
 app.post('/uploadImage',  callable(scrapers.uploadImage,  { auth: 'adminEmail' }));
+app.post('/parseQuotation', callable(scrapers.parseQuotation, { auth: 'adminEmail' }));
 
 export default app;
 
