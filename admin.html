@@ -2866,7 +2866,8 @@ waitFB(()=>{
     ).join('');
     const idHint=r.itemId||costItemKey(r.link);
     return `<tr data-i="${i}" style="border-top:1px solid rgba(255,255,255,.07);">
-      <td style="padding:9px 6px;color:#888;vertical-align:top;">${r.line||i+1}<div style="font-size:9px;color:#666;">${escH(String(r.size||'').slice(0,18))}${r.remarks?(' · '+escH(r.remarks)):''}</div></td>
+      <td style="padding:9px 6px;color:#888;vertical-align:top;">${r.line||i+1}<div style="font-size:9px;color:#666;">${escH(String(r.size||'').slice(0,18))}${r.remarks?(' · '+escH(r.remarks)):''}</div>
+        <input list="cost-people" value="${String(r.person||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" oninput="costSetPerson(${i},this.value)" placeholder="👤 persona" style="margin-top:5px;width:104px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:4px 7px;font-size:10px;"/></td>
       <td style="min-width:210px;vertical-align:top;"><select onchange="costSetPid(${i},this.value)" style="width:100%;max-width:250px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:7px;padding:7px 8px;font-size:11px;">${opts}</select>
         ${r.matched?'<div style="font-size:9px;color:#2ecc71;margin-top:3px;">✓ abbinato via link</div>':(idHint?('<div style="font-size:9px;color:#c90;margin-top:3px;">nessun match auto (id '+escH(idHint)+')</div>'):'<div style="font-size:9px;color:#777;margin-top:3px;">link non letto — scegli a mano</div>')}</td>
       <td style="vertical-align:top;"><input type="number" step="0.01" value="${(+r.unitPriceUsd||0)}" oninput="costEdit(${i},'unitPriceUsd',this.value)" style="width:72px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"/></td>
@@ -2899,11 +2900,43 @@ waitFB(()=>{
           <td colspan="3"></td>
         </tr></tfoot>
       </table>
+      <datalist id="cost-people"></datalist>
       <p id="cost-tot-summary" style="font-size:12px;color:#ccc;margin-top:14px;font-weight:600;"></p>
       <div id="cost-compare" style="margin-top:12px;font-size:12px;line-height:1.9;"></div>
-      <p style="font-size:10px;color:#666;margin-top:8px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Il margine usa il prezzo di vendita del prodotto abbinato.</p>
+      <div id="cost-people-tot" style="margin-top:16px;font-size:12px;"></div>
+      <p style="font-size:10px;color:#666;margin-top:8px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Il margine usa il prezzo di vendita del prodotto abbinato. Assegna una <b>persona</b> alle righe per calcolare quanto deve pagare ciascuno (utile per gli ordini di gruppo).</p>
     </div>`;
     updateCostTotals();
+    updatePeopleTotals();
+  }
+  // Totali per persona: assegna le righe a chi le ha ordinate → quanto deve pagare.
+  window.costSetPerson=function(i,val){ if(_costRows[i]) _costRows[i].person=val; updatePeopleTotals(); };
+  function updatePeopleTotals(){
+    const el=document.getElementById('cost-people-tot'); if(!el) return;
+    const fx=costFx();
+    const groups={}, order=[];
+    _costRows.forEach(r=>{
+      const name=(r.person||'').trim(); const key=name.toLowerCase()||'—';
+      if(!groups[key]){ groups[key]={name:name||'Non assegnati', price:0, ship:0, n:0, un:!name}; order.push(key); }
+      groups[key].price+=(+r.unitPriceUsd||0); groups[key].ship+=(+r.unitFreightUsd||0); groups[key].n++;
+    });
+    const dl=document.getElementById('cost-people');
+    if(dl){ const names=[...new Set(_costRows.map(r=>(r.person||'').trim()).filter(Boolean))]; dl.innerHTML=names.map(n=>'<option value="'+escH(n)+'">').join(''); }
+    const assigned=order.filter(k=>k!=='—');
+    if(!assigned.length){ el.innerHTML='<span style="color:#888;">👥 Assegna una <b>persona</b> alle righe (campo 👤 sotto il numero) per vedere quanto deve pagare ciascuno.</span>'; return; }
+    // Ordina: persone assegnate prima (per totale desc), "Non assegnati" in fondo.
+    order.sort((a,b)=>{ if(a==='—')return 1; if(b==='—')return -1; return (groups[b].price+groups[b].ship)-(groups[a].price+groups[a].ship); });
+    let html='<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">👥 Totale per persona (quanto deve pagare)</p>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;">';
+    order.forEach(k=>{ const g=groups[k]; const t$=g.price+g.ship, tE=t$*fx;
+      html+='<div style="border:1px solid '+(g.un?'#333':'rgba(200,255,0,.28)')+';border-radius:9px;padding:11px 13px;background:'+(g.un?'transparent':'rgba(200,255,0,.04)')+';">'
+        +'<div style="font-weight:700;font-size:13px;color:'+(g.un?'#888':'#fff')+';">'+escH(g.name)+' <span style="font-size:10px;color:#888;font-weight:400;">· '+g.n+' art.</span></div>'
+        +'<div style="font-size:11px;color:#aaa;margin-top:4px;">merce $'+g.price.toFixed(2)+' + sped $'+g.ship.toFixed(2)+'</div>'
+        +'<div style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:22px;color:var(--led);margin-top:3px;line-height:1;">$'+t$.toFixed(2)+' <span style="font-size:13px;color:#ccc;">= €'+tE.toFixed(2)+'</span></div>'
+        +'</div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
   }
   // Somma le colonne (come mostrate) per verificare col totale della ricevuta.
   function updateCostTotals(){
@@ -2948,8 +2981,8 @@ waitFB(()=>{
     if(tds[5]) tds[5].textContent=sell!=null?'€'+sell.toFixed(2):'—';
     if(tds[6]){ tds[6].textContent=margin==null?'—':('€'+margin.toFixed(2)+(pct!=null?(' · '+pct+'%'):'')); tds[6].style.color=margin==null?'#888':(margin>=0?'#2ecc71':'#ff5555'); }
   }
-  window.costEdit=function(i,field,val){ const r=_costRows[i]; if(!r) return; r[field]=parseFloat(val)||0; updateRowComputed(i); updateCostTotals(); };
-  window.recalcCosts=function(){ _costRows.forEach((_,i)=>updateRowComputed(i)); updateCostTotals(); };
+  window.costEdit=function(i,field,val){ const r=_costRows[i]; if(!r) return; r[field]=parseFloat(val)||0; updateRowComputed(i); updateCostTotals(); updatePeopleTotals(); };
+  window.recalcCosts=function(){ _costRows.forEach((_,i)=>updateRowComputed(i)); updateCostTotals(); updatePeopleTotals(); };
   window.costSetPid=function(i,pid){
     const r=_costRows[i]; if(!r) return; r.pid=pid;
     updateRowComputed(i);
