@@ -442,13 +442,14 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
                 <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Cliente</th>
                 <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Ordini</th>
                 <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Totale Speso</th>
+                <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Profitto</th>
                 <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Ultimo Ordine</th>
                 <th style="padding:10px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Status</th>
                 <th style="padding:10px 12px;"></th>
               </tr>
             </thead>
             <tbody id="users-tbody">
-              <tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;">Clicca Aggiorna per caricare i clienti.</td></tr>
+              <tr><td colspan="7" style="padding:20px 12px;color:var(--dim);font-size:10px;">Clicca Aggiorna per caricare i clienti.</td></tr>
             </tbody>
           </table>
         </div>
@@ -3206,20 +3207,26 @@ waitFB(()=>{
     const tbody=document.getElementById('users-tbody');
     const statGrid=document.getElementById('users-stat-grid');
     if(!tbody) return;
-    tbody.innerHTML='<tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;letter-spacing:1px;">Caricamento...</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" style="padding:20px 12px;color:var(--dim);font-size:10px;letter-spacing:1px;">Caricamento...</td></tr>';
     try{
       if(!adminOrders.length){
         const q=fb.query(fb.collection(fb.db,'orders'),fb.orderBy('createdAt','desc'));
         const snap=await fb.getDocs(q);
         adminOrders=snap.docs.map(d=>({id:d.id,_docId:d.id,...d.data()}));
       }
+      // Catalogo (costi) per calcolare il profitto per cliente.
+      if(!adminCatalogProducts.length){ try{ await loadAdminCatalog(); }catch(_){} }
       const userMap={};
       adminOrders.forEach(o=>{
         const email=(o.email||'').toLowerCase();
         if(!email) return;
-        if(!userMap[email]) userMap[email]={email,name:o.name||'',uid:'',subs:[],orders:0,total:0,lastTs:0,lastDate:'—'};
+        if(!userMap[email]) userMap[email]={email,name:o.name||'',uid:'',subs:[],orders:0,total:0,profit:0,costOrders:0,lastTs:0,lastDate:'—'};
         userMap[email].orders++;
         userMap[email].total+=(o.total||0);
+        // Profitto ordine: articoli fisici con costo salvato sul prodotto.
+        let op=0, hasCost=false;
+        (o.items||[]).forEach(i=>{ if(i.isDigital) return; const c=costOfProduct(i.id); if(c!=null){ hasCost=true; op+=((i.price||0)-c)*(i.qty||1); } });
+        if(hasCost){ userMap[email].profit+=op; userMap[email].costOrders++; }
         const ts=o.createdAt?.seconds||0;
         if(ts>userMap[email].lastTs){
           userMap[email].lastTs=ts;
@@ -3232,7 +3239,7 @@ waitFB(()=>{
         const usnap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
         usnap.forEach(d=>{
           const u=d.data()||{}; const email=(u.email||'').toLowerCase(); if(!email) return;
-          if(!userMap[email]) userMap[email]={email,name:u.name||'',uid:'',subs:[],orders:0,total:0,lastTs:0,lastDate:'—'};
+          if(!userMap[email]) userMap[email]={email,name:u.name||'',uid:'',subs:[],orders:0,total:0,profit:0,costOrders:0,lastTs:0,lastDate:'—'};
           userMap[email].uid=d.id;
           if(!userMap[email].name) userMap[email].name=u.name||'';
           if(Array.isArray(u.subscriptions)) userMap[email].subs=u.subscriptions;
@@ -3249,7 +3256,7 @@ waitFB(()=>{
       ].map(s=>`<div class="astat-card"><div class="astat-icon">${s.icon}</div><div class="astat-val ${s.cls}">${s.val}</div><div class="astat-lbl">${s.label}</div></div>`).join('');
       renderUsersTable(_allUsersData);
     }catch(e){
-      if(tbody) tbody.innerHTML=`<tr><td colspan="6" style="padding:20px 12px;color:#ff4444;font-size:10px;">Errore: ${escH(e.message)}</td></tr>`;
+      if(tbody) tbody.innerHTML=`<tr><td colspan="7" style="padding:20px 12px;color:#ff4444;font-size:10px;">Errore: ${escH(e.message)}</td></tr>`;
     }
   };
 
@@ -3257,7 +3264,7 @@ waitFB(()=>{
     const tbody=document.getElementById('users-tbody');
     if(!tbody) return;
     if(!users.length){
-      tbody.innerHTML='<tr><td colspan="6" style="padding:20px 12px;color:var(--dim);font-size:10px;letter-spacing:1px;">Nessun cliente trovato.</td></tr>';
+      tbody.innerHTML='<tr><td colspan="7" style="padding:20px 12px;color:var(--dim);font-size:10px;letter-spacing:1px;">Nessun cliente trovato.</td></tr>';
       return;
     }
     tbody.innerHTML=users.map(u=>{
@@ -3280,6 +3287,7 @@ waitFB(()=>{
         </td>
         <td style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;">${u.orders}</td>
         <td style="color:var(--led);font-family:'Bricolage Grotesque',sans-serif;font-size:20px;">€${u.total.toFixed(2)}</td>
+        <td>${(()=>{ if(!u.costOrders) return '<span style="font-size:10px;color:var(--dim);">—</span>'; const col=u.profit>=0?'#2ecc71':'#ff5555'; const partial=u.costOrders<u.orders?`<div style="font-size:9px;color:var(--dim);">su ${u.costOrders}/${u.orders} ord.</div>`:''; return `<div style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;color:${col};">€${u.profit.toFixed(2)}</div>${partial}`; })()}</td>
         <td style="font-size:10px;color:var(--dim);">${u.lastDate}</td>
         <td>${badge}</td>
         <td style="white-space:nowrap;">
