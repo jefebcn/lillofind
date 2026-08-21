@@ -933,3 +933,81 @@ ${brandHint || modelHint ? `\nL'utente indica che questo prodotto è probabilmen
     throw new HttpsError('internal', 'Analisi AI fallita: ' + e.message);
   }
 }
+
+// ════════════════════════════════════════════════════════════════
+// parseQuotation — legge una "quotation sheet" dell'agente (immagine)
+// ed estrae le righe prodotto con costo/spedizione unitari in USD.
+// L'admin carica lo screenshot; l'AI restituisce dati che l'admin
+// conferma/corregge prima di salvarli come costo sul prodotto.
+// ════════════════════════════════════════════════════════════════
+export async function parseQuotation(data, { env }) {
+  const { imageBase64, mediaType } = data || {};
+  if (!imageBase64 || typeof imageBase64 !== 'string') {
+    throw new HttpsError('invalid-argument', 'imageBase64 mancante.');
+  }
+  if (!env.ANTHROPIC_API_KEY) {
+    throw new HttpsError('failed-precondition', 'ANTHROPIC_API_KEY non configurato sul Worker (secret mancante).');
+  }
+  let mt = (mediaType || 'image/png').split(';')[0].trim();
+  if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mt)) mt = 'image/png';
+  // base64 ~ 4/3 della dimensione binaria; limite pratico ~5MB immagine.
+  if (imageBase64.length > 7 * 1024 * 1024) throw new HttpsError('invalid-argument', 'Immagine troppo grande (>5MB).');
+
+  const prompt = `Sei un assistente che legge le "QUOTATION SHEET" degli agenti di acquisto cinesi (Weidian/Taobao/1688/Yupoo).
+Estrai SOLO le righe prodotto numerate della tabella. Rispondi ESCLUSIVAMENTE con JSON valido (nessun markdown, nessun testo prima o dopo):
+{"rows":[{"line":1,"link":"https://...","itemId":"742989298","remarks":"no box","size":"42 eu","quantity":"1","rmb":280,"freightRmb":12,"totalRmb":292,"gw":2,"unitPriceUsd":49.01,"unitFreightUsd":21.22}],"currency":"USD"}
+Regole IMPORTANTI:
+- Una riga per ogni prodotto numerato (1,2,3...). NON includere righe di totale/subtotale/spedizione stimata/pagamenti.
+- "unitPriceUsd" = colonna "UNIT PRICE" (valori in $). "unitFreightUsd" = colonna "UNIT FREIGHT" (in $). Solo numeri, senza simboli. Se "$0.00" o vuoto → 0.
+- "itemId" = SOLO le cifre dell'itemID/id nel link (es. da "...itemID=742989298" → "742989298"; da un album yupoo, l'ultimo numero). Serve per abbinare al prodotto: cattura sempre le cifre finali, anche se il resto del link è tagliato/illeggibile.
+- "link": riporta l'URL come lo leggi (anche parziale).
+- "rmb","freightRmb","totalRmb","gw" = numeri delle rispettive colonne (RMB, FREIGHT TO WAREHOUSE, TOTAL RMB, GW). Se assenti → null.
+- Se una riga è un rimborso/"refund" o senza prezzo, metti unitPriceUsd:0 e unitFreightUsd:0.
+- Numeri con punto decimale. Non inventare dati non presenti.`;
+
+  try {
+    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2500,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mt, data: imageBase64 } },
+            { type: 'text', text: prompt },
+          ],
+        }],
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+    if (!aiResp.ok) { const errText = await aiResp.text(); throw new Error('Anthropic ' + aiResp.status + ': ' + errText.slice(0, 300)); }
+    const aiData = await aiResp.json();
+    const text = (aiData.content?.[0]?.text || '{}').trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Risposta AI non contiene JSON: ' + text.slice(0, 120));
+    const parsed = JSON.parse(jsonMatch[0]);
+    const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
+    // Normalizza i numeri lato server (difesa: l'AI a volte restituisce stringhe).
+    const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? null : n; };
+    const clean = rows.map((r, i) => ({
+      line: r.line ?? (i + 1),
+      link: String(r.link || '').slice(0, 300),
+      itemId: String(r.itemId || '').replace(/[^0-9]/g, '').slice(0, 20),
+      remarks: String(r.remarks || '').slice(0, 80),
+      size: String(r.size || '').slice(0, 60),
+      quantity: String(r.quantity || '').slice(0, 20),
+      rmb: num(r.rmb),
+      freightRmb: num(r.freightRmb),
+      totalRmb: num(r.totalRmb),
+      gw: num(r.gw),
+      unitPriceUsd: num(r.unitPriceUsd) || 0,
+      unitFreightUsd: num(r.unitFreightUsd) || 0,
+    }));
+    return { rows: clean, currency: 'USD' };
+  } catch (e) {
+    console.error('parseQuotation AI error:', e.message);
+    throw new HttpsError('internal', 'Lettura ricevuta fallita: ' + e.message);
+  }
+}

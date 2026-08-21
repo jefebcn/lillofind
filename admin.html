@@ -233,6 +233,9 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <span class="anav-icon">📩</span>Richieste
         <span class="anav-badge" id="req-nav-badge" style="display:none;"></span>
       </button>
+      <button class="anav-btn" data-pg="costi" onclick="showAdminPg('costi')">
+        <span class="anav-icon">💰</span>Costi &amp; Margini
+      </button>
       <button class="anav-btn" data-pg="ai" onclick="showAdminPg('ai')">
         <span class="anav-icon">🤖</span>Strumenti AI
       </button>
@@ -583,6 +586,30 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <div style="border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;background:#fff;">
         <iframe id="importa-frame" title="Importa prodotti" style="width:100%;height:80vh;border:0;display:block;"></iframe>
       </div>
+    </div>
+
+    <!-- ─── PAGE: COSTI & MARGINI ─── -->
+    <div class="apg hidden" id="apg-costi">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">💰 Costi &amp; Margini</h1>
+      </div>
+      <div class="admin-card">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Da ricevuta agente → costo per prodotto</p>
+        <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px;line-height:1.7;">Carica lo screenshot della <b>quotation sheet</b> dell'agente: l'AI estrae per ogni riga il <b>prezzo unitario</b> e la <b>spedizione unitaria</b> (in $). Il sistema abbina la riga al tuo prodotto (via link sorgente), converte in € e calcola il <b>margine</b> rispetto al tuo prezzo di vendita. Puoi correggere ogni valore prima di salvare il costo sul prodotto.</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+          <div>
+            <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Ricevuta (immagine)</label>
+            <input type="file" id="cost-file" accept="image/*" style="font-size:12px;color:#ccc;"/>
+          </div>
+          <div style="width:130px;">
+            <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Tasso USD→EUR</label>
+            <input type="number" id="cost-fx" value="0.92" step="0.01" min="0.1" oninput="recalcCosts()" style="width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:8px;padding:9px 10px;font-size:13px;"/>
+          </div>
+          <button class="btn-led" id="cost-analyze-btn" onclick="analyzeReceipt()" style="padding:11px 22px;font-size:12px;">Analizza ricevuta →</button>
+        </div>
+        <p id="cost-status" style="font-size:11px;color:var(--dim);margin-top:12px;min-height:14px;"></p>
+      </div>
+      <div id="cost-results"></div>
     </div>
 
     <!-- ─── PAGE: STRUMENTI AI ─── -->
@@ -2695,6 +2722,140 @@ waitFB(()=>{
 // ══════════════════════════════════════════════════════════════════════
 // ADMIN NAVIGATION
 // ══════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
+// COSTI & MARGINI — ricevuta agente (immagine) → costo/margine per prodotto
+// ══════════════════════════════════════════════════════════════════════
+  let _costRows = [];
+
+  function costFx(){ const v=parseFloat(document.getElementById('cost-fx')?.value); return (v>0&&v<10)?v:0.92; }
+  // Chiave di abbinamento: cifre itemID/id dal link, o ultimo numero (album Yupoo)
+  function costItemKey(url){
+    if(!url) return '';
+    const s=String(url);
+    const m=s.match(/item(?:ID|id)?=(\d{6,})/i) || s.match(/[?&]id=(\d{6,})/i) || s.match(/albums\/(\d{5,})/i);
+    if(m) return m[1];
+    const nums=s.match(/\d{6,}/g);
+    return nums? nums[nums.length-1] : '';
+  }
+  function costFindProduct(row){
+    const key=(row.itemId&&String(row.itemId))||costItemKey(row.link);
+    if(!key) return null;
+    return adminCatalogProducts.find(p=>{ const pk=costItemKey(p.sourceUrl||'')||costItemKey(p.link||''); return pk&&pk===key; })||null;
+  }
+
+  window.analyzeReceipt = async function(){
+    const fileInput=document.getElementById('cost-file');
+    const status=document.getElementById('cost-status');
+    const btn=document.getElementById('cost-analyze-btn');
+    const f=fileInput&&fileInput.files&&fileInput.files[0];
+    if(!f){ status.textContent='Seleziona prima un\'immagine della ricevuta.'; return; }
+    if(f.size>6*1024*1024){ status.textContent='Immagine troppo grande (max ~5MB). Riduci lo screenshot.'; return; }
+    if(!adminCatalogProducts.length){ try{ await loadAdminCatalog(); }catch(_){} }
+    btn.disabled=true; const old=btn.textContent; btn.textContent='Analizzo…';
+    status.textContent='📤 Leggo la ricevuta con l\'AI (~10-20s)…';
+    try{
+      const dataUrl=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
+      const comma=dataUrl.indexOf(',');
+      const mediaType=(dataUrl.slice(5,comma).split(';')[0])||'image/png';
+      const imageBase64=dataUrl.slice(comma+1);
+      const resp=await lfCallable('parseQuotation')({ imageBase64, mediaType });
+      const rows=(resp&&resp.data&&Array.isArray(resp.data.rows))?resp.data.rows:[];
+      _costRows=rows.map(r=>{ const prod=costFindProduct(r); return {...r, pid:prod?prod.id:'', matched:!!prod}; });
+      const nMatch=_costRows.filter(r=>r.matched).length;
+      status.textContent='✅ '+_costRows.length+' righe lette · '+nMatch+' abbinate automaticamente. Correggi se serve, poi salva.';
+      renderCostResults();
+    }catch(e){ console.error('parseQuotation',e&&e.code,e&&e.message); status.textContent='⚠️ Errore lettura: '+((e&&e.message)||(e&&e.code)||'riprova'); }
+    finally{ btn.disabled=false; btn.textContent=old; }
+  };
+
+  function costRowHTML(r,i,fx){
+    const cost=((+r.unitPriceUsd||0)+(+r.unitFreightUsd||0))*fx;
+    const prod=r.pid?adminCatalogProducts.find(p=>p.id===r.pid):null;
+    const sell=prod?(parseFloat(prod.price)||null):null;
+    const margin=sell!=null?sell-cost:null;
+    const pct=(sell&&sell>0)?Math.round(margin/sell*100):null;
+    const mColor=margin==null?'#888':(margin>=0?'#2ecc71':'#ff5555');
+    const opts=['<option value="">— non abbinato —</option>'].concat(
+      adminCatalogProducts.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).map(p=>`<option value="${p.id}"${p.id===r.pid?' selected':''}>${escH(String(p.name||p.id).slice(0,54))}${p.price?(' · €'+(parseFloat(p.price)||0).toFixed(0)):''}</option>`)
+    ).join('');
+    const idHint=r.itemId||costItemKey(r.link);
+    return `<tr data-i="${i}" style="border-top:1px solid rgba(255,255,255,.07);">
+      <td style="padding:9px 6px;color:#888;vertical-align:top;">${r.line||i+1}<div style="font-size:9px;color:#666;">${escH(String(r.size||'').slice(0,18))}${r.remarks?(' · '+escH(r.remarks)):''}</div></td>
+      <td style="min-width:210px;vertical-align:top;"><select onchange="costSetPid(${i},this.value)" style="width:100%;max-width:250px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:7px;padding:7px 8px;font-size:11px;">${opts}</select>
+        ${r.matched?'<div style="font-size:9px;color:#2ecc71;margin-top:3px;">✓ abbinato via link</div>':(idHint?('<div style="font-size:9px;color:#c90;margin-top:3px;">nessun match auto (id '+escH(idHint)+')</div>'):'<div style="font-size:9px;color:#777;margin-top:3px;">link non letto — scegli a mano</div>')}</td>
+      <td style="vertical-align:top;"><input type="number" step="0.01" value="${(+r.unitPriceUsd||0)}" oninput="costEdit(${i},'unitPriceUsd',this.value)" style="width:72px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"/></td>
+      <td style="vertical-align:top;"><input type="number" step="0.01" value="${(+r.unitFreightUsd||0)}" oninput="costEdit(${i},'unitFreightUsd',this.value)" style="width:72px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"/></td>
+      <td style="font-weight:700;color:#fff;vertical-align:top;padding-top:12px;">€${cost.toFixed(2)}</td>
+      <td style="color:#ccc;vertical-align:top;padding-top:12px;">${sell!=null?('€'+sell.toFixed(2)):'—'}</td>
+      <td style="font-weight:700;color:${mColor};vertical-align:top;padding-top:12px;">${margin==null?'—':('€'+margin.toFixed(2)+(pct!=null?(' · '+pct+'%'):''))}</td>
+      <td style="vertical-align:top;"><button onclick="saveCostRow(${i})" ${r.pid?'':'disabled'} title="Salva costo sul prodotto" style="font-size:12px;padding:7px 11px;background:${r.pid?'var(--led)':'#333'};color:${r.pid?'#000':'#777'};border:none;border-radius:6px;cursor:${r.pid?'pointer':'not-allowed'};">💾</button></td>
+    </tr>`;
+  }
+  function renderCostResults(){
+    const box=document.getElementById('cost-results'); if(!box) return;
+    if(!_costRows.length){ box.innerHTML=''; return; }
+    const fx=costFx();
+    box.innerHTML=`<div class="admin-card" style="overflow-x:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Righe ricevuta · ${_costRows.length}</p>
+        <button class="btn-led" onclick="saveAllCosts()" style="padding:9px 18px;font-size:11px;">💾 Salva tutti gli abbinati</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:840px;">
+        <thead><tr style="text-align:left;color:#888;font-size:9px;letter-spacing:1px;text-transform:uppercase;">
+          <th style="padding:8px 6px;">#</th><th>Prodotto</th><th>Prezzo $</th><th>Sped. $</th><th>Costo €</th><th>Vendita €</th><th>Margine</th><th></th>
+        </tr></thead>
+        <tbody>${_costRows.map((r,i)=>costRowHTML(r,i,fx)).join('')}</tbody>
+      </table>
+      <p style="font-size:10px;color:#666;margin-top:12px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Il margine usa il prezzo di vendita del prodotto abbinato.</p>
+    </div>`;
+  }
+  function updateRowComputed(i){
+    const r=_costRows[i]; if(!r) return; const fx=costFx();
+    const tr=document.querySelector('#cost-results tr[data-i="'+i+'"]'); if(!tr) return;
+    const cost=((+r.unitPriceUsd||0)+(+r.unitFreightUsd||0))*fx;
+    const prod=r.pid?adminCatalogProducts.find(p=>p.id===r.pid):null;
+    const sell=prod?(parseFloat(prod.price)||null):null;
+    const margin=sell!=null?sell-cost:null;
+    const pct=(sell&&sell>0)?Math.round(margin/sell*100):null;
+    const tds=tr.querySelectorAll('td');
+    if(tds[4]) tds[4].textContent='€'+cost.toFixed(2);
+    if(tds[5]) tds[5].textContent=sell!=null?'€'+sell.toFixed(2):'—';
+    if(tds[6]){ tds[6].textContent=margin==null?'—':('€'+margin.toFixed(2)+(pct!=null?(' · '+pct+'%'):'')); tds[6].style.color=margin==null?'#888':(margin>=0?'#2ecc71':'#ff5555'); }
+  }
+  window.costEdit=function(i,field,val){ const r=_costRows[i]; if(!r) return; r[field]=parseFloat(val)||0; updateRowComputed(i); };
+  window.recalcCosts=function(){ _costRows.forEach((_,i)=>updateRowComputed(i)); };
+  window.costSetPid=function(i,pid){
+    const r=_costRows[i]; if(!r) return; r.pid=pid;
+    updateRowComputed(i);
+    const tr=document.querySelector('#cost-results tr[data-i="'+i+'"]'); const btn=tr&&tr.querySelector('td:last-child button');
+    if(btn){ btn.disabled=!pid; btn.style.background=pid?'var(--led)':'#333'; btn.style.color=pid?'#000':'#777'; btn.style.cursor=pid?'pointer':'not-allowed'; btn.textContent='💾'; }
+  };
+  window.saveCostRow=async function(i){
+    const fb=window.__fb; const r=_costRows[i];
+    if(!r||!r.pid){ showToast('Abbina prima un prodotto.'); return false; }
+    const fx=costFx();
+    const costUsd=(+r.unitPriceUsd||0)+(+r.unitFreightUsd||0);
+    const costEUR=+(costUsd*fx).toFixed(2);
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'products',r.pid),{
+        costEUR, costUsd:+costUsd.toFixed(2),
+        costUnitPriceUsd:+(+r.unitPriceUsd||0).toFixed(2), costUnitFreightUsd:+(+r.unitFreightUsd||0).toFixed(2),
+        costFx:fx, costUpdatedAt:fb.serverTimestamp()
+      });
+      const p=adminCatalogProducts.find(x=>x.id===r.pid); if(p){ p.costEUR=costEUR; p.costUsd=+costUsd.toFixed(2); }
+      r.saved=true;
+      const tr=document.querySelector('#cost-results tr[data-i="'+i+'"]'); const btn=tr&&tr.querySelector('td:last-child button'); if(btn){ btn.textContent='✓'; }
+      showToast('✅ Costo €'+costEUR.toFixed(2)+' salvato'+(p&&p.name?(' · '+p.name):''));
+      return true;
+    }catch(e){ console.error('saveCost',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'')+')'); return false; }
+  };
+  window.saveAllCosts=async function(){
+    const idxs=_costRows.map((r,i)=>i).filter(i=>_costRows[i].pid);
+    if(!idxs.length){ showToast('Nessuna riga abbinata da salvare.'); return; }
+    let ok=0; for(const i of idxs){ if(await saveCostRow(i)) ok++; }
+    showToast('✅ Salvati '+ok+'/'+idxs.length+' costi sui prodotti.');
+  };
+
   window.showAdminPg = function(name){
     document.querySelectorAll('.apg').forEach(p=>p.classList.add('hidden'));
     const target=document.getElementById('apg-'+name);
@@ -2709,6 +2870,7 @@ waitFB(()=>{
     }
     if(name==='clienti' && !_usersLoaded) loadUsersPage();
     if(name==='richieste') loadProductRequests();
+    if(name==='costi' && !adminCatalogProducts.length){ try{ loadAdminCatalog(); }catch(_){} }
     // Carica l'importer solo la prima volta che apri la sezione (lazy)
     if(name==='importa'){ const f=document.getElementById('importa-frame'); if(f && !f.getAttribute('src')) f.setAttribute('src','importer.html'); }
     // Analytics: carica + auto-refresh solo mentre la sezione è aperta
