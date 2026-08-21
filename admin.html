@@ -1457,9 +1457,15 @@ waitFB(()=>{
     } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
   };
 
+  let _marginCatLoading = false;
   window.renderAdminOrders = function(){
     const list = document.getElementById('admin-orders-list');
     if(!list) return;
+    // Carica una volta il catalogo (costi) per calcolare i margini negli ordini.
+    if(!adminCatalogProducts.length && !_marginCatLoading){
+      _marginCatLoading = true;
+      loadAdminCatalog().then(()=>{ _marginCatLoading=false; try{ renderAdminOrders(); }catch(_){} }).catch(()=>{ _marginCatLoading=false; });
+    }
     const filter = document.getElementById('orders-filter')?.value || 'all';
     const filtered = filter==='all' ? adminOrders : adminOrders.filter(o=>o.status===filter);
     const pending = adminOrders.filter(o=>o.status==='pending').length;
@@ -1538,9 +1544,14 @@ waitFB(()=>{
           <div style="text-align:right;flex-shrink:0;">
             <p style="font-size:16px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
             <p style="font-size:13px;color:rgba(255,255,255,.55);">${qtyLabel}</p>
+            ${(()=>{ if(i.isDigital) return ''; const c=costOfProduct(i.id); if(c==null) return ''; return costMarginHTML((i.price||0)*i.qty, c*(i.qty||1), {small:true}); })()}
           </div>
         </div>`;
       }).join('');
+      // Profitto ordine: somma su articoli fisici con costo salvato sul prodotto.
+      let _ordCost=0, _ordRev=0, _ordHasCost=false;
+      (o.items||[]).forEach(i=>{ if(i.isDigital) return; const c=costOfProduct(i.id); if(c!=null){ _ordHasCost=true; _ordCost+=c*(i.qty||1); _ordRev+=(i.price||0)*(i.qty||1); } });
+      const orderMarginHTML = _ordHasCost ? (()=>{ const m=_ordRev-_ordCost; const pct=_ordRev>0?Math.round(m/_ordRev*100):null; const col=m>=0?'#2ecc71':'#ff5555'; return `<p style="font-size:12px;color:var(--dim);margin-top:4px;line-height:1.5;">Costo merce €${_ordCost.toFixed(2)} · <span style="color:${col};font-weight:700;">Profitto €${m.toFixed(2)}${pct!=null?(' ('+pct+'%)'):''}</span></p>`; })() : '';
       const orderJsonSafe = JSON.stringify(o).replace(/'/g,"\\'").replace(/"/g,'&quot;');
       return `
       <div class="admin-order-card ${isPending?'pending':'confirmed'}" style="${isExpired?'opacity:.55;':''}">
@@ -1560,6 +1571,7 @@ waitFB(()=>{
               ${Number(o.discount)>0?'<br>Sconto −€'+Number(o.discount).toFixed(2):''}
             </p>`:''}
             <p style="font-size:12px;color:var(--dim);margin-top:4px;">${payEmoji} ${o.payment||'—'}</p>
+            ${orderMarginHTML}
           </div>
         </div>
         ${unpaid?`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.4);border-radius:4px;">
@@ -2073,6 +2085,23 @@ waitFB(()=>{
     loadAdminCatalog();
   };
 
+  // Badge costo/margine riutilizzabile (Prodotti + Ordini).
+  // Ritorna '' se non c'è un costo salvato sul prodotto.
+  function costMarginHTML(price, costEUR, opts){
+    if(costEUR==null || isNaN(costEUR)) return '';
+    const p = parseFloat(price)||0;
+    const m = p - costEUR;
+    const pct = p>0 ? Math.round(m/p*100) : null;
+    const col = m>=0 ? '#2ecc71' : '#ff5555';
+    const fs = (opts&&opts.small) ? '10px' : '11px';
+    return '<p style="font-size:'+fs+';color:rgba(255,255,255,.42);margin-top:2px;line-height:1.4;white-space:nowrap;">costo €'+costEUR.toFixed(2)+' · <span style="color:'+col+';font-weight:600;">margine €'+m.toFixed(2)+(pct!=null?(' ('+pct+'%)'):'')+'</span></p>';
+  }
+  function costOfProduct(pid){
+    if(!pid) return null;
+    const p = adminCatalogProducts.find(x=>x.id===pid);
+    return (p && typeof p.costEUR==='number') ? p.costEUR : null;
+  }
+
   // Rendering catalogo a batch (con ~5000 prodotti, renderizzare tutte le
   // righe in una volta bloccava il thread; ora carica man mano che si scrolla).
   function _catRowHtml(p){
@@ -2102,7 +2131,10 @@ waitFB(()=>{
         + '<p style="font-size:15px;font-family:\'Manrope\',sans-serif;font-weight:600;color:#fff;">' + escH(p.name||'—') + '</p>'
         + '<p style="font-size:13px;color:rgba(255,255,255,.45);margin-top:3px;">' + escH(p.brand||'') + ' ' + (p.model?'· '+escH(p.model):'') + ' ' + escH(sizeStr) + '</p>'
       + '</div>'
-      + '<p style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:26px;">€' + (p.price||0).toFixed(2) + '</p>'
+      + '<div style="text-align:right;">'
+        + '<p style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:26px;">€' + (p.price||0).toFixed(2) + '</p>'
+        + costMarginHTML(p.price, (typeof p.costEUR==='number'?p.costEUR:null))
+      + '</div>'
       + actionsHtml
       + '</div>';
   }
