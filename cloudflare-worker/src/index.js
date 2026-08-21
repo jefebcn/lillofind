@@ -375,6 +375,37 @@ app.get('/watch', async (c) => {
 });
 
 // ════════════════════════════════════════════════════════════════
+// /fx — tassi di cambio reali (GET pubblico, keyless, cache 12h).
+// Fonte: open.er-api.com (nessuna chiave). Base USD.
+// ════════════════════════════════════════════════════════════════
+app.get('/fx', async (c) => {
+  const cache = caches.default;
+  const cacheKey = new Request(new URL(c.req.url).toString(), { method: 'GET' });
+  const hit = await cache.match(cacheKey);
+  if (hit) return new Response(hit.body, hit);
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/USD', { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
+    const j = await r.json();
+    const usdEur = j && j.rates && j.rates.EUR;
+    const usdCny = j && j.rates && j.rates.CNY;
+    const out = {
+      ok: !!usdEur,
+      usdEur: usdEur || null,
+      usdCny: usdCny || null,
+      cnyEur: (usdEur && usdCny) ? +(usdEur / usdCny).toFixed(6) : null,
+      updated: (j && j.time_last_update_utc) || null,
+    };
+    const resp = new Response(JSON.stringify(out), {
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': out.ok ? 'public, max-age=3600, s-maxage=43200' : 'no-store' },
+    });
+    if (out.ok) c.executionCtx.waitUntil(cache.put(cacheKey, resp.clone()));
+    return resp;
+  } catch (e) {
+    return c.json({ ok: false, error: 'fx-failed' }, 200, { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
 // Endpoint callable (POST /<nomeFunzione>)
 // ════════════════════════════════════════════════════════════════
 // Lettura admin
