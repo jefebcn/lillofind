@@ -4567,7 +4567,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     _sCount = _sCount || document.getElementById('s-count');
     try{ renderSportTeamsBar(); }catch(_){}
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
+    // In una vista sportiva (Calcio/Basket/Sport) i kit devono comparire; altrove
+    // NO — restano "solo su sport". La ricerca li trova comunque.
+    const inSportView=!!(filters.football||filters.basket||filters.style==='Sport');
     _shopFiltered=products.filter(p=>
+      (inSportView||q||!isSportOnly(p))&&
       (!filters.model||matchesModelFilter(p,filters.model))&&
       (!filters.brand||canonBrand(p.brand)===filters.brand)&&
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
@@ -4658,7 +4662,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(h){
       requestAnimationFrame(()=>{
         try{
-          const latest=products.slice(0,8);
+          const latest=products.filter(p=>!isSportOnly(p)).slice(0,8);
           h.textContent='';
           h.insertAdjacentHTML('afterbegin',latest.length?latest.map(cardHTML).join(''):'<p style="font-size:10px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>');
           h.style.display='grid';
@@ -4698,6 +4702,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     const WORDS=['run','gym','palestra','fitness','calcio','football','soccer','basket','basketball',
       'tennis','padel','rugby','volley','tuta','jersey','leggings','shorts','pantaloncini','corsa'];
     return WORDS.some(w=>words.includes(w));
+  }
+
+  // Prodotti che devono stare SOLO nella sezione Sport (Calcio/Basket/Sport),
+  // NON sparsi nel feed generale, nella home o nel carosello.
+  // Mirato: kit calcio/basket + articoli taggati dall'admin come sport.
+  // (Non usa il criterio "brand sportivo" per non nascondere le sneaker Nike ecc.)
+  function isSportOnly(p){
+    if(!p) return false;
+    const st=(typeof p.style==='string')?p.style.toLowerCase():'';
+    if(st==='calcio'||st==='basket'||st==='sport') return true;
+    return isFootballKit(p)||isBasketball(p);
   }
 
   function renderHomeSport(){
@@ -4757,8 +4772,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     requestAnimationFrame(()=>{
       // Rotazione: a OGNI visita mostra un mix casuale di prodotti diversi,
       // così la sezione sembra sempre aggiornata (in realtà pesca dal catalogo).
-      const inStock = products.filter(p=>p.soldOut!==true);
-      const src = inStock.length>=12 ? inStock : products.slice();
+      const base = products.filter(p=>!isSportOnly(p));
+      const inStock = base.filter(p=>p.soldOut!==true);
+      const src = inStock.length>=12 ? inStock : base.slice();
       const shuffled = src.slice();
       for(let i=shuffled.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=shuffled[i]; shuffled[i]=shuffled[j]; shuffled[j]=t; }
       const pool = shuffled.slice(0, Math.min(shuffled.length, 20));
