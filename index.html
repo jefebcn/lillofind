@@ -2394,147 +2394,194 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 <div id="pg-lfpoints" class="pg">
 
+  <style>
+    #pg-lfpoints .lfp-hero{position:relative;background:var(--k);color:var(--w);padding:60px 24px 54px;overflow:hidden;}
+    #pg-lfpoints .lfp-hero::before{content:'';position:absolute;top:-40%;right:-8%;width:62%;height:180%;background:radial-gradient(circle,rgba(153,160,116,.30),transparent 62%);pointer-events:none;}
+    #pg-lfpoints .lfp-hero > *{position:relative;z-index:1;}
+    #pg-lfpoints .lfp-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:clamp(64px,11vw,150px);line-height:.86;background:linear-gradient(175deg,#c3caa0,var(--led2) 45%,var(--led));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 34px rgba(153,160,116,.35));}
+    #pg-lfpoints .lfp-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(245,242,236,.22);border-radius:999px;padding:8px 15px;font-size:11px;letter-spacing:1px;color:var(--led2);background:rgba(153,160,116,.10);font-weight:600;}
+    #pg-lfpoints .lfp-sec{padding:52px 24px;max-width:1180px;margin:0 auto;}
+    #pg-lfpoints .lfp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+    #pg-lfpoints .lfp-step{position:relative;border:1.5px solid rgba(35,35,31,.12);border-radius:var(--radius);padding:26px 22px;background:#fff;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;}
+    #pg-lfpoints .lfp-step:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(35,35,31,.10);border-color:var(--led2);}
+    #pg-lfpoints .lfp-step .num{position:absolute;top:12px;right:18px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:56px;color:rgba(35,35,31,.06);line-height:1;}
+    #pg-lfpoints .lfp-step .ic{width:54px;height:54px;border-radius:15px;background:rgba(153,160,116,.15);display:flex;align-items:center;justify-content:center;font-size:27px;margin-bottom:14px;}
+    #pg-lfpoints .lfp-step h3{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;margin-bottom:8px;}
+    #pg-lfpoints .lfp-tbl{border:1.5px solid rgba(35,35,31,.14);border-radius:var(--radius);overflow:hidden;background:#fff;overflow-x:auto;}
+    #pg-lfpoints .lfp-thead,#pg-lfpoints .rw{display:grid;grid-template-columns:76px 1.05fr .85fr 1.55fr;gap:12px;align-items:center;min-width:560px;}
+    #pg-lfpoints .lfp-thead{background:var(--k);color:var(--w);padding:13px 18px;font-size:9px;letter-spacing:2px;text-transform:uppercase;}
+    #pg-lfpoints .rw{padding:13px 18px;border-bottom:1px solid #ededea;position:relative;transition:background .15s;}
+    #pg-lfpoints .rw:last-child{border-bottom:none;}
+    #pg-lfpoints .rw:hover{background:#faf9f6;}
+    #pg-lfpoints .rw.on{background:rgba(153,160,116,.07);}
+    #pg-lfpoints .rw.on::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--led);}
+    #pg-lfpoints .rw-pts{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:6px 11px;border-radius:999px;background:rgba(35,35,31,.08);color:var(--k);font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px;}
+    #pg-lfpoints .rw.on .rw-pts{background:var(--led);color:#fff;}
+    #pg-lfpoints .rw-lab{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:21px;color:var(--k);}
+    #pg-lfpoints .rw.on .rw-lab{color:var(--led);}
+    #pg-lfpoints .rw-type{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);border:1px solid rgba(35,35,31,.14);border-radius:999px;padding:3px 9px;justify-self:start;}
+    #pg-lfpoints .rw-ok{color:var(--led);font-weight:700;font-size:10px;letter-spacing:.5px;}
+    #pg-lfpoints .rw-miss{color:var(--dim);font-size:9px;}
+    #pg-lfpoints .lfp-tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+    #pg-lfpoints .lfp-tier{position:relative;border-radius:16px;padding:24px 20px;overflow:hidden;border:1.5px solid transparent;transition:transform .2s,box-shadow .2s;}
+    #pg-lfpoints .lfp-tier:hover{transform:translateY(-5px);box-shadow:0 18px 42px rgba(0,0,0,.16);}
+    #pg-lfpoints .lfp-tier .tico{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;}
+    #pg-lfpoints .lfp-tier h4{font-family:'Bricolage Grotesque',sans-serif;font-size:27px;line-height:1;margin-bottom:5px;}
+    #pg-lfpoints .lfp-tier .tpts{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;opacity:.7;}
+    #pg-lfpoints .lfp-tier ul{list-style:none;font-size:11px;line-height:2.05;}
+    #pg-lfpoints .t-bronze{background:linear-gradient(160deg,#f8efe4,#eddcc8);color:#5b4433;border-color:#e4cfb4;}
+    #pg-lfpoints .t-bronze .tico{background:rgba(180,120,70,.18);}
+    #pg-lfpoints .t-silver{background:linear-gradient(160deg,#f5f6f7,#e4e7ea);color:#4c525a;border-color:#d5dade;}
+    #pg-lfpoints .t-silver .tico{background:rgba(120,132,148,.18);}
+    #pg-lfpoints .t-gold{background:linear-gradient(160deg,#2b2b23,#191913);color:#e8e6dd;border-color:#4a4633;}
+    #pg-lfpoints .t-gold h4{color:#e0bd6b;} #pg-lfpoints .t-gold .tico{background:rgba(224,189,107,.16);} #pg-lfpoints .t-gold ul{color:#a29c86;}
+    #pg-lfpoints .t-plat{background:linear-gradient(160deg,#242420,#121210);color:#e8e6dd;border-color:var(--led);box-shadow:0 0 0 1px rgba(153,160,116,.3),0 14px 40px rgba(0,0,0,.25);}
+    #pg-lfpoints .t-plat h4{color:var(--led2);} #pg-lfpoints .t-plat .tico{background:rgba(153,160,116,.20);} #pg-lfpoints .t-plat ul{color:#9a968a;}
+    #pg-lfpoints .t-plat .tribbon{position:absolute;top:12px;right:-30px;transform:rotate(45deg);background:var(--led);color:#141410;font-size:8px;letter-spacing:1.5px;font-weight:800;padding:3px 34px;}
+    #pg-lfpoints .lfp-cta-card{max-width:640px;margin:0 auto;border-radius:20px;padding:44px 28px;background:linear-gradient(160deg,#fff,#f1efe8);border:1.5px solid rgba(35,35,31,.1);box-shadow:0 20px 50px rgba(35,35,31,.08);}
+    @media(max-width:900px){#pg-lfpoints .lfp-steps{grid-template-columns:1fr;}#pg-lfpoints .lfp-tiers{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:520px){#pg-lfpoints .lfp-tiers{grid-template-columns:1fr;}}
+  </style>
+
   <!-- Hero -->
-  <section style="background:var(--k);color:var(--w);padding:60px 24px;border-bottom:2px solid var(--k);">
-    <div class="led-strip-sm" style="margin-bottom:32px;"></div>
-    <p class="slbl" style="color:#888;margin-bottom:12px;">Programma Fedeltà Esclusivo</p>
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;max-width:1100px;">
-      <h1 class="bb" style="font-size:clamp(64px,11vw,150px);line-height:.88;color:var(--led);">LFPOINTS</h1>
-      <p style="font-size:11px;color:#aaa;line-height:1.9;max-width:340px;">
-        LILLOFIND premia chi rimane nel tempo. Ogni euro speso diventa un punto fedeltà. I punti non scadono mai e si convertono in sconti reali.
-      </p>
+  <section class="lfp-hero">
+    <div style="max-width:1180px;margin:0 auto;">
+      <div class="lfp-chip" style="margin-bottom:18px;">⬡ Programma Fedeltà Esclusivo</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:24px;">
+        <h1 class="lfp-title">LFPOINTS</h1>
+        <div style="max-width:360px;">
+          <p style="font-size:12px;color:rgba(245,242,236,.72);line-height:1.9;margin-bottom:14px;">
+            LILLOFIND premia chi resta nel tempo. Ogni euro speso diventa un punto fedeltà — i punti <b style="color:var(--led2);">non scadono mai</b> e si convertono in sconti reali. 💚
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <span class="lfp-chip">💶 1€ = 1 punto</span>
+            <span class="lfp-chip">♾️ Non scadono</span>
+            <span class="lfp-chip">🎁 Sconti reali</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="led-strip-sm" style="margin-top:32px;"></div>
   </section>
 
   <!-- How it works -->
-  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
-    <p class="slbl" style="margin-bottom:32px;">Come Funziona</p>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--k);" class="grid-1-mob">
-      <div style="padding:32px 24px;border-right:1px solid var(--k);">
-        <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">01</p>
-        <h3 class="bb" style="font-size:26px;margin:10px 0 8px;">🛒 Acquista</h3>
-        <p style="font-size:11px;color:var(--mid);line-height:1.9;">Ogni prodotto genera LFPOINTS pari al prezzo in euro. €89 = 89 pts. Accreditati al completamento dell'acquisto.</p>
+  <section class="lfp-sec">
+    <p class="slbl" style="margin-bottom:26px;">✨ Come Funziona</p>
+    <div class="lfp-steps">
+      <div class="lfp-step">
+        <span class="num">01</span>
+        <div class="ic">🛒</div>
+        <h3>Acquista</h3>
+        <p style="font-size:11.5px;color:var(--mid);line-height:1.9;">Ogni prodotto genera LFPOINTS pari al prezzo in euro. <b style="color:var(--k);">€89 = 89 pts</b>, accreditati al completamento dell'acquisto.</p>
       </div>
-      <div style="padding:32px 24px;border-right:1px solid var(--k);">
-        <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">02</p>
-        <h3 class="bb" style="font-size:26px;margin:10px 0 8px;">📈 Accumula</h3>
-        <p style="font-size:11px;color:var(--mid);line-height:1.9;">I punti non scadono mai. Sali di tier e sblocca vantaggi crescenti: sconti, early access, spedizione VIP.</p>
+      <div class="lfp-step">
+        <span class="num">02</span>
+        <div class="ic">📈</div>
+        <h3>Accumula</h3>
+        <p style="font-size:11.5px;color:var(--mid);line-height:1.9;">I punti non scadono mai. Sali di livello e sblocca vantaggi crescenti: sconti, early access, spedizione VIP.</p>
       </div>
-      <div style="padding:32px 24px;">
-        <p class="bb" style="font-size:48px;color:#e0e0e0;line-height:1;">03</p>
-        <h3 class="bb" style="font-size:26px;margin:10px 0 8px;">🎁 Riscatta</h3>
-        <p style="font-size:11px;color:var(--mid);line-height:1.9;">Converti i punti in sconti fissi (€5, €15, €35) o percentuali (10%, 20%, 30%) sul prossimo ordine.</p>
+      <div class="lfp-step">
+        <span class="num">03</span>
+        <div class="ic">🎁</div>
+        <h3>Riscatta</h3>
+        <p style="font-size:11.5px;color:var(--mid);line-height:1.9;">Converti i punti in sconti fissi (€5, €15, €35) o percentuali (10%, 20%, 30%) sul prossimo ordine.</p>
       </div>
     </div>
   </section>
-
-  <!-- LED separator -->
-  <div class="led-strip"></div>
 
   <!-- REWARDS TABLE — the core section -->
-  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-bottom:32px;">
-      <p class="slbl">Tabella Premi</p>
+  <section class="lfp-sec" style="padding-top:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-bottom:22px;">
+      <p class="slbl">🏆 Tabella Premi</p>
       <div class="led-badge">1€ = 1 LFPOINT</div>
     </div>
-
-    <!-- Table -->
-    <div style="border:2px solid var(--k);overflow:hidden;overflow-x:auto;">
-      <div style="min-width:540px;">
-        <!-- Header row -->
-        <div style="display:grid;grid-template-columns:100px 1fr 1fr 1.5fr;background:var(--k);color:var(--w);padding:12px 16px;font-size:9px;letter-spacing:2px;text-transform:uppercase;gap:8px;">
-          <div>Punti</div>
-          <div>Premio</div>
-          <div>Tipo</div>
-          <div>Applicazione</div>
+    <div class="lfp-tbl">
+      <div style="min-width:560px;">
+        <div class="lfp-thead">
+          <div>Punti</div><div>Premio</div><div>Tipo</div><div>Applicazione</div>
         </div>
-        <!-- Rows -->
-        <div id="rew-rows">
-          <!-- JS injected -->
-        </div>
+        <div id="rew-rows"><!-- JS injected --></div>
       </div>
     </div>
-
-    <p style="font-size:10px;color:var(--dim);margin-top:16px;letter-spacing:1px;">* I premi sono cumulabili. Un singolo codice sconto per ordine. Validi 90 giorni dall'attivazione.</p>
+    <p style="font-size:10px;color:var(--dim);margin-top:14px;letter-spacing:1px;">* I premi sono cumulabili. Un singolo codice sconto per ordine. Validi 90 giorni dall'attivazione.</p>
   </section>
 
-  <!-- LED separator -->
-  <div class="led-strip-sm"></div>
-
   <!-- TIERS -->
-  <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
-    <p class="slbl" style="margin-bottom:32px;">I Livelli</p>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" class="grid-1-mob" style="grid-template-columns:repeat(2,1fr)!important;">
-      <div style="border:2px solid var(--k);padding:24px 18px;">
-        <p style="font-size:20px;margin-bottom:8px;">🥉</p>
-        <p class="bb" style="font-size:28px;margin-bottom:4px;">Bronze</p>
-        <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">0+ Punti</p>
-        <ul style="font-size:10px;color:var(--mid);line-height:2.1;list-style:none;">
+  <section class="lfp-sec" style="padding-top:8px;">
+    <p class="slbl" style="margin-bottom:26px;">💠 I Livelli</p>
+    <div class="lfp-tiers">
+      <div class="lfp-tier t-bronze">
+        <div class="tico">🥉</div>
+        <h4>Bronze</h4>
+        <p class="tpts">0+ Punti</p>
+        <ul>
           <li>✓ Accesso programma</li>
           <li>✓ LFPOINTS su ogni ordine</li>
           <li>✓ Newsletter drop</li>
           <li>✓ Sconto da 50 pts</li>
         </ul>
       </div>
-      <div style="border:2px solid var(--k);padding:24px 18px;background:#f0f0f0;">
-        <p style="font-size:20px;margin-bottom:8px;">🥈</p>
-        <p class="bb" style="font-size:28px;margin-bottom:4px;">Silver</p>
-        <p style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">50+ Punti</p>
-        <ul style="font-size:10px;color:var(--mid);line-height:2.1;list-style:none;">
+      <div class="lfp-tier t-silver">
+        <div class="tico">🥈</div>
+        <h4>Silver</h4>
+        <p class="tpts">50+ Punti</p>
+        <ul>
           <li>✓ Tutto Bronze</li>
           <li>✓ Spedizione prioritaria</li>
           <li>✓ Early access drop</li>
           <li>✓ Sconto da 150 pts</li>
         </ul>
       </div>
-      <div style="border:2px solid var(--k);padding:24px 18px;background:#1a1a1a;color:var(--w);">
-        <p style="font-size:20px;margin-bottom:8px;">🥇</p>
-        <p class="bb" style="font-size:28px;margin-bottom:4px;color:var(--led);">Gold</p>
-        <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">200+ Punti</p>
-        <ul style="font-size:10px;color:#666;line-height:2.1;list-style:none;">
+      <div class="lfp-tier t-gold">
+        <div class="tico">🥇</div>
+        <h4>Gold</h4>
+        <p class="tpts">200+ Punti</p>
+        <ul>
           <li>✓ Tutto Silver</li>
           <li>✓ −10% dal primo giorno</li>
           <li>✓ Inviti drop privati</li>
           <li>✓ Sconto dal 30% da 500 pts</li>
         </ul>
       </div>
-      <div style="border:2px solid var(--led);padding:24px 18px;background:var(--k);color:var(--w);box-shadow:0 0 20px rgba(200,255,0,.2);">
-        <p style="font-size:20px;margin-bottom:8px;">💎</p>
-        <p class="bb" style="font-size:28px;margin-bottom:4px;color:var(--led);">Platinum</p>
-        <p style="font-size:9px;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">500+ Punti</p>
-        <ul style="font-size:10px;color:#555;line-height:2.1;list-style:none;">
+      <div class="lfp-tier t-plat">
+        <div class="tribbon">★ TOP</div>
+        <div class="tico">💎</div>
+        <h4>Platinum</h4>
+        <p class="tpts">500+ Punti</p>
+        <ul>
           <li>✓ Tutto Gold</li>
           <li>✓ −20% permanente</li>
           <li>✓ Concierge dedicato</li>
           <li>✓ Edizioni limitate</li>
-          <li style="color:var(--led);">✓ −30% da 1000 pts</li>
+          <li style="color:var(--led2);">✓ −30% da 1000 pts</li>
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- LED separator -->
-  <div class="led-strip"></div>
-
   <!-- CTA -->
-  <section style="padding:60px 24px;text-align:center;">
+  <section class="lfp-sec" style="text-align:center;">
     <!-- Guest: not logged in -->
     <div id="lfp-cta-guest">
-      <h2 class="bb" style="font-size:clamp(44px,7vw,90px);margin-bottom:14px;">Inizia. Gratis.</h2>
-      <p style="font-size:11px;color:var(--dim);margin-bottom:32px;letter-spacing:1px;">50 punti ti bastano per il primo sconto. Un ordine da €50 = €5 gratis.</p>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn-led" onclick="showPg('auth');switchTab('reg')">Crea Account →</button>
-        <button class="btn-g" onclick="showPg('shop')">Vai allo Shop</button>
+      <div class="lfp-cta-card">
+        <div style="font-size:34px;margin-bottom:6px;">🎉</div>
+        <h2 class="bb" style="font-size:clamp(38px,6vw,72px);margin-bottom:12px;">Inizia. Gratis.</h2>
+        <p style="font-size:12px;color:var(--mid);margin-bottom:26px;letter-spacing:.3px;line-height:1.8;">50 punti ti bastano per il primo sconto.<br/>Un ordine da €50 = <b style="color:var(--k);">€5 gratis</b>. 💚</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn-led" onclick="showPg('auth');switchTab('reg')">Crea Account →</button>
+          <button class="btn-g" onclick="showPg('shop')">Vai allo Shop</button>
+        </div>
       </div>
     </div>
     <!-- Member: logged in -->
     <div id="lfp-cta-member" style="display:none;">
-      <h2 class="bb" style="font-size:clamp(44px,7vw,90px);margin-bottom:14px;">Sei già <span style="color:var(--led);">Membro.</span></h2>
-      <p id="lfp-cta-pts-line" style="font-size:11px;color:var(--dim);margin-bottom:32px;letter-spacing:1px;"></p>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn-led" onclick="showPg('shop')">Vai allo Shop →</button>
-        <button class="btn-g" onclick="showPg('profile')">Il Tuo Profilo</button>
+      <div class="lfp-cta-card">
+        <div style="font-size:34px;margin-bottom:6px;">👑</div>
+        <h2 class="bb" style="font-size:clamp(38px,6vw,72px);margin-bottom:12px;">Sei già <span style="color:var(--led);">Membro.</span></h2>
+        <p id="lfp-cta-pts-line" style="font-size:12px;color:var(--mid);margin-bottom:26px;letter-spacing:.3px;"></p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn-led" onclick="showPg('shop')">Vai allo Shop →</button>
+          <button class="btn-g" onclick="showPg('profile')">Il Tuo Profilo</button>
+        </div>
       </div>
     </div>
   </section>
@@ -4856,16 +4903,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     const tbody=document.getElementById('rew-rows');
     if(!tbody)return;
     tbody.innerHTML=REWARDS.map(r=>{
-      const locked=pts<r.pts;
-      return `<div class="rew-row" style="padding:14px 16px;gap:8px;${locked?'opacity:.45':''}">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:9px;letter-spacing:1px;font-family:'Manrope',monospace;">${r.pts}</span>
-        </div>
-        <div>
-          <span class="bb" style="font-size:20px;${!locked?'color:var(--led)':''}">${r.label}</span>
-        </div>
-        <div style="font-size:10px;color:var(--mid);letter-spacing:1px;text-transform:uppercase;">${r.type}</div>
-        <div style="font-size:10px;color:var(--mid);">${r.desc}${!locked?` <span style="color:var(--led);font-weight:bold;margin-left:4px;">✓ DISPONIBILE</span>`:` <span style="color:var(--dim);font-size:9px;">mancano ${r.pts-pts} pts</span>`}</div>
+      const unlocked=pts>=r.pts;
+      return `<div class="rw${unlocked?' on':''}">
+        <div><span class="rw-pts">${r.pts}</span></div>
+        <div><span class="rw-lab">${r.label}</span></div>
+        <div><span class="rw-type">${r.type}</span></div>
+        <div style="font-size:11px;color:var(--mid);">${r.desc}${unlocked?` <span class="rw-ok">✓ DISPONIBILE</span>`:` <span class="rw-miss">· mancano ${r.pts-pts} pts</span>`}</div>
       </div>`;
     }).join('');
   }
