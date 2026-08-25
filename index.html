@@ -2767,6 +2767,35 @@ img{ -webkit-user-drag:none; user-select:none; }
      PROFILE PAGE
 ════════════════════════════════════════════════════════ -->
 <div id="pg-profile" class="pg">
+  <style>
+    /* ── Profile restyle: arrotonda e ammorbidisce, on-brand (sage/cream) ── */
+    #pg-profile .prog-bg,#pg-profile .prog-fill{border-radius:999px;}
+    #pg-profile .lf-slider{border-radius:999px;}
+    #pg-profile .lf-slider:before{border-radius:50%;}
+    /* Hero card */
+    #prof-sec-overview > div:first-child{
+      border-radius:18px;
+      box-shadow:0 14px 38px rgba(35,35,31,.18), inset 0 0 70px rgba(153,160,116,.06);
+    }
+    /* Card generiche (bordi neri/grigi/danger) → arrotondate + ombra morbida */
+    #pg-profile [style*="border:2px solid var(--k)"],
+    #pg-profile [style*="border:1.5px solid #e8e8e8"],
+    #pg-profile [style*="border:2px solid #ffdddd"]{
+      border-radius:16px;box-shadow:0 6px 20px rgba(35,35,31,.05);
+    }
+    /* Tier chips: arrotondati, con hover-lift */
+    #pg-profile .tier-c{border-radius:13px;}
+    #pg-profile .tier-c:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(35,35,31,.10);}
+    #pg-profile .tier-c.unlocked{box-shadow:0 8px 22px rgba(35,35,31,.18);}
+    /* Quick actions: arrotondate + micro-lift */
+    #prof-sec-overview [style*="border:1.5px solid #e0e0e0"]{border-radius:14px;transition:transform .18s,border-color .15s,background .15s,box-shadow .18s;}
+    #prof-sec-overview [style*="border:1.5px solid #e0e0e0"]:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(35,35,31,.09);}
+    /* Titolo sezione con barretta accento */
+    #pg-profile .prof-sec > h2{position:relative;padding-left:16px;}
+    #pg-profile .prof-sec > h2::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:5px;border-radius:999px;background:linear-gradient(180deg,var(--led2),var(--led));}
+    /* Input arrotondati nel profilo */
+    #pg-profile .lf-in{border-radius:11px;}
+  </style>
   <div class="led-strip"></div>
 
 
