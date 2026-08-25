@@ -2109,6 +2109,27 @@ img{ -webkit-user-drag:none; user-select:none; }
      CART PAGE
 ════════════════════════════════════════════════════════ -->
 <div id="pg-cart" class="pg">
+  <style>
+    /* ── Carrello: arrotonda e ammorbidisce (colori LED invariati) ── */
+    #pg-cart h1.bb{position:relative;padding-left:16px;}
+    #pg-cart h1.bb::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:6px;border-radius:999px;background:linear-gradient(180deg,var(--led2),var(--led));}
+    #cart-summary > div{border-radius:16px !important;box-shadow:0 12px 32px rgba(35,35,31,.07);}
+    /* barra spedizione gratuita → pill */
+    #free-ship-bar > div[style*="height:6px"],#free-ship-bar > div[style*="height:6px"] > div{border-radius:999px !important;}
+    /* box QC → arrotondato */
+    #qc-option{border-radius:12px;}
+    /* gruppo coupon: bordi arrotondati agli estremi */
+    #cart-coupon{border-radius:11px 0 0 11px !important;}
+    #cart-coupon + button{border-radius:0 11px 11px 0;}
+    /* righe articolo: hover morbido */
+    #cart-items > div[style*="border-bottom"]{transition:background .15s;padding-left:8px;padding-right:8px;border-radius:12px;}
+    #cart-items > div[style*="border-bottom"]:hover{background:rgba(153,160,116,.05);}
+    /* pulsanti scatola sì/no → pill */
+    #cart-items button[onclick^="setBoxOption"]{border-radius:999px;}
+    /* checkout CTA: micro-lift */
+    #cart-summary .btn-led{transition:transform .15s,box-shadow .2s,background .2s;}
+    #cart-summary .btn-led:hover{transform:translateY(-2px);}
+  </style>
   <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
       <h1 class="bb" style="font-size:clamp(36px,5vw,64px);" data-i18n="cart.title">Carrello</h1>
