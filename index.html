@@ -5849,6 +5849,21 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
     </div>`;
   }
+  // Credenziale di tipo "link di attivazione" (es. Gemini, Kinguin…): il cliente copia il link.
+  function credLinkRow(url){
+    if(!url) return '';
+    const safe=String(url).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const disp=String(url).replace(/</g,'&lt;');
+    const href=/^https?:\/\//i.test(url)?safe:('https://'+safe);
+    return `<div style="padding:12px 2px;border-bottom:1px solid #f0f0f0;">
+      <p style="font-size:13px;color:var(--dim);margin-bottom:7px;">🔗 Link di attivazione</p>
+      <div style="background:#f3f6ff;border:1px solid #e0e6ff;border-radius:12px;padding:10px 12px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#2b57d6;word-break:break-all;line-height:1.55;">${disp}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button data-copy="${safe}" onclick="lfCopy(this.dataset.copy)" style="flex:1;border:none;background:#2b57d6;color:#fff;border-radius:999px;padding:10px;font-size:12px;font-weight:600;cursor:pointer;">📋 Copia link</button>
+        <a href="${href}" target="_blank" rel="noopener" style="border:1.5px solid #2b57d6;color:#2b57d6;border-radius:999px;padding:10px 16px;font-size:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;">Apri ↗</a>
+      </div>
+    </div>`;
+  }
   function subCardHTML(c){
     const s=subDates(c.startISO, c.months);
     const fmt=d=>d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
@@ -5863,6 +5878,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div>
         ${credRow('Nome utente', c.login, false)}
         ${credRow("Parola d'ordine", c.password, true)}
+        ${c.link?credLinkRow(c.link):''}
         ${c.profile?credRow('Profilo', c.profile, false):''}
         ${c.note?`<p style="font-size:11px;color:var(--mid);line-height:1.5;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:8px 10px;">📝 ${String(c.note).replace(/</g,'&lt;')}</p>`:''}
       </div>
@@ -5887,9 +5903,9 @@ img{ -webkit-user-drag:none; user-select:none; }
       const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(30));
       const snap=await fb.getDocs(q);
       const creds=[];
-      snap.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password)) creds.push(c); }); });
+      snap.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password||c.link)) creds.push(c); }); });
       // Credenziali aggiunte dall'admin direttamente sul profilo (clienti senza ordine)
-      if(udata && Array.isArray(udata.subscriptions)) udata.subscriptions.forEach(c=>{ if(c&&(c.login||c.password)) creds.push(c); });
+      if(udata && Array.isArray(udata.subscriptions)) udata.subscriptions.forEach(c=>{ if(c&&(c.login||c.password||c.link)) creds.push(c); });
       if(!creds.length){ list.innerHTML=_subsEmpty; return; }
       // Attivi prima, poi in scadenza, poi scaduti
       creds.sort((a,b)=>subDates(a.startISO,a.months).remDays - subDates(b.startISO,b.months).remDays).reverse();

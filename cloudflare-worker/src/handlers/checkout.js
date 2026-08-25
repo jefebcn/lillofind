@@ -255,7 +255,7 @@ export async function sendCredentialsEmail(data, { env }) {
   if (!env.RESEND_API_KEY) return { sent: false, reason: 'no_key' };
   const to = (data && data.email) || '';
   if (!to) return { sent: false, reason: 'no_email' };
-  const creds = Array.isArray(data.credentials) ? data.credentials.filter(c => c && (c.login || c.password)) : [];
+  const creds = Array.isArray(data.credentials) ? data.credentials.filter(c => c && (c.login || c.password || c.link)) : [];
   if (!creds.length) return { sent: false, reason: 'no_creds' };
   const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
   const name = ((data.name || '').split(' ')[0]) || '';
@@ -270,6 +270,7 @@ export async function sendCredentialsEmail(data, { env }) {
       <tr><td style="padding:16px 18px;">
         <div style="font-size:16px;font-weight:700;color:#23231f;margin-bottom:6px;">🔑 ${escHtml(c.service || 'Abbonamento')}</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${row('Nome utente', c.login)}${row("Parola d'ordine", c.password, true)}${c.profile ? row('Profilo', c.profile) : ''}</table>
+        ${c.link ? `<div style="margin-top:10px;"><div style="font-size:12px;color:#8a8a80;margin-bottom:5px;">🔗 Link di attivazione</div><a href="${escHtml(c.link)}" style="display:block;background:#f3f6ff;border:1px solid #e0e6ff;border-radius:10px;padding:10px 12px;font-family:'Courier New',monospace;font-size:12px;color:#2b57d6;word-break:break-all;text-decoration:none;">${escHtml(c.link)}</a></div>` : ''}
         ${c.note ? `<div style="margin-top:10px;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:8px 10px;font-size:12px;color:#6b6b63;">📝 ${escHtml(c.note)}</div>` : ''}
         <div style="margin-top:10px;font-size:12px;color:#6b6b63;">Inizio <b style="color:#23231f;">${fmt(c.startISO)}</b> · Fine <b style="color:#23231f;">${fmt(c.startISO, months)}</b> · Durata ${months} ${months > 1 ? 'mesi' : 'mese'}</div>
       </td></tr>
