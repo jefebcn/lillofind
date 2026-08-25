@@ -1989,6 +1989,19 @@ img{ -webkit-user-drag:none; user-select:none; }
      SHOP PAGE
 ════════════════════════════════════════════════════════ -->
 <div id="pg-shop" class="pg">
+  <style>
+    /* ── Shop polish: zoom immagine card, hover, titolo, contatore ── */
+    .pgrid .pcard img{transition:opacity .35s ease, transform .55s cubic-bezier(.2,.6,.2,1) !important;}
+    @media(hover:hover){
+      .pgrid .pcard:hover img{transform:scale(1.07);}
+      .pgrid .pcard:hover{box-shadow:0 18px 42px rgba(35,35,31,.16);}
+    }
+    #pg-shop main h2.bb{position:relative;padding-left:16px;}
+    #pg-shop main h2.bb::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:6px;border-radius:999px;background:linear-gradient(180deg,var(--led2),var(--led));}
+    #pg-shop #s-count{background:rgba(153,160,116,.14);color:var(--led);padding:5px 12px;border-radius:999px;font-weight:600;letter-spacing:.5px;}
+    /* barra ricerca: focus glow più morbido */
+    #pg-shop #shop-search:focus{box-shadow:0 0 0 3px rgba(153,160,116,.18);}
+  </style>
   <div style="display:flex;">
     <!-- Filter sidebar (desktop) -->
     <aside id="filter-aside">
