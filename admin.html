@@ -1883,8 +1883,9 @@ waitFB(()=>{
       return '<div style="border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px;margin-bottom:12px;">'
         +'<p style="font-size:13px;font-weight:700;margin-bottom:10px;color:#c9b8ff;">'+escH(it.name||('Abbonamento '+(idx+1)))+' · '+(it.qty>1?it.qty+' mesi':'1 mese')+'</p>'
         +fld('Servizio','cr-svc-'+idx, ex.service||it.name, 'Netflix, Spotify…')
-        +fld('Email / Login','cr-login-'+idx, ex.login, 'account@email.com')
-        +fld('Password','cr-pass-'+idx, ex.password, 'password')
+        +fld('Email / Login (opz.)','cr-login-'+idx, ex.login, 'account@email.com')
+        +fld('Password (opz.)','cr-pass-'+idx, ex.password, 'password')
+        +fld('🔗 Link di attivazione (opz.)','cr-link-'+idx, ex.link, 'https://serviceactivation.google.com/...')
         +fld('Profilo (opz.)','cr-prof-'+idx, ex.profile, 'es. Profilo 2 · PIN 1234')
         +fld('Note (opz.)','cr-note-'+idx, ex.note, 'istruzioni per il cliente')
         +'<div style="display:flex;gap:10px;"><div style="flex:1;">'+fld('Data inizio','cr-start-'+idx, start, '', 'date')+'</div><div style="width:90px;">'+fld('Mesi','cr-mon-'+idx, months, '', 'number')+'</div></div>'
@@ -1905,12 +1906,12 @@ waitFB(()=>{
     const g=id=>(document.getElementById(id)?.value||'').trim();
     const creds = digital.map((it,idx)=>({
       itemId: it.id||'', service: g('cr-svc-'+idx)||it.name||'',
-      login: g('cr-login-'+idx), password: g('cr-pass-'+idx),
+      login: g('cr-login-'+idx), password: g('cr-pass-'+idx), link: g('cr-link-'+idx),
       profile: g('cr-prof-'+idx), note: g('cr-note-'+idx),
       startISO: g('cr-start-'+idx) || new Date().toISOString().slice(0,10),
       months: parseInt(g('cr-mon-'+idx),10) || it.qty || 1,
-    })).filter(c=>c.login||c.password);
-    if(!creds.length){ showToast('Inserisci almeno login o password.'); return; }
+    })).filter(c=>c.login||c.password||c.link);
+    if(!creds.length){ showToast('Inserisci almeno login, password o link.'); return; }
     const btn=document.getElementById('cred-save'); if(btn){ btn.disabled=true; btn.textContent='Salvataggio…'; }
     try{
       const o=adminOrders.find(x=>x._docId===docId)||{};
@@ -1971,8 +1972,9 @@ waitFB(()=>{
     const html='<div id="ucb-'+idx+'" style="border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px;margin-bottom:12px;position:relative;">'
       +'<button onclick="document.getElementById(\'ucb-'+idx+'\').remove()" title="Rimuovi" style="position:absolute;top:6px;right:8px;background:none;border:none;color:#c86;cursor:pointer;font-size:18px;line-height:1;">×</button>'
       +fld('Servizio','uc-svc-'+idx, ex.service, 'Netflix, Spotify…')
-      +fld('Nome utente / Email','uc-login-'+idx, ex.login, 'account@email.com')
-      +fld('Password','uc-pass-'+idx, ex.password, 'password')
+      +fld('Nome utente / Email (opz.)','uc-login-'+idx, ex.login, 'account@email.com')
+      +fld('Password (opz.)','uc-pass-'+idx, ex.password, 'password')
+      +fld('🔗 Link di attivazione (opz.)','uc-link-'+idx, ex.link, 'https://serviceactivation.google.com/...')
       +fld('Profilo (opz.)','uc-prof-'+idx, ex.profile, 'es. Profilo 2 · PIN 1234')
       +fld('Note (opz.)','uc-note-'+idx, ex.note, 'istruzioni')
       +'<div style="display:flex;gap:10px;"><div style="flex:1;">'+fld('Data inizio','uc-start-'+idx, ex.startISO||today, '', 'date')+'</div><div style="width:90px;">'+fld('Mesi','uc-mon-'+idx, ex.months||1, '', 'number')+'</div></div>'
@@ -1985,10 +1987,10 @@ waitFB(()=>{
     const creds=[];
     document.querySelectorAll('#uc-blocks > div').forEach(div=>{
       const idx=div.id.replace('ucb-','');
-      const c={ service:g('uc-svc-'+idx), login:g('uc-login-'+idx), password:g('uc-pass-'+idx), profile:g('uc-prof-'+idx), note:g('uc-note-'+idx), startISO:g('uc-start-'+idx)||new Date().toISOString().slice(0,10), months:parseInt(g('uc-mon-'+idx),10)||1 };
-      if(c.login||c.password) creds.push(c);
+      const c={ service:g('uc-svc-'+idx), login:g('uc-login-'+idx), password:g('uc-pass-'+idx), link:g('uc-link-'+idx), profile:g('uc-prof-'+idx), note:g('uc-note-'+idx), startISO:g('uc-start-'+idx)||new Date().toISOString().slice(0,10), months:parseInt(g('uc-mon-'+idx),10)||1 };
+      if(c.login||c.password||c.link) creds.push(c);
     });
-    if(!creds.length){ showToast('Inserisci almeno login o password.'); return; }
+    if(!creds.length){ showToast('Inserisci almeno login, password o link.'); return; }
     const btn=document.getElementById('uc-save'); if(btn){ btn.disabled=true; btn.textContent='Salvataggio…'; }
     try{
       await fb.updateDoc(fb.doc(fb.db,'users',st.uid), { subscriptions:creds, subscriptionsAt: fb.serverTimestamp() });
