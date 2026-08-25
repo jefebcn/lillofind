@@ -117,25 +117,28 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 .sub-filt{
   font-family:'IBM Plex Mono',monospace;font-size:10px;
   letter-spacing:1.5px;text-transform:uppercase;
-  border:1.5px solid #ccc;background:none;
+  border:1.5px solid #ccc;background:none;border-radius:999px;
   padding:8px 18px;cursor:pointer;
   transition:all .18s;color:var(--mid);
 }
 .sub-filt:hover{border-color:var(--dg2);color:var(--dg2);}
 .sub-filt.active{background:var(--k);color:var(--w);border-color:var(--k);}
+/* chip del calcolatore risparmio → pill */
+#calc-checkboxes label{border-radius:999px !important;}
+.savings-calc{border-radius:18px;}
 
 /* ── CARDS GRID ─────────────────────────────────────── */
 .sub-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:1px;background:#e0e0e0;
-  border:1.5px solid #e0e0e0;
+  gap:18px;
   margin:24px;
 }
 .sub-card{
-  background:#fff;padding:28px 24px;
+  background:#fff;padding:26px 24px;
+  border:1.5px solid #ececec;border-radius:18px;
   display:flex;flex-direction:column;gap:16px;
-  transition:box-shadow .2s,transform .2s;
+  transition:box-shadow .2s,transform .2s,border-color .2s;
   position:relative;overflow:hidden;
 }
 .sub-card::after{
@@ -154,10 +157,10 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 .sub-icon svg{width:32px;height:32px;display:block;}
 .sub-badge{
   display:inline-flex;align-items:center;gap:4px;
-  background:var(--k);color:var(--led);
+  background:var(--k);color:var(--led);border-radius:999px;
   font-family:'IBM Plex Mono',monospace;
   font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
-  padding:3px 8px;flex-shrink:0;
+  padding:3px 9px;flex-shrink:0;
 }
 .sub-price-original{font-size:11px;color:var(--dim);text-decoration:line-through;}
 .sub-price-lillo{
@@ -176,19 +179,19 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 }
 .sub-get-btn{
   width:100%;padding:13px;
-  background:var(--k);color:var(--w);border:none;
+  background:var(--k);color:var(--w);border:none;border-radius:12px;
   font-family:'IBM Plex Mono',monospace;font-size:11px;
   letter-spacing:2px;text-transform:uppercase;
   cursor:pointer;margin-top:auto;
-  transition:background .18s,box-shadow .18s;
+  transition:background .18s,box-shadow .18s,transform .15s;
 }
-.sub-get-btn:hover{background:var(--dg2);box-shadow:0 4px 16px rgba(142,121,99,.3);}
+.sub-get-btn:hover{background:var(--dg2);box-shadow:0 8px 20px rgba(142,121,99,.3);transform:translateY(-2px);}
 
 /* ── ANNUAL SAVINGS BADGE ───────────────────────────── */
 .annual-savings-badge{
   display:inline-flex;flex-direction:column;align-items:center;
-  background:var(--k);color:var(--led);
-  padding:6px 10px;flex-shrink:0;min-width:72px;
+  background:var(--k);color:var(--led);border-radius:12px;
+  padding:7px 12px;flex-shrink:0;min-width:72px;
   font-family:'IBM Plex Mono',monospace;
 }
 .annual-savings-badge .asb-num{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;}
@@ -210,8 +213,8 @@ h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;let
 /* ── SPOTS BADGE ────────────────────────────────────── */
 .spots-badge{
   display:inline-flex;align-items:center;gap:4px;
-  background:#fff8f0;border:1px solid #f59e0b;
-  color:#92400e;padding:3px 8px;
+  background:#fff8f0;border:1px solid #f59e0b;border-radius:999px;
+  color:#92400e;padding:4px 10px;
   font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.5px;
 }
 
