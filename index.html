@@ -3153,6 +3153,32 @@ img{ -webkit-user-drag:none; user-select:none; }
 </div>
 
 <div id="prod-modal" class="modal-bg" onclick="if(event.target===this)closeProd()">
+  <style>
+    /* ── Scheda prodotto: arrotonda e ammorbidisce (mantiene i colori LED) ── */
+    @media(min-width:601px){
+      #prod-modal .modal-box{border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(20,20,17,.42);}
+    }
+    #prod-modal .pg-thumb{border-radius:8px;}
+    /* size chips → pill */
+    #prod-modal-body span[style*="1.5px solid var(--k)"][style*="padding:5px 14px"]{border-radius:999px;}
+    /* wishlist + share (border-radius:0 inline) → arrotondati */
+    #prod-modal-body button[style*="border-radius:0"]{border-radius:12px !important;transition:transform .15s,border-color .15s;}
+    #prod-modal-body button[style*="border-radius:0"]:hover{transform:translateY(-2px);}
+    /* CTA principale → arrotondata + micro-lift */
+    #prod-modal-body button[onclick*="buy("],#prod-modal-body button[onclick*="notifyWhenAvailable"]{border-radius:12px;transition:transform .15s,box-shadow .2s;}
+    #prod-modal-body button[onclick*="buy("]:hover{transform:translateY(-2px);}
+    /* box (qualità 1:1, LFPOINTS, QC) → arrotondati */
+    #prod-modal-body div[style*="border:1px solid #e8e8e8"],
+    #prod-modal-body div[style*="rgba(200,255,0,.4)"],
+    #prod-modal-body div[style*="rgba(200,255,0,.3)"]{border-radius:12px;}
+    /* badge NEW / 1:1 Quality → pill */
+    #prod-modal-body span[style*="letter-spacing:2px;padding:3px 10px"]{border-radius:999px;}
+    /* miniature "Completa il Drop" arrotondate */
+    #prod-modal-body div[style*="width:90px;height:90px"]{border-radius:10px;}
+    /* frecce galleria: micro-hover */
+    #prod-modal-grid button[aria-label]{transition:background .15s,transform .15s;}
+    #prod-modal-grid button[aria-label]:hover{background:rgba(0,0,0,.75)!important;transform:translateY(-50%) scale(1.08)!important;}
+  </style>
   <div class="modal-box" style="padding:0;max-width:960px;width:100%;">
     <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;">
       <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#999;">Dettaglio Prodotto</p>
