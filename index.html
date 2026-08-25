@@ -652,14 +652,17 @@ img{ -webkit-user-drag:none; user-select:none; }
   cursor:pointer;
   background:#1a1a1a;
   border:1px solid #222;
-  transition:border-color .2s,transform .2s;
+  border-radius:var(--radius-lg);overflow:hidden;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
   contain:layout style;
 }
-.carousel-card:hover{border-color:var(--led);transform:translateY(-3px);}
+.carousel-card:hover{border-color:var(--led);transform:translateY(-3px);box-shadow:0 14px 30px rgba(0,0,0,.28);}
+.carousel-card > div:first-child img{transition:transform .5s cubic-bezier(.2,.7,.2,1);}
+.carousel-card:hover > div:first-child img{transform:scale(1.06);}
 .carousel-skel{
   flex-shrink:0;width:150px;height:220px;
   background:#1a1a1a;
-  border:1px solid #1a1a1a;
+  border:1px solid #1a1a1a;border-radius:var(--radius-lg);
   animation:skel-pulse 1.5s ease-in-out infinite;
 }
 @media(min-width:769px){
@@ -1319,8 +1322,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     window.lfSetLang=function(lang){
       try{ document.querySelectorAll('[data-i18n]').forEach(function(el){
         var k=el.getAttribute('data-i18n');
-        if(el.getAttribute('data-it')===null) el.setAttribute('data-it', el.textContent);
-        el.textContent=(lang==='en'&&EN[k])?EN[k]:el.getAttribute('data-it');
+        // innerHTML (non textContent) per preservare i <br> nelle etichette i18n
+        if(el.getAttribute('data-it')===null) el.setAttribute('data-it', el.innerHTML);
+        el.innerHTML=(lang==='en'&&EN[k])?EN[k]:el.getAttribute('data-it');
       }); }catch(_){}
       document.documentElement.lang=lang;
       try{ localStorage.setItem('lf_lang',lang); }catch(_){}
