@@ -231,6 +231,10 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <button class="anav-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')">
         <span class="anav-icon">🚚</span>Spedizioni
       </button>
+      <button class="anav-btn" data-pg="abbonamenti" onclick="showAdminPg('abbonamenti')">
+        <span class="anav-icon">🔑</span>Abbonamenti
+        <span class="anav-badge" id="subs-nav-badge" style="display:none;"></span>
+      </button>
       <button class="anav-btn" data-pg="richieste" onclick="showAdminPg('richieste')">
         <span class="anav-icon">📩</span>Richieste
         <span class="anav-badge" id="req-nav-badge" style="display:none;"></span>
@@ -582,6 +586,27 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <div id="trb-list" style="display:flex;flex-direction:column;gap:10px;">
           <p style="font-size:12px;color:rgba(255,255,255,.4);">Caricamento…</p>
         </div>
+      </div>
+    </div>
+
+    <!-- ─── PAGE: ABBONAMENTI ATTIVI ─── -->
+    <div class="apg hidden" id="apg-abbonamenti">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Abbonamenti</h1>
+        <button onclick="loadSubsBoard()" class="btn-k" style="padding:9px 18px;font-size:13px;">↻ Aggiorna</button>
+      </div>
+      <p style="font-size:14px;color:var(--mid);margin-bottom:20px;">Tutti gli abbonamenti digitali assegnati ai clienti, con il <b>tempo rimanente</b>. Ordinati per scadenza più vicina: in cima quelli in scadenza o già scaduti.</p>
+      <!-- Riepilogo -->
+      <div id="subs-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;"></div>
+      <!-- Filtri -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="subs-filters">
+        <button class="subs-filt btn-led" data-f="all" onclick="subsSetFilter('all')" style="padding:7px 14px;font-size:11px;">Tutti</button>
+        <button class="subs-filt btn-k" data-f="soon" onclick="subsSetFilter('soon')" style="padding:7px 14px;font-size:11px;">⏳ In scadenza (≤7g)</button>
+        <button class="subs-filt btn-k" data-f="expired" onclick="subsSetFilter('expired')" style="padding:7px 14px;font-size:11px;">⛔ Scaduti</button>
+        <button class="subs-filt btn-k" data-f="active" onclick="subsSetFilter('active')" style="padding:7px 14px;font-size:11px;">✅ Attivi</button>
+      </div>
+      <div id="subs-board-list" style="display:flex;flex-direction:column;gap:10px;">
+        <p style="font-size:12px;color:rgba(255,255,255,.4);">Caricamento…</p>
       </div>
     </div>
 
@@ -1177,6 +1202,87 @@ waitFB(()=>{
     if(st) st.textContent='Verifica completata · '+okc+'/'+_trackBoard.length+' con stato trovato';
     if(btn){ btn.disabled=false; btn.textContent='📡 Verifica tutte'; }
     showToast('✅ Verifica completata ('+okc+'/'+_trackBoard.length+')');
+  };
+
+  // ── Pannello Abbonamenti Attivi: countdown scadenze di tutti i clienti ──
+  let _subsRows=[]; let _subsFilter='all';
+  function subDaysInfo(startISO, months){
+    const start = startISO ? new Date(startISO+'T00:00:00') : new Date();
+    const end = new Date(start); end.setMonth(end.getMonth() + (parseInt(months)||1));
+    const now = new Date(), msDay = 86400000;
+    const totalDays = Math.max(1, Math.round((end-start)/msDay));
+    const remDays = Math.ceil((end-now)/msDay);
+    return { start, end, totalDays, remDays, expired: remDays<=0 };
+  }
+  function subFmt(d){ try{ return d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}); }catch(_){ return '—'; } }
+  window.loadSubsBoard=async function(){
+    const fb=window.__fb; const list=document.getElementById('subs-board-list'); const sum=document.getElementById('subs-summary');
+    if(!list) return;
+    if(!fb){ list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Firebase non pronto…</p>'; return; }
+    list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Caricamento…</p>';
+    try{
+      if(!adminOrders.length){
+        const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'orders'),fb.orderBy('createdAt','desc')));
+        adminOrders=snap.docs.map(d=>({id:d.id,_docId:d.id,...d.data()}));
+      }
+      const rows=[];
+      adminOrders.forEach(o=>{ if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password||c.link)) rows.push({src:'order',docId:o._docId,email:o.email||'—',name:o.name||'',c}); }); });
+      const usnap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
+      usnap.forEach(d=>{ const u=d.data()||{}; if(Array.isArray(u.subscriptions)) u.subscriptions.forEach(c=>{ if(c&&(c.login||c.password||c.link)) rows.push({src:'user',uid:d.id,email:u.email||'—',name:u.name||'',subs:u.subscriptions,c}); }); });
+      rows.forEach(r=>{ r.info=subDaysInfo(r.c.startISO,r.c.months); });
+      // Ordina: prima gli attivi per scadenza più vicina, poi gli scaduti (più recenti in alto)
+      rows.sort((a,b)=>{ if(a.info.expired!==b.info.expired) return a.info.expired?1:-1; if(!a.info.expired) return a.info.remDays-b.info.remDays; return b.info.end-a.info.end; });
+      _subsRows=rows;
+      const soon=rows.filter(r=>!r.info.expired&&r.info.remDays<=7).length;
+      const exp=rows.filter(r=>r.info.expired).length;
+      const active=rows.length-exp;
+      const badge=document.getElementById('subs-nav-badge');
+      if(badge){ const n=soon+exp; if(n>0){ badge.style.display=''; badge.textContent=n; } else badge.style.display='none'; }
+      if(sum){
+        const chip=(lbl,val,col)=>'<div style="flex:1;min-width:120px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;"><div style="font-size:22px;font-weight:800;color:'+col+';">'+val+'</div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-top:2px;">'+lbl+'</div></div>';
+        sum.innerHTML=chip('Totale',rows.length,'#fff')+chip('Attivi',active,'#66a80f')+chip('In scadenza ≤7g',soon,'#e0952f')+chip('Scaduti',exp,'#e5484d');
+      }
+      subsRenderList();
+    }catch(e){ console.error('loadSubsBoard',e&&e.code); list.innerHTML='<p style="font-size:12px;color:#e88;">Errore nel caricamento ('+escH((e&&e.code)||'')+').</p>'; }
+  };
+  window.subsSetFilter=function(f){
+    _subsFilter=f;
+    document.querySelectorAll('.subs-filt').forEach(b=>{ const on=b.dataset.f===f; b.className='subs-filt '+(on?'btn-led':'btn-k'); });
+    subsRenderList();
+  };
+  function subsRenderList(){
+    const list=document.getElementById('subs-board-list'); if(!list) return;
+    let rows=_subsRows;
+    if(_subsFilter==='soon') rows=rows.filter(r=>!r.info.expired&&r.info.remDays<=7);
+    else if(_subsFilter==='expired') rows=rows.filter(r=>r.info.expired);
+    else if(_subsFilter==='active') rows=rows.filter(r=>!r.info.expired);
+    if(!rows.length){ list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Nessun abbonamento in questa vista.</p>'; return; }
+    list.innerHTML=rows.map(r=>subsRowHTML(r,_subsRows.indexOf(r))).join('');
+  }
+  function subsRowHTML(r,i){
+    const info=r.info, c=r.c;
+    const col=info.expired?'#e5484d':(info.remDays<=7?'#e0952f':'#66a80f');
+    const bg=info.expired?'rgba(229,72,77,.12)':(info.remDays<=7?'rgba(224,149,47,.12)':'rgba(102,168,15,.12)');
+    const lbl=info.expired?('Scaduto da '+Math.abs(info.remDays)+'g'):(info.remDays<=7?('Scade tra '+info.remDays+'g'):(info.remDays+' giorni rimasti'));
+    const svc=escH(c.service||'Abbonamento');
+    return '<div style="border:1px solid rgba(255,255,255,.08);border-left:3px solid '+col+';border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'
+        +'<div style="min-width:0;">'
+          +'<div style="font-size:15px;font-weight:700;color:#fff;">🔑 '+svc+'</div>'
+          +'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px;">'+escH(r.email)+(r.name?(' · '+escH(r.name)):'')+'</div>'
+          +'<div style="font-size:10px;color:var(--dim);margin-top:3px;">'+subFmt(info.start)+' → '+subFmt(info.end)+' · '+(c.months||1)+(c.months>1?' mesi':' mese')+'</div>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+          +'<span style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:'+bg+';color:'+col+';white-space:nowrap;">'+lbl+'</span>'
+          +'<button class="btn-k" style="padding:6px 12px;font-size:10px;" onclick="subsBoardOpen('+i+')">Apri credenziali</button>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  }
+  window.subsBoardOpen=function(i){
+    const r=_subsRows[i]; if(!r) return;
+    if(r.src==='order'){ if(typeof openCredentials==='function') openCredentials(r.docId); }
+    else if(typeof openUserCreds==='function'){ openUserCreds(r.uid, r.email, r.name||'', Array.isArray(r.subs)?r.subs:[]); }
   };
 
   window.adminAssignTracking=async function(){
@@ -3198,6 +3304,7 @@ waitFB(()=>{
     }
     if(name==='clienti' && !_usersLoaded) loadUsersPage();
     if(name==='spedizioni') loadTrackingBoard();
+    if(name==='abbonamenti') loadSubsBoard();
     if(name==='richieste') loadProductRequests();
     if(name==='costi'){ if(!adminCatalogProducts.length){ try{ loadAdminCatalog(); }catch(_){} } try{ loadFxRates(); }catch(_){} }
     // Carica l'importer solo la prima volta che apri la sezione (lazy)

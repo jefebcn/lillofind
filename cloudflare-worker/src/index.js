@@ -424,7 +424,7 @@ app.post('/createPaymentIntent', callable(checkout.createPaymentIntent, { auth: 
 app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 'required' }));
 // Email tracking al cliente (admin via allowlist email)
 app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
-app.post('/track17',             callable(checkout.track17,             { auth: 'adminEmail' }));
+app.post('/track17',             callable(checkout.track17,             { auth: 'required' }));
 // Email conferma ordine al cliente (utente autenticato)
 app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 'required' }));
 app.post('/sendCredentialsEmail', callable(checkout.sendCredentialsEmail, { auth: 'adminEmail' }));

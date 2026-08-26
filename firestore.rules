@@ -29,16 +29,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Orders — utente legge i propri, admin legge/scrive tutti
+    // Orders — utente legge i propri (per uid O per email verificata, così vede
+    // gli ordini anche se ha cambiato metodo di login mantenendo la stessa
+    // email — es. passaggio a "Accedi con Google"); admin legge/scrive tutti.
+    // L'email in Firebase Auth è unica per account, quindi il match è sicuro.
     match /orders/{id} {
-      allow read:   if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow read:   if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid)
+                    || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email);
       allow create: if signedIn();
       allow update, delete: if isAdmin();
     }
 
-    // Users — utente legge/scrive il proprio doc, admin legge tutti
+    // Users — utente legge/scrive il proprio doc (per uid); legge anche eventuali
+    // doc con la propria email verificata (credenziali aggiunte dall'admin su un
+    // profilo con lo stesso indirizzo ma uid diverso). La scrittura resta legata
+    // all'uid. Email unica in Firebase Auth → lettura per email sicura.
     match /users/{uid} {
-      allow read:  if request.auth.uid == uid || isAdmin();
+      allow read:  if request.auth.uid == uid || isAdmin()
+                   || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email);
       allow write: if isAdmin() || (request.auth.uid == uid && noSelfAdmin());
     }
 

@@ -5772,6 +5772,18 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(typeof renderTracking==='function') renderTracking();
   }
 
+  // Recupera gli ordini del cliente sia per uid sia per email verificata,
+  // deduplicando per id e ordinando per data (più recenti prima). L'email in
+  // Firebase Auth è unica per account: copre il caso "stessa email, uid diverso"
+  // (es. cliente che passa a "Accedi con Google").
+  async function fetchOrdersForUser(fb, max){
+    const seen={}; const out=[];
+    const collect=async(qy)=>{ try{ const s=await fb.getDocs(qy); s.forEach(d=>{ if(!seen[d.id]){ seen[d.id]=1; out.push({id:d.id,data:()=>d.data(),_d:d.data()}); } }); }catch(e){ console.warn('orders q',e&&e.code); } };
+    await collect(fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(max||10)));
+    if(user.email){ await collect(fb.query(fb.collection(fb.db,'orders'),fb.where('email','==',user.email),fb.limit(max||10))); }
+    out.sort((a,b)=>((b._d.createdAt?.seconds)||0)-((a._d.createdAt?.seconds)||0));
+    return (max?out.slice(0,max):out);
+  }
   async function renderOrderHistory(){
     const wrap=document.getElementById('pr-orders-list');
     if(!wrap||!user)return;
@@ -5779,16 +5791,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!fb)return;
     wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Caricamento...</p>';
     try{
-      const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(10));
-      const snap=await fb.getDocs(q);
-      if(snap.empty){
+      // Recupera gli ordini per uid E per email (l'email in Firebase è unica →
+      // così il cliente vede i suoi ordini anche se ha cambiato metodo di login).
+      const ordDocs=await fetchOrdersForUser(fb, 10);
+      if(!ordDocs.length){
         wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun ordine ancora. Il tuo storico apparirà qui dopo il primo acquisto.</p>';
         return;
       }
       const statusLabel={pending:'In attesa',confirmed:'Confermato',shipped:'Spedito',in_transito:'In transito',in_consegna:'In consegna',consegnato:'Consegnato'};
       const statusColor={pending:'#f0a500',confirmed:'var(--led)',shipped:'#0098d4',in_transito:'#0098d4',in_consegna:'#7c3aed',consegnato:'#16a34a'};
       const statusTxt={pending:'#fff',confirmed:'var(--k)',shipped:'#fff',in_transito:'#fff',in_consegna:'#fff',consegnato:'#fff'};
-      wrap.innerHTML=snap.docs.map(d=>{
+      wrap.innerHTML=ordDocs.map(d=>{
         const o=d.data();
         const date=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
         const st=o.status||'pending';
@@ -5900,12 +5913,23 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!user||!window.__fb){ list.innerHTML=_subsEmpty; return; }
     const fb=window.__fb;
     try{
-      const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(30));
-      const snap=await fb.getDocs(q);
+      // Rileggi sempre il doc utente fresco: così le credenziali aggiunte
+      // dall'admin compaiono subito, senza dipendere dallo stato in cache.
+      try{ const us=await fb.getDoc(fb.doc(fb.db,'users',user.uid)); if(us.exists()) udata={...udata,...us.data()}; }catch(_){}
       const creds=[];
-      snap.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password||c.link)) creds.push(c); }); });
-      // Credenziali aggiunte dall'admin direttamente sul profilo (clienti senza ordine)
-      if(udata && Array.isArray(udata.subscriptions)) udata.subscriptions.forEach(c=>{ if(c&&(c.login||c.password||c.link)) creds.push(c); });
+      const keyOf=c=>[c.service||'',c.login||'',c.link||'',c.startISO||'',c.months||''].join('|');
+      const seenC={};
+      const addCred=c=>{ if(!c||!(c.login||c.password||c.link)) return; const k=keyOf(c); if(seenC[k]) return; seenC[k]=1; creds.push(c); };
+      // 1) credenziali allegate agli ordini (per uid o email)
+      const ordDocs=await fetchOrdersForUser(fb, 30);
+      ordDocs.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(addCred); });
+      // 2) credenziali aggiunte dall'admin sul profilo (proprio doc)
+      if(udata && Array.isArray(udata.subscriptions)) udata.subscriptions.forEach(addCred);
+      // 3) …e su eventuali doc con la stessa email verificata (uid diverso)
+      if(user.email){ try{
+        const us2=await fb.getDocs(fb.query(fb.collection(fb.db,'users'),fb.where('email','==',user.email)));
+        us2.forEach(d=>{ const u=d.data(); if(Array.isArray(u.subscriptions)) u.subscriptions.forEach(addCred); });
+      }catch(e){ console.warn('subs by email',e&&e.code); } }
       if(!creds.length){ list.innerHTML=_subsEmpty; return; }
       // Attivi prima, poi in scadenza, poi scaduti
       creds.sort((a,b)=>subDates(a.startISO,a.months).remDays - subDates(b.startISO,b.months).remDays).reverse();
@@ -6211,12 +6235,15 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 
     // ── PROFILE: Render Tracking ────────────────────────────
+  let _liveTrack=null; // {status,event,location,carrier,est,status17,checkedAt}
+  let _liveTrackFetchedFor=null; // codice per cui abbiamo già fatto l'auto-fetch
   function renderTracking(){
     const wrap=document.getElementById('pr-tracking-content');
     const badge=document.getElementById('pr-track-status-badge');
     if(!wrap||!udata) return;
     const code=udata.trackingCode;
     if(!code){
+      _liveTrack=null;
       wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun ordine in corso. Appena il tuo ordine verrà spedito, il codice di tracking apparirà qui.</p>';
       if(badge) badge.style.display='none';
       return;
@@ -6224,16 +6251,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     const statusMap={
       confermato:{emoji:'✅',label:'Confermato',desc:'Il tuo ordine è stato ricevuto e confermato dal team LILLOFIND.'},
       preparazione:{emoji:'📦',label:'In Preparazione',desc:'Il tuo ordine è in fase di preparazione nel nostro magazzino. Verrà imballato con cura.'},
-      spedito:{emoji:'🚀',label:'Spedito',desc:'Il tuo ordine è stato consegnato a DHL ed è in viaggio verso di te!'},
-      in_transito:{emoji:'✈️',label:'In Transito',desc:'Il pacco è in transito con DHL Express. Controlla il tracking per aggiornamenti live.'},
-      in_consegna:{emoji:'🚚',label:'In Consegna',desc:'Il corriere DHL sta portando il pacco a casa tua oggi!'},
+      spedito:{emoji:'🚀',label:'Spedito',desc:'Il tuo ordine è stato affidato al corriere ed è in viaggio verso di te!'},
+      in_transito:{emoji:'✈️',label:'In Transito',desc:'Il pacco è in transito. Lo stato si aggiorna automaticamente dal corriere.'},
+      in_consegna:{emoji:'🚚',label:'In Consegna',desc:'Il corriere sta portando il pacco a casa tua oggi!'},
       consegnato:{emoji:'🎉',label:'Consegnato',desc:'Il tuo ordine è stato consegnato. Buon drop! Lasciaci una recensione.'},
     };
-    const s=statusMap[udata.trackingStatus]||{emoji:'📦',label:udata.trackingStatus||'—',desc:'Stato aggiornato dal team LILLOFIND.'};
+    const effStatus=(_liveTrack&&_liveTrack.status)||udata.trackingStatus;
+    const s=statusMap[effStatus]||{emoji:'📦',label:effStatus||'—',desc:'Stato aggiornato dal team LILLOFIND.'};
     if(badge){badge.textContent=s.emoji+' '+s.label;badge.style.display='';}
     // Build progress steps
     const steps=['confermato','preparazione','spedito','in_transito','in_consegna','consegnato'];
-    const curIdx=steps.indexOf(udata.trackingStatus);
+    const curIdx=steps.indexOf(effStatus);
     const stepsHTML=steps.map((st,i)=>{
       const sm=statusMap[st];
       const done=i<=curIdx;
@@ -6248,6 +6276,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     }).join('');
     const track17Url='https://t.17track.net/it#nums='+encodeURIComponent(code);
     const dhlUrl='https://www.dhl.com/it-it/home/tracciamento.html?tracking-id='+encodeURIComponent(code);
+    // Live-info box (mostrato dopo "Aggiorna stato")
+    let liveHTML='';
+    if(_liveTrack){
+      const bits=[]; if(_liveTrack.event) bits.push(_liveTrack.event); if(_liveTrack.location) bits.push('· '+_liveTrack.location);
+      const evLine=bits.join(' ');
+      liveHTML=`<div style="margin-bottom:20px;background:rgba(111,117,82,.08);border:1px solid var(--led);border-radius:10px;padding:14px 16px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--led);margin-bottom:6px;">📡 Stato in tempo reale${_liveTrack.carrier?' · '+_liveTrack.carrier:''}</p>
+        ${evLine?`<p style="font-size:12px;color:var(--k);line-height:1.5;">${evLine}</p>`:'<p style="font-size:12px;color:var(--mid);">Il corriere non ha ancora registrato eventi. Riprova più tardi.</p>'}
+        ${_liveTrack.est?`<p style="font-size:10px;color:var(--mid);margin-top:4px;">📅 Consegna stimata: ${String(_liveTrack.est).slice(0,10)}</p>`:''}
+      </div>`;
+    }
     wrap.innerHTML=`
       <div style="margin-bottom:20px;background:#f8f8f8;border-left:3px solid var(--led);padding:16px 18px;">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Codice Tracking</p>
@@ -6255,16 +6294,57 @@ img{ -webkit-user-drag:none; user-select:none; }
         ${udata.trackingProduct&&udata.trackingProduct!=='—'?`<p style="font-size:10px;color:var(--mid);margin-top:4px;letter-spacing:1px;">📦 ${udata.trackingProduct}</p>`:''}
         ${udata.trackingNote?`<p style="font-size:10px;color:var(--mid);margin-top:4px;font-style:italic;">💬 ${udata.trackingNote}</p>`:''}
       </div>
+      ${liveHTML}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Stato spedizione</span>
+        <span id="pr-track-livehint" style="font-size:9px;letter-spacing:1px;color:var(--led);">${_liveTrack?'· aggiornato dal corriere':'· aggiornamento in corso…'}</span>
+      </div>
       <div style="margin-bottom:20px;">${stepsHTML}</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <button id="pr-track-refresh" onclick="refreshTrackingLive()" style="display:inline-flex;align-items:center;gap:8px;background:var(--led);color:var(--k);border:none;padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+          🔄 Aggiorna ora
+        </button>
         <a href="${track17Url}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--k);color:var(--w);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
-          📡 Traccia in tempo reale →
+          📡 Dettagli completi →
         </a>
         <a href="${dhlUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--k);border:1.5px solid var(--k);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='var(--k)';this.style.color='var(--w)'" onmouseout="this.style.background='transparent';this.style.color='var(--k)'">
           🌐 DHL.com
         </a>
       </div>`;
+    // Auto-aggiornamento: alla prima render per questo codice interroga 17TRACK
+    // in silenzio, così la timeline riflette subito lo stato reale del corriere.
+    if(code && _liveTrackFetchedFor!==code){
+      _liveTrackFetchedFor=code;
+      setTimeout(()=>{ try{ refreshTrackingLive(true); }catch(_){} }, 50);
+    }
   }
+
+  // Cliente: recupera lo stato reale del pacco da 17TRACK (via Worker) e
+  // aggiorna la dicitura mostrata senza intervento admin. `silent` per
+  // l'auto-aggiornamento (niente toast, niente errori invadenti).
+  window.refreshTrackingLive=async function(silent){
+    if(!udata||!udata.trackingCode) return;
+    const btn=document.getElementById('pr-track-refresh');
+    const hint=document.getElementById('pr-track-livehint');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ Aggiornamento…'; }
+    if(hint) hint.textContent='· aggiornamento in corso…';
+    try{
+      const resp=await lfCallable('track17')({code:udata.trackingCode});
+      const d=(resp&&resp.data)||resp||{};
+      if(!d.ok){
+        if(!silent && typeof showToast==='function') showToast(d.error==='not-configured'?'Tracking live non ancora attivo.':'Il corriere non ha ancora aggiornato lo stato.');
+        _liveTrack={status:'',event:'',location:'',carrier:d.carrier||'',est:'',status17:d.status17||''};
+      }else{
+        _liveTrack={status:d.statusMapped||'',event:d.lastEvent||'',location:d.lastLocation||'',carrier:d.carrier||'',est:d.estDelivery||'',status17:d.status17||''};
+        if(!silent && typeof showToast==='function') showToast('✅ Stato aggiornato dal corriere');
+      }
+      renderTracking();
+    }catch(e){
+      if(!silent && typeof showToast==='function') showToast('Impossibile aggiornare ora. Riprova tra poco.');
+      if(btn){ btn.disabled=false; btn.textContent='🔄 Aggiorna ora'; }
+      if(hint) hint.textContent='';
+    }
+  };
 
   // ── FOOTER INFO MODAL ───────────────────────────────────
   const INFO_CONTENT={
