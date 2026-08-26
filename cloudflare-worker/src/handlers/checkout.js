@@ -44,6 +44,55 @@ function escHtml(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Logo ospitato pubblicamente (usato nell'header delle email).
+const EMAIL_LOGO = 'https://lillofind.shop/icon-512.png';
+
+// Header brandizzato con logo immagine + wordmark. `tagline` opzionale.
+function emailHeader(tagline) {
+  return `<tr><td style="background:#23231f;padding:24px 32px;text-align:center;">
+    <img src="${EMAIL_LOGO}" width="52" height="52" alt="LilloFind" style="display:inline-block;border-radius:14px;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;margin-bottom:10px;"/>
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:26px;font-weight:800;letter-spacing:4px;color:#f5f2ec;">LILLOFIND</div>
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;letter-spacing:3px;color:#99a074;text-transform:uppercase;margin-top:4px;">${escHtml(tagline || 'Drop your style')}</div>
+  </td></tr>`;
+}
+
+// Footer brandizzato coerente per tutte le email.
+function emailFooter() {
+  return `<tr><td style="background:#23231f;padding:26px 32px;text-align:center;">
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:3px;color:#f5f2ec;margin-bottom:10px;">LILLOFIND</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 12px;"><tr>
+      <td style="padding:0 10px;"><a href="https://lillofind.shop" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#99a074;text-decoration:none;letter-spacing:1px;">Shop</a></td>
+      <td style="color:#4a4a44;">·</td>
+      <td style="padding:0 10px;"><a href="https://lillofind.shop/#/profilo" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#99a074;text-decoration:none;letter-spacing:1px;">Il mio profilo</a></td>
+      <td style="color:#4a4a44;">·</td>
+      <td style="padding:0 10px;"><a href="mailto:noreply@lillofind.shop" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#99a074;text-decoration:none;letter-spacing:1px;">Assistenza</a></td>
+    </tr></table>
+    <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#8a8a80;line-height:1.7;">Spedizione DHL Express · Reso 30 giorni · Qualità 1:1 verificata</p>
+    <p style="margin:0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#66665e;">Hai domande? Rispondi a questa email.<br>© 2026 LilloFind — lillofind.shop</p>
+  </td></tr>`;
+}
+
+// Preheader nascosto: il testo che Gmail mostra in anteprima accanto all'oggetto.
+function emailPreheader(text) {
+  return `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f5f2ec;opacity:0;">${escHtml(text)}</div>`;
+}
+
+// Guscio completo: <html> + tabella centrata + header + footer.
+function emailShell(innerHtml, preheaderText, tagline) {
+  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f2ec;">
+${emailPreheader(preheaderText || '')}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;padding:24px 12px;font-family:'Helvetica Neue',Arial,sans-serif;">
+<tr><td align="center">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e7e2d8;border-radius:16px;overflow:hidden;">
+    ${emailHeader(tagline)}
+    ${innerHtml}
+    ${emailFooter()}
+  </table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
 function stripeClient(env) {
   // httpClient fetch-based: lo SDK Stripe gira così su Workers
   return new Stripe(env.STRIPE_SECRET_KEY, {
@@ -101,14 +150,86 @@ export async function sendTrackingEmail(data, { env }) {
   if (!email || !code) throw new HttpsError('invalid-argument', 'Email e codice tracking obbligatori.');
   if (!env.RESEND_API_KEY) throw new HttpsError('unavailable', 'Invio email non configurato (RESEND_API_KEY mancante).');
 
-  const statusLabels = {
-    confermato: '✅ Ordine confermato', preparazione: '📦 In preparazione',
-    spedito: '🚀 Spedito', in_transito: '✈️ In transito',
-    in_consegna: '🚚 In consegna', consegnato: '🎉 Consegnato',
-  };
-  const statusLabel = statusLabels[status] || '📦 Aggiornamento spedizione';
+  const steps = [
+    { key: 'confermato',  emoji: '✅', label: 'Ordine confermato', desc: 'Abbiamo ricevuto e confermato il tuo ordine.' },
+    { key: 'preparazione', emoji: '📦', label: 'In preparazione',  desc: 'Stiamo preparando e imballando il tuo pacco con cura.' },
+    { key: 'spedito',     emoji: '🚀', label: 'Spedito',           desc: 'Il pacco è stato affidato al corriere ed è in viaggio.' },
+    { key: 'in_transito', emoji: '✈️', label: 'In transito',       desc: 'Il pacco sta viaggiando verso di te. Segui gli aggiornamenti live.' },
+    { key: 'in_consegna', emoji: '🚚', label: 'In consegna',       desc: 'Il corriere sta consegnando il pacco: tienilo d’occhio oggi!' },
+    { key: 'consegnato',  emoji: '🎉', label: 'Consegnato',        desc: 'Il pacco è stato consegnato. Buon drop! Ci lasci una recensione?' },
+  ];
+  const curIdx = Math.max(0, steps.findIndex(s => s.key === status));
+  const cur = steps[curIdx] || { emoji: '📦', label: 'Aggiornamento spedizione', desc: 'Il tuo ordine è stato aggiornato.' };
+  const statusLabel = cur.emoji + ' ' + cur.label;
   const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
   const trackUrl = 'https://t.17track.net/it#nums=' + encodeURIComponent(code);
+
+  // Timeline verticale (email-safe): step completati / attuale / futuri.
+  const timelineHtml = steps.map((s, i) => {
+    const done = i < curIdx, active = i === curIdx;
+    const dotBg = active ? '#6f7552' : done ? '#23231f' : '#ffffff';
+    const dotBorder = (active || done) ? '#6f7552' : '#d8d3c7';
+    const dotInner = done
+      ? '<span style="color:#99a074;font-size:13px;line-height:1;">&#10003;</span>'
+      : active ? '<span style="color:#f5f2ec;font-size:13px;line-height:1;">&#10003;</span>'
+      : `<span style="color:#c4bfb3;font-size:11px;line-height:1;">${i + 1}</span>`;
+    const line = i < steps.length - 1
+      ? `<div style="width:2px;height:22px;background:${i < curIdx ? '#6f7552' : '#e7e2d8'};margin:2px auto 0;"></div>` : '';
+    const titleColor = (active || done) ? '#23231f' : '#b3ad9f';
+    return `<tr>
+      <td width="40" valign="top" style="text-align:center;">
+        <div style="width:30px;height:30px;border-radius:999px;background:${dotBg};border:2px solid ${dotBorder};text-align:center;line-height:28px;margin:0 auto;">${dotInner}</div>
+        ${line}
+      </td>
+      <td valign="top" style="padding:2px 0 ${i < steps.length - 1 ? '18px' : '0'} 12px;">
+        <div style="font-size:14px;font-weight:${active ? '700' : '600'};color:${titleColor};">${s.emoji} ${escHtml(s.label)}</div>
+        ${active ? `<div style="font-size:12px;color:#6b6b63;line-height:1.6;margin-top:3px;">${escHtml(s.desc)}</div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const inner = `
+    <!-- Hero -->
+    <tr><td style="padding:32px 32px 6px;text-align:center;">
+      <div style="display:inline-block;background:#eef0e6;color:#6f7552;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:7px 16px;border-radius:999px;">${escHtml(statusLabel)}</div>
+      <h1 style="font-size:24px;color:#23231f;margin:18px 0 6px;">La tua spedizione è aggiornata</h1>
+      <p style="font-size:14px;color:#6b6b63;line-height:1.6;margin:0;">Ciao, ecco lo stato più recente del tuo ordine LilloFind${product ? ` — <b style="color:#23231f;">${escHtml(product)}</b>` : ''}.</p>
+    </td></tr>
+    <!-- Tracking code -->
+    <tr><td style="padding:24px 32px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f3;border:1px solid #e7e2d8;border-radius:12px;">
+        <tr><td style="padding:16px 20px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8a8a80;font-weight:700;">Codice tracking</p>
+          <p style="margin:0;font-size:22px;letter-spacing:3px;color:#23231f;font-weight:800;font-family:'Courier New',monospace;">${escHtml(code)}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+    ${note ? `<!-- Note -->
+    <tr><td style="padding:14px 32px 0;">
+      <div style="background:#fffceb;border:1px solid #f4ecc9;border-radius:10px;padding:12px 16px;font-size:13px;color:#6b6b63;line-height:1.6;">💬 ${escHtml(note)}</div>
+    </td></tr>` : ''}
+    <!-- Timeline -->
+    <tr><td style="padding:26px 32px 0;">
+      <p style="margin:0 0 16px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8a8a80;font-weight:700;">Stato della spedizione</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${timelineHtml}</table>
+    </td></tr>
+    <!-- CTA -->
+    <tr><td style="padding:28px 32px 6px;text-align:center;">
+      <a href="${escHtml(trackUrl)}" style="display:inline-block;background:#6f7552;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 34px;border-radius:999px;">📡 Traccia il pacco in tempo reale →</a>
+      <p style="margin:14px 0 0;font-size:12px;color:#8a8a80;line-height:1.6;">Puoi seguire la spedizione anche dalla sezione <b style="color:#6b6b63;">Traccia Pacco</b> del tuo profilo, con aggiornamento live dal corriere.</p>
+    </td></tr>
+    <!-- Reassurance -->
+    <tr><td style="padding:20px 32px 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ece7db;">
+        <tr>
+          <td width="33%" style="padding:16px 6px 0;text-align:center;vertical-align:top;"><div style="font-size:20px;">🚚</div><div style="font-size:11px;color:#6b6b63;line-height:1.5;margin-top:4px;">Spedizione<br>tracciata</div></td>
+          <td width="33%" style="padding:16px 6px 0;text-align:center;vertical-align:top;"><div style="font-size:20px;">↩️</div><div style="font-size:11px;color:#6b6b63;line-height:1.5;margin-top:4px;">Reso entro<br>30 giorni</div></td>
+          <td width="33%" style="padding:16px 6px 0;text-align:center;vertical-align:top;"><div style="font-size:20px;">💬</div><div style="font-size:11px;color:#6b6b63;line-height:1.5;margin-top:4px;">Assistenza<br>dedicata</div></td>
+        </tr>
+      </table>
+    </td></tr>`;
+
+  const html = emailShell(inner, `${cur.label} · codice ${code}`, 'La tua spedizione');
 
   const resp = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -116,18 +237,8 @@ export async function sendTrackingEmail(data, { env }) {
     body: JSON.stringify({
       from,
       to: [email],
-      subject: `📦 La tua spedizione LilloFind — ${escHtml(statusLabel)}`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#111;">
-<h2 style="color:#111;">${escHtml(statusLabel)}</h2>
-<p>Ciao,<br>il tuo ordine LilloFind è stato aggiornato.</p>
-${product ? `<p><b>Prodotto:</b> ${escHtml(product)}</p>` : ''}
-<p style="font-size:15px;"><b>Codice tracking:</b><br>
-<span style="font-size:20px;letter-spacing:1px;background:#f4f4f4;padding:8px 14px;display:inline-block;margin-top:6px;border-radius:4px;">${escHtml(code)}</span></p>
-${note ? `<p><b>Note:</b> ${escHtml(note)}</p>` : ''}
-<p style="margin:24px 0;">
-<a href="${escHtml(trackUrl)}" style="background:#111;color:#fff;text-decoration:none;padding:12px 22px;border-radius:4px;display:inline-block;">Traccia il pacco →</a></p>
-<p style="font-size:12px;color:#888;">Puoi seguire la spedizione anche dalla sezione "Traccia Pacco" del tuo profilo su LilloFind.</p>
-</div>`,
+      subject: `${cur.emoji} La tua spedizione LilloFind — ${cur.label} (${code})`,
+      html,
     }),
   });
   if (!resp.ok) {
