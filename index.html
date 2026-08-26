@@ -5772,6 +5772,18 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(typeof renderTracking==='function') renderTracking();
   }
 
+  // Recupera gli ordini del cliente sia per uid sia per email verificata,
+  // deduplicando per id e ordinando per data (più recenti prima). L'email in
+  // Firebase Auth è unica per account: copre il caso "stessa email, uid diverso"
+  // (es. cliente che passa a "Accedi con Google").
+  async function fetchOrdersForUser(fb, max){
+    const seen={}; const out=[];
+    const collect=async(qy)=>{ try{ const s=await fb.getDocs(qy); s.forEach(d=>{ if(!seen[d.id]){ seen[d.id]=1; out.push({id:d.id,data:()=>d.data(),_d:d.data()}); } }); }catch(e){ console.warn('orders q',e&&e.code); } };
+    await collect(fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(max||10)));
+    if(user.email){ await collect(fb.query(fb.collection(fb.db,'orders'),fb.where('email','==',user.email),fb.limit(max||10))); }
+    out.sort((a,b)=>((b._d.createdAt?.seconds)||0)-((a._d.createdAt?.seconds)||0));
+    return (max?out.slice(0,max):out);
+  }
   async function renderOrderHistory(){
     const wrap=document.getElementById('pr-orders-list');
     if(!wrap||!user)return;
@@ -5779,16 +5791,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!fb)return;
     wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Caricamento...</p>';
     try{
-      const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(10));
-      const snap=await fb.getDocs(q);
-      if(snap.empty){
+      // Recupera gli ordini per uid E per email (l'email in Firebase è unica →
+      // così il cliente vede i suoi ordini anche se ha cambiato metodo di login).
+      const ordDocs=await fetchOrdersForUser(fb, 10);
+      if(!ordDocs.length){
         wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun ordine ancora. Il tuo storico apparirà qui dopo il primo acquisto.</p>';
         return;
       }
       const statusLabel={pending:'In attesa',confirmed:'Confermato',shipped:'Spedito',in_transito:'In transito',in_consegna:'In consegna',consegnato:'Consegnato'};
       const statusColor={pending:'#f0a500',confirmed:'var(--led)',shipped:'#0098d4',in_transito:'#0098d4',in_consegna:'#7c3aed',consegnato:'#16a34a'};
       const statusTxt={pending:'#fff',confirmed:'var(--k)',shipped:'#fff',in_transito:'#fff',in_consegna:'#fff',consegnato:'#fff'};
-      wrap.innerHTML=snap.docs.map(d=>{
+      wrap.innerHTML=ordDocs.map(d=>{
         const o=d.data();
         const date=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
         const st=o.status||'pending';
@@ -5900,12 +5913,23 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!user||!window.__fb){ list.innerHTML=_subsEmpty; return; }
     const fb=window.__fb;
     try{
-      const q=fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(30));
-      const snap=await fb.getDocs(q);
+      // Rileggi sempre il doc utente fresco: così le credenziali aggiunte
+      // dall'admin compaiono subito, senza dipendere dallo stato in cache.
+      try{ const us=await fb.getDoc(fb.doc(fb.db,'users',user.uid)); if(us.exists()) udata={...udata,...us.data()}; }catch(_){}
       const creds=[];
-      snap.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password||c.link)) creds.push(c); }); });
-      // Credenziali aggiunte dall'admin direttamente sul profilo (clienti senza ordine)
-      if(udata && Array.isArray(udata.subscriptions)) udata.subscriptions.forEach(c=>{ if(c&&(c.login||c.password||c.link)) creds.push(c); });
+      const keyOf=c=>[c.service||'',c.login||'',c.link||'',c.startISO||'',c.months||''].join('|');
+      const seenC={};
+      const addCred=c=>{ if(!c||!(c.login||c.password||c.link)) return; const k=keyOf(c); if(seenC[k]) return; seenC[k]=1; creds.push(c); };
+      // 1) credenziali allegate agli ordini (per uid o email)
+      const ordDocs=await fetchOrdersForUser(fb, 30);
+      ordDocs.forEach(d=>{ const o=d.data(); if(Array.isArray(o.credentials)) o.credentials.forEach(addCred); });
+      // 2) credenziali aggiunte dall'admin sul profilo (proprio doc)
+      if(udata && Array.isArray(udata.subscriptions)) udata.subscriptions.forEach(addCred);
+      // 3) …e su eventuali doc con la stessa email verificata (uid diverso)
+      if(user.email){ try{
+        const us2=await fb.getDocs(fb.query(fb.collection(fb.db,'users'),fb.where('email','==',user.email)));
+        us2.forEach(d=>{ const u=d.data(); if(Array.isArray(u.subscriptions)) u.subscriptions.forEach(addCred); });
+      }catch(e){ console.warn('subs by email',e&&e.code); } }
       if(!creds.length){ list.innerHTML=_subsEmpty; return; }
       // Attivi prima, poi in scadenza, poi scaduti
       creds.sort((a,b)=>subDates(a.startISO,a.months).remDays - subDates(b.startISO,b.months).remDays).reverse();
