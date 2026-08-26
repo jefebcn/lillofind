@@ -195,6 +195,7 @@ app.get('/diag', async (c) => {
       STRIPE_SECRET_KEY: !!env.STRIPE_SECRET_KEY,
       RESEND_API_KEY: !!env.RESEND_API_KEY,
       ANTHROPIC_API_KEY: !!env.ANTHROPIC_API_KEY,
+      TRACK17_TOKEN: !!env.TRACK17_TOKEN,
       TMDB_API_KEY: !!env.TMDB_API_KEY,
     },
     firestore: { reachable: false },
@@ -423,6 +424,7 @@ app.post('/createPaymentIntent', callable(checkout.createPaymentIntent, { auth: 
 app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 'required' }));
 // Email tracking al cliente (admin via allowlist email)
 app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
+app.post('/track17',             callable(checkout.track17,             { auth: 'adminEmail' }));
 // Email conferma ordine al cliente (utente autenticato)
 app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 'required' }));
 app.post('/sendCredentialsEmail', callable(checkout.sendCredentialsEmail, { auth: 'adminEmail' }));
