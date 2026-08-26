@@ -6211,12 +6211,14 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 
     // ── PROFILE: Render Tracking ────────────────────────────
+  let _liveTrack=null; // {status,event,location,carrier,est,status17,checkedAt}
   function renderTracking(){
     const wrap=document.getElementById('pr-tracking-content');
     const badge=document.getElementById('pr-track-status-badge');
     if(!wrap||!udata) return;
     const code=udata.trackingCode;
     if(!code){
+      _liveTrack=null;
       wrap.innerHTML='<p style="font-size:11px;color:var(--dim);letter-spacing:1px;">Nessun ordine in corso. Appena il tuo ordine verrà spedito, il codice di tracking apparirà qui.</p>';
       if(badge) badge.style.display='none';
       return;
@@ -6229,11 +6231,12 @@ img{ -webkit-user-drag:none; user-select:none; }
       in_consegna:{emoji:'🚚',label:'In Consegna',desc:'Il corriere DHL sta portando il pacco a casa tua oggi!'},
       consegnato:{emoji:'🎉',label:'Consegnato',desc:'Il tuo ordine è stato consegnato. Buon drop! Lasciaci una recensione.'},
     };
-    const s=statusMap[udata.trackingStatus]||{emoji:'📦',label:udata.trackingStatus||'—',desc:'Stato aggiornato dal team LILLOFIND.'};
+    const effStatus=(_liveTrack&&_liveTrack.status)||udata.trackingStatus;
+    const s=statusMap[effStatus]||{emoji:'📦',label:effStatus||'—',desc:'Stato aggiornato dal team LILLOFIND.'};
     if(badge){badge.textContent=s.emoji+' '+s.label;badge.style.display='';}
     // Build progress steps
     const steps=['confermato','preparazione','spedito','in_transito','in_consegna','consegnato'];
-    const curIdx=steps.indexOf(udata.trackingStatus);
+    const curIdx=steps.indexOf(effStatus);
     const stepsHTML=steps.map((st,i)=>{
       const sm=statusMap[st];
       const done=i<=curIdx;
@@ -6248,6 +6251,17 @@ img{ -webkit-user-drag:none; user-select:none; }
     }).join('');
     const track17Url='https://t.17track.net/it#nums='+encodeURIComponent(code);
     const dhlUrl='https://www.dhl.com/it-it/home/tracciamento.html?tracking-id='+encodeURIComponent(code);
+    // Live-info box (mostrato dopo "Aggiorna stato")
+    let liveHTML='';
+    if(_liveTrack){
+      const bits=[]; if(_liveTrack.event) bits.push(_liveTrack.event); if(_liveTrack.location) bits.push('· '+_liveTrack.location);
+      const evLine=bits.join(' ');
+      liveHTML=`<div style="margin-bottom:20px;background:rgba(111,117,82,.08);border:1px solid var(--led);border-radius:10px;padding:14px 16px;">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--led);margin-bottom:6px;">📡 Stato in tempo reale${_liveTrack.carrier?' · '+_liveTrack.carrier:''}</p>
+        ${evLine?`<p style="font-size:12px;color:var(--k);line-height:1.5;">${evLine}</p>`:'<p style="font-size:12px;color:var(--mid);">Il corriere non ha ancora registrato eventi. Riprova più tardi.</p>'}
+        ${_liveTrack.est?`<p style="font-size:10px;color:var(--mid);margin-top:4px;">📅 Consegna stimata: ${String(_liveTrack.est).slice(0,10)}</p>`:''}
+      </div>`;
+    }
     wrap.innerHTML=`
       <div style="margin-bottom:20px;background:#f8f8f8;border-left:3px solid var(--led);padding:16px 18px;">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Codice Tracking</p>
@@ -6255,8 +6269,12 @@ img{ -webkit-user-drag:none; user-select:none; }
         ${udata.trackingProduct&&udata.trackingProduct!=='—'?`<p style="font-size:10px;color:var(--mid);margin-top:4px;letter-spacing:1px;">📦 ${udata.trackingProduct}</p>`:''}
         ${udata.trackingNote?`<p style="font-size:10px;color:var(--mid);margin-top:4px;font-style:italic;">💬 ${udata.trackingNote}</p>`:''}
       </div>
+      ${liveHTML}
       <div style="margin-bottom:20px;">${stepsHTML}</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <button id="pr-track-refresh" onclick="refreshTrackingLive()" style="display:inline-flex;align-items:center;gap:8px;background:var(--led);color:var(--k);border:none;padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+          🔄 Aggiorna stato
+        </button>
         <a href="${track17Url}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--k);color:var(--w);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
           📡 Traccia in tempo reale →
         </a>
@@ -6265,6 +6283,29 @@ img{ -webkit-user-drag:none; user-select:none; }
         </a>
       </div>`;
   }
+
+  // Cliente: recupera lo stato reale del pacco da 17TRACK (via Worker) e
+  // aggiorna la dicitura mostrata senza intervento admin.
+  window.refreshTrackingLive=async function(){
+    if(!udata||!udata.trackingCode) return;
+    const btn=document.getElementById('pr-track-refresh');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ Aggiornamento…'; }
+    try{
+      const resp=await lfCallable('track17')({code:udata.trackingCode});
+      const d=(resp&&resp.data)||resp||{};
+      if(!d.ok){
+        if(typeof showToast==='function') showToast(d.error==='not-configured'?'Tracking live non ancora attivo.':'Il corriere non ha ancora aggiornato lo stato.');
+        _liveTrack={status:'',event:'',location:'',carrier:d.carrier||'',est:'',status17:d.status17||''};
+      }else{
+        _liveTrack={status:d.statusMapped||'',event:d.lastEvent||'',location:d.lastLocation||'',carrier:d.carrier||'',est:d.estDelivery||'',status17:d.status17||''};
+        if(typeof showToast==='function') showToast('✅ Stato aggiornato'+(_liveTrack.status?'':''));
+      }
+      renderTracking();
+    }catch(e){
+      if(typeof showToast==='function') showToast('Impossibile aggiornare ora. Riprova tra poco.');
+      if(btn){ btn.disabled=false; btn.textContent='🔄 Aggiorna stato'; }
+    }
+  };
 
   // ── FOOTER INFO MODAL ───────────────────────────────────
   const INFO_CONTENT={
