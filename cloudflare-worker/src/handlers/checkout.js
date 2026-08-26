@@ -270,7 +270,8 @@ export async function sendCredentialsEmail(data, { env }) {
       <tr><td style="padding:16px 18px;">
         <div style="font-size:16px;font-weight:700;color:#23231f;margin-bottom:6px;">🔑 ${escHtml(c.service || 'Abbonamento')}</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${row('Nome utente', c.login)}${row("Parola d'ordine", c.password, true)}${c.profile ? row('Profilo', c.profile) : ''}</table>
-        ${c.link ? `<div style="margin-top:10px;"><div style="font-size:12px;color:#8a8a80;margin-bottom:5px;">🔗 Link di attivazione</div><a href="${escHtml(c.link)}" style="display:block;background:#f3f6ff;border:1px solid #e0e6ff;border-radius:10px;padding:10px 12px;font-family:'Courier New',monospace;font-size:12px;color:#2b57d6;word-break:break-all;text-decoration:none;">${escHtml(c.link)}</a></div>` : ''}
+        ${c.link ? `<div style="margin-top:10px;"><div style="font-size:12px;color:#8a8a80;margin-bottom:5px;">🔗 Link di attivazione</div><a href="${escHtml(c.link)}" style="display:block;background:#f3f6ff;border:1px solid #e0e6ff;border-radius:10px;padding:10px 12px;font-family:'Courier New',monospace;font-size:12px;color:#2b57d6;word-break:break-all;text-decoration:none;">${escHtml(c.link)}</a>
+          <a href="${escHtml(c.link)}" style="display:inline-block;margin-top:10px;background:#2b57d6;color:#ffffff;font-weight:700;font-size:13px;text-decoration:none;padding:11px 24px;border-radius:999px;">Apri link &rarr;</a></div>` : ''}
         ${c.note ? `<div style="margin-top:10px;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:8px 10px;font-size:12px;color:#6b6b63;">📝 ${escHtml(c.note)}</div>` : ''}
         <div style="margin-top:10px;font-size:12px;color:#6b6b63;">Inizio <b style="color:#23231f;">${fmt(c.startISO)}</b> · Fine <b style="color:#23231f;">${fmt(c.startISO, months)}</b> · Durata ${months} ${months > 1 ? 'mesi' : 'mese'}</div>
       </td></tr>
