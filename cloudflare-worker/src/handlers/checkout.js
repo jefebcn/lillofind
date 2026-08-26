@@ -108,7 +108,7 @@ export async function sendTrackingEmail(data, { env }) {
   };
   const statusLabel = statusLabels[status] || '📦 Aggiornamento spedizione';
   const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
-  const trackUrl = 'https://www.dhl.com/it-it/home/tracciabilita.html?tracking-id=' + encodeURIComponent(code);
+  const trackUrl = 'https://t.17track.net/it#nums=' + encodeURIComponent(code);
 
   const resp = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -135,6 +135,66 @@ ${note ? `<p><b>Note:</b> ${escHtml(note)}</p>` : ''}
     throw new HttpsError('internal', 'Invio email fallito: ' + (t || resp.status));
   }
   return { sent: true };
+}
+
+// ── track17 ─────────────────────────────────────────────────────
+// Stato pacco in tempo reale via 17TRACK (multi-corriere). Registra il
+// numero (idempotente) e restituisce l'ultimo stato, mappato sugli stati
+// LilloFind. Auth: adminEmail. Richiede il secret TRACK17_TOKEN.
+const TRACK17_MAP = {
+  InfoReceived: 'spedito', InTransit: 'in_transito', OutForDelivery: 'in_consegna',
+  AvailableForPickup: 'in_consegna', PickUp: 'in_consegna', Delivered: 'consegnato',
+  DeliveryFailure: 'in_transito', Undelivered: 'in_transito', Exception: 'in_transito', Expired: 'in_transito',
+  NotFound: '', InfoReceived_2: 'spedito',
+};
+export async function track17(data, { env }) {
+  const code = String((data && data.code) || '').trim();
+  if (!code) throw new HttpsError('invalid-argument', 'Codice tracking mancante.');
+  const token = env.TRACK17_TOKEN;
+  if (!token) return { ok: false, error: 'not-configured' };
+  const carrier = (data && data.carrier) ? Number(data.carrier) : undefined;
+  const api = async (path, body) => {
+    const r = await fetch('https://api.17track.net/track/v2.2/' + path, {
+      method: 'POST',
+      headers: { '17token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15000),
+    });
+    return r.json();
+  };
+  try {
+    // 1) registra (se già registrato 17TRACK risponde "rejected: already registered" → ignora)
+    await api('register', [carrier ? { number: code, carrier } : { number: code }]).catch(() => {});
+    // 2) info
+    const info = await api('gettrackinfo', [{ number: code }]);
+    const acc = info && info.data && info.data.accepted && info.data.accepted[0];
+    const rej = info && info.data && info.data.rejected && info.data.rejected[0];
+    if (!acc) {
+      const msg = rej && rej.error ? (rej.error.message || String(rej.error.code || '')) : 'no-data';
+      return { ok: false, error: msg };
+    }
+    const ti = acc.track_info || {};
+    const status17 = (ti.latest_status && ti.latest_status.status) || 'NotFound';
+    const latest = ti.latest_event || {};
+    const providers = (ti.tracking && ti.tracking.providers) || [];
+    let events = [];
+    if (providers[0] && Array.isArray(providers[0].events)) {
+      events = providers[0].events.slice(0, 12).map(e => ({
+        time: e.time_iso || e.time_utc || '', desc: e.description || '', location: e.location || '',
+      }));
+    }
+    const carrierName = (providers[0] && providers[0].provider && providers[0].provider.name) || '';
+    const est = (ti.time_metrics && ti.time_metrics.estimated_delivery_date && ti.time_metrics.estimated_delivery_date.to) || '';
+    return {
+      ok: true, code,
+      status17, statusMapped: TRACK17_MAP[status17] || '',
+      lastEvent: latest.description || '', lastTime: latest.time_iso || latest.time_utc || '', lastLocation: latest.location || '',
+      carrier: carrierName, estDelivery: est, delivered: status17 === 'Delivered',
+      events,
+    };
+  } catch (e) {
+    return { ok: false, error: 'fetch-failed:' + (e.message || '') };
+  }
 }
 
 // ── sendOrderEmail ──────────────────────────────────────────────

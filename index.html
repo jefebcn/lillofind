@@ -6246,18 +6246,24 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
       </div>`;
     }).join('');
+    const track17Url='https://t.17track.net/it#nums='+encodeURIComponent(code);
     const dhlUrl='https://www.dhl.com/it-it/home/tracciamento.html?tracking-id='+encodeURIComponent(code);
     wrap.innerHTML=`
       <div style="margin-bottom:20px;background:#f8f8f8;border-left:3px solid var(--led);padding:16px 18px;">
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Codice Tracking DHL</p>
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Codice Tracking</p>
         <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;letter-spacing:3px;color:var(--k);">${code}</p>
         ${udata.trackingProduct&&udata.trackingProduct!=='—'?`<p style="font-size:10px;color:var(--mid);margin-top:4px;letter-spacing:1px;">📦 ${udata.trackingProduct}</p>`:''}
         ${udata.trackingNote?`<p style="font-size:10px;color:var(--mid);margin-top:4px;font-style:italic;">💬 ${udata.trackingNote}</p>`:''}
       </div>
       <div style="margin-bottom:20px;">${stepsHTML}</div>
-      <a href="${dhlUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--k);color:var(--w);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
-        🌐 Traccia su DHL.com →
-      </a>`;
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <a href="${track17Url}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--k);color:var(--w);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+          📡 Traccia in tempo reale →
+        </a>
+        <a href="${dhlUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--k);border:1.5px solid var(--k);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='var(--k)';this.style.color='var(--w)'" onmouseout="this.style.background='transparent';this.style.color='var(--k)'">
+          🌐 DHL.com
+        </a>
+      </div>`;
   }
 
   // ── FOOTER INFO MODAL ───────────────────────────────────
