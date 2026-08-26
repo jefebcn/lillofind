@@ -35,7 +35,14 @@ service cloud.firestore {
     // L'email in Firebase Auth è unica per account, quindi il match è sicuro.
     match /orders/{id} {
       allow read:   if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid)
-                    || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email);
+                    || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email)
+                    // …oppure se il proprietario dell'ordine (il suo uid) è un
+                    // account con la mia stessa email verificata: copre il caso
+                    // in cui il cliente ha un vecchio account (uid diverso) con
+                    // la stessa email, anche se sull'ordine manca il campo email.
+                    || (signedIn() && request.auth.token.email != null
+                        && exists(/databases/$(database)/documents/users/$(resource.data.uid))
+                        && get(/databases/$(database)/documents/users/$(resource.data.uid)).data.get('email','') == request.auth.token.email);
       allow create: if signedIn();
       allow update, delete: if isAdmin();
     }
