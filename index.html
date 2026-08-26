@@ -5779,8 +5779,18 @@ img{ -webkit-user-drag:none; user-select:none; }
   async function fetchOrdersForUser(fb, max){
     const seen={}; const out=[];
     const collect=async(qy)=>{ try{ const s=await fb.getDocs(qy); s.forEach(d=>{ if(!seen[d.id]){ seen[d.id]=1; out.push({id:d.id,data:()=>d.data(),_d:d.data()}); } }); }catch(e){ console.warn('orders q',e&&e.code); } };
+    // 1) i miei ordini per uid attuale
     await collect(fb.query(fb.collection(fb.db,'orders'),fb.where('uid','==',user.uid),fb.orderBy('createdAt','desc'),fb.limit(max||10)));
+    // 2) per email verificata (ordini con lo stesso indirizzo)
     if(user.email){ await collect(fb.query(fb.collection(fb.db,'orders'),fb.where('email','==',user.email),fb.limit(max||10))); }
+    // 3) per gli uid di eventuali vecchi account con la mia stessa email
+    //    (copre ordini creati con un account diverso, anche senza campo email).
+    if(user.email){ try{
+      const us=await fb.getDocs(fb.query(fb.collection(fb.db,'users'),fb.where('email','==',user.email)));
+      const uids=[]; us.forEach(d=>{ if(d.id!==user.uid) uids.push(d.id); });
+      const chunk=uids.slice(0,10);
+      if(chunk.length){ await collect(fb.query(fb.collection(fb.db,'orders'),fb.where('uid','in',chunk),fb.limit(max||10))); }
+    }catch(e){ console.warn('orders by alt uid',e&&e.code); } }
     out.sort((a,b)=>((b._d.createdAt?.seconds)||0)-((a._d.createdAt?.seconds)||0));
     return (max?out.slice(0,max):out);
   }
