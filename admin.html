@@ -565,6 +565,24 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           <div id="tr-history" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
+
+      <!-- ─── Pannello: Spedizioni attive · Verifica 17TRACK ─── -->
+      <div class="admin-card" style="margin-top:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:6px;">
+          <div>
+            <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">📡 Spedizioni Attive · Verifica 17TRACK</p>
+            <p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;">Tutti i codici tracking assegnati finora. Premi <b>Verifica</b> per interrogare 17TRACK in tempo reale, oppure <b>Verifica tutte</b> per aggiornare l'intero elenco.</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-k" id="trb-reload" onclick="loadTrackingBoard()" title="Ricarica l'elenco dei codici dal database">↻ Ricarica</button>
+            <button class="btn-led" id="trb-all" onclick="trackingBoardVerifyAll()" title="Interroga 17TRACK per ogni codice in elenco">📡 Verifica tutte</button>
+          </div>
+        </div>
+        <div id="trb-status" style="font-size:11px;color:var(--dim);letter-spacing:1px;margin:8px 0 14px;"></div>
+        <div id="trb-list" style="display:flex;flex-direction:column;gap:10px;">
+          <p style="font-size:12px;color:rgba(255,255,255,.4);">Caricamento…</p>
+        </div>
+      </div>
     </div>
 
     <!-- ─── PAGE: RICHIESTE PRODOTTO ─── -->
@@ -1074,6 +1092,91 @@ waitFB(()=>{
       showToast('✅ Stato aggiornato da 17TRACK'+(d.statusMapped?(' ('+d.statusMapped+')'):''));
     }catch(e){ console.error('track17',e&&e.code); showToast('⚠️ Errore 17TRACK ('+((e&&e.code)||'')+')'); }
     finally{ if(btn){ btn.disabled=false; btn.textContent='🔄 Stato live (17TRACK)'; } }
+  };
+
+  // ── Tracking board: elenco spedizioni attive + verifica 17TRACK ──────────
+  const TRB_STATUS={confermato:'✅ Confermato',preparazione:'📦 In Preparazione',spedito:'🚀 Spedito',in_transito:'✈️ In Transito',in_consegna:'🚚 In Consegna',consegnato:'🎉 Consegnato'};
+  let _trackBoard=[];
+  function trbTs(v){ return v&&v.seconds?v.seconds*1000:(v&&v.toMillis?v.toMillis():0); }
+  function trbDate(ms){ if(!ms) return '—'; try{ const d=new Date(ms); return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return '—'; } }
+  window.loadTrackingBoard=async function(){
+    const fb=window.__fb; const list=document.getElementById('trb-list'); const st=document.getElementById('trb-status');
+    if(!list) return;
+    if(!fb){ list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Firebase non pronto…</p>'; return; }
+    list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Caricamento…</p>';
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
+      const rows=[];
+      snap.forEach(d=>{ const u=d.data()||{}; if(u.trackingCode) rows.push({uid:d.id,email:u.email||'—',code:u.trackingCode,product:u.trackingProduct||'',status:u.trackingStatus||'',note:u.trackingNote||'',updated:trbTs(u.trackingUpdatedAt)}); });
+      rows.sort((a,b)=>b.updated-a.updated);
+      _trackBoard=rows;
+      if(st) st.textContent=rows.length+' spedizion'+(rows.length===1?'e':'i')+' con codice tracking';
+      if(!rows.length){ list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Nessun codice tracking assegnato finora.</p>'; return; }
+      list.innerHTML=rows.map((r,i)=>trbRowHTML(r,i)).join('');
+    }catch(e){ console.error('loadTrackingBoard',e&&e.code); list.innerHTML='<p style="font-size:12px;color:#e88;">Errore nel caricamento ('+escH((e&&e.code)||'')+').</p>'; }
+  };
+  function trbRowHTML(r,i){
+    const savedBadge=r.status?('<span style="font-size:10px;padding:3px 9px;border-radius:999px;background:rgba(200,255,0,.10);color:var(--led);border:1px solid rgba(200,255,0,.25);white-space:nowrap;">'+escH(TRB_STATUS[r.status]||r.status)+'</span>'):'<span style="font-size:10px;color:var(--dim);">— nessuno stato</span>';
+    return '<div class="trb-row" data-i="'+i+'" style="border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'
+        +'<div style="min-width:0;">'
+          +'<div style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:16px;letter-spacing:1px;color:#fff;">'+escH(r.code)+'</div>'
+          +'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px;">'+escH(r.email)+(r.product?(' · '+escH(r.product)):'')+'</div>'
+          +'<div style="font-size:10px;color:var(--dim);margin-top:2px;">Aggiornato: '+escH(trbDate(r.updated))+'</div>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+savedBadge
+          +'<a href="https://t.17track.net/it#nums='+encodeURIComponent(r.code)+'" target="_blank" class="btn-k" style="padding:6px 12px;font-size:10px;text-decoration:none;">🌐</a>'
+          +'<button class="btn-k" style="padding:6px 12px;font-size:10px;" onclick="trackingBoardVerifyRow('+i+')">📡 Verifica</button>'
+        +'</div>'
+      +'</div>'
+      +'<div class="trb-live" id="trb-live-'+i+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);"></div>'
+    +'</div>';
+  }
+  window.trackingBoardVerifyRow=async function(i){
+    const r=_trackBoard[i]; if(!r) return; const box=document.getElementById('trb-live-'+i); if(!box) return;
+    box.style.display='block'; box.innerHTML='<span style="font-size:11px;color:var(--dim);">Interrogazione 17TRACK…</span>';
+    try{
+      const resp=await lfCallable('track17')({code:r.code});
+      const d=(resp&&resp.data)||resp||{};
+      if(!d.ok){
+        box.innerHTML='<span style="font-size:11px;color:#e8a;">'+(d.error==='not-configured'?'17TRACK non configurato (manca TRACK17_TOKEN).':'Nessuno stato: '+escH(d.error||'non trovato'))+'</span>';
+        return {ok:false};
+      }
+      const mism=d.statusMapped && d.statusMapped!==r.status;
+      const evs=(d.events||[]).slice(0,6).map(e=>'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);"><span style="font-size:10px;color:#888;white-space:nowrap;">'+escH(String(e.time||'').replace('T',' ').slice(0,16))+'</span><span style="font-size:11px;">'+escH(e.desc||'')+(e.location?(' <span style="color:#888;">· '+escH(e.location)+'</span>'):'')+'</span></div>').join('');
+      box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'
+          +'<strong style="font-size:12px;">📡 '+escH(d.carrier||'corriere')+'</strong>'
+          +'<span style="font-size:10px;color:var(--led);">'+escH(d.status17||'')+(d.statusMapped?(' → '+escH(TRB_STATUS[d.statusMapped]||d.statusMapped)):'')+'</span>'
+        +'</div>'
+        +(d.estDelivery?('<p style="font-size:10px;color:#aaa;margin-bottom:6px;">Consegna stimata: '+escH(String(d.estDelivery).slice(0,10))+'</p>'):'')
+        +(evs||'<p style="font-size:11px;color:#888;">Nessun evento ancora disponibile.</p>')
+        +(mism?('<div style="margin-top:8px;"><button class="btn-led" style="padding:5px 12px;font-size:10px;" onclick="trackingBoardSaveStatus('+i+',\''+escH(d.statusMapped)+'\')">💾 Aggiorna stato salvato → '+escH(TRB_STATUS[d.statusMapped]||d.statusMapped)+'</button></div>'):'');
+      return {ok:true,statusMapped:d.statusMapped};
+    }catch(e){ box.innerHTML='<span style="font-size:11px;color:#e8a;">Errore ('+escH((e&&e.code)||'')+')</span>'; return {ok:false}; }
+  };
+  window.trackingBoardSaveStatus=async function(i,status){
+    const r=_trackBoard[i]; const fb=window.__fb; if(!r||!fb||!status) return;
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'users',r.uid),{trackingStatus:status,trackingUpdatedAt:fb.serverTimestamp()});
+      r.status=status; r.updated=Date.now();
+      const row=document.querySelector('.trb-row[data-i="'+i+'"]');
+      if(row){ const live=document.getElementById('trb-live-'+i); const html=trbRowHTML(r,i); row.outerHTML=html; }
+      showToast('✅ Stato aggiornato: '+(TRB_STATUS[status]||status));
+    }catch(e){ showToast('⚠️ Errore salvataggio ('+((e&&e.code)||'')+')'); }
+  };
+  window.trackingBoardVerifyAll=async function(){
+    const btn=document.getElementById('trb-all'); const st=document.getElementById('trb-status');
+    if(!_trackBoard.length){ showToast('Nessuna spedizione da verificare.'); return; }
+    if(btn){ btn.disabled=true; btn.textContent='Verifica in corso…'; }
+    let done=0, okc=0;
+    for(let i=0;i<_trackBoard.length;i++){
+      if(st) st.textContent='Verifica '+(done+1)+'/'+_trackBoard.length+'…';
+      const res=await window.trackingBoardVerifyRow(i);
+      done++; if(res&&res.ok) okc++;
+    }
+    if(st) st.textContent='Verifica completata · '+okc+'/'+_trackBoard.length+' con stato trovato';
+    if(btn){ btn.disabled=false; btn.textContent='📡 Verifica tutte'; }
+    showToast('✅ Verifica completata ('+okc+'/'+_trackBoard.length+')');
   };
 
   window.adminAssignTracking=async function(){
@@ -3094,6 +3197,7 @@ waitFB(()=>{
       document.body.style.overflow='';
     }
     if(name==='clienti' && !_usersLoaded) loadUsersPage();
+    if(name==='spedizioni') loadTrackingBoard();
     if(name==='richieste') loadProductRequests();
     if(name==='costi'){ if(!adminCatalogProducts.length){ try{ loadAdminCatalog(); }catch(_){} } try{ loadFxRates(); }catch(_){} }
     // Carica l'importer solo la prima volta che apri la sezione (lazy)
