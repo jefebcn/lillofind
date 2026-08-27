@@ -651,8 +651,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
             </div>
           </div>
           <div>
-            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Puoi anche fissare un importo manuale (€ / mese)</label>
-            <input class="lf-in" id="inv-manual" type="number" min="0" step="10" placeholder="(auto dal profilo)" oninput="invRecalc()"/>
+            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Importo fisso per versamento (€, nella frequenza scelta)</label>
+            <input class="lf-in" id="inv-manual" type="number" min="0" step="10" placeholder="es. 120 a settimana" oninput="invRecalc()"/>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;" class="grid-1-mob">
@@ -690,8 +690,9 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
             <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);">di fila</div>
           </div>
         </div>
+        <div id="inv-start-bar" style="margin:12px 0 6px;"></div>
         <div id="inv-next" style="font-size:12px;color:#e0a45a;margin:10px 0 14px;"></div>
-        <div id="inv-checklist" style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;"></div>
+        <div id="inv-checklist" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;"></div>
       </div>
 
       <!-- PIATTAFORME -->
@@ -1455,16 +1456,18 @@ waitFB(()=>{
     document.getElementById('inv-years-lbl').textContent=years;
     document.getElementById('inv-return-lbl').textContent=ret;
     const pct=_invState.pct||20;
-    const monthly=manual>0?manual:(income*pct/100);
-    const weekly=monthly*12/52;
     const freq=_invState.freq||'weekly';
-    const per=freq==='weekly'?weekly:monthly;
+    // "manual" = importo fisso per ogni versamento, nella frequenza scelta
+    let per, monthly;
+    if(manual>0){ per=manual; monthly=(freq==='weekly')?manual*52/12:manual; }
+    else { monthly=income*pct/100; per=(freq==='weekly')?monthly*12/52:monthly; }
+    const weekly=monthly*12/52;
     const annual=monthly*12;
     // Valore futuro di versamenti mensili costanti, capitalizzazione mensile
     const i=ret/100/12, n=years*12;
     const fv=i>0?monthly*((Math.pow(1+i,n)-1)/i):monthly*n;
     const invested=monthly*12*years, gain=fv-invested;
-    const pctTxt=manual>0?'manuale':(pct+'% dello stipendio');
+    const pctTxt=manual>0?'importo fisso':(pct+'% dello stipendio');
     const sum=document.getElementById('inv-summary');
     const card=(lbl,val,sub,col)=>'<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;">'
       +'<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">'+lbl+'</div>'
@@ -1486,29 +1489,73 @@ waitFB(()=>{
     invSave();
     invRenderChecklist();
   }
+  function invMonday(d){ const m=new Date(d); const dow=(m.getDay()+6)%7; m.setDate(m.getDate()-dow); m.setHours(0,0,0,0); return m; }
+  // Genera i periodi dal giorno di AVVIO del piano fino a oggi (+ 2 futuri).
+  function invPeriodsFrom(freq, startISO){
+    const out=[]; const now=new Date();
+    const start=new Date(startISO+'T00:00:00');
+    if(freq==='weekly'){
+      let d=invMonday(start); const last=invMonday(now); const end=new Date(last); end.setDate(end.getDate()+14);
+      let idx=1;
+      while(d<=end){ const e=new Date(d); e.setDate(e.getDate()+6);
+        out.push({key:invWeekKey(d), label:'Settimana '+idx, sub:invFmtD(d)+' – '+invFmtD(e), date:new Date(d), due:d.getTime()<=last.getTime()});
+        d=new Date(d); d.setDate(d.getDate()+7); idx++; }
+    } else {
+      let d=new Date(start.getFullYear(),start.getMonth(),1);
+      const end=new Date(now.getFullYear(),now.getMonth()+2,1); let idx=1;
+      while(d<end){ const due=(d.getFullYear()<now.getFullYear())||(d.getFullYear()===now.getFullYear()&&d.getMonth()<=now.getMonth());
+        out.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), label:'Mese '+idx, sub:invMonthName(d), date:new Date(d), due});
+        d=new Date(d.getFullYear(),d.getMonth()+1,1); idx++; }
+    }
+    return out;
+  }
+  window.invStart=function(){
+    const t=new Date(); _invState.startISO=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    invSave(); invRenderChecklist();
+    if(typeof showToast==='function') showToast('🚀 Piano avviato! Buon investimento.');
+  };
+  window.invSetStart=function(v){ if(v){ _invState.startISO=v; invSave(); invRenderChecklist(); } };
+  window.invResetStart=function(){ if(confirm('Azzerare la data di avvio del piano? I versamenti segnati restano salvati.')){ _invState.startISO=''; invSave(); invRenderChecklist(); } };
   function invRenderChecklist(){
     if(!_invState) return;
     const freq=_invState.freq||'weekly';
     _invState.done=_invState.done||{};
-    const periods=invPeriods(freq, freq==='weekly'?16:12);
-    const cur=periods[periods.length-1];
-    // streak: da corrente all'indietro finché "fatto"
-    let streak=0; for(let k=periods.length-1;k>=0;k--){ if(_invState.done[periods[k].key]) streak++; else break; }
-    const sEl=document.getElementById('inv-streak'); if(sEl) sEl.textContent=streak;
-    // prossima scadenza
+    const bar=document.getElementById('inv-start-bar');
     const nextEl=document.getElementById('inv-next');
-    if(nextEl){
-      if(!_invState.done[cur.key]) nextEl.innerHTML='⏳ <b>Versamento in scadenza ora</b> — '+cur.label+'. Fallo e segnalo qui sotto.';
-      else { const nd=invNextDate(freq); nextEl.innerHTML='✅ Sei in pari! Prossimo versamento: <b>'+nd.toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long'})+'</b>.'; }
-    }
     const list=document.getElementById('inv-checklist');
+    const sEl=document.getElementById('inv-streak');
+    // Nessuna data di avvio → invita a iniziare quando vuole lui.
+    if(!_invState.startISO){
+      if(sEl) sEl.textContent='0';
+      if(bar) bar.innerHTML='<button class="btn-led" onclick="invStart()" style="padding:12px 22px;font-size:13px;">🚀 Inizia il piano oggi</button>'
+        +'<span style="font-size:12px;color:var(--dim);margin-left:12px;">oppure scegli la data d\'inizio: <input type="date" onchange="invSetStart(this.value)" class="lf-in" style="width:auto;display:inline-block;padding:6px 8px;font-size:12px;"/></span>';
+      if(nextEl) nextEl.innerHTML='';
+      if(list) list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Il registro parte dal giorno in cui avvii il piano. Premi <b>Inizia</b> quando fai il primo versamento.</p>';
+      return;
+    }
+    const startD=new Date(_invState.startISO+'T00:00:00');
+    if(bar) bar.innerHTML='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:rgba(255,255,255,.6);">'
+      +'<span>🚀 Piano avviato il <b style="color:#fff;">'+startD.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})+'</b></span>'
+      +'<button class="btn-k" onclick="invResetStart()" style="padding:5px 10px;font-size:10px;">Cambia</button></div>';
+    const periods=invPeriodsFrom(freq, _invState.startISO);
+    const duePeriods=periods.filter(p=>p.due);
+    const cur=duePeriods[duePeriods.length-1]||periods[0];
+    // streak: dai periodi DOVUTI, dal più recente all'indietro finché "fatto"
+    let streak=0; for(let k=duePeriods.length-1;k>=0;k--){ if(_invState.done[duePeriods[k].key]) streak++; else break; }
+    if(sEl) sEl.textContent=streak;
+    // prossima scadenza
+    if(nextEl){
+      const firstUndone=duePeriods.find(p=>!_invState.done[p.key]);
+      if(firstUndone) nextEl.innerHTML='⏳ <b>Da versare:</b> '+firstUndone.label+' ('+firstUndone.sub+'). Fallo e spuntalo qui sotto.';
+      else { const up=periods.find(p=>!p.due); nextEl.innerHTML=up?('✅ Sei in pari! Prossimo versamento: <b>'+up.date.toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long'})+'</b>.'):'✅ Sei in pari!'; }
+    }
     if(list) list.innerHTML=periods.slice().reverse().map(p=>{
-      const done=!!_invState.done[p.key]; const isCur=p.key===cur.key;
-      return '<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid '+(isCur&&!done?'rgba(224,149,47,.5)':'rgba(255,255,255,.08)')+';border-radius:10px;background:'+(done?'rgba(111,117,82,.12)':(isCur?'rgba(224,149,47,.06)':'rgba(255,255,255,.02)'))+';cursor:pointer;">'
+      const done=!!_invState.done[p.key]; const isCur=p.key===(cur&&cur.key); const future=!p.due;
+      return '<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid '+(isCur&&!done?'rgba(224,149,47,.5)':'rgba(255,255,255,.08)')+';border-radius:10px;background:'+(done?'rgba(111,117,82,.12)':(isCur?'rgba(224,149,47,.06)':'rgba(255,255,255,.02)'))+';cursor:pointer;opacity:'+(future&&!done?'.55':'1')+';">'
         +'<input type="checkbox" '+(done?'checked':'')+' onchange="invToggle(\''+p.key+'\')" style="width:18px;height:18px;accent-color:var(--led);flex-shrink:0;"/>'
-        +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:'+(isCur?'700':'500')+';color:'+(done?'#fff':'rgba(255,255,255,.8)')+';">'+p.label+(isCur?' <span style="font-size:9px;color:#e0a45a;">· ora</span>':'')+'</div>'
+        +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:'+(isCur?'700':'500')+';color:'+(done?'#fff':'rgba(255,255,255,.8)')+';">'+p.label+(isCur?' <span style="font-size:9px;color:#e0a45a;">· ora</span>':'')+(future?' <span style="font-size:9px;color:var(--dim);">· in arrivo</span>':'')+'</div>'
         +(p.sub?'<div style="font-size:10px;color:var(--dim);">'+p.sub+'</div>':'')+'</div>'
-        +'<span style="font-size:11px;color:'+(done?'var(--led)':'var(--dim)')+';white-space:nowrap;">'+(done?'✓ fatto':'da fare')+'</span></label>';
+        +'<span style="font-size:11px;color:'+(done?'var(--led)':'var(--dim)')+';white-space:nowrap;">'+(done?'✓ fatto':(future?'—':'da fare'))+'</span></label>';
     }).join('');
   }
   function invRenderStatic(){
@@ -1541,10 +1588,12 @@ waitFB(()=>{
   }
   window.invInit=function(){
     _invState=invLoad();
+    const fresh=!_invState || Object.keys(_invState).length===0;
     if(!_invState.pct) _invState.pct=20;
     if(!_invState.risk) _invState.risk='bilanciato';
     if(!_invState.freq) _invState.freq='weekly';
     if(!_invState.done) _invState.done={};
+    if(fresh && _invState.manual==null) _invState.manual=120; // media di partenza: €120/settimana
     // popola input
     const setV=(id,v)=>{ const e=document.getElementById(id); if(e!=null&&v!=null) e.value=v; };
     if(_invState.income) setV('inv-income',_invState.income);
