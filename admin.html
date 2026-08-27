@@ -697,8 +697,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
 
       <!-- PIATTAFORME -->
       <div class="admin-card" style="margin-top:20px;">
-        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🏦 Dove investire (PAC su ETF, Italia)</p>
-        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.7;">Broker con <b>piani di accumulo ricorrenti</b> su ETF, economici. Preferisci il <b>regime amministrato</b> (il broker fa da sostituto d'imposta: nessuna dichiarazione manuale). Verifica sempre commissioni e condizioni aggiornate prima di aprire.</p>
+        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🏦 Dove investire (residente San Marino)</p>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.7;">Da San Marino molti neobroker UE <b>non</b> aprono conto. Sotto le opzioni che di norma accettano i residenti sammarinesi. San Marino ha il <b>proprio regime fiscale</b> sui redditi finanziari (diverso dall'Italia): con un broker estero le imposte le gestisci tu, con una banca locale spesso è tutto in loco. Fatti seguire da un <b>commercialista sammarinese</b> e verifica sempre commissioni/idoneità prima di aprire.</p>
         <div id="inv-platforms" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="grid-1-mob"></div>
       </div>
 
@@ -1560,12 +1560,12 @@ waitFB(()=>{
   }
   function invRenderStatic(){
     const plats=[
-      ['Scalable Capital','PAC su ETF ricorrenti gratuiti · regime amministrato disponibile · ottimo per chi vuole "imposta e dimentica".'],
-      ['Trade Republic','Piani ETF ricorrenti gratuiti · app semplice · interessi sulla liquidità non investita.'],
-      ['Directa SIM','Broker italiano storico · "PAC Directa" su ETF · regime amministrato (nessuna dichiarazione).'],
-      ['Fineco','Banca + broker italiano · PAC su ETF · tutto in un conto · regime amministrato.'],
-      ['Degiro','Molto economico · ampia scelta ETF (alcuni in "core selection") · regime dichiarativo, valuta il fisco.'],
-      ['Consob / fondo emergenza','Prima di investire: 3–6 mesi di spese su conto deposito. Verifica che il broker sia autorizzato (Consob/registro).'],
+      ['Interactive Brokers','Broker internazionale che di norma accetta i residenti a San Marino · costi bassissimi · enorme scelta di ETF · investimenti ricorrenti automatici. Regime dichiarativo: le imposte le gestisci tu a San Marino.'],
+      ['Banca di San Marino (BSM)','Banca locale · conto titoli + Gestione Patrimoniale PAC · accesso alle principali borse · KYC semplice da residente e fisco locale gestito. Commissioni più alte, scelta più ristretta.'],
+      ['Banca Sammarinese di Investimento (BSI)','Banca locale · Piani di Accumulo automatici in ETF e fondi · importi anche ridotti · comoda se vuoi semplicità e tutto in loco.'],
+      ['BAC / Cassa di Risparmio RSM','Altre banche sammarinesi con conto titoli e servizi di investimento · confronta commissioni e scelta ETF prima di decidere.'],
+      ['⚠️ Neobroker UE (Trade Republic, Scalable, Degiro)','Spesso limitati a residenti UE/SEE: da San Marino di solito NON puoi aprire il conto. Non perderci tempo salvo confermino l\'idoneità.'],
+      ['Fisco & fondo emergenza','San Marino ha un regime fiscale proprio sui redditi finanziari: fatti seguire da un commercialista sammarinese. E prima di investire tieni 3–6 mesi di spese da parte.'],
     ];
     const pel=document.getElementById('inv-platforms');
     if(pel) pel.innerHTML=plats.map(p=>'<div style="border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;background:rgba(255,255,255,.02);">'
