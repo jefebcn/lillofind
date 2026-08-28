@@ -673,8 +673,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
 
       <!-- ALLOCAZIONE -->
       <div class="admin-card" style="margin-top:20px;">
-        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🧩 Allocazione suggerita (esempio "lazy portfolio")</p>
-        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.7;">ETF ad accumulazione (reinvestono i dividendi in automatico), a basse commissioni. Un solo ETF azionario mondiale è già molto diversificato; la quota obbligazionaria smorza le oscillazioni.</p>
+        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🧩 Cosa comprare su XTB · suddivisione automatica</p>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.7;">In base al profilo, ecco gli <b>ETF concreti</b> (ad accumulo, basse commissioni) e <b>quanti € di ogni versamento</b> vanno su ciascuno. Cambia profilo/importo e la suddivisione si aggiorna da sola.</p>
         <div id="inv-alloc"></div>
       </div>
 
@@ -1420,8 +1420,9 @@ waitFB(()=>{
   window.invSetRisk=function(btn){
     document.querySelectorAll('.inv-risk').forEach(b=>b.className='inv-risk btn-k');
     btn.className='inv-risk btn-led';
+    // Il profilo cambia l'ALLOCAZIONE (e la % suggerita). Se hai fissato un
+    // importo manuale (es. €120), lo mantengo: cambia solo la suddivisione.
     _invState.risk=btn.dataset.risk; _invState.pct=parseFloat(btn.dataset.pct);
-    const man=document.getElementById('inv-manual'); if(man) man.value=''; _invState.manual=0;
     invRecalc();
   };
   window.invSetFreq=function(btn){
@@ -1434,18 +1435,18 @@ waitFB(()=>{
     if(_invState.done[key]) delete _invState.done[key]; else _invState.done[key]=true;
     invSave(); invRenderChecklist();
   };
+  // ETF UCITS ad accumulo, tra i più diffusi e di norma disponibili su XTB.
+  const INV_ETF={
+    vwce:{name:'Vanguard FTSE All-World (Acc)',tk:'VWCE',isin:'IE00BK5BQT80',d:'Azionario mondiale — ~3.700 aziende, paesi sviluppati + emergenti. È il cuore del portafoglio.'},
+    aggh:{name:'iShares Core Global Aggregate Bond EUR Hedged (Acc)',tk:'AGGH',isin:'IE00BDBRDM35',d:'Obbligazionario globale con copertura in euro. Smorza le oscillazioni dell\'azionario.'},
+    eimi:{name:'iShares Core MSCI EM IMI (Acc)',tk:'EIMI',isin:'IE00BKM4GZ66',d:'Mercati emergenti — piccolo tilt extra di crescita (più rischio/volatilità).'},
+  };
   function invAllocFor(risk){
-    if(risk==='prudente') return [
-      {n:'Azionario mondiale (ETF All-World / MSCI World, accumulo)',p:60,c:'#6f7552'},
-      {n:'Obbligazionario globale (ETF aggregate, hedged EUR)',p:30,c:'#8E7963'},
-      {n:'Liquidità / Oro (conto deposito o ETC oro)',p:10,c:'#B5A89D'} ];
-    if(risk==='dinamico') return [
-      {n:'Azionario mondiale (ETF All-World / MSCI World, accumulo)',p:90,c:'#6f7552'},
-      {n:'Mercati emergenti / small cap (ETF, accumulo)',p:10,c:'#99a074'} ];
-    return [
-      {n:'Azionario mondiale (ETF All-World / MSCI World, accumulo)',p:80,c:'#6f7552'},
-      {n:'Obbligazionario globale (ETF aggregate, hedged EUR)',p:20,c:'#8E7963'} ];
+    if(risk==='prudente') return [{e:INV_ETF.vwce,p:60,c:'#6f7552'},{e:INV_ETF.aggh,p:40,c:'#8E7963'}];
+    if(risk==='dinamico') return [{e:INV_ETF.vwce,p:90,c:'#6f7552'},{e:INV_ETF.eimi,p:10,c:'#99a074'}];
+    return [{e:INV_ETF.vwce,p:80,c:'#6f7552'},{e:INV_ETF.aggh,p:20,c:'#8E7963'}];
   }
+  window.invCopy=function(t){ try{ navigator.clipboard.writeText(t); if(typeof showToast==='function') showToast('Copiato: '+t); }catch(_){ if(typeof showToast==='function') showToast(t); } };
   function invRecalc(){
     if(!_invState) return;
     const income=parseFloat(document.getElementById('inv-income').value)||0;
@@ -1478,14 +1479,32 @@ waitFB(()=>{
       +card('Al mese', invEUR(monthly), invEUR(annual)+' / anno')
       +card('Totale versato in '+years+' anni', invEUR(invested), '')
       +card('Valore proiettato', invEUR(fv), '≈ +'+invEUR(gain)+' di guadagno stimato', 'var(--led2,#99a074)');
-    // Allocazione
+    // Allocazione + suddivisione del versamento tra ETF concreti (XTB)
     const alloc=invAllocFor(_invState.risk||'bilanciato');
+    const freqW=(freq==='weekly');
     const ael=document.getElementById('inv-alloc');
-    if(ael) ael.innerHTML='<div style="display:flex;height:14px;border-radius:999px;overflow:hidden;margin-bottom:14px;">'
-      +alloc.map(a=>'<div style="width:'+a.p+'%;background:'+a.c+';"></div>').join('')+'</div>'
-      +alloc.map(a=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);">'
-        +'<span style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="width:11px;height:11px;border-radius:3px;background:'+a.c+';flex-shrink:0;"></span>'+a.n+'</span>'
-        +'<span style="font-size:13px;font-weight:700;white-space:nowrap;">'+a.p+'% · '+invEUR(monthly*a.p/100)+'/mese</span></div>').join('');
+    if(ael){
+      const bar='<div style="display:flex;height:16px;border-radius:999px;overflow:hidden;margin-bottom:16px;">'
+        +alloc.map(a=>'<div style="width:'+a.p+'%;background:'+a.c+';"></div>').join('')+'</div>';
+      const action='<div style="background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.28);border-radius:12px;padding:14px 16px;margin-bottom:18px;">'
+        +'<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--led);margin-bottom:8px;">🎯 La tua mossa · ogni '+(freqW?'settimana':'mese')+'</div>'
+        +'<div style="font-size:14px;line-height:1.5;">Versa <b>'+invEUR(per)+'</b> e comprali così su XTB:</div>'
+        +'<div style="margin-top:8px;">'+alloc.map(a=>'<span style="display:inline-block;margin:4px 8px 0 0;padding:5px 12px;border-radius:999px;background:'+a.c+';color:#0d0d0d;font-size:13px;font-weight:700;">'+invEUR(per*a.p/100)+' → '+a.e.tk+'</span>').join('')+'</div></div>';
+      const rows=alloc.map(a=>'<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">'
+          +'<div style="display:flex;align-items:flex-start;gap:10px;min-width:0;"><span style="width:12px;height:12px;border-radius:3px;background:'+a.c+';flex-shrink:0;margin-top:4px;"></span>'
+            +'<div style="min-width:0;"><div style="font-size:13px;font-weight:600;">'+a.e.name+' <span style="font-size:10px;color:var(--dim);letter-spacing:.5px;">· '+a.e.tk+'</span></div>'
+            +'<div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;margin-top:3px;">'+a.e.d+'</div>'
+            +'<div style="font-size:10px;color:var(--dim);margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">ISIN <code style="color:rgba(255,255,255,.7);">'+a.e.isin+'</code>'
+              +'<button class="btn-k" style="padding:2px 8px;font-size:9px;" onclick="invCopy(\''+a.e.isin+'\')">📋 copia ISIN</button>'
+              +'<button class="btn-k" style="padding:2px 8px;font-size:9px;" onclick="invCopy(\''+a.e.tk+'\')">copia ticker</button></div></div></div>'
+          +'<div style="text-align:right;white-space:nowrap;"><div style="font-size:16px;font-weight:800;">'+a.p+'%</div>'
+            +'<div style="font-size:12px;color:var(--led);font-weight:700;">'+invEUR(per*a.p/100)+'/'+(freqW?'sett':'mese')+'</div>'
+            +'<div style="font-size:10px;color:var(--dim);">'+invEUR(monthly*a.p/100)+'/mese</div></div>'
+        +'</div></div>').join('');
+      ael.innerHTML=bar+action+rows
+        +'<p style="font-size:11px;color:var(--dim);margin-top:14px;line-height:1.7;">💡 Su XTB puoi comprare <b>frazioni</b> di ETF: investi l\'importo esatto. Gli ETF ad <b>accumulo</b> reinvestono i dividendi da soli. Cerca l\'ETF per <b>ISIN</b> nell\'app. Ribilancia ~1 volta l\'anno riportando le percentuali ai valori target. <i>Esempi didattici, non consulenza: verifica la disponibilità e le condizioni su XTB.</i></p>';
+    }
     invSave();
     invRenderChecklist();
   }
