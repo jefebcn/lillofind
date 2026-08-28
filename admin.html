@@ -678,6 +678,18 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <div id="inv-alloc"></div>
       </div>
 
+      <!-- RIBILANCIAMENTO -->
+      <div class="admin-card" style="margin-top:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:6px;">
+          <div>
+            <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">🔄 Ribilanciamento</p>
+            <p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;">Col tempo le percentuali si spostano. Inserisci quanto hai <b>oggi</b> in ogni ETF (e l'eventuale nuova liquidità): ti dico quanto <b>comprare/vendere</b> per tornare ai target. Falla ~1 volta l'anno.</p>
+          </div>
+          <button class="btn-k" id="inv-rebal-toggle" onclick="invRebalToggle()" style="padding:9px 16px;font-size:12px;white-space:nowrap;">Apri ▾</button>
+        </div>
+        <div id="inv-rebal-panel" style="display:none;margin-top:12px;"></div>
+      </div>
+
       <!-- CHECKLIST VERSAMENTI -->
       <div class="admin-card" style="margin-top:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:6px;">
@@ -1447,6 +1459,61 @@ waitFB(()=>{
     return [{e:INV_ETF.vwce,p:80,c:'#6f7552'},{e:INV_ETF.aggh,p:20,c:'#8E7963'}];
   }
   window.invCopy=function(t){ try{ navigator.clipboard.writeText(t); if(typeof showToast==='function') showToast('Copiato: '+t); }catch(_){ if(typeof showToast==='function') showToast(t); } };
+  // ── Ribilanciamento ──────────────────────────────────────────────────────
+  let _invRebalOpen=false, _invRebalProfile=null;
+  window.invRebalToggle=function(){
+    _invRebalOpen=!_invRebalOpen;
+    const p=document.getElementById('inv-rebal-panel'); const t=document.getElementById('inv-rebal-toggle');
+    if(p) p.style.display=_invRebalOpen?'block':'none';
+    if(t) t.textContent=_invRebalOpen?'Chiudi ▴':'Apri ▾';
+    if(_invRebalOpen) invRenderRebal(true);
+  };
+  function invRenderRebal(force){
+    if(!_invRebalOpen) return;
+    const panel=document.getElementById('inv-rebal-panel'); if(!panel||!_invState) return;
+    const alloc=invAllocFor(_invState.risk||'bilanciato');
+    _invState.holdings=_invState.holdings||{};
+    const profileKey=alloc.map(a=>a.e.tk).join(',');
+    if(force || _invRebalProfile!==profileKey){
+      _invRebalProfile=profileKey;
+      const inRow=(tk,name,pct,color,val,ph)=>'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+        +'<span style="width:11px;height:11px;border-radius:3px;background:'+color+';flex-shrink:0;"></span>'
+        +'<span style="font-size:13px;min-width:60px;font-weight:600;">'+tk+'</span>'
+        +'<span style="font-size:11px;color:var(--dim);flex:1;min-width:120px;">'+name+(pct!=null?(' · target '+pct+'%'):'')+'</span>'
+        +'<span style="font-size:12px;color:#888;">€</span><input id="rebal-'+tk+'" type="number" min="0" step="10" value="'+(val||'')+'" placeholder="'+(ph||'0')+'" oninput="invRebalCalc()" class="lf-in" style="width:130px;padding:8px 10px;font-size:14px;"/></div>';
+      panel.innerHTML='<div style="display:flex;flex-direction:column;gap:10px;">'
+        +alloc.map(a=>inRow(a.e.tk,a.e.name,a.p,a.c,_invState.holdings[a.e.tk])).join('')
+        +'<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;margin-top:2px;">'
+          +inRow('new','Nuova liquidità da aggiungere ora (opzionale)',null,'#B5A89D',_invState.rebalNew)+'</div>'
+        +'</div><div id="rebal-result" style="margin-top:16px;"></div>';
+    }
+    invRebalCalc();
+  }
+  window.invRebalCalc=function(){
+    if(!_invState) return;
+    const alloc=invAllocFor(_invState.risk||'bilanciato');
+    _invState.holdings=_invState.holdings||{};
+    let cur={}, total=0;
+    alloc.forEach(a=>{ const el=document.getElementById('rebal-'+a.e.tk); const v=el?(parseFloat(el.value)||0):0; cur[a.e.tk]=v; total+=v; _invState.holdings[a.e.tk]=v; });
+    const newEl=document.getElementById('rebal-new'); const nw=newEl?(parseFloat(newEl.value)||0):0; _invState.rebalNew=nw;
+    invSave();
+    const res=document.getElementById('rebal-result'); if(!res) return;
+    const grand=total+nw;
+    if(grand<=0){ res.innerHTML='<p style="font-size:12px;color:var(--dim);">Inserisci i valori attuali per calcolare il ribilanciamento.</p>'; return; }
+    const rows=alloc.map(a=>{
+      const target=grand*a.p/100; const delta=target-cur[a.e.tk];
+      const act=Math.abs(delta)<1?'<span style="color:var(--led);">✓ a posto</span>'
+        :(delta>0?'<span style="color:#66a80f;font-weight:700;">Compra '+invEUR(delta)+'</span>':'<span style="color:#e5484d;font-weight:700;">Vendi '+invEUR(-delta)+'</span>');
+      const curPct=grand>0?Math.round(cur[a.e.tk]/grand*100):0;
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);">'
+        +'<span style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="width:11px;height:11px;border-radius:3px;background:'+a.c+';flex-shrink:0;"></span><b>'+a.e.tk+'</b> <span style="font-size:10px;color:var(--dim);">ora '+curPct+'% → '+a.p+'%</span></span>'
+        +'<span style="font-size:13px;white-space:nowrap;">target '+invEUR(target)+' · '+act+'</span></div>';
+    }).join('');
+    res.innerHTML='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;">'
+      +'<div style="font-size:12px;color:var(--dim);margin-bottom:8px;">Totale portafoglio'+(nw?(' + nuovi '+invEUR(nw)):'')+': <b style="color:#fff;">'+invEUR(grand)+'</b></div>'
+      +rows
+      +'<p style="font-size:11px;color:var(--dim);margin-top:10px;line-height:1.6;">💡 Se hai aggiunto nuova liquidità, spesso basta <b>comprare</b> ciò che è sotto-target senza vendere (meglio per le tasse). Verifica prezzi e commissioni su XTB.</p></div>';
+  };
   function invRecalc(){
     if(!_invState) return;
     const income=parseFloat(document.getElementById('inv-income').value)||0;
@@ -1505,6 +1572,7 @@ waitFB(()=>{
       ael.innerHTML=bar+action+rows
         +'<p style="font-size:11px;color:var(--dim);margin-top:14px;line-height:1.7;">💡 Su XTB puoi comprare <b>frazioni</b> di ETF: investi l\'importo esatto. Gli ETF ad <b>accumulo</b> reinvestono i dividendi da soli. Cerca l\'ETF per <b>ISIN</b> nell\'app. Ribilancia ~1 volta l\'anno riportando le percentuali ai valori target. <i>Esempi didattici, non consulenza: verifica la disponibilità e le condizioni su XTB.</i></p>';
     }
+    try{ invRenderRebal(false); }catch(_){}
     invSave();
     invRenderChecklist();
   }
