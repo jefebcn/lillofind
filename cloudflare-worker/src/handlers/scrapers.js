@@ -193,9 +193,45 @@ export async function uploadImage(data, { env }) {
 // ════════════════════════════════════════════════════════════════
 // yupooFetch — proxy/scraper Yupoo + Taobao/Tmall/AliExpress
 // ════════════════════════════════════════════════════════════════
+// Estrae l'URL prodotto ORIGINALE (Weidian/Taobao/1688/Tmall) da un link di
+// un "agent" (Kakobuy, CNFans, Mulebuy, Hoobuy, AcBuy, Sifukj…): questi link
+// incapsulano l'articolo originale in un query param (?url=…, itemUrl, goodsUrl)
+// oppure in id + piattaforma (shop_type/platform=weidian&id=…). Ritorna null se
+// non è un link agent riconosciuto.
+function unwrapAgentUrl(raw) {
+  let u;
+  try { u = new URL(raw); } catch (_) { return null; }
+  const AGENT = /(?:^|\.)(kakobuy|cnfans|mulebuy|hoobuy|acbuy|allchinabuy|sifukj|kameymall|orientdig|joyabuy|ponybuy|superbuy|pandabuy|basetao|cssbuy|wegobuy|hagobuy|loongbuy|itaobuy|oopbuy|lovegobuy|eastmallbuy)\.com$/i;
+  if (!AGENT.test(u.hostname)) return null;
+  // Deve essere un URL di un SINGOLO PRODOTTO (non un negozio): richiede un
+  // token da articolo ed esclude i link negozio (userid=/shopId=).
+  const isItem = (s) => /(?:weidian|koudai|taobao|tmall|1688|jd)\.com/i.test(s)
+    && /(item\.html|item\.htm|itemID=|itemid=|goodsId=|goods_id=|\/item\/|\/offer\/|offerId=)/i.test(s)
+    && !/userid=|shopId=|shop_id=/i.test(s);
+  // 1) un query param che contiene direttamente l'URL originale
+  for (const [, v] of u.searchParams) {
+    let dec = v; try { dec = decodeURIComponent(v); } catch (_) {}
+    if (isItem(dec)) return dec.startsWith('http') ? dec : ('https://' + dec.replace(/^\/+/, ''));
+  }
+  // 2) id + piattaforma → ricostruisci l'URL item
+  const gid = u.searchParams.get('id') || u.searchParams.get('goodsId') || u.searchParams.get('goods_id')
+    || u.searchParams.get('itemID') || u.searchParams.get('itemId') || u.searchParams.get('offerId');
+  const plat = (u.searchParams.get('shop_type') || u.searchParams.get('platform') || u.searchParams.get('channel')
+    || u.searchParams.get('shopType') || u.searchParams.get('mall') || '').toLowerCase();
+  if (gid && /^\d{5,}$/.test(gid)) {
+    if (/weidian|koudai|wd/.test(plat)) return `https://weidian.com/item.html?itemID=${gid}`;
+    if (/taobao|tmall|tb/.test(plat))   return `https://item.taobao.com/item.htm?id=${gid}`;
+    if (/1688|ali/.test(plat))          return `https://detail.1688.com/offer/${gid}.html`;
+  }
+  return null;
+}
+
 export async function yupooFetch(data, _ctx) {
-  const { url, password } = data || {};
-  if (!url || typeof url !== 'string') throw new HttpsError('invalid-argument', 'Parametro url mancante.');
+  const { url: rawUrl, password } = data || {};
+  if (!rawUrl || typeof rawUrl !== 'string') throw new HttpsError('invalid-argument', 'Parametro url mancante.');
+  // Se è un link di un agent (Kakobuy & simili), scarta il wrapper e usa
+  // l'URL prodotto originale che c'è dentro.
+  const url = unwrapAgentUrl(rawUrl) || rawUrl;
 
   let parsedUrl;
   try { parsedUrl = new URL(url); } catch (e) { throw new HttpsError('invalid-argument', 'URL non valido.'); }
@@ -211,7 +247,7 @@ export async function yupooFetch(data, _ctx) {
     || parsedUrl.hostname.endsWith('.koudai.com')
     || parsedUrl.hostname === 'koudai.com';
   if (!parsedUrl.hostname.endsWith('.yupoo.com') && !isTaobao && !isWeidian) {
-    throw new HttpsError('invalid-argument', 'Solo URL *.yupoo.com, Taobao/Tmall, AliExpress o Weidian sono permessi.');
+    throw new HttpsError('invalid-argument', 'Solo URL Yupoo, Taobao/Tmall, AliExpress, Weidian o link agent (Kakobuy, CNFans…) di un singolo prodotto.');
   }
 
   // ── BRANCH WEIDIAN ────────────────────────────────────────────

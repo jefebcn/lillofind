@@ -245,6 +245,9 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <button class="anav-btn" data-pg="ai" onclick="showAdminPg('ai')">
         <span class="anav-icon">🤖</span>Strumenti AI
       </button>
+      <button class="anav-btn" data-pg="investimenti" onclick="showAdminPg('investimenti')">
+        <span class="anav-icon">🪙</span>Investimenti
+      </button>
     </div>
     <div class="anav-footer">
       <span class="anav-email" id="admin-user-email"></span>
@@ -607,6 +610,102 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       </div>
       <div id="subs-board-list" style="display:flex;flex-direction:column;gap:10px;">
         <p style="font-size:12px;color:rgba(255,255,255,.4);">Caricamento…</p>
+      </div>
+    </div>
+
+    <!-- ─── PAGE: INVESTIMENTI (piano PAC personale) ─── -->
+    <div class="apg hidden" id="apg-investimenti">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">Investimenti</h1>
+        <span style="font-size:11px;color:var(--dim);letter-spacing:1px;">Piano di accumulo personale · privato</span>
+      </div>
+
+      <!-- Disclaimer -->
+      <div style="background:rgba(224,149,47,.10);border:1px solid rgba(224,149,47,.35);border-radius:12px;padding:12px 16px;margin-bottom:22px;font-size:12px;color:#e0a45a;line-height:1.6;">
+        ⚠️ <b>Non è consulenza finanziaria.</b> Questo è uno strumento personale, educativo e organizzativo. Le cifre sono esempi, il capitale investito è a rischio e i rendimenti passati non garantiscono quelli futuri. Per decisioni importanti valuta un consulente finanziario indipendente (fee-only). I dati qui sono salvati solo su questo browser.
+      </div>
+
+      <!-- CONFIGURATORE -->
+      <div class="admin-card">
+        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">⚙️ Il tuo piano</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;" class="grid-1-mob">
+          <div>
+            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Stipendio netto mensile (€)</label>
+            <input class="lf-in" id="inv-income" type="number" min="0" step="50" value="3500" oninput="invRecalc()" style="font-size:18px;font-weight:700;"/>
+          </div>
+          <div>
+            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Profilo / quota da investire</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;" id="inv-risk-btns">
+              <button class="inv-risk btn-k" data-risk="prudente" data-pct="15" onclick="invSetRisk(this)" style="flex:1;padding:9px 6px;font-size:11px;">🛡️ Prudente<br><span style="font-size:9px;opacity:.7;">15%</span></button>
+              <button class="inv-risk btn-led" data-risk="bilanciato" data-pct="20" onclick="invSetRisk(this)" style="flex:1;padding:9px 6px;font-size:11px;">⚖️ Bilanciato<br><span style="font-size:9px;opacity:.7;">20%</span></button>
+              <button class="inv-risk btn-k" data-risk="dinamico" data-pct="27" onclick="invSetRisk(this)" style="flex:1;padding:9px 6px;font-size:11px;">🚀 Dinamico<br><span style="font-size:9px;opacity:.7;">27%</span></button>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;" class="grid-1-mob">
+          <div>
+            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Frequenza versamento</label>
+            <div style="display:flex;gap:6px;" id="inv-freq-btns">
+              <button class="inv-freq btn-led" data-freq="weekly" onclick="invSetFreq(this)" style="flex:1;padding:9px;font-size:11px;">Settimanale</button>
+              <button class="inv-freq btn-k" data-freq="monthly" onclick="invSetFreq(this)" style="flex:1;padding:9px;font-size:11px;">Mensile</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Importo fisso per versamento (€, nella frequenza scelta)</label>
+            <input class="lf-in" id="inv-manual" type="number" min="0" step="10" placeholder="es. 120 a settimana" oninput="invRecalc()"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;" class="grid-1-mob">
+          <div>
+            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Orizzonte: <span id="inv-years-lbl" style="color:var(--led);">15</span> anni</label>
+            <input id="inv-years" type="range" min="3" max="40" value="15" oninput="invRecalc()" style="width:100%;accent-color:var(--led);"/>
+          </div>
+          <div>
+            <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:block;margin-bottom:6px;">Rendimento medio annuo ipotizzato: <span id="inv-return-lbl" style="color:var(--led);">7</span>%</label>
+            <input id="inv-return" type="range" min="1" max="12" step="0.5" value="7" oninput="invRecalc()" style="width:100%;accent-color:var(--led);"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- RISULTATI -->
+      <div id="inv-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px;" class="grid-2-mob"></div>
+      <p style="font-size:11px;color:var(--dim);margin-top:8px;line-height:1.6;">La proiezione usa un rendimento costante ipotetico e non considera inflazione, tasse (in Italia ~26% sui guadagni) e commissioni. È solo un ordine di grandezza.</p>
+
+      <!-- ALLOCAZIONE -->
+      <div class="admin-card" style="margin-top:20px;">
+        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🧩 Allocazione suggerita (esempio "lazy portfolio")</p>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.7;">ETF ad accumulazione (reinvestono i dividendi in automatico), a basse commissioni. Un solo ETF azionario mondiale è già molto diversificato; la quota obbligazionaria smorza le oscillazioni.</p>
+        <div id="inv-alloc"></div>
+      </div>
+
+      <!-- CHECKLIST VERSAMENTI -->
+      <div class="admin-card" style="margin-top:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:6px;">
+          <div>
+            <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">✅ Registro versamenti — resta puntuale</p>
+            <p style="font-size:13px;color:rgba(255,255,255,.5);">Segna ogni versamento appena lo fai. Ti mostra la prossima scadenza e la tua costanza.</p>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:26px;font-weight:800;color:var(--led);" id="inv-streak">0</div>
+            <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);">di fila</div>
+          </div>
+        </div>
+        <div id="inv-start-bar" style="margin:12px 0 6px;"></div>
+        <div id="inv-next" style="font-size:12px;color:#e0a45a;margin:10px 0 14px;"></div>
+        <div id="inv-checklist" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;"></div>
+      </div>
+
+      <!-- PIATTAFORME -->
+      <div class="admin-card" style="margin-top:20px;">
+        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🏦 Dove investire (residente San Marino)</p>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.7;">Da San Marino molti neobroker UE <b>non</b> aprono conto. Sotto le opzioni che di norma accettano i residenti sammarinesi. San Marino ha il <b>proprio regime fiscale</b> sui redditi finanziari (diverso dall'Italia): con un broker estero le imposte le gestisci tu, con una banca locale spesso è tutto in loco. Fatti seguire da un <b>commercialista sammarinese</b> e verifica sempre commissioni/idoneità prima di aprire.</p>
+        <div id="inv-platforms" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="grid-1-mob"></div>
+      </div>
+
+      <!-- REGOLE D'ORO -->
+      <div class="admin-card" style="margin-top:20px;">
+        <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;">📜 Le 8 regole d'oro del PAC</p>
+        <div id="inv-rules" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     </div>
 
@@ -1283,6 +1382,229 @@ waitFB(()=>{
     const r=_subsRows[i]; if(!r) return;
     if(r.src==='order'){ if(typeof openCredentials==='function') openCredentials(r.docId); }
     else if(typeof openUserCreds==='function'){ openUserCreds(r.uid, r.email, r.name||'', Array.isArray(r.subs)?r.subs:[]); }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════
+  // INVESTIMENTI — piano PAC personale (privato, salvato su localStorage)
+  // ══════════════════════════════════════════════════════════════════════
+  const INV_KEY='lf_invest_v1';
+  let _invState=null, _invInited=false;
+  function invLoad(){ try{ return JSON.parse(localStorage.getItem(INV_KEY)||'{}')||{}; }catch(_){ return {}; } }
+  function invSave(){ try{ localStorage.setItem(INV_KEY, JSON.stringify(_invState)); }catch(_){} }
+  function invEUR(n){ return '€'+Math.round(n||0).toLocaleString('it-IT'); }
+  function invFmtD(d){ return d.toLocaleDateString('it-IT',{day:'2-digit',month:'short'}); }
+  function invMonthName(d){ const s=d.toLocaleDateString('it-IT',{month:'long',year:'numeric'}); return s.charAt(0).toUpperCase()+s.slice(1); }
+  function invWeekKey(d){
+    const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const day=(dt.getUTCDay()+6)%7; dt.setUTCDate(dt.getUTCDate()-day+3);
+    const firstThu=new Date(Date.UTC(dt.getUTCFullYear(),0,4));
+    const week=1+Math.round(((dt-firstThu)/86400000-3+((firstThu.getUTCDay()+6)%7))/7);
+    return dt.getUTCFullYear()+'-W'+String(week).padStart(2,'0');
+  }
+  function invPeriods(freq,count){
+    const out=[]; const now=new Date();
+    if(freq==='weekly'){
+      const mon=new Date(now); const dow=(mon.getDay()+6)%7; mon.setDate(mon.getDate()-dow); mon.setHours(0,0,0,0);
+      for(let i=count-1;i>=0;i--){ const d=new Date(mon); d.setDate(d.getDate()-i*7); const end=new Date(d); end.setDate(end.getDate()+6);
+        out.push({key:invWeekKey(d), label:'Settimana del '+invFmtD(d), sub:invFmtD(d)+' – '+invFmtD(end), date:d}); }
+    } else {
+      for(let i=count-1;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+        out.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), label:invMonthName(d), sub:'', date:d}); }
+    }
+    return out;
+  }
+  function invNextDate(freq){ const now=new Date();
+    if(freq==='weekly'){ const mon=new Date(now); const dow=(mon.getDay()+6)%7; mon.setDate(mon.getDate()-dow+7); mon.setHours(0,0,0,0); return mon; }
+    return new Date(now.getFullYear(),now.getMonth()+1,1);
+  }
+  window.invSetRisk=function(btn){
+    document.querySelectorAll('.inv-risk').forEach(b=>b.className='inv-risk btn-k');
+    btn.className='inv-risk btn-led';
+    _invState.risk=btn.dataset.risk; _invState.pct=parseFloat(btn.dataset.pct);
+    const man=document.getElementById('inv-manual'); if(man) man.value=''; _invState.manual=0;
+    invRecalc();
+  };
+  window.invSetFreq=function(btn){
+    document.querySelectorAll('.inv-freq').forEach(b=>b.className='inv-freq btn-k');
+    btn.className='inv-freq btn-led';
+    _invState.freq=btn.dataset.freq; invRecalc();
+  };
+  window.invToggle=function(key){
+    _invState.done=_invState.done||{};
+    if(_invState.done[key]) delete _invState.done[key]; else _invState.done[key]=true;
+    invSave(); invRenderChecklist();
+  };
+  function invAllocFor(risk){
+    if(risk==='prudente') return [
+      {n:'Azionario mondiale (ETF All-World / MSCI World, accumulo)',p:60,c:'#6f7552'},
+      {n:'Obbligazionario globale (ETF aggregate, hedged EUR)',p:30,c:'#8E7963'},
+      {n:'Liquidità / Oro (conto deposito o ETC oro)',p:10,c:'#B5A89D'} ];
+    if(risk==='dinamico') return [
+      {n:'Azionario mondiale (ETF All-World / MSCI World, accumulo)',p:90,c:'#6f7552'},
+      {n:'Mercati emergenti / small cap (ETF, accumulo)',p:10,c:'#99a074'} ];
+    return [
+      {n:'Azionario mondiale (ETF All-World / MSCI World, accumulo)',p:80,c:'#6f7552'},
+      {n:'Obbligazionario globale (ETF aggregate, hedged EUR)',p:20,c:'#8E7963'} ];
+  }
+  function invRecalc(){
+    if(!_invState) return;
+    const income=parseFloat(document.getElementById('inv-income').value)||0;
+    const manual=parseFloat(document.getElementById('inv-manual').value)||0;
+    const years=parseInt(document.getElementById('inv-years').value)||15;
+    const ret=parseFloat(document.getElementById('inv-return').value)||7;
+    _invState.income=income; _invState.manual=manual; _invState.years=years; _invState.ret=ret;
+    document.getElementById('inv-years-lbl').textContent=years;
+    document.getElementById('inv-return-lbl').textContent=ret;
+    const pct=_invState.pct||20;
+    const freq=_invState.freq||'weekly';
+    // "manual" = importo fisso per ogni versamento, nella frequenza scelta
+    let per, monthly;
+    if(manual>0){ per=manual; monthly=(freq==='weekly')?manual*52/12:manual; }
+    else { monthly=income*pct/100; per=(freq==='weekly')?monthly*12/52:monthly; }
+    const weekly=monthly*12/52;
+    const annual=monthly*12;
+    // Valore futuro di versamenti mensili costanti, capitalizzazione mensile
+    const i=ret/100/12, n=years*12;
+    const fv=i>0?monthly*((Math.pow(1+i,n)-1)/i):monthly*n;
+    const invested=monthly*12*years, gain=fv-invested;
+    const pctTxt=manual>0?'importo fisso':(pct+'% dello stipendio');
+    const sum=document.getElementById('inv-summary');
+    const card=(lbl,val,sub,col)=>'<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;">'
+      +'<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">'+lbl+'</div>'
+      +'<div style="font-size:24px;font-weight:800;color:'+(col||'#fff')+';">'+val+'</div>'
+      +(sub?'<div style="font-size:10px;color:var(--dim);margin-top:2px;">'+sub+'</div>':'')+'</div>';
+    if(sum) sum.innerHTML=
+      card(freq==='weekly'?'Ogni settimana':'Ogni mese', invEUR(per), pctTxt, 'var(--led)')
+      +card('Al mese', invEUR(monthly), invEUR(annual)+' / anno')
+      +card('Totale versato in '+years+' anni', invEUR(invested), '')
+      +card('Valore proiettato', invEUR(fv), '≈ +'+invEUR(gain)+' di guadagno stimato', 'var(--led2,#99a074)');
+    // Allocazione
+    const alloc=invAllocFor(_invState.risk||'bilanciato');
+    const ael=document.getElementById('inv-alloc');
+    if(ael) ael.innerHTML='<div style="display:flex;height:14px;border-radius:999px;overflow:hidden;margin-bottom:14px;">'
+      +alloc.map(a=>'<div style="width:'+a.p+'%;background:'+a.c+';"></div>').join('')+'</div>'
+      +alloc.map(a=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);">'
+        +'<span style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="width:11px;height:11px;border-radius:3px;background:'+a.c+';flex-shrink:0;"></span>'+a.n+'</span>'
+        +'<span style="font-size:13px;font-weight:700;white-space:nowrap;">'+a.p+'% · '+invEUR(monthly*a.p/100)+'/mese</span></div>').join('');
+    invSave();
+    invRenderChecklist();
+  }
+  function invMonday(d){ const m=new Date(d); const dow=(m.getDay()+6)%7; m.setDate(m.getDate()-dow); m.setHours(0,0,0,0); return m; }
+  // Genera i periodi dal giorno di AVVIO del piano fino a oggi (+ 2 futuri).
+  function invPeriodsFrom(freq, startISO){
+    const out=[]; const now=new Date();
+    const start=new Date(startISO+'T00:00:00');
+    if(freq==='weekly'){
+      let d=invMonday(start); const last=invMonday(now); const end=new Date(last); end.setDate(end.getDate()+14);
+      let idx=1;
+      while(d<=end){ const e=new Date(d); e.setDate(e.getDate()+6);
+        out.push({key:invWeekKey(d), label:'Settimana '+idx, sub:invFmtD(d)+' – '+invFmtD(e), date:new Date(d), due:d.getTime()<=last.getTime()});
+        d=new Date(d); d.setDate(d.getDate()+7); idx++; }
+    } else {
+      let d=new Date(start.getFullYear(),start.getMonth(),1);
+      const end=new Date(now.getFullYear(),now.getMonth()+2,1); let idx=1;
+      while(d<end){ const due=(d.getFullYear()<now.getFullYear())||(d.getFullYear()===now.getFullYear()&&d.getMonth()<=now.getMonth());
+        out.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), label:'Mese '+idx, sub:invMonthName(d), date:new Date(d), due});
+        d=new Date(d.getFullYear(),d.getMonth()+1,1); idx++; }
+    }
+    return out;
+  }
+  window.invStart=function(){
+    const t=new Date(); _invState.startISO=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    invSave(); invRenderChecklist();
+    if(typeof showToast==='function') showToast('🚀 Piano avviato! Buon investimento.');
+  };
+  window.invSetStart=function(v){ if(v){ _invState.startISO=v; invSave(); invRenderChecklist(); } };
+  window.invResetStart=function(){ if(confirm('Azzerare la data di avvio del piano? I versamenti segnati restano salvati.')){ _invState.startISO=''; invSave(); invRenderChecklist(); } };
+  function invRenderChecklist(){
+    if(!_invState) return;
+    const freq=_invState.freq||'weekly';
+    _invState.done=_invState.done||{};
+    const bar=document.getElementById('inv-start-bar');
+    const nextEl=document.getElementById('inv-next');
+    const list=document.getElementById('inv-checklist');
+    const sEl=document.getElementById('inv-streak');
+    // Nessuna data di avvio → invita a iniziare quando vuole lui.
+    if(!_invState.startISO){
+      if(sEl) sEl.textContent='0';
+      if(bar) bar.innerHTML='<button class="btn-led" onclick="invStart()" style="padding:12px 22px;font-size:13px;">🚀 Inizia il piano oggi</button>'
+        +'<span style="font-size:12px;color:var(--dim);margin-left:12px;">oppure scegli la data d\'inizio: <input type="date" onchange="invSetStart(this.value)" class="lf-in" style="width:auto;display:inline-block;padding:6px 8px;font-size:12px;"/></span>';
+      if(nextEl) nextEl.innerHTML='';
+      if(list) list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Il registro parte dal giorno in cui avvii il piano. Premi <b>Inizia</b> quando fai il primo versamento.</p>';
+      return;
+    }
+    const startD=new Date(_invState.startISO+'T00:00:00');
+    if(bar) bar.innerHTML='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:rgba(255,255,255,.6);">'
+      +'<span>🚀 Piano avviato il <b style="color:#fff;">'+startD.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})+'</b></span>'
+      +'<button class="btn-k" onclick="invResetStart()" style="padding:5px 10px;font-size:10px;">Cambia</button></div>';
+    const periods=invPeriodsFrom(freq, _invState.startISO);
+    const duePeriods=periods.filter(p=>p.due);
+    const cur=duePeriods[duePeriods.length-1]||periods[0];
+    // streak: dai periodi DOVUTI, dal più recente all'indietro finché "fatto"
+    let streak=0; for(let k=duePeriods.length-1;k>=0;k--){ if(_invState.done[duePeriods[k].key]) streak++; else break; }
+    if(sEl) sEl.textContent=streak;
+    // prossima scadenza
+    if(nextEl){
+      const firstUndone=duePeriods.find(p=>!_invState.done[p.key]);
+      if(firstUndone) nextEl.innerHTML='⏳ <b>Da versare:</b> '+firstUndone.label+' ('+firstUndone.sub+'). Fallo e spuntalo qui sotto.';
+      else { const up=periods.find(p=>!p.due); nextEl.innerHTML=up?('✅ Sei in pari! Prossimo versamento: <b>'+up.date.toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long'})+'</b>.'):'✅ Sei in pari!'; }
+    }
+    if(list) list.innerHTML=periods.slice().reverse().map(p=>{
+      const done=!!_invState.done[p.key]; const isCur=p.key===(cur&&cur.key); const future=!p.due;
+      return '<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid '+(isCur&&!done?'rgba(224,149,47,.5)':'rgba(255,255,255,.08)')+';border-radius:10px;background:'+(done?'rgba(111,117,82,.12)':(isCur?'rgba(224,149,47,.06)':'rgba(255,255,255,.02)'))+';cursor:pointer;opacity:'+(future&&!done?'.55':'1')+';">'
+        +'<input type="checkbox" '+(done?'checked':'')+' onchange="invToggle(\''+p.key+'\')" style="width:18px;height:18px;accent-color:var(--led);flex-shrink:0;"/>'
+        +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:'+(isCur?'700':'500')+';color:'+(done?'#fff':'rgba(255,255,255,.8)')+';">'+p.label+(isCur?' <span style="font-size:9px;color:#e0a45a;">· ora</span>':'')+(future?' <span style="font-size:9px;color:var(--dim);">· in arrivo</span>':'')+'</div>'
+        +(p.sub?'<div style="font-size:10px;color:var(--dim);">'+p.sub+'</div>':'')+'</div>'
+        +'<span style="font-size:11px;color:'+(done?'var(--led)':'var(--dim)')+';white-space:nowrap;">'+(done?'✓ fatto':(future?'—':'da fare'))+'</span></label>';
+    }).join('');
+  }
+  function invRenderStatic(){
+    const plats=[
+      ['Interactive Brokers ⭐','Il più consigliato per San Marino · costi bassissimi · enorme scelta di ETF veri · investimenti ricorrenti automatici (ideale per il PAC). Regolamentato top-tier. Regime dichiarativo: imposte a carico tuo a San Marino.'],
+      ['XTB','Accetta residenti San Marino · azioni ed ETF reali a 0% di commissioni (entro soglia) · "Piani di Investimento" ricorrenti per il PAC · app semplice.'],
+      ['Swissquote','Banca-broker svizzera solida · disponibile a San Marino · ampia scelta di ETF reali e mercati · custodia in Svizzera. Commissioni più alte, ma massima affidabilità.'],
+      ['Saxo Bank','Broker internazionale · ETF reali + versamenti ricorrenti (SaxoInvestor) · piattaforma completa. Verifica l\'idoneità per San Marino in fase di apertura.'],
+      ['Banche locali (BSM / BSI)','Alternativa "chiavi in mano": Banca di San Marino o Banca Sammarinese di Investimento offrono PAC su ETF/fondi con KYC facile e fisco locale gestito. Più costose, meno scelta.'],
+      ['⚠️ Evita CFD e neobroker UE','Capital.com/Plus500/eToro-CFD = CFD, NON adatti a un PAC di lungo termine (non possiedi l\'ETF). E Trade Republic/Scalable/Degiro spesso non aprono conto da San Marino. Prima di investire: 3–6 mesi di spese da parte + commercialista sammarinese per il fisco.'],
+    ];
+    const pel=document.getElementById('inv-platforms');
+    if(pel) pel.innerHTML=plats.map(p=>'<div style="border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;background:rgba(255,255,255,.02);">'
+      +'<div style="font-size:14px;font-weight:700;margin-bottom:4px;">'+p[0]+'</div>'
+      +'<div style="font-size:11.5px;color:rgba(255,255,255,.55);line-height:1.6;">'+p[1]+'</div></div>').join('');
+    const rules=[
+      ['Automatizza','Imposta un ordine ricorrente automatico. Togli l\'emotività: versi anche quando non ne hai voglia.'],
+      ['Prima il cuscinetto','Tieni 3–6 mesi di spese su conto deposito PRIMA di investire. Investi solo soldi che non ti servono a breve.'],
+      ['Orizzonte lungo','Minimo 7–10 anni. Il tempo è il tuo alleato più forte grazie all\'interesse composto.'],
+      ['Niente market timing','Non aspettare "il momento giusto": versa sempre. Quando il mercato scende, compri a prezzi più bassi.'],
+      ['Non vendere nei crolli','I ribassi fanno parte del gioco. Chi resta investito storicamente recupera; chi vende realizza la perdita.'],
+      ['Basse commissioni','ETF ad accumulo a basso costo. Evita fondi attivi cari, polizze e prodotti "strutturati".'],
+      ['Cresci col reddito','Quando lo stipendio sale, alza il versamento. Almeno adegualo all\'inflazione ogni anno.'],
+      ['Ribilancia e stacca','Riporta le percentuali ai valori target 1 volta l\'anno. Non guardare il portafoglio ogni giorno.'],
+    ];
+    const rel=document.getElementById('inv-rules');
+    if(rel) rel.innerHTML=rules.map((r,i)=>'<div style="display:flex;gap:14px;align-items:flex-start;">'
+      +'<span style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:22px;color:var(--led);flex-shrink:0;line-height:1;min-width:26px;">'+String(i+1).padStart(2,'0')+'</span>'
+      +'<div><b style="font-size:13px;">'+r[0]+'</b><p style="font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;line-height:1.6;">'+r[1]+'</p></div></div>').join('');
+  }
+  window.invInit=function(){
+    _invState=invLoad();
+    const fresh=!_invState || Object.keys(_invState).length===0;
+    if(!_invState.pct) _invState.pct=20;
+    if(!_invState.risk) _invState.risk='bilanciato';
+    if(!_invState.freq) _invState.freq='weekly';
+    if(!_invState.done) _invState.done={};
+    if(fresh && _invState.manual==null) _invState.manual=120; // media di partenza: €120/settimana
+    // popola input
+    const setV=(id,v)=>{ const e=document.getElementById(id); if(e!=null&&v!=null) e.value=v; };
+    if(_invState.income) setV('inv-income',_invState.income);
+    if(_invState.manual) setV('inv-manual',_invState.manual);
+    if(_invState.years) setV('inv-years',_invState.years);
+    if(_invState.ret) setV('inv-return',_invState.ret);
+    document.querySelectorAll('.inv-risk').forEach(b=>b.className='inv-risk '+(b.dataset.risk===_invState.risk?'btn-led':'btn-k'));
+    document.querySelectorAll('.inv-freq').forEach(b=>b.className='inv-freq '+(b.dataset.freq===_invState.freq?'btn-led':'btn-k'));
+    invRenderStatic();
+    invRecalc();
+    _invInited=true;
   };
 
   window.adminAssignTracking=async function(){
@@ -3305,6 +3627,7 @@ waitFB(()=>{
     if(name==='clienti' && !_usersLoaded) loadUsersPage();
     if(name==='spedizioni') loadTrackingBoard();
     if(name==='abbonamenti') loadSubsBoard();
+    if(name==='investimenti') invInit();
     if(name==='richieste') loadProductRequests();
     if(name==='costi'){ if(!adminCatalogProducts.length){ try{ loadAdminCatalog(); }catch(_){} } try{ loadFxRates(); }catch(_){} }
     // Carica l'importer solo la prima volta che apri la sezione (lazy)

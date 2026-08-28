@@ -378,12 +378,13 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
   <!-- 00b TAOBAO / WEIDIAN IMPORT -->
   <div class="sec-wrap" id="taobao-sec">
     <p class="sec-num">00 — Import da link prodotto</p>
-    <p class="sec-title">🛒 TAOBAO / WEIDIAN <span style="color:var(--led);">+ AI</span></p>
+    <p class="sec-title">🛒 TAOBAO / WEIDIAN / KAKOBUY <span style="color:var(--led);">+ AI</span></p>
 
     <!-- Nota su limitazioni -->
     <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:10px 14px;margin-bottom:16px;font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">
       <strong style="color:#666;letter-spacing:1px;">COME FUNZIONA</strong><br>
-      Incolla i link (Taobao/Tmall, AliExpress o <span style="color:#888;">Weidian</span>) → il sistema estrae foto, nome e prezzo, poi l'AI riconosce brand/modello/colore.<br>
+      Incolla i link (Taobao/Tmall, AliExpress, <span style="color:#888;">Weidian</span> o link agent <span style="color:#888;">Kakobuy / CNFans / Mulebuy…</span> di un singolo prodotto) → il sistema estrae foto, nome e prezzo, poi l'AI riconosce brand/modello/colore.<br>
+      <span style="color:#555;">Nota: i link agent devono essere di un <b>prodotto</b>, non di un intero negozio.</span><br>
       Se la fonte blocca la richiesta, la riga viene creata vuota:<br>
       <span style="color:#888;">1.</span> Apri il link nel browser &nbsp;
       <span style="color:#888;">2.</span> Copia l'URL dell'immagine principale (tasto destro → "Copia indirizzo immagine") &nbsp;
@@ -391,7 +392,7 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start;">
-      <textarea class="lf-in" id="tb-urls" placeholder="https://weidian.com/item.html?itemID=...&#10;https://item.taobao.com/item.htm?id=...&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
+      <textarea class="lf-in" id="tb-urls" placeholder="https://weidian.com/item.html?itemID=...&#10;https://item.taobao.com/item.htm?id=...&#10;https://www.kakobuy.com/item/... (link agent del prodotto)&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
       <button class="btn-led" id="tb-fetch-btn" onclick="fetchTaobaoItems()" style="white-space:nowrap;padding:14px 28px;align-self:flex-start;">CARICA →</button>
     </div>
 
@@ -1501,8 +1502,9 @@ window.fetchTaobaoItems = async function(){
   const raw = (document.getElementById('tb-urls')?.value||'').trim();
   if(!raw){ toast('⚠️ Incolla almeno un URL (Taobao o Weidian)'); return; }
 
-  const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && (u.includes('taobao')||u.includes('tb.cn')||u.includes('tmall')||u.includes('aliexpress')||u.includes('weidian')||u.includes('koudai')));
-  if(!urls.length){ toast('⚠️ Nessun URL valido rilevato (Taobao/Tmall/AliExpress/Weidian)'); return; }
+  const _agentRe=/taobao|tb\.cn|tmall|aliexpress|weidian|koudai|1688|kakobuy|cnfans|mulebuy|hoobuy|acbuy|allchinabuy|sifukj|kameymall|orientdig|joyabuy|ponybuy|superbuy|pandabuy|basetao|cssbuy|wegobuy|hagobuy|loongbuy|itaobuy|oopbuy|lovegobuy|eastmallbuy/i;
+  const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && _agentRe.test(u));
+  if(!urls.length){ toast('⚠️ Nessun URL valido rilevato (Taobao/Tmall/AliExpress/Weidian o link agent Kakobuy/CNFans…)'); return; }
 
   const btn   = document.getElementById('tb-fetch-btn');
   const status = document.getElementById('tb-status');
