@@ -1576,6 +1576,7 @@ waitFB(()=>{
     invSave();
     invRenderChecklist();
   }
+  window.invRecalc=invRecalc; // richiamata dagli oninput inline (scope globale)
   function invMonday(d){ const m=new Date(d); const dow=(m.getDay()+6)%7; m.setDate(m.getDate()-dow); m.setHours(0,0,0,0); return m; }
   // Genera i periodi dal giorno di AVVIO del piano fino a oggi (+ 2 futuri).
   function invPeriodsFrom(freq, startISO){
