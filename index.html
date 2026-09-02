@@ -5173,7 +5173,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const totalWeight=physicalItems.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
     const ship=allDigital?0:getShippingCost(totalWeight);
     const tierLabel=allDigital?'':getShippingTierLabel(totalWeight);
-    const ar=(typeof udata!=='undefined'&&udata)?udata.activeReward:null;
+    const ar=(typeof udata!=='undefined'&&udata&&!udata.discountUsed)?udata.activeReward:null;
     let discount=0;
     if(ar){
       if(ar.type==='fisso') discount=Math.min(ar.val,total);
@@ -5390,7 +5390,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <span style="font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;">€${(i.price*i.qty).toFixed(2)}</span>
       </div>`).join('');
-    const ar2=(typeof udata!=='undefined'&&udata)?udata.activeReward:null;
+    const ar2=(typeof udata!=='undefined'&&udata&&!udata.discountUsed)?udata.activeReward:null;
     let discount2=0;
     if(ar2){
       if(ar2.type==='fisso') discount2=Math.min(ar2.val,total);
@@ -5470,7 +5470,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const prevPts=(udata?.lfpoints||0);
     // LFPoints: accreditati subito solo se pagamento verificato (carta)
     const newPts=prevPts+(pts||0);
-    udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null};
+    udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null,...(discount>0?{discountUsed:true}:{})};
     if(!localStorage.getItem('lf_orders_placed')){
       localStorage.setItem('lf_show_vault_banner','1');
     }
@@ -5662,7 +5662,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     const phys=items.filter(i=>!i.isDigital);
     const totW=phys.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
     const shipping=allDigital?0:getShippingCost(totW);
-    let discount=0; const ar=udata&&udata.activeReward?udata.activeReward:null;
+    // Sconto: uno solo per account, per sempre. Se già usato in passato, ignora
+    // qualsiasi premio residuo.
+    let discount=0; const ar=(udata&&udata.activeReward&&!udata.discountUsed)?udata.activeReward:null;
     if(ar){
       if(ar.type==='fisso') discount=Math.min(ar.val,subtotal);
       else if(ar.type==='percentuale') discount=subtotal*(ar.val/100);
@@ -5684,8 +5686,16 @@ img{ -webkit-user-drag:none; user-select:none; }
       status:'pending', paymentStatus:'unpaid', createdAt:fb.serverTimestamp(),
     };
     await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
-    // Aggiorna spesa utente (i punti vengono accreditati alla conferma del pagamento)
-    try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{totalSpent:(udata&&udata.totalSpent||0)+subtotal}); }catch(_){}
+    // Aggiorna spesa utente (i punti vengono accreditati alla conferma del pagamento).
+    // Se è stato usato uno sconto: consuma il premio (anche su Firestore, non solo
+    // in locale) e segna discountUsed → uno solo sconto per account, per sempre.
+    try{
+      const upd={ totalSpent:(udata&&udata.totalSpent||0)+subtotal };
+      if(ar){ upd.activeReward=null; }
+      if(discount>0){ upd.discountUsed=true; upd.discountUsedAt=fb.serverTimestamp(); upd.discountUsedOrder=orderId; }
+      await fb.updateDoc(fb.doc(fb.db,'users',user.uid),upd);
+      if(discount>0 && typeof udata==='object' && udata){ udata.discountUsed=true; udata.activeReward=null; }
+    }catch(_){}
     // Email di conferma ordine (fire-and-forget — non blocca il checkout)
     try{ lfCallable('sendOrderEmail')({orderId,name:orderData.name,email:orderData.email||'',items:orderData.items,subtotal,shipping,discount,total,payment:orderData.payment,address:orderData.address}); }catch(_){}
     return { orderId, subtotal, shipping, discount, total, lfpoints:0, paymentMethod:payload.paymentMethod||'bonifico' };
@@ -5745,19 +5755,23 @@ img{ -webkit-user-drag:none; user-select:none; }
     const rg=document.getElementById('pr-rewards-grid');
     if(rg){
       const ar=udata.activeReward||null;
-      rg.innerHTML=REWARDS.map(r=>{
+      const usedUp=!!udata.discountUsed; // uno sconto per account, per sempre
+      const usedBanner=usedUp?'<p style="grid-column:1/-1;font-size:11px;color:var(--dim);letter-spacing:.5px;line-height:1.6;margin-bottom:4px;">🔒 Hai già usato il tuo sconto. È previsto <b>un solo sconto per account</b>, quindi i premi non sono più riscattabili.</p>':'';
+      rg.innerHTML=usedBanner+REWARDS.map(r=>{
         const ok=pts>=r.pts;
         const isActive=ar&&ar.label===r.label;
-        let borderColor=isActive?'var(--led)':(ok?'var(--led)':'#e0e0e0');
-        let bgStyle=isActive?'background:rgba(200,255,0,.12);box-shadow:0 0 12px rgba(200,255,0,.3)':(ok?'background:rgba(200,255,0,.05);box-shadow:0 0 8px rgba(200,255,0,.15)':'opacity:.4');
+        let borderColor=isActive?'var(--led)':((ok&&!usedUp)?'var(--led)':'#e0e0e0');
+        let bgStyle=isActive?'background:rgba(200,255,0,.12);box-shadow:0 0 12px rgba(200,255,0,.3)':((ok&&!usedUp)?'background:rgba(200,255,0,.05);box-shadow:0 0 8px rgba(200,255,0,.15)':'opacity:.4');
         let actionHtml='';
-        if(isActive){
+        if(usedUp&&!isActive){
+          actionHtml=`<div style="margin-top:8px;padding:5px 10px;font-size:9px;width:100%;background:#f0f0f0;color:#999;letter-spacing:1px;text-transform:uppercase;box-sizing:border-box;">🔒 Già usato</div>`;
+        } else if(isActive){
           actionHtml=`<div style="margin-top:8px;padding:5px 10px;font-size:9px;width:100%;background:rgba(200,255,0,.2);color:var(--led);letter-spacing:1px;text-transform:uppercase;border:1px solid var(--led);box-sizing:border-box;">✓ Nel carrello</div>`;
-        } else if(ok&&!ar){
+        } else if(ok&&!ar&&!usedUp){
           actionHtml=`<button onclick="claimReward('${r.label}')" class="btn-led" style="margin-top:8px;padding:5px 10px;font-size:9px;width:100%;">Riscatta</button>`;
         }
         return `<div style="border:1.5px solid ${borderColor};padding:14px 12px;text-align:center;${bgStyle}">
-          <p class="bb" style="font-size:22px;${(ok||isActive)?'color:var(--led)':''}">${r.label}</p>
+          <p class="bb" style="font-size:22px;${((ok&&!usedUp)||isActive)?'color:var(--led)':''}">${r.label}</p>
           <p style="font-size:8px;color:var(--dim);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">${r.pts} pts</p>
           ${actionHtml}
         </div>`;
@@ -6101,6 +6115,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!user||!udata){showToast('Accedi per riscattare.');return;}
     const fb=window.__fb;
     if(!fb)return;
+    if(udata.discountUsed){showToast('Hai già usato il tuo sconto (uno solo per account).');return;}
     const r=REWARDS.find(x=>x.label===label);
     if(!r)return;
     const pts=udata.lfpoints||0;
