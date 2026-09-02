@@ -892,6 +892,32 @@ async function weidianPriceCNY(itemUrl) {
   return null;
 }
 
+// Estrae e fa il parse del PRIMO oggetto JSON completo da una risposta AI,
+// ignorando fence markdown, testo/prosa in coda o un eventuale secondo oggetto
+// (causa del "Unexpected non-whitespace character after JSON"). Conta le
+// parentesi rispettando le stringhe, così si ferma alla chiusura del 1° oggetto.
+function parseFirstJson(text) {
+  let s = String(text == null ? '' : text).trim();
+  s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  const start = s.indexOf('{');
+  if (start < 0) throw new Error('Risposta AI senza JSON: ' + s.slice(0, 120));
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === '{') depth++;
+    else if (c === '}') { depth--; if (depth === 0) return JSON.parse(s.slice(start, i + 1)); }
+  }
+  // Brace non bilanciate: ultimo tentativo greedy.
+  const m = s.match(/\{[\s\S]*\}/);
+  if (m) return JSON.parse(m[0]);
+  throw new Error('JSON incompleto nella risposta AI');
+}
+
 // ════════════════════════════════════════════════════════════════
 // yupooAnalyze — fetch immagine + analisi Claude Haiku
 // ════════════════════════════════════════════════════════════════
@@ -963,9 +989,7 @@ ${brandHint || modelHint ? `\nL'utente indica che questo prodotto è probabilmen
     if (!aiResp.ok) { const errText = await aiResp.text(); throw new Error('Anthropic ' + aiResp.status + ': ' + errText.slice(0, 300)); }
     const aiData = await aiResp.json();
     const text = (aiData.content?.[0]?.text || '{}').trim();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Risposta AI non contiene JSON: ' + text.slice(0, 100));
-    return JSON.parse(jsonMatch[0]);
+    return parseFirstJson(text);
   } catch (e) {
     console.error('yupooAnalyze AI error:', e.message);
     throw new HttpsError('internal', 'Analisi AI fallita: ' + e.message);
@@ -1028,9 +1052,7 @@ Regole IMPORTANTI:
     if (!aiResp.ok) { const errText = await aiResp.text(); throw new Error('Anthropic ' + aiResp.status + ': ' + errText.slice(0, 300)); }
     const aiData = await aiResp.json();
     const text = (aiData.content?.[0]?.text || '{}').trim();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Risposta AI non contiene JSON: ' + text.slice(0, 120));
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = parseFirstJson(text);
     const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
     // Normalizza i numeri lato server (difesa: l'AI a volte restituisce stringhe).
     const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? null : n; };
