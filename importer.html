@@ -1104,6 +1104,7 @@ window.saveAll=async function(){
       // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker,
       // che richiederebbe un service account non configurato.
       const sourceUrl = row.dataset.sourceUrl||'';
+      const supplierCNY = parseFloat(row.dataset.cny)||0;
       let images=[]; try{ images=JSON.parse(row.dataset.images||'[]'); }catch(_){}
       images=[...new Set([imgUrl, ...images].filter(Boolean))].slice(0,15);
       await imp.addDoc(imp.collection(imp.db,'products'),{
@@ -1114,6 +1115,7 @@ window.saveAll=async function(){
         ...(isBasket?{style:'basket'}:isKit?{style:'calcio'}:{}),
         ...(images.length>1?{images}:{}),
         ...(sourceUrl?{sourceUrl}:{}),
+        ...(supplierCNY>0?{supplierPriceCNY:supplierCNY}:{}),
         createdAt:imp.serverTimestamp()
       });
       saved++; savedCount++;
@@ -2026,6 +2028,10 @@ function addAnalyzedRow(d){
     priceLabel  = `${aiCur === 'EUR' ? '€' : '$'}${aiPrice} AI`;
   }
 
+  // Prezzo fornitore in CNY (per l'ordine all'agente d'acquisto): salvato sul
+  // prodotto così l'admin lo ritrova nell'ordine.
+  const supplierCNY = albumCNY || (aiCur === 'CNY' && aiPrice ? aiPrice : null);
+  div.dataset.cny = supplierCNY ? String(supplierCNY) : '';
   const priceDefault = supplierEUR
     ? Math.round(supplierEUR * markup * 10) / 10
     : (_defaultPrice > 0 ? _defaultPrice : (isShoe ? Math.round(45 * markup / 1.8 * 10) / 10 : ''));
