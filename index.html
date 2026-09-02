@@ -5685,17 +5685,24 @@ img{ -webkit-user-drag:none; user-select:none; }
       lfpoints, isDigitalOrder:allDigital, deliveryType:allDigital?'digital':'physical',
       status:'pending', paymentStatus:'unpaid', createdAt:fb.serverTimestamp(),
     };
-    await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
-    // Aggiorna spesa utente (i punti vengono accreditati alla conferma del pagamento).
-    // Se è stato usato uno sconto: consuma il premio (anche su Firestore, non solo
-    // in locale) e segna discountUsed → uno solo sconto per account, per sempre.
-    try{
-      const upd={ totalSpent:(udata&&udata.totalSpent||0)+subtotal };
-      if(ar){ upd.activeReward=null; }
-      if(discount>0){ upd.discountUsed=true; upd.discountUsedAt=fb.serverTimestamp(); upd.discountUsedOrder=orderId; }
-      await fb.updateDoc(fb.doc(fb.db,'users',user.uid),upd);
-      if(discount>0 && typeof udata==='object' && udata){ udata.discountUsed=true; udata.activeReward=null; }
-    }catch(_){}
+    if(discount>0){
+      // Ordine SCONTATO: creo l'ordine e segno discountUsed in un'unica scrittura
+      // ATOMICA (writeBatch). Le Firestore rules rifiutano un ordine con sconto se
+      // l'account ha già usato uno sconto → enforcement server-side non aggirabile.
+      const batch=fb.writeBatch(fb.db);
+      const oref=fb.doc(fb.collection(fb.db,'orders'));
+      batch.set(oref, orderData);
+      batch.update(fb.doc(fb.db,'users',user.uid), {
+        totalSpent:(udata&&udata.totalSpent||0)+subtotal,
+        activeReward:null, discountUsed:true, discountUsedAt:fb.serverTimestamp(), discountUsedOrder:orderId
+      });
+      try{ await batch.commit(); }
+      catch(e){ throw new Error('Sconto non più disponibile: è previsto un solo sconto per account. Rimuovi il premio e riprova.'); }
+      if(udata){ udata.discountUsed=true; udata.activeReward=null; udata.totalSpent=(udata.totalSpent||0)+subtotal; }
+    } else {
+      await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
+      try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{ totalSpent:(udata&&udata.totalSpent||0)+subtotal }); }catch(_){}
+    }
     // Email di conferma ordine (fire-and-forget — non blocca il checkout)
     try{ lfCallable('sendOrderEmail')({orderId,name:orderData.name,email:orderData.email||'',items:orderData.items,subtotal,shipping,discount,total,payment:orderData.payment,address:orderData.address}); }catch(_){}
     return { orderId, subtotal, shipping, discount, total, lfpoints:0, paymentMethod:payload.paymentMethod||'bonifico' };
