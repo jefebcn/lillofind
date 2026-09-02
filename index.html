@@ -421,7 +421,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   #prod-modal{padding:0!important;align-items:stretch!important;}
   #prod-modal .modal-box{max-height:100dvh!important;height:100dvh!important;max-width:100%!important;border-radius:0;}
   /* niente scroll annidato: la griglia non scrolla da sola */
-  #prod-modal-grid{grid-template-columns:1fr!important;overflow:visible!important;max-height:none!important;}
+  #prod-modal-grid{grid-template-columns:minmax(0,1fr)!important;overflow:visible!important;max-height:none!important;}
   /* immagine: mostra il prodotto INTERO (contain), niente crop né altezza forzata.
      La galleria aggiunge un div intermedio con min-height:420px e il main image ha
      object-fit:cover inline → vanno annullati con !important su mobile. */
@@ -3222,6 +3222,27 @@ img{ -webkit-user-drag:none; user-select:none; }
     /* frecce galleria: micro-hover */
     #prod-modal-grid button[aria-label]{transition:background .15s,transform .15s;}
     #prod-modal-grid button[aria-label]:hover{background:rgba(0,0,0,.75)!important;transform:translateY(-50%) scale(1.08)!important;}
+    /* ── FIX visualizzazione foto (PC + mobile) ─────────────────────────────
+       Un SOLO contenitore scrollabile (.modal-box): la colonna dettagli non
+       scrolla da sola (evita il "non scorre"). */
+    #prod-modal-grid > div:last-child{max-height:none!important;overflow:visible!important;}
+    /* min-width:0 sui figli della grid: evita che l'immagine forzi la traccia
+       a sforare il contenitore (immagine gigante/overflow orizzontale). */
+    #prod-modal-grid > div{min-width:0;}
+    @media(min-width:601px){
+      /* PC: la colonna immagine non si stira all'altezza dei dettagli e la foto
+         è CONTENUTA (niente crop/altezza esagerata), con un tetto ragionevole. */
+      #prod-modal-grid{align-items:start;}
+      #prod-modal-grid > div:first-child{align-self:start;}
+      #prod-modal-grid > div:first-child > div:first-child{min-height:0!important;}
+      #prod-gallery-main,
+      #prod-modal-grid > div:first-child img:not(.pg-thumb){
+        object-fit:contain!important;background:#f0f0f0;
+        width:100%!important;height:auto!important;min-height:0!important;max-height:74vh!important;
+      }
+      /* thumbnail più comode da cliccare su PC */
+      #prod-modal-grid .pg-thumb{width:64px!important;height:64px!important;}
+    }
   </style>
   <div class="modal-box" style="padding:0;max-width:960px;width:100%;">
     <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;">
@@ -4373,7 +4394,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           availability:p.soldOut?'https://schema.org/OutOfStock':'https://schema.org/InStock',url:location.href}});
     }catch(_){}
     body.innerHTML=`
-      <div style="display:grid;grid-template-columns:5fr 6fr;" id="prod-modal-grid">
+      <div style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);" id="prod-modal-grid">
         <div style="background:#f0f0f0;position:relative;display:flex;flex-direction:column;">
           <div style="flex:1;position:relative;min-height:420px;display:flex;" ontouchstart="_pgTS(event)" ontouchend="_pgTE(event)">
             ${_gmain?`<img id="prod-gallery-main" src="${_gmain}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;min-height:420px;cursor:zoom-in;flex:1;" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;min-height:420px;width:100%;font-size:10px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
