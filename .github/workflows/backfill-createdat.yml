@@ -1,0 +1,31 @@
+name: Backfill createdAt prodotti (una-tantum)
+
+# Migrazione manuale: imposta createdAt sui prodotti che non ce l'hanno.
+# NON si attiva da sola — la lanci da GitHub → Actions → questo workflow → Run.
+# Usa gli stessi secret del deploy Firebase (service account).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Google credentials
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > /tmp/gcloud-key.json
+
+      - name: Install firebase-admin
+        run: npm init -y && npm install firebase-admin@12
+
+      - name: Run backfill
+        run: node scripts/backfill-createdat.mjs
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcloud-key.json
