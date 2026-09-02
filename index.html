@@ -5695,7 +5695,15 @@ img{ -webkit-user-drag:none; user-select:none; }
       name:payload.name||'', phone:payload.phone||'',
       address:payload.shippingAddress||{street:'',city:'',zip:'',country:'Italia'},
       notes:payload.notes||'',
-      items:items.map(i=>({id:i.id,name:i.name||'',price:i.price||0,brand:i.brand||'',category:i.category||'',boxOption:i.boxOption||'',qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||i.imageUrl||'',isDigital:!!i.isDigital,...(i.addonSummary?{addonSummary:i.addonSummary,addonPrice:i.addonPrice||0}:{})})),
+      items:items.map(i=>{
+        // Arricchisci con link fonte e prezzo CNY fornitore (dal catalogo) così
+        // finiscono sull'ordine e nell'email di notifica per l'agente d'acquisto.
+        const _p=(typeof products!=='undefined'&&products)?products.find(pp=>pp.id===i.id):null;
+        return {id:i.id,name:i.name||'',price:i.price||0,brand:i.brand||'',category:i.category||'',boxOption:i.boxOption||'',qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||i.imageUrl||(_p&&_p.imageUrl)||'',isDigital:!!i.isDigital,
+          ...(_p&&_p.sourceUrl?{sourceUrl:_p.sourceUrl}:{}),
+          ...(_p&&_p.supplierPriceCNY!=null?{supplierPriceCNY:_p.supplierPriceCNY}:{}),
+          ...(i.addonSummary?{addonSummary:i.addonSummary,addonPrice:i.addonPrice||0}:{})};
+      }),
       subtotal, shipping, discount, total,
       payment:payload.paymentMethod||'bonifico',
       lfpoints, isDigitalOrder:allDigital, deliveryType:allDigital?'digital':'physical',

@@ -407,11 +407,36 @@ export async function sendOrderEmail(data, { env, auth }) {
       console.error('Resend conferma ordine FALLITA:', cResp.status, errTxt);
       return { sent: false, status: cResp.status, reason: errTxt };
     }
+    // Blocco "ordine fornitore" per l'agente d'acquisto (solo articoli fisici):
+    // link prodotto, nome, specifiche, quantità, prezzo CNY, immagine.
+    const physItems = (o.items || []).filter(i => !i.isDigital);
+    const supplierBlockHtml = physItems.length ? (
+      '<div style="margin:16px 0;padding:14px 16px;border:1px solid #e7e2d8;border-radius:10px;background:#faf8f3;">' +
+      '<p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#23231f;">🛒 Ordine fornitore (per l\'agente d\'acquisto)</p>' +
+      physItems.map((i, idx) => {
+        const specs = [i.size ? ('Taglia ' + i.size) : '', i.color ? ('Colore ' + i.color) : '', i.addonSummary || ''].filter(Boolean).join(' · ');
+        const cny = (i.supplierPriceCNY != null && i.supplierPriceCNY !== '') ? String(i.supplierPriceCNY) : '10 (da confermare)';
+        const link = i.sourceUrl || '';
+        const img = i.img ? (String(i.img).startsWith('//') ? 'https:' + i.img : i.img) : '';
+        const row = (l, v) => '<tr><td style="padding:2px 10px 2px 0;font-size:11px;color:#8a8a80;white-space:nowrap;vertical-align:top;">' + l + '</td><td style="padding:2px 0;font-size:12px;color:#23231f;word-break:break-all;">' + v + '</td></tr>';
+        return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #ece7db;">' +
+          '<p style="margin:0 0 4px;font-size:11px;color:#6b6b63;font-weight:700;">Articolo ' + (idx + 1) + '</p>' +
+          '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">' +
+            (link ? row('Link prodotto', '<a href="' + escHtml(link) + '" style="color:#2b57d6;">' + escHtml(link) + '</a>') : '') +
+            row('Nome prodotto', escHtml(i.name || '')) +
+            row('Specifiche', escHtml(specs || '-')) +
+            row('Quantità', String(i.qty || 1)) +
+            row('Prezzo unit. (CNY)', escHtml(cny)) +
+            (img ? row('Immagine', '<a href="' + escHtml(img) + '" style="color:#2b57d6;">apri foto</a>') : '') +
+          '</table></div>';
+      }).join('') +
+      '</div>'
+    ) : '';
     // Notifica admin (best-effort)
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [NOTIFY_EMAIL], subject: `🛍 Nuovo ordine ${o.orderId || ''} — €${(o.total || 0).toFixed(2)} (${escHtml(payLabel)})`, html: `<p><b>Nuovo ordine</b> da ${escHtml(o.name || '')} — ${escHtml(to)}</p>` + html }),
+      body: JSON.stringify({ from, to: [NOTIFY_EMAIL], subject: `🛍 Nuovo ordine ${o.orderId || ''} — €${(o.total || 0).toFixed(2)} (${escHtml(payLabel)})`, html: `<p><b>Nuovo ordine</b> da ${escHtml(o.name || '')} — ${escHtml(to)}</p>` + supplierBlockHtml + html }),
     });
   } catch (e) {
     return { sent: false, reason: e.message };
