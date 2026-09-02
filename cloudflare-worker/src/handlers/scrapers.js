@@ -633,14 +633,16 @@ export async function yupooFetch(data, _ctx) {
     };
 
     if (!Object.keys(albumPrices).length) {
-      const fwdRe = /\/albums\/(\w+)[^<]{0,400}?[¥￥]\s*(\d{1,5})/g;
+      // [~～≈约\s]* tra il simbolo ¥ e il numero: molti store (es. huskyreps)
+      // scrivono il prezzo saldo come "￥~135" / "￥ ~ 298".
+      const fwdRe = /\/albums\/(\w+)[^<]{0,400}?[¥￥]\s*[~～≈约\s]*(\d{1,5})/g;
       let fwd;
       while ((fwd = fwdRe.exec(html)) !== null) { if (!albumPrices[fwd[1]]) albumPrices[fwd[1]] = { value: parseInt(fwd[2], 10), currency: 'CNY' }; }
-      const revRe = /[¥￥]\s*(\d{1,5})[^<]{0,400}?\/albums\/(\w+)/g;
+      const revRe = /[¥￥]\s*[~～≈约\s]*(\d{1,5})[^<]{0,400}?\/albums\/(\w+)/g;
       let rev;
       while ((rev = revRe.exec(html)) !== null) { if (!albumPrices[rev[2]]) albumPrices[rev[2]] = { value: parseInt(rev[1], 10), currency: 'CNY' }; }
       const stripped = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-      const stripRe = /\/albums\/(\w+)[^¥￥]{0,200}?[¥￥]\s*(\d{1,5})/g;
+      const stripRe = /\/albums\/(\w+)[^¥￥]{0,200}?[¥￥]\s*[~～≈约\s]*(\d{1,5})/g;
       let sp;
       while ((sp = stripRe.exec(stripped)) !== null) { if (!albumPrices[sp[1]]) albumPrices[sp[1]] = { value: parseInt(sp[2], 10), currency: 'CNY' }; }
     }
@@ -675,8 +677,8 @@ export async function yupooFetch(data, _ctx) {
       const cnyBases = cnyAll.filter(m => !m[1]).map(m => parseInt(m[2], 10)).filter(v => v > 0 && v < 100000);
       if (cnyBases.length) supplierPriceCNY = Math.max(...cnyBases);
       else if (cnyAll.length) supplierPriceCNY = parseInt(cnyAll[0][2], 10);
-      // Simbolo ¥/￥ (es. "¥128", "￥ 128")
-      if (supplierPriceCNY == null) { const y = bodyText.match(/[¥￥]\s*(\d{1,5})/); if (y) supplierPriceCNY = parseInt(y[1], 10); }
+      // Simbolo ¥/￥ (es. "¥128", "￥ 128", "￥~135", "￥ ~ 298" → prezzo saldo)
+      if (supplierPriceCNY == null) { const y = bodyText.match(/[¥￥]\s*[~～≈约\s]*(\d{1,5})/); if (y) supplierPriceCNY = parseInt(y[1], 10); }
       // Parole chiave cinesi: 价格/售价/价/单价/批发价 seguite da un numero
       if (supplierPriceCNY == null) {
         const kw = [...bodyText.matchAll(/(?:价格|售价|单价|批发价|价)\s*[:：]?\s*(\d{1,5})/g)]
@@ -685,7 +687,7 @@ export async function yupooFetch(data, _ctx) {
       }
       // Ultima risorsa: un numero prezzo nel titolo album (es. "… 65" / "价65")
       if (supplierPriceCNY == null && rawTitle) {
-        const tp = rawTitle.match(/(?:¥|￥|价格?|售价)\s*(\d{2,5})/) || rawTitle.match(/\b(\d{2,4})\s*(?:元|cny|rmb)\b/i);
+        const tp = rawTitle.match(/(?:¥|￥|价格?|售价)\s*[~～≈约\s]*(\d{2,5})/) || rawTitle.match(/\b(\d{2,4})\s*(?:元|cny|rmb)\b/i);
         if (tp) { const v = parseInt(tp[1], 10); if (v >= 5 && v < 100000) supplierPriceCNY = v; }
       }
       // Prezzo assente nel testo ma l'album linka un prodotto Weidian
