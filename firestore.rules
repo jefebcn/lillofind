@@ -23,6 +23,20 @@ service cloud.firestore {
         || request.resource.data.isAdmin == resource.data.get('isAdmin', false);
     }
 
+    // Sconto: uno solo per account, per sempre. True se l'utente ha GIÀ usato
+    // uno sconto (flag discountUsed sul suo doc). Se il doc non esiste, non ha
+    // ancora usato nulla.
+    function discountAlreadyUsed(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && get(/databases/$(database)/documents/users/$(uid)).data.get('discountUsed', false) == true;
+    }
+    // Impedisce di rimettere discountUsed a false/rimuoverlo una volta true
+    // (write-once): così il flag non può essere "azzerato" per riottenere lo sconto.
+    function noDiscountReset() {
+      return !(resource != null && resource.data.get('discountUsed', false) == true)
+        || (request.resource != null && request.resource.data.get('discountUsed', false) == true);
+    }
+
     // Products — lettura pubblica, scrittura solo admin
     match /products/{id} {
       allow read: if true;
@@ -43,7 +57,16 @@ service cloud.firestore {
                     || (signedIn() && request.auth.token.email != null
                         && exists(/databases/$(database)/documents/users/$(resource.data.uid))
                         && get(/databases/$(database)/documents/users/$(resource.data.uid)).data.get('email','') == request.auth.token.email);
-      allow create: if signedIn();
+      // Creazione ordine: l'ordine deve essere del proprio uid. Un ordine CON
+      // sconto (discount>0) è ammesso solo se l'account non ha ancora usato uno
+      // sconto → enforcement server-side "uno sconto per account, per sempre".
+      // Gli ordini senza sconto passano sempre. Admin bypassa.
+      allow create: if isAdmin() || (
+        signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && (request.resource.data.get('discount', 0) <= 0
+            || !discountAlreadyUsed(request.auth.uid))
+      );
       allow update, delete: if isAdmin();
     }
 
@@ -54,7 +77,11 @@ service cloud.firestore {
     match /users/{uid} {
       allow read:  if request.auth.uid == uid || isAdmin()
                    || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email);
-      allow write: if isAdmin() || (request.auth.uid == uid && noSelfAdmin());
+      // Scrittura sul proprio doc; discountUsed è write-once (non azzerabile)
+      // così non si può "resettare" lo sconto già usato. Admin bypassa.
+      allow create: if isAdmin() || (request.auth.uid == uid && noSelfAdmin());
+      allow update: if isAdmin() || (request.auth.uid == uid && noSelfAdmin() && noDiscountReset());
+      allow delete: if isAdmin();
     }
 
     // Richieste prodotto ("non trovo prodotto") — chiunque può inviare, solo admin legge
