@@ -2677,9 +2677,11 @@ waitFB(()=>{
     if(!list) return;
     list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
-      const q=fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc'));
-      const snap=await fb.getDocs(q);
-      adminCatalogProducts=snap.docs.map(d=>({id:d.id,...d.data()}));
+      // Senza orderBy: l'orderBy('createdAt') escluderebbe i prodotti privi del
+      // campo. Ordino lato client per data (i più recenti prima).
+      const snap=await fb.getDocs(fb.collection(fb.db,'products'));
+      adminCatalogProducts=snap.docs.map(d=>({id:d.id,...d.data()}))
+        .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       renderAdminCatalog();
       // Deep-link: admin.html?edit=<id> (arrivo da ✏️ sul sito) → apri modifica
       try{ maybeOpenEditFromURL(); }catch(_){}
@@ -2964,7 +2966,7 @@ waitFB(()=>{
     const btn = document.getElementById('gc-analyze-btn');
     btn.textContent = 'Analisi in corso...'; btn.disabled = true;
     try {
-      const snap = await fb.getDocs(fb.query(fb.collection(fb.db, 'products'), fb.orderBy('createdAt','desc')));
+      const snap = await fb.getDocs(fb.collection(fb.db, 'products')); // no orderBy: include i prodotti senza createdAt
       _gcData = snap.docs.map(d => {
         const p = { id: d.id, ...d.data() };
         return { id: p.id, name: p.name||'', brand: p.brand||'', category: p.category||'',
@@ -3150,7 +3152,7 @@ waitFB(()=>{
     const btn=document.getElementById('qc-analyze-btn');
     btn.textContent='Analisi in corso...'; btn.disabled=true;
     try{
-      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc')));
+      const snap=await fb.getDocs(fb.collection(fb.db,'products')); // no orderBy: include i prodotti senza createdAt
       _qcData=snap.docs.map(d=>{
         const p={id:d.id,...d.data()};
         const canon=qcCanonBrand(p.brand);
