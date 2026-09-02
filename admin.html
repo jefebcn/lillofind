@@ -2252,6 +2252,23 @@ waitFB(()=>{
           </div>
         </div>`;
       }).join('');
+      // Blocco "ordine fornitore" per TUTTI gli articoli fisici (copia unica).
+      const _physItems=(o.items||[]).filter(i=>!i.isDigital);
+      const _orderSupplierAll = _physItems.length ? encodeURIComponent(
+        'ORDINE '+(o.orderId||'')+'\n'+
+        _physItems.map((i,idx)=>{
+          const sp=[i.size?('Taglia '+i.size):'', i.color?('Colore '+i.color):'', i.addonSummary||''].filter(Boolean).join(' · ');
+          const cny=(i.supplierPriceCNY!=null && i.supplierPriceCNY!=='')?String(i.supplierPriceCNY):'10 (da confermare)';
+          const lk=i.sourceUrl||'';
+          return '\n--- Articolo '+(idx+1)+' ---\n'+
+            'Link prodotto: '+lk+'\n'+
+            'Nome prodotto: '+(i.name||'')+'\n'+
+            'Specifiche: '+(sp||'-')+'\n'+
+            'Quantità: '+(i.qty||1)+'\n'+
+            'Prezzo unitario (CNY): '+cny+'\n'+
+            'Immagine: '+(i.img||i.imageUrl||'');
+        }).join('\n')
+      ) : '';
       // Profitto ordine: somma su articoli fisici con costo salvato sul prodotto.
       let _ordCost=0, _ordRev=0, _ordHasCost=false;
       (o.items||[]).forEach(i=>{ if(i.isDigital) return; const c=costOfProduct(i.id); if(c!=null){ _ordHasCost=true; _ordCost+=c*(i.qty||1); _ordRev+=(i.price||0)*(i.qty||1); } });
@@ -2297,7 +2314,10 @@ waitFB(()=>{
           </div>
         </div>
         <div style="margin-bottom:12px;">
-          <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Articoli (${(o.items||[]).reduce((s,i)=>s+i.qty,0)} pezzi)</p>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);">Articoli (${(o.items||[]).reduce((s,i)=>s+i.qty,0)} pezzi)</p>
+            ${_orderSupplierAll?`<button class="btn-k" data-copy="${_orderSupplierAll}" onclick="adminCopySupplier(this)" style="padding:6px 12px;font-size:10px;white-space:nowrap;" title="Copia i dati di TUTTI gli articoli per il form dell'agente">🛒 Copia tutto l'ordine</button>`:''}
+          </div>
           <div style="display:flex;flex-direction:column;gap:8px;">${itemsHtml||'<p style="font-size:14px;color:#aaa;">—</p>'}</div>
         </div>
         ${o.notes?`<div style="font-size:13px;color:var(--mid);font-style:italic;margin-bottom:12px;">📝 ${escH(o.notes)}</div>`:''}
