@@ -3852,17 +3852,12 @@ img{ -webkit-user-drag:none; user-select:none; }
     _prodsLoading=true;
     const fb=window.__fb;
     try{
-      let docs=[];
-      // 1° tentativo: ordinati per data
-      try{
-        const s=await fb.getDocs(fb.query(fb.collection(fb.db,'products'),fb.orderBy('createdAt','desc')));
-        docs=s.docs;
-      }catch(e1){ console.warn('orderBy createdAt fallito, uso fallback',e1&&e1.code); docs=[]; }
-      // Fallback: nessun ordinamento (copre prodotti senza campo createdAt o problemi di indice)
-      if(!docs.length){
-        const s2=await fb.getDocs(fb.collection(fb.db,'products'));
-        docs=s2.docs;
-      }
+      // Carica TUTTI i prodotti SENZA orderBy: un orderBy('createdAt') escluderebbe
+      // dalla query i documenti privi del campo createdAt (comportamento Firestore),
+      // facendo sparire i prodotti importati senza quel campo. L'ordinamento per
+      // data si fa lato client qui sotto.
+      const s=await fb.getDocs(fb.collection(fb.db,'products'));
+      const docs=s.docs;
       products=docs.map(d=>({id:d.id,...d.data()}));
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       _prodsLoaded=true;
