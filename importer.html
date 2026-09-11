@@ -1979,15 +1979,26 @@ function addAnalyzedRow(d){
   div.dataset.category = d.analysis.category || '';
   div.dataset.desc     = d.analysis.description || '';
 
-  // Nome: il titolo album va bene per i kit ("25-26 Juventus away shorts") ma
-  // per molti fornitori è un codice interno ("0528 Enzoo Optical…"). Usa il
-  // titolo album SOLO se contiene un brand/squadra riconosciuto, altrimenti
-  // preferisci il nome AI descrittivo ("Occhiali da sole Cartier…").
+  // Nome: il titolo album del fornitore è quasi sempre SPORCO — porta davanti
+  // prezzi, batch e codici QC ("40$ GO Batch Balenciaga…", "In Out 3.0 ZL#2.4
+  // Balenciaga Track…", "0528 Enzoo Optical…"). L'unico caso in cui il titolo
+  // album è DAVVERO migliore del nome AI è il kit sportivo (squadra + stagione,
+  // es. "25-26 Juventus away"), dove l'AI spesso non riconosce la squadra.
+  // Per tutto il resto (brand di moda, scarpe, occhiali…) si preferisce il nome
+  // AI descrittivo e pulito ("Balenciaga Track Nero Grigio").
   const albumName = (d.albumInfo?.name || '').trim();
   const aiName    = (d.analysis?.name || '').trim();
   const _QC = window.LFCatalog;
-  const albumHasBrand = albumName.length >= 6 && !!(_QC && _QC.detectBrand(albumName));
-  const name   = ((albumHasBrand ? albumName : (aiName || albumName || d.albumInfo?.pageTitle || '')) || '').replace(/"/g,'&quot;');
+  const albumBrand   = (albumName.length >= 4 && _QC) ? _QC.detectBrand(albumName) : '';
+  const albumIsTeam  = !!(albumBrand && _QC && (_QC.isFootballTeam(albumBrand) || _QC.isBasketTeam(albumBrand)));
+  // Ripulisce il titolo del fornitore dai prefissi commerciali (prezzo/batch/QC)
+  // così, se dobbiamo cadere sul titolo album, resta almeno leggibile.
+  const cleanAlbum = albumName
+    .replace(/^\s*\$?\d+\s*\$\s*/,'')                         // prezzo in testa "40$ ", "$40 "
+    .replace(/^\s*(go\s*batch|batch|in\s*out|new|hot|sale|top|best)\b[\s.:#-]*/i,'')
+    .replace(/\b(zl|zj|zk|gd|gp)\s*#?\s*\d+(\.\d+)?\b/ig,'')  // codici QC tipo ZL#2.4
+    .replace(/\s{2,}/g,' ').trim();
+  const name   = ((albumIsTeam ? (cleanAlbum || albumName) : (aiName || cleanAlbum || albumName || d.albumInfo?.pageTitle || '')) || '').replace(/"/g,'&quot;');
   const colors = (d.analysis.colors || []).join(', ');
   // Per le scarpe: tipo sempre Sneakers, taglie EU default, prezzo 50€, colori nascosti
   const isShoe     = ['scarpe','scarpe_box'].includes(d.analysis.category) || (d.albumInfo?.shoeSizes?.length > 0);
