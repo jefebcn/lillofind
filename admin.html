@@ -3632,16 +3632,44 @@ waitFB(()=>{
     order.sort((a,b)=>{ if(a==='—')return 1; if(b==='—')return -1; return (groups[b].price+groups[b].ship)-(groups[a].price+groups[a].ship); });
     let html='<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">👥 Totale per persona (quanto deve pagare)</p>'
       +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;">';
+    // Testo pronto per WhatsApp: lista in colonna, in € (quanto incassi da ciascuno).
+    const waLines=['💰 LILLOFIND — Riepilogo pagamenti',''];
+    let grpTotE=0, nPeople=0;
     order.forEach(k=>{ const g=groups[k]; const t$=g.price+g.ship, tE=t$*fx;
       html+='<div style="border:1px solid '+(g.un?'#333':'rgba(200,255,0,.28)')+';border-radius:9px;padding:11px 13px;background:'+(g.un?'transparent':'rgba(200,255,0,.04)')+';">'
         +'<div style="font-weight:700;font-size:13px;color:'+(g.un?'#888':'#fff')+';">'+escH(g.name)+' <span style="font-size:10px;color:#888;font-weight:400;">· '+g.n+' art.</span></div>'
         +'<div style="font-size:11px;color:#aaa;margin-top:4px;">merce $'+g.price.toFixed(2)+' + sped $'+g.ship.toFixed(2)+'</div>'
         +'<div style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:22px;color:var(--led);margin-top:3px;line-height:1;">$'+t$.toFixed(2)+' <span style="font-size:13px;color:#ccc;">= €'+tE.toFixed(2)+'</span></div>'
         +'</div>';
+      // Solo persone assegnate nel testo WhatsApp (i "Non assegnati" non si mandano).
+      if(!g.un){
+        waLines.push('👤 '+g.name+' ('+g.n+' art.)');
+        waLines.push('   Merce: €'+(g.price*fx).toFixed(2));
+        waLines.push('   Spedizione: €'+(g.ship*fx).toFixed(2));
+        waLines.push('   👉 Da pagare: €'+tE.toFixed(2));
+        waLines.push('');
+        grpTotE+=tE; nPeople++;
+      }
     });
     html+='</div>';
+    waLines.push('━━━━━━━━━━━');
+    waLines.push('Totale gruppo: €'+grpTotE.toFixed(2));
+    window._peopleWaText = nPeople ? waLines.join('\n') : '';
+    if(nPeople){
+      html+='<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+        +'<button class="btn-k" onclick="copyPeopleList()" style="padding:8px 14px;font-size:11px;" title="Copia la lista pronta da incollare su WhatsApp">📋 Copia lista per WhatsApp</button>'
+        +'<span style="font-size:10px;color:#666;">In €, pronta da incollare — un tap e la mandi.</span>'
+        +'</div>';
+    }
     el.innerHTML=html;
   }
+  // Copia negli appunti la lista pagamenti per persona (formato WhatsApp).
+  window.copyPeopleList=function(){
+    const t=window._peopleWaText||'';
+    if(!t){ if(typeof showToast==='function') showToast('⚠️ Niente da copiare'); return; }
+    try{ navigator.clipboard.writeText(t).then(()=>showToast('📋 Lista copiata — incolla su WhatsApp!')).catch(()=>showToast('📋 Copia manuale:\n'+t)); }
+    catch(_){ if(typeof showToast==='function') showToast('📋 '+t); }
+  };
   // Somma le colonne (come mostrate) per verificare col totale della ricevuta.
   function updateCostTotals(){
     const fx=costFx(); let tP=0,tS=0,tC=0;
