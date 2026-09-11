@@ -3873,7 +3873,17 @@ img{ -webkit-user-drag:none; user-select:none; }
   function _afterProds(){
     try{buildChips();updateFilterUI();buildNavMenus();}catch(_){}
     try{renderHomeProds();}catch(_){}
-    try{ if(document.getElementById('pg-shop')?.classList.contains('on')) renderShop(); }catch(_){}
+    try{
+      if(document.getElementById('pg-shop')?.classList.contains('on')){
+        // Se siamo arrivati sullo shop da un link condiviso, i prodotti sono
+        // appena caricati: applica l'ordinamento scelto (anche da URL) e
+        // riflette i chip attivi, poi renderizza.
+        const ss=document.getElementById('shop-sort');
+        if(ss && ss.value && ss.value!=='new' && typeof applySort==='function') applySort(ss.value);
+        if(typeof _reflectFilterChips==='function') _reflectFilterChips();
+        renderShop();
+      }
+    }catch(_){}
     try{ localStorage.setItem('lf_wishlist', JSON.stringify(wishlist)); updateWishBadge(); }catch(_){}
     try{ warmImageCache(); }catch(_){}
   }
@@ -7239,13 +7249,17 @@ img{ -webkit-user-drag:none; user-select:none; }
   window._reflectFilterChips=_reflectFilterChips;
 
   // Legge la query string all'avvio e ri-applica ricerca + filtri + ordinamento.
-  // Ritorna false se i prodotti non sono ancora caricati (il poller riprova).
+  // NON aspetta i prodotti: il catalogo è grande e caricarlo può richiedere
+  // parecchi secondi. Navighiamo subito allo shop e impostiamo lo STATO (filtri,
+  // ricerca, ordinamento); il filtro/ordinamento effettivo scatta appena i
+  // prodotti sono caricati (loadAllProducts → _afterProds → renderShop).
+  // Ritorna false solo se l'app non è ancora pronta (il poller riprova).
   window._applyShopFromURL=function(){
     try{
       const p=new URLSearchParams(location.search);
       if(p.get('p')) return false;             // il deep-link prodotto ha la priorità
       if(!_hasShopUrlParams(p)) return false;  // nessun filtro nell'URL
-      if(!products || !products.length) return false; // aspetta il caricamento prodotti
+      if(typeof showPg!=='function') return false; // app non ancora pronta → riprova
       showPg('shop');
       filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,basket:false,priceMin:null,priceMax:null};
       if(p.get('cat'))    filters.model=p.get('cat');
@@ -7261,10 +7275,15 @@ img{ -webkit-user-drag:none; user-select:none; }
       const pmin=parseFloat(p.get('pmin')), pmax=parseFloat(p.get('pmax'));
       if(!isNaN(pmin)&&!isNaN(pmax)){ filters.priceMin=pmin; filters.priceMax=pmax; }
       const q=p.get('q'); if(q){ const si=document.getElementById('shop-search'); if(si) si.value=q; }
-      const sort=p.get('sort'); if(sort){ const ss=document.getElementById('shop-sort'); if(ss) ss.value=sort; applySort(sort); }
-      if(typeof updateFilterUI==='function') updateFilterUI();
-      _reflectFilterChips();
-      if(typeof renderShop==='function') renderShop();
+      const sort=p.get('sort'); if(sort){ const ss=document.getElementById('shop-sort'); if(ss) ss.value=sort; }
+      // Se i prodotti sono già in memoria applichiamo tutto adesso; altrimenti
+      // ci pensa _afterProds al termine del caricamento (evita il flash "0 items").
+      if(products && products.length){
+        if(sort && sort!=='new' && typeof applySort==='function') applySort(sort);
+        if(typeof updateFilterUI==='function') updateFilterUI();
+        _reflectFilterChips();
+        if(typeof renderShop==='function') renderShop();
+      }
       window.scrollTo({top:0});
       return true;
     }catch(_){ return false; }
