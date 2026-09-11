@@ -1105,11 +1105,22 @@ img{ -webkit-user-drag:none; user-select:none; }
     }, 200);
   }
 
+  // Link condivisibile dello shop (?q=&cat=&brand=&sport=&sort=…) → ri-applica
+  // ricerca + filtri + ordinamento appena i prodotti sono caricati.
+  var _shopKeys=['q','cat','brand','size','color','gender','sport','style','pmin','pmax','sort'];
+  var _sp0=new URLSearchParams(location.search);
+  var _hasShopParams=!_sp0.get('p') && _shopKeys.some(function(k){ return _sp0.get(k); });
+  if(_hasShopParams){ var st=setInterval(function(){
+      if(typeof window._applyShopFromURL==='function' && window._applyShopFromURL()){ clearInterval(st); }
+    }, 150); setTimeout(function(){ clearInterval(st); }, 12000);
+  }
+
   // Scorciatoie manifest (?go=shop|sport|lfpoints) → naviga quando l'app è pronta
   var go=new URLSearchParams(location.search).get('go');
   if(go){ var t=setInterval(function(){
       if(typeof window.showPg==='function'){ clearInterval(t);
-        if(go==='shop'){ showPg('shop'); if(window.resetFilters) resetFilters(); }
+        // Non resettare i filtri se il link porta già una ricerca/categoria.
+        if(go==='shop'){ showPg('shop'); if(!_hasShopParams && window.resetFilters) resetFilters(); }
         else if(go==='sport'){ showPg('shop'); setTimeout(function(){ if(window.setFilter) setFilter('style','Sport'); }, 250); }
         else if(go==='lfpoints'){ showPg('lfpoints'); }
       }
@@ -2072,6 +2083,11 @@ img{ -webkit-user-drag:none; user-select:none; }
               <option value="alpha">A → Z</option>
             </select>
           </div>
+          <!-- Condividi la ricerca/categoria corrente (link con filtri dentro) -->
+          <button onclick="shareShop()" class="btn-g" style="padding:8px 14px;font-size:10px;display:flex;align-items:center;gap:6px;" title="Copia il link di questa ricerca">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Condividi
+          </button>
           <!-- Mobile filter button (inline, in header row) -->
           <button onclick="openMobFilter()" class="btn-g mob-only" style="padding:8px 14px;font-size:10px;">⚙ Filtri</button>
         </div>
@@ -4286,7 +4302,14 @@ img{ -webkit-user-drag:none; user-select:none; }
       const ogt=document.querySelector('meta[property="og:title"]'); if(ogt) ogt.setAttribute('content','LILLOFIND — Drop Your Style');
       const ogi=document.querySelector('meta[property="og:image"]'); if(ogi) ogi.setAttribute('content','https://lillofind.shop/assets/og-image.jpg');
       const _ld=document.getElementById('ld-product'); if(_ld) _ld.remove(); // rimuovi JSON-LD prodotto
-      if(location.search.indexOf('p=')>-1) history.replaceState(null,'',location.pathname);
+      if(location.search.indexOf('p=')>-1){
+        // Se siamo sullo shop, ripristina i filtri nell'URL; altrimenti pulisci.
+        if(document.getElementById('pg-shop')?.classList.contains('on') && typeof window._syncShopURL==='function'){
+          history.replaceState(null,'',location.pathname); window._syncShopURL();
+        } else {
+          history.replaceState(null,'',location.pathname);
+        }
+      }
     }catch(_){}
   };
 
@@ -4754,6 +4777,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     _sLoad  = _sLoad  || document.getElementById('s-load');
     _sCount = _sCount || document.getElementById('s-count');
     try{ renderSportTeamsBar(); }catch(_){}
+    try{ _syncShopURL(); }catch(_){}
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     // In una vista sportiva (Calcio/Basket/Sport) i kit devono comparire; altrove
     // NO — restano "solo su sport". La ricerca li trova comunque.
@@ -7165,6 +7189,97 @@ img{ -webkit-user-drag:none; user-select:none; }
     else if(val==='price-desc') products.sort((a,b)=>(b.price||0)-(a.price||0));
     else if(val==='alpha')      products.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
     if(typeof renderShop === 'function') renderShop();
+  };
+
+  // ── URL condivisibile dello shop (ricerca + filtri + ordinamento) ──────
+  // Ogni cambio di filtro passa da renderShop → _doRenderShop, quindi qui
+  // sincronizziamo lo stato nella query string. Così l'utente può copiare il
+  // link e chi lo apre ritrova la stessa ricerca/categoria già applicata.
+  const SHOP_URL_KEYS=['q','cat','brand','size','color','gender','sport','style','pmin','pmax','sort'];
+  function _hasShopUrlParams(sp){ sp=sp||new URLSearchParams(location.search); return SHOP_URL_KEYS.some(k=>sp.get(k)); }
+  function _syncShopURL(){
+    try{
+      // Solo quando lo shop è la pagina attiva e nessuna scheda prodotto è aperta,
+      // per non sovrascrivere il deep-link ?p= né le altre pagine.
+      if(!document.getElementById('pg-shop')?.classList.contains('on')) return;
+      if(new URLSearchParams(location.search).get('p')) return;
+      const q=(document.getElementById('shop-search')?.value||'').trim();
+      const sort=(document.getElementById('shop-sort')?.value||'new');
+      const sp=new URLSearchParams();
+      if(q) sp.set('q',q);
+      if(filters.model)  sp.set('cat',filters.model);
+      if(filters.brand)  sp.set('brand',filters.brand);
+      if(filters.size)   sp.set('size',filters.size);
+      if(filters.color)  sp.set('color',filters.color);
+      if(filters.gender) sp.set('gender',filters.gender);
+      if(filters.football)       sp.set('sport','calcio');
+      else if(filters.basket)    sp.set('sport','basket');
+      else if(filters.style==='Sport') sp.set('sport','sport');
+      else if(filters.style)     sp.set('style',filters.style);
+      if(filters.priceMin!=null) sp.set('pmin',filters.priceMin);
+      if(filters.priceMax!=null) sp.set('pmax',filters.priceMax);
+      if(sort && sort!=='new')   sp.set('sort',sort);
+      const qs=sp.toString();
+      history.replaceState(null,'',location.pathname+(qs?'?'+qs:''));
+    }catch(_){}
+  }
+  window._syncShopURL=_syncShopURL;
+
+  // Evidenzia i chip/taglie/swatch/tab-genere in base allo stato filters corrente.
+  function _reflectFilterChips(){
+    try{
+      document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>{
+        c.classList.toggle('on', c.dataset.val===filters[c.dataset.key]);
+      });
+      document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===(filters.gender||'tutti')));
+      document.querySelectorAll('.gtrio-btn[data-g]').forEach(b=>b.classList.toggle('active',b.dataset.g===(filters.gender||'')));
+    }catch(_){}
+  }
+  window._reflectFilterChips=_reflectFilterChips;
+
+  // Legge la query string all'avvio e ri-applica ricerca + filtri + ordinamento.
+  // Ritorna false se i prodotti non sono ancora caricati (il poller riprova).
+  window._applyShopFromURL=function(){
+    try{
+      const p=new URLSearchParams(location.search);
+      if(p.get('p')) return false;             // il deep-link prodotto ha la priorità
+      if(!_hasShopUrlParams(p)) return false;  // nessun filtro nell'URL
+      if(!products || !products.length) return false; // aspetta il caricamento prodotti
+      showPg('shop');
+      filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,basket:false,priceMin:null,priceMax:null};
+      if(p.get('cat'))    filters.model=p.get('cat');
+      if(p.get('brand'))  filters.brand=p.get('brand');
+      if(p.get('size'))   filters.size=p.get('size');
+      if(p.get('color'))  filters.color=p.get('color');
+      if(p.get('gender')) filters.gender=p.get('gender');
+      const sport=p.get('sport');
+      if(sport==='calcio')      filters.football=true;
+      else if(sport==='basket') filters.basket=true;
+      else if(sport==='sport')  filters.style='Sport';
+      else if(p.get('style'))   filters.style=p.get('style');
+      const pmin=parseFloat(p.get('pmin')), pmax=parseFloat(p.get('pmax'));
+      if(!isNaN(pmin)&&!isNaN(pmax)){ filters.priceMin=pmin; filters.priceMax=pmax; }
+      const q=p.get('q'); if(q){ const si=document.getElementById('shop-search'); if(si) si.value=q; }
+      const sort=p.get('sort'); if(sort){ const ss=document.getElementById('shop-sort'); if(ss) ss.value=sort; applySort(sort); }
+      if(typeof updateFilterUI==='function') updateFilterUI();
+      _reflectFilterChips();
+      if(typeof renderShop==='function') renderShop();
+      window.scrollTo({top:0});
+      return true;
+    }catch(_){ return false; }
+  };
+
+  // Condividi la ricerca/categoria corrente: copia (o apre lo share nativo)
+  // l'URL con i filtri già dentro.
+  window.shareShop=function(){
+    _syncShopURL();
+    const url=location.href;
+    const text='Guarda questa selezione su LILLOFIND 🔥';
+    if(navigator.share){
+      navigator.share({ title:'LILLOFIND', text, url }).catch(()=>{});
+    } else {
+      navigator.clipboard?.writeText(url).then(()=>showToast('🔗 Link della ricerca copiato!')).catch(()=>showToast('🔗 '+url));
+    }
   };
 
   // Web Share API — share product on mobile
