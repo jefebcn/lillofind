@@ -4415,7 +4415,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Galleria: usa le foto multiple se presenti, altrimenti la cover
     const _gimgs=[...new Set([...(Array.isArray(p.images)?p.images:[]), p.imageUrl].filter(Boolean))];
     const _gmain=_gimgs.length?pImgHi(_gimgs[0]):'';
-    window._pg=_gimgs.map(pImgHi); window._pgi=0; // main/zoom in alta risoluzione
+    window._pg=_gimgs.map(pImgHi);        // main/zoom in alta risoluzione (large)
+    window._pgSmall=_gimgs.map(pImg);     // versione piccola (già in cache dalle miniature) → mostrata subito
+    window._pgi=0; window._pgPre={};      // stato preload
+    // Precarica le prime foto grandi in background così le prime frecce sono istantanee.
+    try{ [1,2,_gimgs.length-1].forEach(k=>{ if(k>0&&k<window._pg.length){ const im=new Image(); im.src=window._pg[k]; window._pgPre[k]=true; } }); }catch(_){}
     // SEO: dati strutturati Product (Google esegue il JS → rich result)
     try{
       let _ld=document.getElementById('ld-product');
@@ -4430,7 +4434,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);" id="prod-modal-grid">
         <div style="background:#f0f0f0;position:relative;display:flex;flex-direction:column;">
           <div style="flex:1;position:relative;min-height:420px;display:flex;" ontouchstart="_pgTS(event)" ontouchend="_pgTE(event)">
-            ${_gmain?`<img id="prod-gallery-main" src="${_gmain}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;min-height:420px;cursor:zoom-in;flex:1;" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;min-height:420px;width:100%;font-size:10px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
+            ${_gmain?`<img id="prod-gallery-main" src="${_gmain}" alt="${p.name}" decoding="async" fetchpriority="high" style="width:100%;height:100%;object-fit:cover;display:block;min-height:420px;cursor:zoom-in;flex:1;" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;min-height:420px;width:100%;font-size:10px;color:#ccc;letter-spacing:2px;">NO IMG</div>`}
             ${_gimgs.length>1?`
               <button aria-label="Precedente" onclick="event.stopPropagation();prodGNav(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">‹</button>
               <button aria-label="Successiva" onclick="event.stopPropagation();prodGNav(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">›</button>
@@ -7612,14 +7616,39 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ── Galleria prodotto (miniature + frecce + swipe) ──
+  // Precarica in background una foto grande (per indice), una sola volta.
+  function _pgPreload(i){
+    const g=window._pg||[]; if(!g.length) return;
+    const k=((i%g.length)+g.length)%g.length;
+    window._pgPre=window._pgPre||{};
+    if(window._pgPre[k]) return;
+    window._pgPre[k]=true;
+    const im=new Image(); im.src=g[k];
+  }
   function _pgApply(i){
     const g=window._pg||[]; if(!g.length) return;
     window._pgi=((i%g.length)+g.length)%g.length;
-    const main=document.getElementById('prod-gallery-main'); if(main) main.src=g[window._pgi];
+    const idx=window._pgi;
+    const main=document.getElementById('prod-gallery-main');
+    if(main){
+      const small=(window._pgSmall||[])[idx];
+      const large=g[idx];
+      // 1) Feedback immediato: mostra subito la miniatura (già in cache) — niente schermo vuoto.
+      //    Se non esiste una versione piccola distinta, usa direttamente la grande.
+      if(small && small!==large) main.src=small; else main.src=large;
+      // 2) Carica la grande in background e sostituiscila appena pronta (solo se siamo ancora su questa foto).
+      if(large && large!==main.src){
+        const hi=new Image();
+        hi.onload=()=>{ if(window._pgi===idx){ const m=document.getElementById('prod-gallery-main'); if(m) m.src=large; } };
+        hi.src=large;
+      }
+      // 3) Preload delle foto adiacenti → la prossima freccia/swipe è istantanea.
+      _pgPreload(idx+1); _pgPreload(idx-1);
+    }
     const thumbs=document.querySelectorAll('#prod-modal-grid .pg-thumb');
-    thumbs.forEach((x,k)=>{ x.style.borderColor = k===window._pgi ? 'var(--led)' : 'transparent'; });
-    if(thumbs[window._pgi]) thumbs[window._pgi].scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
-    const c=document.getElementById('pg-counter'); if(c) c.textContent=(window._pgi+1)+'/'+g.length;
+    thumbs.forEach((x,k)=>{ x.style.borderColor = k===idx ? 'var(--led)' : 'transparent'; });
+    if(thumbs[idx]) thumbs[idx].scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
+    const c=document.getElementById('pg-counter'); if(c) c.textContent=(idx+1)+'/'+g.length;
   }
   window.prodThumb = function(el){
     const thumbs=[...document.querySelectorAll('#prod-modal-grid .pg-thumb')];
