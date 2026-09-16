@@ -5535,6 +5535,22 @@ img{ -webkit-user-drag:none; user-select:none; }
     cart=[];saveCart();updateCartBadge();
 
     if(method==='card'){
+      // L'ordine con carta è creato lato server (callable validateOrder), che non
+      // crea il documento profilo. Lo garantiamo qui (crea per gli ospiti, aggiorna
+      // per gli altri) così ogni cliente che ordina ha il suo profilo.
+      try{
+        const fb=window.__fb;
+        if(fb && user){
+          const pe=((orderData&&orderData.email)||user.email||'').toLowerCase();
+          const prof={ uid:user.uid, email:pe,
+            displayName:(orderData&&orderData.name)||(udata&&udata.displayName)||'',
+            phone:(orderData&&orderData.phone)||(udata&&udata.phone)||'',
+            address:(orderData&&orderData.shippingAddress)||(udata&&udata.address)||null,
+            isGuest:!!user.isAnonymous, lastOrderAt:fb.serverTimestamp() };
+          if(!(udata&&udata.createdAt)) prof.createdAt=fb.serverTimestamp();
+          fb.setDoc(fb.doc(fb.db,'users',user.uid), prof, {merge:true}).catch(()=>{});
+        }
+      }catch(_){}
       showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
       if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
       setTimeout(()=>showPg('shop'),1200);
@@ -5748,6 +5764,25 @@ img{ -webkit-user-drag:none; user-select:none; }
       lfpoints, isDigitalOrder:allDigital, deliveryType:allDigital?'digital':'physical',
       status:'pending', paymentStatus:'unpaid', createdAt:fb.serverTimestamp(),
     };
+    // ── Profilo cliente: crea/aggiorna SEMPRE il documento users/{uid} a ogni
+    // ordine (anche per gli ospiti, che prima non avevano alcun profilo perché
+    // updateDoc falliva su un doc inesistente). Con setDoc({merge:true}) il
+    // profilo viene creato se manca e aggiornato se esiste — così ogni cliente
+    // che ordina ha il suo profilo con nome, email, telefono e indirizzo.
+    const prevSpent=(udata&&udata.totalSpent)||0;
+    const profEmail=(payload.email||user.email||'').toLowerCase();
+    const profBase={
+      uid:user.uid,
+      email:profEmail,
+      displayName:payload.name||(udata&&udata.displayName)||'',
+      phone:payload.phone||(udata&&udata.phone)||'',
+      address:payload.shippingAddress||(udata&&udata.address)||null,
+      isGuest:!!(user.isAnonymous),
+      lastOrderAt:fb.serverTimestamp(),
+    };
+    // createdAt solo la prima volta (non sovrascrivere quello esistente).
+    if(!(udata&&udata.createdAt)) profBase.createdAt=fb.serverTimestamp();
+
     if(discount>0){
       // Ordine SCONTATO: creo l'ordine e segno discountUsed in un'unica scrittura
       // ATOMICA (writeBatch). Le Firestore rules rifiutano un ordine con sconto se
@@ -5755,17 +5790,22 @@ img{ -webkit-user-drag:none; user-select:none; }
       const batch=fb.writeBatch(fb.db);
       const oref=fb.doc(fb.collection(fb.db,'orders'));
       batch.set(oref, orderData);
-      batch.update(fb.doc(fb.db,'users',user.uid), {
-        totalSpent:(udata&&udata.totalSpent||0)+subtotal,
+      // set({merge:true}) invece di update: crea il profilo se non esiste.
+      batch.set(fb.doc(fb.db,'users',user.uid), {
+        ...profBase,
+        totalSpent:prevSpent+subtotal,
         activeReward:null, discountUsed:true, discountUsedAt:fb.serverTimestamp(), discountUsedOrder:orderId
-      });
+      }, {merge:true});
       try{ await batch.commit(); }
       catch(e){ throw new Error('Sconto non più disponibile: è previsto un solo sconto per account. Rimuovi il premio e riprova.'); }
-      if(udata){ udata.discountUsed=true; udata.activeReward=null; udata.totalSpent=(udata.totalSpent||0)+subtotal; }
+      if(udata){ udata.discountUsed=true; udata.activeReward=null; udata.totalSpent=prevSpent+subtotal; }
     } else {
       await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
-      try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{ totalSpent:(udata&&udata.totalSpent||0)+subtotal }); }catch(_){}
+      // Crea/aggiorna il profilo cliente (per gli ospiti lo crea da zero).
+      try{ await fb.setDoc(fb.doc(fb.db,'users',user.uid), {...profBase, totalSpent:prevSpent+subtotal}, {merge:true}); }catch(e){ console.warn('ensure profile:',e&&e.code); }
     }
+    // Aggiorna lo stato locale così il profilo mostra subito nome/email/telefono.
+    if(udata){ udata.email=udata.email||profEmail; udata.displayName=udata.displayName||profBase.displayName; udata.phone=udata.phone||profBase.phone; if(profBase.address&&!udata.address) udata.address=profBase.address; udata.totalSpent=prevSpent+subtotal; }
     // Email di conferma ordine (fire-and-forget — non blocca il checkout)
     try{ lfCallable('sendOrderEmail')({orderId,name:orderData.name,email:orderData.email||'',items:orderData.items,subtotal,shipping,discount,total,payment:orderData.payment,address:orderData.address}); }catch(_){}
     return { orderId, subtotal, shipping, discount, total, lfpoints:0, paymentMethod:payload.paymentMethod||'bonifico' };
