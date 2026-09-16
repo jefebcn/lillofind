@@ -427,6 +427,7 @@ app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 
 app.post('/track17',             callable(checkout.track17,             { auth: 'required' }));
 // Email conferma ordine al cliente (utente autenticato)
 app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 'required' }));
+app.post('/sendAccountEmail',    callable(checkout.sendAccountEmail,    { auth: 'required' }));
 app.post('/sendCredentialsEmail', callable(checkout.sendCredentialsEmail, { auth: 'adminEmail' }));
 // Diagnostica invio email (admin via allowlist email)
 app.post('/sendTestEmail',       callable(checkout.sendTestEmail,       { auth: 'adminEmail' }));

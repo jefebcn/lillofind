@@ -5534,6 +5534,14 @@ img{ -webkit-user-drag:none; user-select:none; }
     const newReward=pts>0?REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts):null;
     cart=[];saveCart();updateCartBadge();
 
+    // Se in questo checkout è stato creato un nuovo account (ospite → account
+    // reale), invia al cliente email + password temporanea. Fire-and-forget.
+    if(window.__newAccountPass){
+      const _p=window.__newAccountPass; window.__newAccountPass=null;
+      try{ lfCallable('sendAccountEmail')({password:_p,name:orderData?.name||''}); }catch(_){}
+      setTimeout(()=>showToast('📧 Ti abbiamo inviato email e password per accedere al tuo account.'),1800);
+    }
+
     if(method==='card'){
       // L'ordine con carta è creato lato server (callable validateOrder), che non
       // crea il documento profilo. Lo garantiamo qui (crea per gli ospiti, aggiorna
@@ -5589,20 +5597,20 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
   }
 
+  // Genera una password temporanea leggibile (10 caratteri, senza simboli
+  // ambigui) per il nuovo account creato al checkout ospite.
+  function _genTempPassword(){
+    const A='ABCDEFGHJKLMNPQRSTUVWXYZ', a='abcdefghijkmnpqrstuvwxyz', d='23456789', all=A+a+d;
+    const pick=set=>{ try{ const r=new Uint32Array(1); crypto.getRandomValues(r); return set[r[0]%set.length]; }catch(_){ return set[Math.floor(Math.random()*set.length)]; } };
+    let p=pick(A)+pick(a)+pick(d);           // garantisce maiuscola, minuscola e cifra
+    for(let i=0;i<7;i++) p+=pick(all);
+    // mescola leggermente
+    return p.split('').sort(()=>Math.random()-0.5).join('');
+  }
   window.placeOrder=async function(){
     if(!cart.length){showToast('Carrello vuoto!');return;}
-    // Guest checkout: se non loggato, crea una sessione ospite (accesso anonimo Firebase).
-    // Se l'accesso anonimo non è abilitato, ripiega sul login.
-    if(!user){
-      try{
-        const fb=window.__fb;
-        const cred=await fb.signInAnonymously(fb.auth);
-        user=cred.user; if(!udata) udata={};
-      }catch(e){
-        console.error('guest signin:',e&&e.code,e&&e.message);
-        showToast('Accedi per completare l\'ordine'); showPg('auth'); return;
-      }
-    }
+    // Nota: l'autenticazione ospite avviene DOPO la validazione dell'email
+    // (serve per creare un vero account con password temporanea). Vedi sotto.
     const allDigital=cart.every(i=>i.isDigital);
 
     // ── Helper: highlight invalid field ─────────────────────
@@ -5656,6 +5664,33 @@ img{ -webkit-user-drag:none; user-select:none; }
       markErr('ck-email'); showToast('⚠️ Inserisci una email valida per la conferma.');
       document.getElementById('ck-email')?.scrollIntoView({behavior:'smooth',block:'center'}); return;
     } else clearErr('ck-email');
+
+    // ── Autenticazione cliente ───────────────────────────────
+    // Se non loggato (o solo ospite anonimo), crea un VERO account con email +
+    // password temporanea, così il cliente potrà riaccedere e vedere ordini,
+    // credenziali e abbonamenti. La password viene inviata via email a fine
+    // ordine (window.__newAccountPass). Se l'email ha già un account, ripiega su
+    // sessione ospite: l'ordine resta collegato all'email e lo invitiamo ad
+    // accedere col suo account.
+    window.__newAccountPass=null;
+    if(!user || user.isAnonymous){
+      const fb=window.__fb;
+      try{
+        const tmp=_genTempPassword();
+        const cred=await fb.createUserWithEmailAndPassword(fb.auth,email,tmp);
+        user=cred.user; if(!udata) udata={};
+        window.__newAccountPass=tmp;
+        try{ if(fb.updateProfile) await fb.updateProfile(user,{displayName:(fname+' '+lname).trim()}); }catch(_){}
+      }catch(e){
+        const code=e&&e.code||'';
+        if(code==='auth/email-already-in-use'){
+          showToast('Hai già un account con questa email — accedi per collegarci l\'ordine.');
+        }
+        // Ripiego su ospite anonimo così l'ordine si completa comunque (collegato all'email).
+        try{ const cred=await fb.signInAnonymously(fb.auth); user=cred.user; if(!udata) udata={}; }
+        catch(err){ console.error('guest signin:',err&&err.code); showToast('Accedi per completare l\'ordine'); showPg('auth'); return; }
+      }
+    }
 
     const _orderItems=[...cart];
     const country=document.getElementById('ck-country')?.value||'Italia';
