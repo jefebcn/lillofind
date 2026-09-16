@@ -444,6 +444,46 @@ export async function sendOrderEmail(data, { env, auth }) {
   return { sent: true };
 }
 
+// ── sendAccountEmail ────────────────────────────────────────────
+// Invia al cliente le credenziali del suo NUOVO account LilloFind (email +
+// password temporanea), creato automaticamente al primo ordine come ospite.
+// Auth: required — il destinatario è SEMPRE l'email autenticata del chiamante,
+// mai un indirizzo arbitrario, quindi non è sfruttabile per spam.
+export async function sendAccountEmail(data, { env, auth }) {
+  if (!env.RESEND_API_KEY) return { sent: false, reason: 'no_key' };
+  const to = (auth && auth.email) ? auth.email : '';
+  const password = (data && data.password) ? String(data.password) : '';
+  if (!to || !password) return { sent: false, reason: 'missing' };
+  const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
+  const name = (((data && data.name) || '').split(' ')[0]) || '';
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f2ec;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;padding:24px 12px;font-family:'Helvetica Neue',Arial,sans-serif;"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border:1px solid #e7e2d8;border-radius:16px;overflow:hidden;">
+  <tr><td style="background:#23231f;padding:26px 32px;text-align:center;"><div style="font-size:26px;font-weight:800;letter-spacing:4px;color:#f5f2ec;">LILLOFIND</div><div style="font-size:10px;letter-spacing:3px;color:#99a074;text-transform:uppercase;margin-top:4px;">Il tuo account</div></td></tr>
+  <tr><td style="padding:30px 32px 8px;"><h1 style="font-size:22px;color:#23231f;margin:0 0 6px;">Ciao ${escHtml(name)}! 👤</h1><p style="font-size:14px;color:#6b6b63;line-height:1.6;margin:0;">Abbiamo creato per te un account LilloFind così puoi seguire i tuoi ordini e ritrovare le tue credenziali e abbonamenti in qualsiasi momento. Ecco i dati d'accesso:</p></td></tr>
+  <tr><td style="padding:18px 32px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f3;border:1px solid #e7e2d8;border-radius:12px;"><tr><td style="padding:16px 18px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:8px 0;font-size:12px;color:#8a8a80;">Email</td><td style="padding:8px 0;text-align:right;font-family:'Courier New',monospace;font-size:14px;color:#23231f;font-weight:600;word-break:break-all;">${escHtml(to)}</td></tr>
+        <tr><td style="padding:8px 0;font-size:12px;color:#8a8a80;">Password temporanea</td><td style="padding:8px 0;text-align:right;font-family:'Courier New',monospace;font-size:16px;color:#e5484d;font-weight:700;">${escHtml(password)}</td></tr>
+      </table>
+    </td></tr></table>
+    <div style="margin-top:12px;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:10px 12px;font-size:12px;color:#6b6b63;line-height:1.6;">🔒 Per sicurezza cambia la password dopo il primo accesso: dal sito vai su <b>Profilo → Impostazioni account</b>.</div>
+  </td></tr>
+  <tr><td style="padding:18px 32px 30px;"><a href="https://lillofind.shop/?auth=1" style="display:inline-block;background:#C8FF00;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:999px;">Accedi al mio account →</a><p style="font-size:11px;color:#a8a89e;margin-top:16px;line-height:1.6;">Tieni riservate queste credenziali. Per assistenza, rispondi a questa email.</p></td></tr>
+  <tr><td style="background:#23231f;padding:20px 32px;text-align:center;"><div style="font-size:15px;font-weight:800;letter-spacing:3px;color:#f5f2ec;">LILLOFIND</div><p style="margin:6px 0 0;font-size:11px;color:#66665e;">© 2026 LilloFind — lillofind.shop</p></td></tr>
+</table></td></tr></table></body></html>`;
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject: '👤 Il tuo account LilloFind è pronto', html }),
+    });
+    if (!resp.ok) { const t = await resp.text().catch(() => ''); return { sent: false, reason: 'resend_' + resp.status, detail: t.slice(0, 200) }; }
+    return { sent: true };
+  } catch (e) { return { sent: false, reason: 'exception', detail: (e && e.message) || '' }; }
+}
+
 // ── sendCredentialsEmail ────────────────────────────────────────
 // Invia al cliente le credenziali degli abbonamenti (Netflix/Spotify…),
 // con data inizio/fine. Auth: adminEmail (lo scatena l'admin al salvataggio).
