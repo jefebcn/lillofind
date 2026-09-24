@@ -2984,7 +2984,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
 
       <!-- ── QUICK ACTIONS ── -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:8px;margin-bottom:0;">
         <button onclick="document.getElementById('prof-sec-tracking').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">📦</p>
           <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Manrope',monospace;">Traccia</p>
@@ -2996,6 +2996,10 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button onclick="document.getElementById('prof-sec-address').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
           <p style="font-size:22px;margin-bottom:5px;">📍</p>
           <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Manrope',monospace;">Indirizzi</p>
+        </button>
+        <button onclick="document.getElementById('prof-sec-security').scrollIntoView({behavior:'smooth'})" style="border:1.5px solid #e0e0e0;padding:16px 8px;text-align:center;background:none;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--k)';this.style.background='#fafafa'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='none'">
+          <p style="font-size:22px;margin-bottom:5px;">🔒</p>
+          <p style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Manrope',monospace;">Password</p>
         </button>
       </div>
 
@@ -7030,7 +7034,13 @@ img{ -webkit-user-drag:none; user-select:none; }
       showToast('✅ Password aggiornata!');
       ['sec-old-pass','sec-new-pass','sec-conf-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     } catch(e){
-      const m=e.code==='auth/wrong-password'?'Password attuale errata.':' Si è verificato un errore. Riprova.';
+      const c=e&&e.code||'';
+      let m;
+      if(c==='auth/wrong-password'||c==='auth/invalid-credential') m='Password attuale errata.';
+      else if(c==='auth/weak-password') m='La nuova password è troppo debole (min. 8 caratteri).';
+      else if(c==='auth/too-many-requests') m='Troppi tentativi. Riprova tra qualche minuto.';
+      else if(c==='auth/requires-recent-login') m='Per sicurezza, esci e riaccedi, poi riprova.';
+      else m='Si è verificato un errore. Riprova.';
       showToast('⚠️ '+m);
     }
   };
