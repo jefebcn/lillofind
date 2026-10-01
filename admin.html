@@ -108,12 +108,6 @@ button{touch-action:manipulation;}
 .astat-skeleton{animation:sk-p 1.5s ease-in-out infinite;height:100px;}
 @keyframes sk-p{0%,100%{opacity:.3;}50%{opacity:.6;}}
 
-/* Override for existing stat cards rendered by loadAdminStats */
-#admin-stats-wrap>div>div{
-  background:rgba(255,255,255,.04)!important;
-  border:1px solid rgba(255,255,255,.08)!important;
-}
-#admin-stats-wrap *{color:inherit!important;}
 
 /* Orders */
 .admin-order-card{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);border-radius:14px;padding:16px 18px;transition:border-color .2s,transform .2s,box-shadow .2s;}
@@ -139,6 +133,106 @@ button{touch-action:manipulation;}
 .lf-in:focus{border-color:var(--led)!important;outline:none;}
 .lf-in option{background:#1a1a1a;color:#fff;}
 select.lf-in{appearance:none;-webkit-appearance:none;}
+
+
+/* ══════════════════════════════════════════════
+   RESTYLE HUD — navigazione semplificata
+   (barra a schede su mobile, menu raggruppato,
+   ricerca rapida Ctrl+K, dashboard a colpo d'occhio)
+══════════════════════════════════════════════ */
+#admin-main{min-width:0;}            /* senza questo il contenuto su mobile sbordava a destra */
+.apg{min-width:0;}
+#admin-wrap{--hud:#b8c77e;--hud-bg:rgba(184,199,126,.12);--hud-line:rgba(255,255,255,.08);--hud-surf:rgba(255,255,255,.035);}
+:focus-visible{outline:2px solid #b8c77e;outline-offset:2px;}
+
+/* Sidebar raggruppata */
+.anav-items{padding:6px 0 14px;}
+.anav-group{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.28);padding:16px 28px 6px;font-weight:700;}
+.anav-btn{padding:10px 14px;font-size:13.5px;margin:1px 12px;}
+.anav-btn.active{background:var(--hud-bg);color:var(--hud);box-shadow:inset 0 0 0 1px rgba(184,199,126,.3);}
+.anav-search{display:flex;align-items:center;gap:10px;width:calc(100% - 24px);margin:14px 12px 2px;padding:10px 12px;border-radius:11px;border:1px solid var(--hud-line);background:var(--hud-surf);color:rgba(255,255,255,.55);font:500 13px 'Manrope',sans-serif;cursor:pointer;transition:all .15s;}
+.anav-search:hover{border-color:rgba(255,255,255,.2);color:#fff;}
+.kbd{margin-left:auto;font-size:10px;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:1px 6px;color:rgba(255,255,255,.5);font-family:ui-monospace,Menlo,monospace;white-space:nowrap;}
+
+/* Intestazione pagina fissa in alto: titolo e azioni sempre a portata */
+.apg-hdr{position:sticky;top:0;z-index:60;background:rgba(13,13,13,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin:-40px -48px 28px;padding:22px 48px 16px;}
+.apg-title{font-size:34px;}
+
+/* Dashboard HUD */
+.hud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px;}
+.hud-tile{position:relative;text-align:left;background:var(--hud-surf);border:1px solid var(--hud-line);border-radius:16px;padding:18px;cursor:pointer;color:#fff;font-family:'Manrope',sans-serif;transition:border-color .15s,transform .15s,background .15s;}
+.hud-tile:hover{border-color:rgba(184,199,126,.45);transform:translateY(-2px);}
+.hud-tile:active{transform:scale(.98);}
+.hud-k{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:700;}
+.hud-v{font-family:'Bricolage Grotesque',sans-serif;font-size:34px;line-height:1.05;margin-top:10px;font-variant-numeric:tabular-nums;}
+.hud-s{font-size:12px;color:rgba(255,255,255,.45);margin-top:5px;min-height:1em;}
+.hud-go{position:absolute;top:16px;right:16px;color:rgba(255,255,255,.3);font-size:14px;}
+.hud-tile.alert{border-color:rgba(240,192,48,.5);background:rgba(240,192,48,.07);}
+.hud-tile.alert .hud-v{color:#f0c030;}
+.hud-tile.good .hud-v{color:#7ddc9c;}
+.qa-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;margin-bottom:20px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.qa-row::-webkit-scrollbar{display:none;}
+.qa-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;min-height:44px;border-radius:999px;border:1px solid var(--hud-line);background:var(--hud-surf);color:#fff;font:600 13px 'Manrope',sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.qa-btn:hover{border-color:rgba(184,199,126,.5);background:var(--hud-bg);}
+.qa-btn.primary{background:var(--hud);color:#12150b;border-color:var(--hud);}
+.qa-btn .kbd{margin-left:4px;}
+.hud-meta{font-size:12px;color:rgba(255,255,255,.4);}
+.icon-btn{width:40px;height:40px;flex-shrink:0;border-radius:12px;border:1px solid var(--hud-line);background:var(--hud-surf);color:#fff;cursor:pointer;font-size:16px;display:inline-flex;align-items:center;justify-content:center;}
+.icon-btn:hover{border-color:rgba(255,255,255,.22);}
+.icon-btn.busy span{display:inline-block;animation:spin .8s linear infinite;}
+#dash-recent-orders > div{cursor:pointer;border-radius:12px;margin-bottom:6px;transition:border-color .15s;}
+#dash-recent-orders > div:hover{border-color:rgba(184,199,126,.4)!important;}
+
+/* Statistiche dettagliate (tema scuro nativo) */
+.st-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px;}
+.st-card{background:var(--hud-surf);border:1px solid var(--hud-line);border-radius:14px;padding:18px;}
+.st-ico{font-size:20px;}
+.st-v{font-family:'Bricolage Grotesque',sans-serif;font-size:28px;line-height:1.1;margin-top:8px;color:#fff;font-variant-numeric:tabular-nums;}
+.st-l{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px;}
+.st-s{font-size:12px;color:rgba(255,255,255,.4);margin-top:4px;}
+.st-2col{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:12px;}
+.st-box{background:var(--hud-surf);border:1px solid var(--hud-line);border-radius:14px;padding:20px;min-width:0;}
+.st-sec{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin:26px 0 12px;font-weight:700;}
+
+/* Ricerca rapida (Ctrl+K) */
+#cmdk{position:fixed;inset:0;z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:12vh 16px 16px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+#cmdk.open{display:flex;}
+.cmdk-box{width:100%;max-width:560px;background:#141414;border:1px solid rgba(255,255,255,.12);border-radius:18px;box-shadow:0 24px 64px rgba(0,0,0,.55);overflow:hidden;}
+#cmdk-in{width:100%;box-sizing:border-box;padding:18px 20px;background:none;border:none;border-bottom:1px solid var(--hud-line);color:#fff;font-family:'Manrope',sans-serif;font-weight:500;outline:none;}
+#cmdk-list{max-height:min(60vh,440px);overflow-y:auto;padding:6px 8px 10px;}
+.cmdk-sec{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);padding:10px 12px 6px;font-weight:700;}
+.cmdk-it{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:none;background:none;border-radius:10px;color:rgba(255,255,255,.8);font:500 14px 'Manrope',sans-serif;text-align:left;cursor:pointer;}
+.cmdk-it .ic{width:22px;text-align:center;font-size:16px;}
+.cmdk-it .hint{margin-left:auto;font-size:11px;color:rgba(255,255,255,.35);}
+.cmdk-it.sel{background:var(--hud-bg);color:#fff;}
+.cmdk-empty{padding:18px;color:rgba(255,255,255,.4);font-size:13px;text-align:center;}
+.cmdk-foot{display:flex;gap:14px;padding:10px 16px;border-top:1px solid var(--hud-line);font-size:11px;color:rgba(255,255,255,.35);}
+
+/* Barra superiore + barra a schede (solo mobile) */
+#atop,#abar{display:none;}
+@media(max-width:768px){
+  #anav-mob-btn{display:none!important;}
+  #atop{display:flex;position:fixed;top:0;left:0;right:0;z-index:220;align-items:center;gap:10px;height:56px;padding:0 12px;background:rgba(10,10,10,.93);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--hud-line);}
+  #atop-title{flex:1;min-width:0;font-family:'Bricolage Grotesque',sans-serif;font-size:20px;letter-spacing:.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #abar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:220;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--hud-line);padding-bottom:env(safe-area-inset-bottom);}
+  .abar-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:60px;background:none;border:none;color:rgba(255,255,255,.5);font:600 10.5px 'Manrope',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .abar-btn .ic{font-size:20px;line-height:1;}
+  .abar-btn.active{color:var(--hud);}
+  .abar-btn.active::before{content:'';position:absolute;top:0;left:28%;right:28%;height:3px;border-radius:0 0 3px 3px;background:var(--hud);}
+  .abar-badge{position:absolute;top:6px;left:calc(50% + 7px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#f0c030;color:#000;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  #admin-main{padding-top:56px;padding-bottom:calc(76px + env(safe-area-inset-bottom));}
+  .apg-hdr{top:56px;margin:-16px -16px 16px;padding:10px 16px;}
+  .apg-hdr .apg-title{display:none;}            /* il titolo è già nella barra in alto */
+  .apg-hdr:has(> .apg-title:only-child){display:none;}
+  #toast{bottom:calc(86px + env(safe-area-inset-bottom));}
+  .btn-k,.btn-led,.btn-g{min-height:44px;}
+  .hud-grid{grid-template-columns:1fr 1fr;gap:10px;}
+  .hud-tile{padding:14px;}
+  .hud-v{font-size:26px;}
+  .hud-go{display:none;}
+  #cmdk{padding-top:64px;}
+  .admin-card{padding:18px;border-radius:14px;}
+}
 
 /* Responsive mobile nav */
 #anav-mob-btn{display:none;position:fixed;top:14px;left:16px;z-index:300;background:#111;border:1px solid rgba(255,255,255,.15);color:#fff;width:38px;height:38px;cursor:pointer;font-size:18px;align-items:center;justify-content:center;}
@@ -202,6 +296,31 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
   <button id="anav-mob-btn" onclick="toggleAdminNav()">☰</button>
   <div id="anav-overlay" onclick="toggleAdminNav()"></div>
 
+  <!-- Barra superiore (mobile): sezione corrente + ricerca -->
+  <header id="atop">
+    <button class="icon-btn" onclick="toggleAdminNav()" aria-label="Apri menu">☰</button>
+    <span id="atop-title">Dashboard</span>
+    <button class="icon-btn" onclick="openCmdk()" aria-label="Cerca">🔍</button>
+  </header>
+
+  <!-- Barra a schede (mobile): le 4 sezioni più usate a portata di pollice -->
+  <nav id="abar" aria-label="Sezioni principali">
+    <button class="abar-btn active" data-pg="dashboard" onclick="showAdminPg('dashboard')"><span class="ic">📊</span>Home</button>
+    <button class="abar-btn" data-pg="ordini" onclick="showAdminPg('ordini')"><span class="ic">📋</span>Ordini<span class="abar-badge" id="abar-orders-badge" style="display:none;"></span></button>
+    <button class="abar-btn" data-pg="prodotti" onclick="showAdminPg('prodotti')"><span class="ic">👗</span>Prodotti</button>
+    <button class="abar-btn" data-pg="clienti" onclick="showAdminPg('clienti')"><span class="ic">👥</span>Clienti</button>
+    <button class="abar-btn" data-pg="__more" onclick="toggleAdminNav()"><span class="ic">☰</span>Altro<span class="abar-badge" id="abar-more-badge" style="display:none;"></span></button>
+  </nav>
+
+  <!-- Ricerca rapida: Ctrl+K o / -->
+  <div id="cmdk" onclick="if(event.target===this)closeCmdk()">
+    <div class="cmdk-box" role="dialog" aria-label="Vai a o esegui">
+      <input id="cmdk-in" placeholder="Vai a una sezione o esegui un'azione…" autocomplete="off" spellcheck="false" oninput="cmdkRender()" onkeydown="cmdkKey(event)"/>
+      <div id="cmdk-list"></div>
+      <div class="cmdk-foot"><span>↑↓ scegli</span><span>↵ apri</span><span>esc chiudi</span></div>
+    </div>
+  </div>
+
   <!-- ══ SIDEBAR NAV ══ -->
   <nav id="anav">
     <div class="anav-logo">
@@ -209,24 +328,15 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <span class="anav-tag">ADMIN</span>
     </div>
     <div class="anav-items">
+      <button class="anav-search" onclick="openCmdk()"><span>🔍</span>Cerca o vai a…<span class="kbd">Ctrl K</span></button>
+
+      <div class="anav-group">Operativo</div>
       <button class="anav-btn active" data-pg="dashboard" onclick="showAdminPg('dashboard')">
         <span class="anav-icon">📊</span>Dashboard
       </button>
       <button class="anav-btn" data-pg="ordini" onclick="showAdminPg('ordini')">
         <span class="anav-icon">📋</span>Ordini
         <span class="anav-badge" id="orders-nav-badge" style="display:none;">0</span>
-      </button>
-      <button class="anav-btn" data-pg="prodotti" onclick="showAdminPg('prodotti')">
-        <span class="anav-icon">👗</span>Prodotti
-      </button>
-      <button class="anav-btn" data-pg="importa" onclick="showAdminPg('importa')">
-        <span class="anav-icon">⚡</span>Importa Veloce
-      </button>
-      <button class="anav-btn" data-pg="clienti" onclick="showAdminPg('clienti')">
-        <span class="anav-icon">👥</span>Clienti
-      </button>
-      <button class="anav-btn" data-pg="analytics" onclick="showAdminPg('analytics')">
-        <span class="anav-icon">📈</span>Analytics <span id="analytics-live-badge" style="display:none;margin-left:auto;background:#2ecc71;color:#04210f;font-size:9px;font-weight:800;padding:2px 8px;border-radius:999px;">0 live</span>
       </button>
       <button class="anav-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')">
         <span class="anav-icon">🚚</span>Spedizioni
@@ -239,12 +349,30 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <span class="anav-icon">📩</span>Richieste
         <span class="anav-badge" id="req-nav-badge" style="display:none;"></span>
       </button>
+
+      <div class="anav-group">Catalogo</div>
+      <button class="anav-btn" data-pg="prodotti" onclick="showAdminPg('prodotti')">
+        <span class="anav-icon">👗</span>Prodotti
+      </button>
+      <button class="anav-btn" data-pg="importa" onclick="showAdminPg('importa')">
+        <span class="anav-icon">⚡</span>Importa Veloce
+      </button>
       <button class="anav-btn" data-pg="costi" onclick="showAdminPg('costi')">
         <span class="anav-icon">💰</span>Costi &amp; Margini
       </button>
       <button class="anav-btn" data-pg="ai" onclick="showAdminPg('ai')">
         <span class="anav-icon">🤖</span>Strumenti AI
       </button>
+
+      <div class="anav-group">Clienti &amp; dati</div>
+      <button class="anav-btn" data-pg="clienti" onclick="showAdminPg('clienti')">
+        <span class="anav-icon">👥</span>Clienti
+      </button>
+      <button class="anav-btn" data-pg="analytics" onclick="showAdminPg('analytics')">
+        <span class="anav-icon">📈</span>Analytics <span id="analytics-live-badge" style="display:none;margin-left:auto;background:#2ecc71;color:#04210f;font-size:9px;font-weight:800;padding:2px 8px;border-radius:999px;">0 live</span>
+      </button>
+
+      <div class="anav-group">Personale</div>
       <button class="anav-btn" data-pg="investimenti" onclick="showAdminPg('investimenti')">
         <span class="anav-icon">🪙</span>Investimenti
       </button>
@@ -265,17 +393,41 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
     <div class="apg" id="apg-dashboard">
       <div class="apg-hdr">
         <h1 class="apg-title bb">Dashboard</h1>
-        <button class="btn-k" onclick="loadAdminStats()" style="padding:10px 16px;font-size:10px;">🔄 Aggiorna Statistiche</button>
-      </div>
-      <div id="admin-stats-wrap">
-        <p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Clicca "Aggiorna Statistiche" per caricare i dati.</p>
-      </div>
-      <div class="admin-card" style="margin-top:24px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <p class="bb" style="font-size:20px;letter-spacing:1px;">Ordini Recenti</p>
-          <button onclick="showAdminPg('ordini')" class="btn-k" style="padding:7px 14px;font-size:10px;">Vedi Tutti →</button>
+        <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+          <span class="hud-meta" id="dash-updated">Caricamento…</span>
+          <button class="icon-btn" id="dash-refresh" onclick="refreshDashboard()" title="Aggiorna dati" aria-label="Aggiorna dati"><span>🔄</span></button>
         </div>
-        <div id="dash-recent-orders"><p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Carica gli ordini per visualizzare qui l'anteprima.</p></div>
+      </div>
+
+      <!-- HUD: i numeri che contano, ognuno porta alla sezione giusta -->
+      <div class="hud-grid">
+        <button class="hud-tile" id="hud-pending" onclick="goPendingOrders()"><span class="hud-go">→</span><div class="hud-k">⏳ Da gestire</div><div class="hud-v" id="hud-pending-v">—</div><div class="hud-s" id="hud-pending-s"></div></button>
+        <button class="hud-tile good" onclick="showAdminPg('ordini')"><span class="hud-go">→</span><div class="hud-k">💶 Incasso mese</div><div class="hud-v" id="hud-month-v">—</div><div class="hud-s" id="hud-month-s"></div></button>
+        <button class="hud-tile" id="hud-profit" onclick="showAdminPg('costi')"><span class="hud-go">→</span><div class="hud-k">📈 Profitto mese</div><div class="hud-v" id="hud-profit-v">—</div><div class="hud-s" id="hud-profit-s"></div></button>
+        <button class="hud-tile" onclick="showAdminPg('clienti')"><span class="hud-go">→</span><div class="hud-k">👥 Nuovi clienti</div><div class="hud-v" id="hud-users-v">—</div><div class="hud-s" id="hud-users-s"></div></button>
+      </div>
+
+      <!-- Azioni rapide: le cose che fai più spesso, a un tocco -->
+      <div class="qa-row">
+        <button class="qa-btn primary" onclick="quickNewProduct()">➕ Nuovo prodotto</button>
+        <button class="qa-btn" onclick="showAdminPg('importa')">⚡ Importa da Yupoo</button>
+        <button class="qa-btn" onclick="goPendingOrders()">📋 Ordini in attesa</button>
+        <button class="qa-btn" onclick="showAdminPg('spedizioni')">🚚 Spedizioni</button>
+        <button class="qa-btn" onclick="quickBrokenPhotos()">🧹 Foto rotte</button>
+        <button class="qa-btn" onclick="window.open('index.html','_blank')">🛍 Apri shop</button>
+        <button class="qa-btn" onclick="openCmdk()">🔍 Cerca<span class="kbd">Ctrl K</span></button>
+      </div>
+
+      <div class="admin-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;">
+          <p class="bb" style="font-size:20px;letter-spacing:1px;">Ordini recenti</p>
+          <button onclick="showAdminPg('ordini')" class="btn-k" style="padding:7px 14px;font-size:11px;">Vedi tutti →</button>
+        </div>
+        <div id="dash-recent-orders"><p style="font-size:12px;color:var(--dim);">Caricamento ordini…</p></div>
+      </div>
+
+      <div id="admin-stats-wrap">
+        <p style="font-size:12px;color:var(--dim);">Caricamento statistiche…</p>
       </div>
     </div>
 
@@ -682,7 +834,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       </div>
 
       <!-- RISULTATI -->
-      <div id="inv-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px;" class="grid-2-mob"></div>
+      <div id="inv-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:20px;"></div>
       <p style="font-size:11px;color:var(--dim);margin-top:8px;line-height:1.6;">La proiezione usa un rendimento costante ipotetico e non considera inflazione, tasse (in Italia ~26% sui guadagni) e commissioni. È solo un ordine di grandezza.</p>
 
       <!-- ALLOCAZIONE -->
@@ -1100,6 +1252,7 @@ waitFB(()=>{
         if(typeof loadAdminCatalog === 'function') loadAdminCatalog();
         if(typeof loadAdminOrders  === 'function') loadAdminOrders();
         if(typeof loadAdminStats   === 'function') loadAdminStats();
+        try{ adminInitRoute(); }catch(_){}
       }, 150);
 
     } catch(e) {
@@ -1114,6 +1267,7 @@ waitFB(()=>{
           if(typeof loadAdminCatalog === 'function') loadAdminCatalog();
           if(typeof loadAdminOrders  === 'function') loadAdminOrders();
           if(typeof loadAdminStats   === 'function') loadAdminStats();
+          try{ adminInitRoute(); }catch(_){}
         }, 150);
         return;
       }
@@ -1963,13 +2117,13 @@ waitFB(()=>{
       };
       const u = s.users, o = s.orders, r = s.revenue;
 
-      const card = (icon, label, value, sub='', color='var(--k)') =>
-        `<div style="border:1.5px solid #e0e0e0;padding:22px 20px;background:#fff;">
-          <div style="font-size:28px;margin-bottom:8px;">${icon}</div>
-          <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:38px;color:${color};line-height:1;">${value}</div>
-          <div style="font-size:12px;letter-spacing:1.5px;color:#888;text-transform:uppercase;margin-top:6px;">${label}</div>
-          ${sub?`<div style="font-size:12px;color:var(--dim);margin-top:4px;">${sub}</div>`:''}
-        </div>`;
+      const card = (icon, label, value, sub='', color='#fff') =>
+        `<div class="st-card"><div class="st-ico">${icon}</div><div class="st-v" style="color:${color};">${value}</div><div class="st-l">${label}</div>${sub?`<div class="st-s">${sub}</div>`:''}</div>`;
+
+      // Numeri per l'HUD in cima alla dashboard
+      window._dashKpi = { pending:o.pending, total:o.total, confirmed:o.confirmed, monthly:r.monthly, revenue:r.total,
+        profitMonth, profitTotal, new30d:u.new30d, users:u.total };
+      try{ renderDashHud(); }catch(_){}
 
       const tierBar = (label, count, total, color) => {
         const pct = total ? Math.round(count/total*100) : 0;
@@ -1977,31 +2131,31 @@ waitFB(()=>{
           <div style="display:flex;justify-content:space-between;font-size:13px;letter-spacing:.3px;margin-bottom:5px;">
             <span>${label}</span><span style="color:${color};font-weight:600;">${count} (${pct}%)</span>
           </div>
-          <div style="height:7px;background:#f0f0f0;border-radius:3px;">
+          <div style="height:7px;background:rgba(255,255,255,.08);border-radius:3px;">
             <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .6s;"></div>
           </div>
         </div>`;
       };
 
       wrap.innerHTML = `
-        <!-- Stat cards -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;" class="stats-grid">
+        <p class="st-sec">Statistiche</p>
+        <div class="st-grid">
           ${card('👥','Utenti Totali', u.total, `${u.new30d} nuovi negli ultimi 30gg`)}
           ${card('🛒','Con Ordini', u.withOrders, `${u.total - u.withOrders} senza ordini`)}
           ${card('📦','Ordini Totali', o.total, `⏳ ${o.pending} in attesa · ✅ ${o.confirmed} confermati`)}
           ${card('🧾','Articoli Venduti', s.itemsSold, '')}
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;" class="stats-grid">
-          ${card('📈','Profitto Stimato', '€'+profitTotal.toFixed(2), `${costedPhysItems}/${totalPhysItems} art. con costo${profitMonth?` · €${profitMonth.toFixed(2)} questo mese`:''}`, profitTotal>=0?'#1a7a4a':'#c0392b')}
-          ${card('💶','Revenue Totale', '€'+r.total.toFixed(2), '', '#1a7a4a')}
-          ${card('📅','Revenue Questo Mese', '€'+r.monthly.toFixed(2), '', '#1a7a4a')}
+        <div class="st-grid">
+          ${card('📈','Profitto Stimato', '€'+profitTotal.toFixed(2), `${costedPhysItems}/${totalPhysItems} art. con costo${profitMonth?` · €${profitMonth.toFixed(2)} questo mese`:''}`, profitTotal>=0?'#7ddc9c':'#ff7b6b')}
+          ${card('💶','Revenue Totale', '€'+r.total.toFixed(2), '', '#7ddc9c')}
+          ${card('📅','Revenue Questo Mese', '€'+r.monthly.toFixed(2), '', '#7ddc9c')}
           ${card('🚚','Totale Spedizioni', '€'+r.shipping.toFixed(2), '')}
         </div>
-        ${totalPhysItems && costedPhysItems<totalPhysItems ? `<p style="font-size:12px;color:var(--dim);margin:-14px 0 24px;">ℹ️ Il profitto considera solo gli articoli con costo salvato (${costedPhysItems} di ${totalPhysItems}). Aggiungi i costi in <b>Costi & Margini</b> per un dato completo.</p>` : ''}
+        ${totalPhysItems && costedPhysItems<totalPhysItems ? `<p style="font-size:12px;color:var(--dim);margin:0 0 16px;">ℹ️ Il profitto considera solo gli articoli con costo salvato (${costedPhysItems} di ${totalPhysItems}). Aggiungi i costi in <b>Costi & Margini</b> per un dato completo.</p>` : ''}
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:28px;">
+        <div class="st-2col">
           <!-- Tier utenti -->
-          <div style="border:1.5px solid #e0e0e0;padding:24px;">
+          <div class="st-box">
             <p style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:18px;">Livelli Utenti (LFPOINTS)</p>
             ${tierBar('⬡ Nessuno (0–19 pts)', u.tiers.none, u.total, '#aaa')}
             ${tierBar('🥉 Bronze (20–79 pts)', u.tiers.bronze, u.total, '#cd7f32')}
@@ -2011,11 +2165,11 @@ waitFB(()=>{
           </div>
 
           <!-- Top prodotti -->
-          <div style="border:1.5px solid #e0e0e0;padding:24px;">
+          <div class="st-box">
             <p style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Top Prodotti Venduti</p>
             ${s.topProducts.length ? s.topProducts.map((p,i)=>`
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
-                <span style="font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i+1}. ${p.name}</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+                <span style="font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i+1}. ${escH(p.name)}</span>
                 <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;flex-shrink:0;margin-left:10px;">×${p.qty}</span>
               </div>`).join('') : '<p style="font-size:14px;color:#aaa;">Nessun dato</p>'}
           </div>
@@ -2023,20 +2177,20 @@ waitFB(()=>{
 
         <!-- Top spenders -->
         ${s.topSpenders.length ? `
-        <div style="border:1.5px solid #e0e0e0;padding:24px;margin-bottom:8px;">
+        <div class="st-box" style="margin-bottom:8px;overflow-x:auto;">
           <p style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Top Clienti per Spesa</p>
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
-            <thead><tr style="border-bottom:2px solid var(--k);">
+            <thead><tr style="border-bottom:1px solid rgba(255,255,255,.15);">
               <th style="text-align:left;padding:9px 6px;letter-spacing:1px;font-size:11px;">#</th>
               <th style="text-align:left;padding:9px 6px;letter-spacing:1px;font-size:11px;">EMAIL</th>
               <th style="text-align:right;padding:9px 6px;letter-spacing:1px;font-size:11px;">SPESA</th>
               <th style="text-align:right;padding:9px 6px;letter-spacing:1px;font-size:11px;">LFPOINTS</th>
             </tr></thead>
             <tbody>${s.topSpenders.map((u,i)=>`
-              <tr style="border-bottom:1px solid #f0f0f0;">
+              <tr style="border-bottom:1px solid rgba(255,255,255,.06);">
                 <td style="padding:9px 6px;color:#aaa;">${i+1}</td>
-                <td style="padding:9px 6px;">${u.email}</td>
-                <td style="padding:9px 6px;text-align:right;font-weight:600;color:#1a7a4a;">€${u.spent.toFixed(2)}</td>
+                <td style="padding:9px 6px;word-break:break-all;">${escH(u.email)}</td>
+                <td style="padding:9px 6px;text-align:right;font-weight:600;color:#7ddc9c;">€${u.spent.toFixed(2)}</td>
                 <td style="padding:9px 6px;text-align:right;color:var(--led);">⬡ ${u.pts}</td>
               </tr>`).join('')}
             </tbody>
@@ -3869,13 +4023,29 @@ waitFB(()=>{
     try{ if(typeof renderAdminCatalog==='function') renderAdminCatalog(); }catch(_){}
   };
 
-  window.showAdminPg = function(name){
+  window.showAdminPg = function(name, opts){
+    opts=opts||{};
+    if(!document.getElementById('apg-'+name)) name='dashboard';
     document.querySelectorAll('.apg').forEach(p=>p.classList.add('hidden'));
     const target=document.getElementById('apg-'+name);
     if(target) target.classList.remove('hidden');
-    document.querySelectorAll('.anav-btn[data-pg]').forEach(b=>{
+    document.querySelectorAll('.anav-btn[data-pg],.abar-btn[data-pg]').forEach(b=>{
       b.classList.toggle('active', b.dataset.pg===name);
     });
+    // Titolo nella barra mobile e nella scheda del browser
+    const _t=target&&target.querySelector('.apg-title'); const _tt=_t?_t.textContent.trim():'Admin';
+    const _at=document.getElementById('atop-title'); if(_at) _at.textContent=_tt;
+    document.title=_tt+' · LILLOFIND Admin';
+    // Cronologia: il tasto/gesto "indietro" torna alla sezione precedente
+    if(!opts.fromHistory){
+      try{
+        if(opts.replace) history.replaceState({pg:name},'','#'+name);
+        else if(location.hash!=='#'+name) history.pushState({pg:name},'','#'+name);
+      }catch(_){}
+    }
+    if(!opts.keepScroll) window.scrollTo({top:0});
+    // Dashboard: dati più vecchi di 2 minuti → aggiorna in automatico
+    if(name==='dashboard' && window._dashUpdatedAt && Date.now()-window._dashUpdatedAt>120000){ try{ refreshDashboard(true); }catch(_){} }
     if(window.innerWidth<=768){
       document.getElementById('anav')?.classList.remove('mob-open');
       document.getElementById('anav-overlay')?.classList.remove('open');
@@ -4089,6 +4259,142 @@ waitFB(()=>{
       }).join('');
     }catch(e){ list.innerHTML='<p style="color:#ff6b6b;font-size:13px;">Errore: '+(e.message||e)+'</p>'; }
   };
+
+
+// ══════════════════════════════════════════════════════════════════════
+// RESTYLE HUD — dashboard a colpo d'occhio, ricerca rapida, scorciatoie
+// ══════════════════════════════════════════════════════════════════════
+  const _eur=v=>'€'+(Math.round((+v||0)*100)/100).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+  window.renderDashHud=function(){
+    const k=window._dashKpi; if(!k) return;
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('hud-pending-v', k.pending);
+    set('hud-pending-s', k.total+' ordini totali · '+k.confirmed+' confermati');
+    document.getElementById('hud-pending')?.classList.toggle('alert', k.pending>0);
+    set('hud-month-v', _eur(k.monthly));
+    set('hud-month-s', 'Totale '+_eur(k.revenue));
+    set('hud-profit-v', _eur(k.profitMonth));
+    set('hud-profit-s', 'Totale stimato '+_eur(k.profitTotal));
+    const hp=document.getElementById('hud-profit'); if(hp){ hp.classList.toggle('good', k.profitMonth>0); }
+    set('hud-users-v', k.new30d);
+    set('hud-users-s', 'ultimi 30 giorni · '+k.users+' totali');
+    window._dashUpdatedAt=Date.now();
+    set('dash-updated', 'Aggiornato alle '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}));
+  };
+  window.refreshDashboard=async function(silent){
+    const b=document.getElementById('dash-refresh');
+    if(b){ if(b.classList.contains('busy')) return; b.classList.add('busy'); }
+    try{ await Promise.all([ window.loadAdminStats&&loadAdminStats(), window.loadAdminOrders&&loadAdminOrders() ]); if(!silent) showToast('✓ Dati aggiornati'); }
+    catch(_){ if(!silent) showToast('⚠️ Aggiornamento non riuscito'); }
+    finally{ if(b) b.classList.remove('busy'); }
+  };
+  window.goPendingOrders=function(){
+    showAdminPg('ordini');
+    const f=document.getElementById('orders-filter');
+    if(f){ f.value='pending'; try{ renderAdminOrders(); }catch(_){} }
+  };
+  window.quickNewProduct=function(){
+    showAdminPg('prodotti');
+    setTimeout(()=>{ const n=document.getElementById('ad-name'); if(n){ n.closest('.admin-card')?.scrollIntoView({behavior:'smooth',block:'start'}); setTimeout(()=>n.focus({preventScroll:true}),350); } },60);
+  };
+  window.quickBrokenPhotos=function(autoScan){
+    showAdminPg('prodotti');
+    setTimeout(()=>{ document.getElementById('bk-tool')?.scrollIntoView({behavior:'smooth',block:'start'}); if(autoScan&&window.scanBrokenProducts) scanBrokenProducts(); },60);
+  };
+  // Un clic su un ordine recente apre la lista ordini
+  document.getElementById('dash-recent-orders')?.addEventListener('click',()=>showAdminPg('ordini'));
+
+  // Avvio: sezione dall'URL (#ordini, #prodotti…) così refresh e link diretti funzionano
+  window.adminInitRoute=function(){
+    const h=(location.hash||'').slice(1);
+    showAdminPg(h&&document.getElementById('apg-'+h)?h:'dashboard',{replace:true});
+  };
+  window.addEventListener('popstate',()=>{
+    closeCmdk();
+    const h=(location.hash||'').slice(1)||'dashboard';
+    showAdminPg(h,{fromHistory:true});
+  });
+
+  // ── Ricerca rapida (Ctrl+K / "/") ──
+  const CMDK_ACTIONS=[
+    {ic:'🔄',label:'Aggiorna dashboard',kw:'refresh ricarica statistiche dati',run:()=>{ showAdminPg('dashboard'); refreshDashboard(); }},
+    {ic:'⏳',label:'Ordini in attesa',kw:'pending da gestire nuovi',run:goPendingOrders},
+    {ic:'➕',label:'Nuovo prodotto',kw:'aggiungi crea prodotto',run:quickNewProduct},
+    {ic:'🧹',label:'Scansiona foto rotte',kw:'yupoo broken nascondi immagini',run:()=>quickBrokenPhotos(true)},
+    {ic:'🛍',label:'Apri lo shop',kw:'sito negozio lillofind',run:()=>window.open('index.html','_blank')},
+    {ic:'🚪',label:'Esci dall\'admin',kw:'logout disconnetti',run:()=>{ if(window.doAdminLogout) doAdminLogout(); }},
+  ];
+  let _cmdkItems=[], _cmdkSel=0;
+  const _norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  function _cmdkAll(){
+    const secs=[...document.querySelectorAll('#anav .anav-btn[data-pg]')].map(b=>{
+      const ic=b.querySelector('.anav-icon')?.textContent||'•';
+      const label=[...b.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').trim();
+      return {group:'Vai a',ic,label,kw:b.dataset.pg,run:()=>showAdminPg(b.dataset.pg)};
+    });
+    return secs.concat(CMDK_ACTIONS.map(a=>({group:'Azioni',...a})));
+  }
+  window.cmdkRender=function(){
+    const q=_norm(document.getElementById('cmdk-in').value).trim().split(/\s+/).filter(Boolean);
+    _cmdkItems=_cmdkAll().filter(it=>{ const h=_norm(it.label+' '+(it.kw||'')); return q.every(t=>h.includes(t)); });
+    if(_cmdkSel>=_cmdkItems.length) _cmdkSel=Math.max(0,_cmdkItems.length-1);
+    const list=document.getElementById('cmdk-list');
+    if(!_cmdkItems.length){ list.innerHTML='<div class="cmdk-empty">Nessun risultato</div>'; return; }
+    let html='', g='';
+    _cmdkItems.forEach((it,i)=>{
+      if(it.group!==g){ g=it.group; html+='<div class="cmdk-sec">'+g+'</div>'; }
+      html+='<button class="cmdk-it'+(i===_cmdkSel?' sel':'')+'" data-i="'+i+'" onmousemove="cmdkHover('+i+')" onclick="cmdkRun('+i+')"><span class="ic">'+it.ic+'</span>'+escH(it.label)+(i===_cmdkSel?'<span class="hint">↵</span>':'')+'</button>';
+    });
+    list.innerHTML=html;
+    list.querySelector('.cmdk-it.sel')?.scrollIntoView({block:'nearest'});
+  };
+  window.cmdkHover=function(i){ if(i!==_cmdkSel){ _cmdkSel=i; cmdkRender(); } };
+  window.cmdkRun=function(i){ const it=_cmdkItems[i]; closeCmdk(); if(it) setTimeout(()=>it.run(),0); };
+  window.cmdkKey=function(e){
+    if(e.key==='ArrowDown'){ e.preventDefault(); _cmdkSel=Math.min(_cmdkItems.length-1,_cmdkSel+1); cmdkRender(); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); _cmdkSel=Math.max(0,_cmdkSel-1); cmdkRender(); }
+    else if(e.key==='Enter'){ e.preventDefault(); cmdkRun(_cmdkSel); }
+    else if(e.key==='Escape'){ e.preventDefault(); closeCmdk(); }
+    else { _cmdkSel=0; }
+  };
+  window.openCmdk=function(){
+    const nav=document.getElementById('anav');
+    if(nav&&nav.classList.contains('mob-open')) toggleAdminNav();
+    const el=document.getElementById('cmdk'), inp=document.getElementById('cmdk-in');
+    if(!el) return;
+    el.classList.add('open'); inp.value=''; _cmdkSel=0; cmdkRender();
+    setTimeout(()=>inp.focus(),10);
+  };
+  window.closeCmdk=function(){ document.getElementById('cmdk')?.classList.remove('open'); };
+  document.addEventListener('keydown',e=>{
+    const tag=(e.target&&e.target.tagName)||'';
+    const typing=/INPUT|TEXTAREA|SELECT/.test(tag)||(e.target&&e.target.isContentEditable);
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); const o=document.getElementById('cmdk')?.classList.contains('open'); o?closeCmdk():openCmdk(); return; }
+    if(e.key==='/'&&!typing&&document.getElementById('admin-wrap')?.style.display!=='none'){ e.preventDefault(); openCmdk(); return; }
+    if(e.key==='Escape'){
+      const nav=document.getElementById('anav');
+      if(nav&&nav.classList.contains('mob-open')) toggleAdminNav();
+    }
+  });
+
+  // ── Badge della barra mobile allineati a quelli del menu ──
+  function _syncBarBadges(){
+    const vis=el=>el&&el.style.display!=='none'&&String(el.textContent).trim()!==''&&String(el.textContent).trim()!=='0';
+    const ob=document.getElementById('orders-nav-badge'), ab=document.getElementById('abar-orders-badge');
+    if(ab){ if(vis(ob)){ ab.textContent=ob.textContent; ab.style.display='flex'; } else ab.style.display='none'; }
+    // Dato in tempo reale anche nell'HUD "Da gestire"
+    if(ob && window._dashKpi){ const n=vis(ob)?(parseInt(ob.textContent,10)||0):0; window._dashKpi.pending=n; const v=document.getElementById('hud-pending-v'); if(v) v.textContent=n; document.getElementById('hud-pending')?.classList.toggle('alert',n>0); }
+    let more=0;
+    ['subs-nav-badge','req-nav-badge'].forEach(id=>{ const e=document.getElementById(id); if(vis(e)) more+=(parseInt(e.textContent,10)||1); });
+    const mb=document.getElementById('abar-more-badge');
+    if(mb){ if(more>0){ mb.textContent=more; mb.style.display='flex'; } else mb.style.display='none'; }
+  }
+  // Su Mac la scorciatoia si chiama ⌘K
+  if(/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent)) document.querySelectorAll('.kbd').forEach(k=>{ if(/Ctrl K/.test(k.textContent)) k.textContent='⌘K'; });
+  try{
+    const mo=new MutationObserver(_syncBarBadges);
+    ['orders-nav-badge','subs-nav-badge','req-nav-badge'].forEach(id=>{ const e=document.getElementById(id); if(e) mo.observe(e,{attributes:true,childList:true,characterData:true,subtree:true}); });
+  }catch(_){}
 
   window.toggleAdminNav = function(){
     const nav=document.getElementById('anav');
