@@ -308,6 +308,20 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <a href="importer.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,255,0,.08);border:1px solid var(--led);padding:9px 16px;text-decoration:none;font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:1px;color:var(--led);">🚀 Bulk Import →</a>
       </div>
 
+      <!-- Foto rotte: album Yupoo eliminati -->
+      <div class="admin-card" id="bk-tool">
+        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">🧹 Foto rotte · album Yupoo eliminati</p>
+        <p style="font-size:12px;color:#aaa;line-height:1.6;margin-bottom:14px;">Controlla la foto principale di tutti i prodotti: quando il fornitore elimina l'album, Yupoo mostra la scritta <b>图片暂时无法展示</b> e il prodotto non è più disponibile. Puoi <b>nasconderli</b> dallo shop in un clic (reversibile) o eliminarli.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-led" id="bk-scan-btn" onclick="scanBrokenProducts()" style="padding:10px 16px;font-size:11px;">🔍 Scansiona prodotti</button>
+          <button class="btn-k" id="bk-hide-btn" onclick="hideBrokenProducts()" disabled style="padding:10px 16px;font-size:11px;">🙈 Nascondi rotti</button>
+          <button class="btn-k" id="bk-del-btn" onclick="deleteBrokenProducts()" disabled style="padding:10px 16px;font-size:11px;">🗑 Elimina rotti</button>
+          <button class="btn-g" onclick="unhideAllProducts()" style="padding:10px 16px;font-size:11px;">↩︎ Ripristina nascosti</button>
+        </div>
+        <div id="bk-progress" style="font-size:12px;color:#aaa;margin-top:12px;"></div>
+        <div id="bk-list" style="margin-top:10px;max-height:320px;overflow:auto;"></div>
+      </div>
+
       <!-- Add product -->
       <div class="admin-card">
         <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;">Aggiungi Singolo Prodotto</p>
@@ -2051,6 +2065,86 @@ waitFB(()=>{
       return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner);
     return u;
   }
+
+  // ── Foto rotte (album Yupoo eliminati) ─────────────────────────
+  // Il Worker risponde 410 alle foto Yupoo eliminate (placeholder 图片暂时无法展示);
+  // con ?check=1 la risposta non ha corpo → scansione leggera di tutto il catalogo.
+  let _bkBroken=[];
+  window.scanBrokenProducts=async function(){
+    const fb=window.__fb, btn=document.getElementById('bk-scan-btn');
+    const prog=document.getElementById('bk-progress'), list=document.getElementById('bk-list');
+    btn.disabled=true; btn.textContent='⏳ Scansione…'; list.innerHTML=''; _bkBroken=[];
+    document.getElementById('bk-hide-btn').disabled=true; document.getElementById('bk-del-btn').disabled=true;
+    try{
+      const snap=await fb.getDocs(fb.collection(fb.db,'products'));
+      const all=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const hiddenN=all.filter(p=>p.hidden===true).length;
+      const todo=all.filter(p=>p.hidden!==true && p.imageUrl && /yupoo\.com|yunjifen\.com/.test(p.imageUrl));
+      let done=0, errs=0;
+      const upd=()=>{ prog.textContent='Controllati '+done+' / '+todo.length+' · rotti '+_bkBroken.length+(errs?(' · non verificabili '+errs):'')+(hiddenN?(' · già nascosti '+hiddenN):''); };
+      upd();
+      let i=0;
+      const worker=async()=>{
+        while(i<todo.length){
+          const p=todo[i++];
+          try{
+            const u=pImg(p.imageUrl);
+            const r=await fetch(u+(u.indexOf('?')>-1?'&':'?')+'check=1',{cache:'no-store'});
+            if(r.status===410) _bkBroken.push(p);
+            else if(!r.ok) errs++;
+          }catch(_){ errs++; }
+          done++; if(done%10===0||done===todo.length) upd();
+        }
+      };
+      await Promise.all(Array.from({length:8},worker));
+      upd();
+      list.innerHTML=_bkBroken.length
+        ? _bkBroken.slice(0,300).map(p=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #222;font-size:12px;"><span>'+escH((p.brand?p.brand+' · ':'')+(p.name||p.id))+'</span><span style="color:#888;white-space:nowrap;">€'+(+p.price||0).toFixed(2)+'</span></div>').join('')+(_bkBroken.length>300?'<p style="font-size:11px;color:#888;margin-top:6px;">…e altri '+(_bkBroken.length-300)+'</p>':'')
+        : '<p style="font-size:12px;color:#2ecc71;">✓ Nessun prodotto con foto rotta.</p>';
+      document.getElementById('bk-hide-btn').disabled=!_bkBroken.length;
+      document.getElementById('bk-del-btn').disabled=!_bkBroken.length;
+      document.getElementById('bk-hide-btn').textContent='🙈 Nascondi rotti ('+_bkBroken.length+')';
+    }catch(e){ prog.textContent='⚠️ Errore scansione: '+((e&&e.code)||(e&&e.message)||''); }
+    btn.disabled=false; btn.textContent='🔍 Scansiona prodotti';
+  };
+  async function _bkBatch(ids, fn){
+    const fb=window.__fb;
+    for(let k=0;k<ids.length;k+=400){
+      const b=fb.writeBatch(fb.db);
+      ids.slice(k,k+400).forEach(id=>fn(b,fb.doc(fb.db,'products',id)));
+      await b.commit();
+    }
+  }
+  window.hideBrokenProducts=async function(){
+    if(!_bkBroken.length) return;
+    const fb=window.__fb;
+    try{
+      await _bkBatch(_bkBroken.map(p=>p.id),(b,ref)=>b.update(ref,{hidden:true,hiddenReason:'yupoo_removed',hiddenAt:fb.serverTimestamp()}));
+      showToast('🙈 '+_bkBroken.length+' prodotti nascosti dallo shop');
+      document.getElementById('bk-progress').textContent='✓ Nascosti '+_bkBroken.length+' prodotti. Puoi ripristinarli quando vuoi.';
+      _bkBroken=[]; document.getElementById('bk-hide-btn').disabled=true; document.getElementById('bk-del-btn').disabled=true;
+    }catch(e){ showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+  };
+  window.deleteBrokenProducts=async function(){
+    if(!_bkBroken.length) return;
+    if(!confirm('Eliminare definitivamente '+_bkBroken.length+' prodotti con foto rotta?\nL\'azione non si può annullare (in alternativa usa "Nascondi").')) return;
+    try{
+      await _bkBatch(_bkBroken.map(p=>p.id),(b,ref)=>b.delete(ref));
+      showToast('🗑 '+_bkBroken.length+' prodotti eliminati');
+      document.getElementById('bk-progress').textContent='✓ Eliminati '+_bkBroken.length+' prodotti.';
+      _bkBroken=[]; document.getElementById('bk-list').innerHTML=''; document.getElementById('bk-hide-btn').disabled=true; document.getElementById('bk-del-btn').disabled=true;
+    }catch(e){ showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+  };
+  window.unhideAllProducts=async function(){
+    const fb=window.__fb;
+    try{
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'products'),fb.where('hidden','==',true)));
+      if(snap.empty){ showToast('Nessun prodotto nascosto.'); return; }
+      if(!confirm('Rendere di nuovo visibili '+snap.size+' prodotti nascosti?')) return;
+      await _bkBatch(snap.docs.map(d=>d.id),(b,ref)=>b.update(ref,{hidden:false}));
+      showToast('↩︎ '+snap.size+' prodotti di nuovo visibili');
+    }catch(e){ showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
+  };
 
   // Ricava il link alla "fonte" (store Yupoo) dall'URL immagine del prodotto.
   // Es. photo.yupoo.com/huskyreps/xxx/medium.jpg → https://huskyreps.x.yupoo.com/

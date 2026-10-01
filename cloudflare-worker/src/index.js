@@ -109,13 +109,39 @@ app.get('/proxyImage', async (c) => {
     || parsed.hostname === 'yupoo.com' || parsed.hostname === 'yunjifen.com';
   if (!ok) return c.text('Host not allowed', 403);
 
-  // Cache v2 — versioned key invalidates all previously cached error responses
+  // Foto Yupoo eliminata: Yupoo NON dà errore ma serve un placeholder
+  // ("图片暂时无法展示", PNG 470x380 da 17.670 byte, header x-errno). Lo
+  // trasformiamo in 410 Gone così il sito può nascondere il prodotto.
+  // ?check=1 → risposta senza corpo (204 ok / 410 rotta) per le scansioni admin.
+  const checkOnly = c.req.query('check') === '1';
+  const PLACEHOLDER_BYTES = 17670;
+  const goneResp = () => new Response(checkOnly ? null : 'Yupoo image removed', {
+    status: 410,
+    headers: { 'X-LF-Broken': '1', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*', 'Access-Control-Expose-Headers': 'X-LF-Broken' },
+  });
+  const okCheck = () => new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } });
+
+  // Cache v2 — la chiave dipende solo da ?url= (i parametri v/check servono
+  // al browser e alle scansioni, non devono moltiplicare la cache edge).
   const cache = caches.default;
   const cacheUrl = new URL(c.req.url);
+  cacheUrl.searchParams.delete('v');
+  cacheUrl.searchParams.delete('check');
   cacheUrl.searchParams.set('_cv', '2');
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   const hit = await cache.match(cacheKey);
-  if (hit && hit.ok) return new Response(hit.body, hit); // copia mutabile
+  if (hit && hit.ok) {
+    // Le vecchie voci in cache possono contenere il placeholder: riconoscilo.
+    const hct = (hit.headers.get('content-type') || '');
+    if (hct.includes('png')) {
+      const hb = await hit.arrayBuffer();
+      if (hb.byteLength === PLACEHOLDER_BYTES) return goneResp();
+      if (checkOnly) return okCheck();
+      return new Response(hb, hit);
+    }
+    if (checkOnly) return okCheck();
+    return new Response(hit.body, hit); // copia mutabile
+  }
 
   const reqHeaders = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -151,6 +177,13 @@ app.get('/proxyImage', async (c) => {
     }
     const ct = (upstream.headers.get('content-type') || 'image/jpeg').split(';')[0];
     const buf = await upstream.arrayBuffer();
+    if (upstream.headers.get('x-errno') || (ct === 'image/png' && buf.byteLength === PLACEHOLDER_BYTES)) {
+      return goneResp();
+    }
+    if (checkOnly) {
+      c.executionCtx.waitUntil(cache.put(cacheKey, new Response(buf, { headers: { 'Content-Type': ct, 'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable', 'Access-Control-Allow-Origin': '*' } })));
+      return okCheck();
+    }
     const resp = new Response(buf, {
       headers: {
         'Content-Type': ct,

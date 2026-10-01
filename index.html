@@ -3909,7 +3909,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       // data si fa lato client qui sotto.
       const s=await fb.getDocs(fb.collection(fb.db,'products'));
       const docs=s.docs;
-      products=docs.map(d=>({id:d.id,...d.data()}));
+      const _broken=_brokenPids();
+      products=docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.hidden!==true && !_broken[p.id]);
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       _prodsLoaded=true;
       _afterProds();
@@ -4239,7 +4240,40 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // Riprova a caricare l'immagine (proxy lento sulle novità non ancora in cache);
   // se dopo i tentativi non arriva, mostra un placeholder — NON nasconde il prodotto.
+  // Prodotti con foto Yupoo eliminata rilevati da questo browser (scadenza 3
+  // giorni: nel frattempo l'admin li nasconde/ripara con lo strumento "Foto rotte").
+  function _brokenPids(){
+    try{
+      const o=JSON.parse(localStorage.getItem('lf_broken_pids')||'{}'), now=Date.now(), out={};
+      Object.keys(o).forEach(k=>{ if(now-o[k]<3*864e5) out[k]=o[k]; });
+      return out;
+    }catch(_){ return {}; }
+  }
+  function _markBroken(pid){
+    if(!pid) return;
+    try{ const o=_brokenPids(); o[pid]=Date.now(); localStorage.setItem('lf_broken_pids',JSON.stringify(o)); }catch(_){}
+    // Toglie il prodotto dalle liste in memoria → i prossimi render non lo mostrano.
+    try{ products=products.filter(p=>p.id!==pid); }catch(_){}
+    try{ if(Array.isArray(_shopFiltered)){ _shopFiltered=_shopFiltered.filter(p=>p.id!==pid); if(_sCount) _sCount.textContent=_shopFiltered.length+' item'+(_shopFiltered.length!==1?'s':''); } }catch(_){}
+  }
   window._imgErr=function(img){
+    // Prima volta: chiedi al proxy se è una foto Yupoo eliminata (410).
+    // Se sì → nascondi subito la card, niente retry inutili.
+    if(!img.dataset.chk && img.src && img.src.indexOf('/proxyImage')>-1){
+      img.dataset.chk='1';
+      const src=img.src;
+      fetch(src+(src.indexOf('?')>-1?'&':'?')+'check=1',{cache:'no-store'}).then(r=>{
+        if(r.status===410){
+          const card=img.closest('.pcard')||img.closest('.hcc')||null;
+          if(card) card.style.display='none';
+          _markBroken(img.dataset.pid);
+        } else { window._imgErrRetry(img); }
+      }).catch(()=>window._imgErrRetry(img));
+      return;
+    }
+    window._imgErrRetry(img);
+  };
+  window._imgErrRetry=function(img){
     var r=parseInt(img.dataset.retry||0);
     if(r<4){
       img.dataset.retry=r+1;
@@ -4277,7 +4311,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const rating=(4.5+(pidHash%5)/10).toFixed(1);
     return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.75':''}" onclick="openProduct('${p.id}')">
       <div style="aspect-ratio:1/1;background:#efece4;overflow:hidden;position:relative;">
-        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;${isSoldOut?'filter:grayscale(.6);':''}" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#c3bfb4;letter-spacing:2px;">NO IMG</div>`}
+        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" data-pid="${p.id}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;${isSoldOut?'filter:grayscale(.6);':''}" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:#c3bfb4;letter-spacing:2px;">NO IMG</div>`}
         ${isSoldOut?`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;"><span style="background:var(--k);color:#fff;font-size:11px;letter-spacing:3px;padding:8px 18px;border-radius:999px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.35);">ESAURITO</span></div>`:''}
         ${stockBadge}
         ${delBtn}
@@ -5092,7 +5126,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     // Estrai l'URL originale se già passato attraverso un proxy
     const inner=u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
     if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
-      return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner);
+      return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner)+'&v=2';
     return u;
   }
   // Variante ad alta risoluzione per il modal/zoom: Yupoo espone small/medium/
@@ -7716,6 +7750,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const idx=window._pgi;
     const main=document.getElementById('prod-gallery-main');
     if(main){
+      main.style.display=''; // una foto precedente rotta l'aveva nascosta
       const small=(window._pgSmall||[])[idx];
       const large=g[idx];
       // 1) Feedback immediato: mostra subito la miniatura (già in cache) — niente schermo vuoto.
