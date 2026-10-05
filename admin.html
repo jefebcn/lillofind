@@ -214,11 +214,12 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
   #anav-mob-btn{display:none!important;}
   #atop{display:flex;position:fixed;top:0;left:0;right:0;z-index:220;align-items:center;gap:10px;height:56px;padding:0 12px;background:rgba(10,10,10,.93);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--hud-line);}
   #atop-title{flex:1;min-width:0;font-family:'Bricolage Grotesque',sans-serif;font-size:20px;letter-spacing:.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #abar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:220;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--hud-line);padding-bottom:env(safe-area-inset-bottom);}
+  #abar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:220;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--hud-line);padding-bottom:env(safe-area-inset-bottom);}
   .abar-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:60px;min-width:0;padding:0 2px;white-space:nowrap;overflow:hidden;background:none;border:none;color:rgba(255,255,255,.5);font:600 10px 'Manrope',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;}
   .abar-btn .ic{font-size:20px;line-height:1;}
   .abar-btn.active{color:var(--hud);}
   .abar-btn.active::before{content:'';position:absolute;top:0;left:24%;right:24%;height:3px;border-radius:0 0 3px 3px;background:var(--hud);}
+  .abar-btn .t-s{display:none;}
   .abar-badge{position:absolute;top:6px;left:calc(50% + 7px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#f0c030;color:#000;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;}
   #admin-main{padding-top:56px;padding-bottom:calc(76px + env(safe-area-inset-bottom));}
   .apg-hdr{top:56px;margin:-16px -16px 16px;padding:10px 16px;}
@@ -233,6 +234,10 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
   #cmdk{padding-top:64px;}
   .admin-card{padding:18px;border-radius:14px;}
 }
+
+/* Etichette brevi nella barra in basso quando lo spazio non basta */
+@media(max-width:439px){ .abar-btn[data-pg="abbonamenti"] .t-l{display:none;} .abar-btn[data-pg="abbonamenti"] .t-s{display:inline;} }
+@media(max-width:371px){ .abar-btn[data-pg="spedizioni"] .t-l{display:none;} .abar-btn[data-pg="spedizioni"] .t-s{display:inline;} }
 
 /* Responsive mobile nav */
 #anav-mob-btn{display:none;position:fixed;top:14px;left:16px;z-index:300;background:#111;border:1px solid rgba(255,255,255,.15);color:#fff;width:38px;height:38px;cursor:pointer;font-size:18px;align-items:center;justify-content:center;}
@@ -307,7 +312,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
   <nav id="abar" aria-label="Sezioni principali">
     <button class="abar-btn active" data-pg="dashboard" onclick="showAdminPg('dashboard')"><span class="ic">📊</span>Home</button>
     <button class="abar-btn" data-pg="ordini" onclick="showAdminPg('ordini')"><span class="ic">📋</span>Ordini<span class="abar-badge" id="abar-orders-badge" style="display:none;"></span></button>
-    <button class="abar-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')"><span class="ic">🚚</span>Spedizioni</button>
+    <button class="abar-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')"><span class="ic">🚚</span><span class="t-l">Spedizioni</span><span class="t-s">Sped.</span></button>
+    <button class="abar-btn" data-pg="abbonamenti" onclick="showAdminPg('abbonamenti')"><span class="ic">🔑</span><span class="t-l">Abbonamenti</span><span class="t-s">Abbon.</span><span class="abar-badge" id="abar-subs-badge" style="display:none;"></span></button>
     <button class="abar-btn" data-pg="prodotti" onclick="showAdminPg('prodotti')"><span class="ic">👗</span>Prodotti</button>
     <button class="abar-btn" data-pg="clienti" onclick="showAdminPg('clienti')"><span class="ic">👥</span>Clienti</button>
     <button class="abar-btn" data-pg="__more" onclick="toggleAdminNav()"><span class="ic">☰</span>Altro<span class="abar-badge" id="abar-more-badge" style="display:none;"></span></button>
@@ -4386,7 +4392,9 @@ waitFB(()=>{
     // Dato in tempo reale anche nell'HUD "Da gestire"
     if(ob && window._dashKpi){ const n=vis(ob)?(parseInt(ob.textContent,10)||0):0; window._dashKpi.pending=n; const v=document.getElementById('hud-pending-v'); if(v) v.textContent=n; document.getElementById('hud-pending')?.classList.toggle('alert',n>0); }
     let more=0;
-    ['subs-nav-badge','req-nav-badge'].forEach(id=>{ const e=document.getElementById(id); if(vis(e)) more+=(parseInt(e.textContent,10)||1); });
+    const sb=document.getElementById('subs-nav-badge'), asb=document.getElementById('abar-subs-badge');
+    if(asb){ if(vis(sb)){ asb.textContent=sb.textContent; asb.style.display='flex'; } else asb.style.display='none'; }
+    ['req-nav-badge'].forEach(id=>{ const e=document.getElementById(id); if(vis(e)) more+=(parseInt(e.textContent,10)||1); });
     const mb=document.getElementById('abar-more-badge');
     if(mb){ if(more>0){ mb.textContent=more; mb.style.display='flex'; } else mb.style.display='none'; }
   }
