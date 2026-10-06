@@ -5,21 +5,21 @@
 <meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<meta name="theme-color" content="#0a0a0a"/>
-<meta name="description" content="LILLOFIND Digital Gear — Abbonamenti premium condivisi a prezzo esclusivo. Netflix, Spotify, Disney+, Canva Pro e altri."/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0c0c0b"/>
+<meta name="description" content="LILLOFIND Digital Gear — Netflix, Spotify, Disney+, YouTube Premium, Canva Pro e altri abbonamenti premium a prezzo esclusivo. Credenziali via email entro 12–24h."/>
 <title>Digital Gear — LILLOFIND</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style.css"/>
 
-<!-- Firebase -->
+<!-- Firebase: stato login (per il pulsante account) e richieste prodotto -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -32,463 +32,371 @@ window.__subsAuth = auth;
 window.__subsUser = null;
 onAuthStateChanged(auth, u => {
   window.__subsUser = u;
-  const loginBtn = document.getElementById('sub-login-btn');
-  const cartLabel = document.getElementById('sub-cart-lbl');
-  if (loginBtn) loginBtn.style.display = u ? 'none' : '';
-  updateCartBadge();
+  const acc = document.getElementById('hud-account');
+  if (acc) {
+    const real = u && !u.isAnonymous;
+    acc.textContent = real ? 'Profilo' : 'Accedi';
+    acc.href = real ? 'index.html?go=profile' : 'index.html?auth=1';
+  }
+  if (window.updateCartBadge) updateCartBadge();
 });
 </script>
 
 <style>
-/* ── SUBS PAGE-SPECIFIC TOKENS ───────────────── */
-:root{--dg1:#B5A89D;--dg2:#8E7963;}
-body{font-family:'Inter','IBM Plex Mono',monospace;}
-.bb{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
-h1,h2,h3{font-family:'Space Grotesk','Bebas Neue',sans-serif;font-weight:700;letter-spacing:-0.02em;}
+/* ══════════════════════════════════════════════════════════════
+   DIGITAL GEAR — tema scuro unico, coerente col brand LILLOFIND
+══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#0c0c0b; --bg2:#11110f; --surf:#171714; --surf2:#1e1e1a;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
+  --tx:#f3f1ea; --tx2:rgba(243,241,234,.68); --tx3:rgba(243,241,234,.44);
+  --ac:#b8c77e; --ac-ink:#12150b; --ac-bg:rgba(184,199,126,.12); --ac-line:rgba(184,199,126,.4);
+  --ok:#7ddc9c;
+  --dg1:#b8c77e; --dg2:#99a074;          /* usati da Catalogo e Cosa guardare */
+  --r:16px; --hud-h:60px; --nav-h:58px;
+  --ff-h:'Bricolage Grotesque',system-ui,sans-serif;
+  --ff:'Manrope',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body.dg{margin:0;background:var(--bg);color:var(--tx);font-family:var(--ff);-webkit-font-smoothing:antialiased;}
+body.dg button{font-family:inherit;}
+body.dg h1,body.dg h2,body.dg h3{font-family:var(--ff-h);letter-spacing:-.02em;margin:0;}
+.bb{font-family:var(--ff-h);font-weight:800;letter-spacing:-.02em;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px;}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
 
-/* ── TOAST ─────────────────────────────────────────── */
-#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--k);color:var(--w);padding:12px 22px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:9999;white-space:nowrap;border-top:2px solid var(--led);}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* ── HUD (barra superiore) ─────────────────────────── */
+.hud{position:sticky;top:0;z-index:300;height:var(--hud-h);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 20px;background:rgba(12,12,11,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+.hud-brand{display:flex;align-items:baseline;gap:10px;text-decoration:none;min-width:0;}
+.hud-logo{font-family:var(--ff-h);font-weight:800;font-size:20px;letter-spacing:3px;color:var(--tx);}
+.hud-tag{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ac);white-space:nowrap;}
+.hud-actions{display:flex;align-items:center;gap:6px;}
+.hud-link{display:inline-flex;align-items:center;height:40px;padding:0 12px;border-radius:999px;color:var(--tx2);text-decoration:none;font-size:13px;font-weight:600;transition:color .15s,background .15s;}
+.hud-link:hover{color:var(--tx);background:rgba(255,255,255,.05);}
+.hud-cart{position:relative;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--surf);color:var(--tx);font-size:13px;font-weight:700;cursor:pointer;transition:border-color .15s;}
+.hud-cart:hover{border-color:var(--ac-line);}
+.hud-count{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ac);color:var(--ac-ink);font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center;}
+@media(max-width:560px){ .hud{padding:0 12px;} .hide-sm{display:none!important;} .hud-cart-lbl{display:none;} .hud-tag{font-size:10px;} .hud-logo{font-size:17px;letter-spacing:2px;} }
 
-/* ── HEADER ─────────────────────────────────────────── */
-#sub-header{
-  position:sticky;top:0;z-index:300;
-  background:var(--k);color:var(--w);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 24px;height:60px;
-  border-bottom:1px solid #1a1a1a;
-}
-.sub-logo{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:24px;letter-spacing:4px;color:var(--w);
-  text-decoration:none;
-}
-.sub-logo span{color:var(--dg1);}
-.sub-header-nav{display:flex;align-items:center;gap:16px;}
-.sub-nav-link{
-  background:none;border:none;cursor:pointer;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
-  letter-spacing:1.5px;text-transform:uppercase;
-  color:#aaa;text-decoration:none;
-  transition:color .15s;
-}
-.sub-nav-link:hover{color:var(--w);}
-.sub-cart-btn{
-  display:flex;align-items:center;gap:7px;
-  background:none;border:1.5px solid #333;
-  color:var(--w);padding:7px 14px;cursor:pointer;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
-  letter-spacing:1px;text-transform:uppercase;
-  transition:border-color .15s;position:relative;
-}
-.sub-cart-btn:hover{border-color:var(--dg1);}
-#sub-cart-count{
-  background:var(--led);color:var(--k);
-  border-radius:50%;width:16px;height:16px;
-  font-size:8px;font-weight:bold;
-  display:none;align-items:center;justify-content:center;
-}
-.sub-login-btn{
-  background:var(--led);color:var(--k);border:none;
-  padding:7px 14px;font-family:'IBM Plex Mono',monospace;
-  font-size:10px;letter-spacing:1px;text-transform:uppercase;
-  cursor:pointer;transition:opacity .15s;
-}
-.sub-login-btn:hover{opacity:.85;}
+/* ── HERO ──────────────────────────────────────────── */
+.hero{position:relative;overflow:hidden;padding:56px 0 40px;border-bottom:1px solid var(--line);}
+.hero::before{content:'';position:absolute;inset:-40% -10% auto auto;width:640px;height:640px;background:radial-gradient(circle,rgba(184,199,126,.16),transparent 62%);pointer-events:none;}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--ac);margin:0 0 12px;}
+.hero h1{font-size:clamp(44px,9vw,96px);font-weight:800;line-height:.92;}
+.hero h1 em{font-style:normal;color:var(--ac);}
+.lead{font-size:16px;line-height:1.7;color:var(--tx2);max-width:560px;margin:18px 0 28px;}
+.hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:640px;}
+.hs{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+.hs b{display:block;font-family:var(--ff-h);font-size:24px;font-weight:800;color:var(--tx);line-height:1.1;}
+.hs span{display:block;font-size:12px;color:var(--tx3);margin-top:3px;}
+@media(max-width:560px){ .hero{padding:36px 0 28px;} .lead{font-size:14.5px;} .hs{padding:12px;} .hs b{font-size:19px;} .hs span{font-size:11px;} }
 
-/* ── HERO ───────────────────────────────────────────── */
-.subs-hero{
-  background:var(--k);color:var(--w);
-  padding:64px 24px 48px;border-bottom:2px solid var(--k);
-  position:relative;overflow:hidden;
-}
-.subs-hero::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 60% 40%,rgba(181,168,157,.12) 0%,transparent 65%);
-  pointer-events:none;
-}
+/* ── NAV VISTE (fissa sotto l'HUD) ────────────────── */
+.dg-nav{position:sticky;top:var(--hud-h);z-index:250;background:rgba(12,12,11,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:9px 20px;max-width:1180px;margin:0 auto;}
+.seg::-webkit-scrollbar{display:none;}
+.dg-tab{min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--tx2);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s;}
+.dg-tab:hover{color:var(--tx);background:rgba(255,255,255,.04);}
+.dg-tab.on{background:var(--ac-bg);border-color:var(--ac-line);color:var(--ac);}
+.dg-view{display:none;}
+.dg-view.on{display:block;animation:dgIn .28s ease;}
+@keyframes dgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+@media(max-width:560px){ .seg{padding:8px 12px;} .dg-tab{font-size:13px;padding:0 6px;} }
+@media(max-width:430px){ .dg-tab .e{display:none;} .hud-tag{display:none;} }
+@media(max-width:360px){ .wrap{padding:0 14px;} .seg{padding:8px 10px;gap:2px;} .dg-tab{font-size:12px;padding:0 2px;} .sc{padding:16px;} .sc-now{font-size:34px;} .sc-dur button{font-size:12px;} }
 
-/* ── FILTER BAR ─────────────────────────────────────── */
-.sub-filter-bar{
-  display:flex;gap:8px;flex-wrap:wrap;
-  padding:18px 24px;border-bottom:1.5px solid #e0e0e0;
-  background:#fafafa;position:relative;z-index:1;
-}
-.sub-filt{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
-  letter-spacing:1.5px;text-transform:uppercase;
-  border:1.5px solid #ccc;background:none;border-radius:999px;
-  padding:8px 18px;cursor:pointer;
-  transition:all .18s;color:var(--mid);
-}
-.sub-filt:hover{border-color:var(--dg2);color:var(--dg2);}
-.sub-filt.active{background:var(--k);color:var(--w);border-color:var(--k);}
-/* chip del calcolatore risparmio → pill */
-#calc-checkboxes label{border-radius:999px !important;}
-.savings-calc{border-radius:18px;}
+/* ── SEZIONI ───────────────────────────────────────── */
+.sec{padding:34px 0 8px;}
+.sec-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.sec-hd h2{font-size:clamp(24px,4vw,32px);font-weight:800;}
+.sec-hd p{font-size:14px;color:var(--tx2);margin:6px 0 0;max-width:620px;line-height:1.6;}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--tx2);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.chip:hover{color:var(--tx);border-color:rgba(255,255,255,.28);}
+.chip.on{background:var(--tx);color:var(--bg);border-color:var(--tx);}
+.chip .n{font-size:11px;opacity:.55;font-weight:800;}
 
-/* ── CARDS GRID ─────────────────────────────────────── */
-.sub-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:18px;
-  margin:24px;
-}
-.sub-card{
-  background:#fff;padding:26px 24px;
-  border:1.5px solid #ececec;border-radius:18px;
-  display:flex;flex-direction:column;gap:16px;
-  transition:box-shadow .2s,transform .2s,border-color .2s;
-  position:relative;overflow:hidden;
-}
-.sub-card::after{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,var(--dg1),var(--dg2));
-  transform:scaleX(0);transform-origin:left;
-  transition:transform .25s ease;
-}
-.sub-card:hover::after{transform:scaleX(1);}
-.sub-card:hover{box-shadow:0 8px 32px rgba(142,121,99,.15);transform:translateY(-2px);}
-.sub-icon{
-  width:52px;height:52px;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;overflow:hidden;
-}
-.sub-icon svg{width:32px;height:32px;display:block;}
-.sub-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  background:var(--k);color:var(--led);border-radius:999px;
-  font-family:'IBM Plex Mono',monospace;
-  font-size:8px;letter-spacing:1.5px;text-transform:uppercase;
-  padding:3px 9px;flex-shrink:0;
-}
-.sub-price-original{font-size:11px;color:var(--dim);text-decoration:line-through;}
-.sub-price-lillo{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:36px;line-height:1;color:var(--k);
-}
-.sub-price-lillo span{font-size:18px;}
-.sub-features{list-style:none;display:flex;flex-direction:column;gap:6px;}
-.sub-features li{
-  font-size:10px;color:var(--mid);
-  display:flex;align-items:center;gap:7px;letter-spacing:.5px;
-}
-.sub-features li::before{
-  content:'';width:5px;height:5px;border-radius:50%;
-  background:var(--dg2);flex-shrink:0;
-}
-.sub-get-btn{
-  width:100%;padding:13px;
-  background:var(--k);color:var(--w);border:none;border-radius:12px;
-  font-family:'IBM Plex Mono',monospace;font-size:11px;
-  letter-spacing:2px;text-transform:uppercase;
-  cursor:pointer;margin-top:auto;
-  transition:background .18s,box-shadow .18s,transform .15s;
-}
-.sub-get-btn:hover{background:var(--dg2);box-shadow:0 8px 20px rgba(142,121,99,.3);transform:translateY(-2px);}
+/* ── CARD ABBONAMENTO ─────────────────────────────── */
+.sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(290px,100%),1fr));gap:14px;margin-top:16px;}
+.sc{display:flex;flex-direction:column;gap:16px;background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:20px;transition:border-color .2s,transform .2s,box-shadow .2s;}
+.sc:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:0 14px 36px rgba(0,0,0,.35);}
+.sc-top{display:flex;align-items:center;gap:12px;}
+.sc-ic{width:50px;height:50px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);}
+.sc-ic svg{width:30px;height:30px;display:block;}
+.sc-hd{min-width:0;flex:1;}
+.sc-cat{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);margin:0 0 3px;}
+.sc-name{font-size:18px;font-weight:800;line-height:1.2;color:var(--tx);}
+.sc-off{flex-shrink:0;align-self:flex-start;font-size:12px;font-weight:800;color:var(--ac-ink);background:var(--ac);border-radius:999px;padding:5px 10px;}
+.sc-price{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;}
+.sc-now{font-family:var(--ff-h);font-size:40px;font-weight:800;line-height:1;color:var(--tx);font-variant-numeric:tabular-nums;}
+.sc-per{font-size:14px;color:var(--tx3);font-weight:600;}
+.sc-was{margin-left:auto;font-size:13px;color:var(--tx3);}
+.sc-was s{color:var(--tx2);}
+.sc-feat{list-style:none;margin:0;padding:0;display:grid;gap:8px;}
+.sc-feat li{display:flex;align-items:flex-start;gap:9px;font-size:14px;color:var(--tx2);line-height:1.4;}
+.sc-feat li::before{content:'';flex-shrink:0;width:16px;height:16px;margin-top:1px;border-radius:50%;background:var(--ac-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='%23b8c77e' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;}
+.sc-dur-l{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);margin:0 0 8px;}
+.sc-dur{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;}
+.sc-dur button{height:36px;border:none;border-radius:9px;background:transparent;color:var(--tx2);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;}
+.sc-dur button:hover{color:var(--tx);}
+.sc-dur button.on{background:var(--surf2);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line2);}
+.sc-cta{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:52px;padding:0 18px;border:none;border-radius:14px;background:var(--ac);color:var(--ac-ink);font-size:15px;font-weight:800;cursor:pointer;margin-top:auto;transition:filter .15s,transform .1s;}
+.sc-cta:hover{filter:brightness(1.06);}
+.sc-cta:active{transform:scale(.985);}
+.sc-cta b{font-family:var(--ff-h);font-size:18px;font-variant-numeric:tabular-nums;}
+.sc-note{font-size:12.5px;color:var(--tx3);margin:-6px 0 0;text-align:center;}
+.sc-note b{color:var(--ok);font-weight:700;}
 
-/* ── ANNUAL SAVINGS BADGE ───────────────────────────── */
-.annual-savings-badge{
-  display:inline-flex;flex-direction:column;align-items:center;
-  background:var(--k);color:var(--led);border-radius:12px;
-  padding:7px 12px;flex-shrink:0;min-width:72px;
-  font-family:'IBM Plex Mono',monospace;
-}
-.annual-savings-badge .asb-num{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;}
-.annual-savings-badge .asb-lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:#aaa;margin-top:1px;}
+/* ── COME FUNZIONA ────────────────────────────────── */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.step{background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:20px;}
+.step-n{width:34px;height:34px;border-radius:10px;background:var(--ac-bg);color:var(--ac);font-family:var(--ff-h);font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.step h3{font-size:17px;font-weight:800;margin-bottom:6px;}
+.step p{font-size:14px;color:var(--tx2);line-height:1.6;margin:0;}
 
-/* ── LIVE DOT ───────────────────────────────────────── */
-.live-dot{
-  display:inline-flex;align-items:center;gap:5px;
-  font-family:'IBM Plex Mono',monospace;font-size:8px;
-  letter-spacing:1px;text-transform:uppercase;color:#22c55e;
-}
-.live-dot::before{
-  content:'';width:7px;height:7px;border-radius:50%;
-  background:#22c55e;flex-shrink:0;
-  animation:pulse-dot .9s ease-in-out infinite;
-}
-@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{opacity:.7;box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+/* ── CALCOLATORE ──────────────────────────────────── */
+.calc{background:linear-gradient(160deg,var(--surf),var(--bg2));border:1px solid var(--line);border-radius:22px;padding:22px;}
+.calc-pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px;}
+.calc-chip{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--bg2);color:var(--tx2);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.calc-chip .ci{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+.calc-chip .ci svg{width:14px;height:14px;}
+.calc-chip[aria-pressed="true"]{border-color:var(--ac-line);background:var(--ac-bg);color:var(--tx);}
+.calc-out{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);gap:10px;}
+.co{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:16px;}
+.co span{display:block;font-size:12px;color:var(--tx3);font-weight:600;}
+.co{min-width:0;}
+.co b{display:block;font-family:var(--ff-h);font-size:26px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+.co.big{border-color:var(--ac-line);background:var(--ac-bg);}
+.co.big b{font-size:40px;color:var(--ac);}
+.co.was b{color:var(--tx3);text-decoration:line-through;}
+@media(max-width:640px){ .calc{padding:16px;} .calc-out{grid-template-columns:repeat(2,minmax(0,1fr));} .co.big{grid-column:1/-1;} .co.big b{font-size:34px;} .co{padding:14px;} .co b{font-size:20px;} }
 
-/* ── SPOTS BADGE ────────────────────────────────────── */
-.spots-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  background:#fff8f0;border:1px solid #f59e0b;border-radius:999px;
-  color:#92400e;padding:4px 10px;
-  font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.5px;
-}
+/* ── FAQ ──────────────────────────────────────────── */
+.faq{display:grid;gap:8px;}
+.faq details{background:var(--surf);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+.faq summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;font-size:15px;font-weight:700;color:var(--tx);}
+.faq summary::-webkit-details-marker{display:none;}
+.faq summary::after{content:'+';font-size:22px;font-weight:400;color:var(--tx3);transition:transform .2s;}
+.faq details[open] summary::after{transform:rotate(45deg);color:var(--ac);}
+.faq p{margin:0;padding:0 18px 16px;font-size:14px;line-height:1.7;color:var(--tx2);}
 
-/* ── FEATURE TOOLTIP ────────────────────────────────── */
-.feat-tip{position:relative;cursor:default;border-bottom:1px dashed var(--dg1);}
-.feat-tip .tip-box{
-  display:none;position:absolute;bottom:calc(100% + 6px);left:50%;
-  transform:translateX(-50%);
-  background:var(--k);color:var(--w);
-  font-family:'Inter',sans-serif;font-size:10px;line-height:1.5;
-  white-space:normal;width:180px;
-  padding:8px 12px;
-  box-shadow:0 4px 16px rgba(0,0,0,.25);
-  z-index:200;pointer-events:none;text-align:left;
-}
-.feat-tip .tip-box::after{
-  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
-  border:5px solid transparent;border-top-color:var(--k);
-}
-.feat-tip:hover .tip-box{display:block;}
+/* ── PANNELLO "AGGIUNTO AL CARRELLO" ─────────────── */
+#cart-confirm{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:8000;max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 14px 14px 16px;background:#1b1b17;border:1px solid var(--ac-line);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.55);transform:translateY(160%);transition:transform .3s cubic-bezier(.3,.8,.3,1);}
+#cart-confirm.show{transform:none;}
+.cc-ok{width:36px;height:36px;border-radius:50%;background:var(--ac);color:var(--ac-ink);display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
+.cc-txt{flex:1;min-width:160px;}
+.cc-name{font-size:14px;font-weight:800;color:var(--tx);}
+.cc-sub{font-size:12px;color:var(--tx3);margin-top:2px;}
+.cc-btns{display:flex;gap:8px;}
+.cc-btn{height:42px;padding:0 16px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--tx2);}
+.cc-btn-main{background:var(--ac);border-color:var(--ac);color:var(--ac-ink);}
+@media(max-width:480px){ .cc-btns{width:100%;} .cc-btn{flex:1;} }
 
-/* ── SAVINGS CALCULATOR ─────────────────────────────── */
-.savings-calc{
-  margin:0 24px 40px;border:2px solid var(--k);padding:32px;background:#fafafa;
-}
-.savings-calc h3{font-family:'Bebas Neue',sans-serif;font-size:clamp(26px,4vw,42px);}
-.savings-result{
-  background:var(--k);color:var(--w);
-  padding:20px 24px;margin-top:20px;
-  display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:12px;
-}
+/* ── TOAST ────────────────────────────────────────── */
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,16px);z-index:9999;background:var(--tx);color:var(--bg);padding:12px 18px;border-radius:999px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:calc(100vw - 32px);text-align:center;}
+#toast.show{opacity:1;transform:translate(-50%,0);}
 
-/* ── CART ADDED TOAST PANEL ─────────────────────────── */
-#cart-confirm{
-  position:fixed;bottom:0;left:0;right:0;z-index:8000;
-  background:var(--k);color:var(--w);
-  padding:20px 24px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  flex-wrap:wrap;
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
-  border-top:3px solid var(--dg1);
-}
-#cart-confirm.show{transform:translateY(0);}
-#cart-confirm .cc-name{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;}
-#cart-confirm .cc-sub{font-size:10px;color:#888;margin-top:2px;}
-#cart-confirm .cc-btns{display:flex;gap:8px;}
-.cc-btn{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
-  letter-spacing:1.5px;text-transform:uppercase;
-  padding:10px 18px;cursor:pointer;border:none;
-}
-.cc-btn-main{background:var(--dg1);color:var(--k);}
-.cc-btn-cont{background:transparent;border:1px solid #444;color:#aaa;}
+/* ── CATALOGO + COSA GUARDARE (contenitori comuni) ─ */
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:22px;overflow:hidden;}
+.panel-hd{padding:22px 22px 16px;border-bottom:1px solid var(--line);}
+.panel-hd .row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.pill-soon{flex-shrink:0;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ac-ink);background:var(--ac);padding:6px 12px;border-radius:999px;}
+#kg-tabs,#cw-tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;}
+#kg-tabs::-webkit-scrollbar,#cw-tabs::-webkit-scrollbar{display:none;}
+#kg-tabs{padding:14px 22px 4px;}
+#kg-grid{padding:16px 22px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+.kg-card{border:1px solid var(--line);border-radius:16px;background:var(--bg2);overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,border-color .15s;}
+.kg-card:hover{transform:translateY(-3px);border-color:var(--line2);}
+.kg-cover{position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.kg-cover .kg-glyph{position:absolute;top:8px;right:10px;font-size:20px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+.kg-cover .kg-mark{font-family:var(--ff-h);font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.96);text-shadow:0 3px 12px rgba(0,0,0,.5);text-align:center;padding:0 8px;line-height:.95;white-space:nowrap;max-width:100%;overflow:hidden;}
+.kg-ribbon{position:absolute;top:8px;left:8px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:var(--ac);color:var(--ac-ink);padding:3px 8px;border-radius:6px;}
+.kg-body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1;}
+.kg-title{font-weight:800;font-size:14px;color:var(--tx);line-height:1.25;min-height:35px;margin:0;}
+.kg-meta{font-size:11.5px;color:var(--tx3);margin:0;}
+.kg-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:4px;}
+.kg-price{font-size:12.5px;font-weight:800;color:var(--ac);}
+.kg-cart{width:40px;height:40px;flex-shrink:0;border:none;border-radius:11px;background:var(--ac);color:var(--ac-ink);font-size:20px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;}
+.cw-search{flex:1;min-width:180px;max-width:320px;height:42px;background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:999px;padding:0 16px;font-size:14px;font-family:var(--ff);outline:none;}
+.cw-search:focus{border-color:var(--ac-line);}
+#cw-genre-row{display:none;padding:12px 22px 0;flex-wrap:wrap;gap:7px;}
+#cw-grid{padding:16px 22px 26px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;min-height:120px;}
+.cw-card{border:1px solid var(--line);border-radius:14px;background:var(--bg2);overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s;position:relative;}
+.cw-card:hover{transform:translateY(-3px);border-color:var(--ac-line);}
+.cw-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#1c1c1c;}
+.cw-fallback{width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#242424,#111);color:#666;font-size:26px;}
+.cw-kind{position:absolute;top:7px;left:7px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;background:rgba(0,0,0,.72);color:#fff;padding:3px 7px;border-radius:6px;}
+.cw-rate{position:absolute;top:7px;right:7px;font-size:11px;font-weight:800;background:rgba(0,0,0,.72);color:var(--ac);padding:3px 7px;border-radius:6px;}
+.cw-cap{padding:9px 10px 11px;}
+.cw-name{font-weight:800;font-size:13px;color:var(--tx);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0;}
+.cw-year{font-size:11px;color:var(--tx3);margin:3px 0 0;}
+.cw-tab{flex:0 0 auto;cursor:pointer;white-space:nowrap;font-size:13px;font-weight:700;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--tx2);}
+.cw-tab.on{border-color:var(--tx);background:var(--tx);color:var(--bg);}
+#cw-modal{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.82);display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#cw-modal.on{display:flex;}
+.cw-sheet{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;max-width:720px;width:100%;margin:auto;overflow:hidden;position:relative;}
+.cw-x{position:absolute;top:12px;right:14px;z-index:3;background:rgba(0,0,0,.55);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;line-height:1;}
+.cw-cta{display:inline-flex;align-items:center;min-height:44px;background:var(--ac);color:var(--ac-ink);font-weight:800;font-size:14px;padding:0 18px;border-radius:12px;text-decoration:none;border:none;cursor:pointer;}
+.cw-spin{grid-column:1/-1;text-align:center;color:var(--tx3);font-size:13px;padding:40px 0;}
+@media(max-width:560px){ .panel-hd{padding:18px 16px 14px;} #kg-tabs{padding:12px 16px 4px;} #kg-grid,#cw-grid{padding:14px 16px 20px;gap:10px;} #kg-grid{grid-template-columns:repeat(2,minmax(0,1fr));} #cw-grid{grid-template-columns:repeat(3,minmax(0,1fr));} #cw-genre-row{padding:12px 16px 0;} .cw-search{max-width:none;} }
 
-/* ── AUTH OVERLAY ───────────────────────────────────── */
-#auth-overlay{
-  position:fixed;inset:0;z-index:9000;
-  background:rgba(0,0,0,.8);
-  display:none;align-items:center;justify-content:center;
-  padding:16px;
-}
-#auth-overlay.open{display:flex;}
-.auth-box{
-  background:var(--w);width:100%;max-width:400px;
-  padding:40px 32px;
-  border-top:3px solid var(--dg1);
-}
-
-/* ── UTILITY ────────────────────────────────────────── */
-@media(max-width:600px){
-  .sub-grid{margin:12px;}
-  .savings-calc{margin:0 12px 32px;padding:20px;}
-}
+/* ── FOOTER ───────────────────────────────────────── */
+.foot{margin-top:48px;border-top:1px solid var(--line);padding:24px 0 calc(28px + env(safe-area-inset-bottom));}
+.foot .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.foot a{color:var(--tx2);text-decoration:none;font-size:13px;font-weight:700;}
+.foot a.logo{font-family:var(--ff-h);font-weight:800;letter-spacing:3px;color:var(--tx);font-size:18px;}
+.foot p{margin:0;font-size:12px;color:var(--tx3);}
 </style>
 </head>
-<body>
+<body class="dg">
 
-<!-- TOAST -->
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
-<!-- CART CONFIRM PANEL -->
-<div id="cart-confirm">
-  <div>
-    <div class="cc-name" id="cc-name">Prodotto</div>
-    <div class="cc-sub">📧 Consegna via email entro 12–24 ore</div>
+<!-- Pannello "aggiunto al carrello" -->
+<div id="cart-confirm" role="status" aria-live="polite">
+  <div class="cc-ok">✓</div>
+  <div class="cc-txt">
+    <div class="cc-name" id="cc-name">Aggiunto al carrello</div>
+    <div class="cc-sub">Credenziali via email entro 12–24h dal pagamento</div>
   </div>
   <div class="cc-btns">
-    <button class="cc-btn cc-btn-cont" onclick="closeCartConfirm()">Continua →</button>
-    <button class="cc-btn cc-btn-main" onclick="goToCart()">Vai al Carrello</button>
+    <button class="cc-btn" onclick="closeCartConfirm()">Continua</button>
+    <button class="cc-btn cc-btn-main" onclick="goToCart()">Vai al carrello →</button>
   </div>
 </div>
 
-<!-- AUTH OVERLAY -->
-<div id="auth-overlay">
-  <div class="auth-box">
-    <p style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:10px;">Accesso Richiesto</p>
-    <h2 style="font-size:28px;margin-bottom:12px;">Accedi per acquistare</h2>
-    <div style="height:2px;width:40px;background:var(--dg1);margin-bottom:20px;"></div>
-    <p style="font-size:11px;color:var(--mid);line-height:1.8;margin-bottom:24px;">Per aggiungere al carrello devi essere loggato. Verrai reindirizzato alla pagina di accesso.</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <a href="index.html?auth=1" style="background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:13px 20px;text-decoration:none;display:inline-block;">Accedi / Registrati →</a>
-      <button onclick="document.getElementById('auth-overlay').classList.remove('open')" style="background:none;border:1px solid #ccc;color:var(--mid);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:13px 20px;cursor:pointer;">Annulla</button>
-    </div>
-  </div>
-</div>
-
-<!-- HEADER -->
-<header id="sub-header">
-  <a href="index.html" class="sub-logo">LILLO<span>FIND</span></a>
-  <nav class="sub-header-nav">
-    <a href="index.html" class="sub-nav-link">← Shop</a>
-    <a href="index.html?pg=lfpoints" class="sub-nav-link">LFPoints</a>
-    <button id="sub-login-btn" class="sub-login-btn" onclick="location.href='index.html?auth=1'">Accedi</button>
-    <button class="sub-cart-btn" onclick="goToCart()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-      <span id="sub-cart-lbl">Carrello</span>
-      <span id="sub-cart-count"></span>
+<!-- HUD -->
+<header class="hud">
+  <a href="index.html" class="hud-brand" aria-label="LILLOFIND — torna allo shop"><span class="hud-logo">LILLOFIND</span><span class="hud-tag">Digital Gear</span></a>
+  <nav class="hud-actions" aria-label="Account e carrello">
+    <a href="index.html" class="hud-link hide-sm">← Shop</a>
+    <a href="index.html?auth=1" class="hud-link" id="hud-account">Accedi</a>
+    <button class="hud-cart" onclick="goToCart()" aria-label="Apri il carrello">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="hud-cart-lbl">Carrello</span>
+      <span class="hud-count" id="sub-cart-count">0</span>
     </button>
   </nav>
 </header>
-<div class="led-strip"></div>
 
 <!-- HERO -->
-<section class="subs-hero">
-  <div class="led-strip-sm" style="margin-bottom:32px;"></div>
-  <div style="max-width:1100px;margin:0 auto;position:relative;">
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:12px;">Lillo-Life Subscriptions</p>
-    <h1 class="bb" style="font-size:clamp(52px,10vw,140px);line-height:.88;color:var(--w);margin-bottom:16px;">DIGITAL<br/><span style="color:var(--dg1);">GEAR</span></h1>
-    <div style="height:3px;width:80px;background:linear-gradient(90deg,var(--dg1),var(--dg2));margin:16px 0 24px;"></div>
-    <p style="font-size:12px;color:#aaa;line-height:1.9;max-width:480px;font-family:'Inter',sans-serif;">Premium streaming e produttività a prezzo esclusivo. Accesso condiviso ai migliori servizi digitali — consegnato via email entro 24h.</p>
+<section class="hero">
+  <div class="wrap" style="position:relative;">
+    <p class="eyebrow">Lillo-Life · Abbonamenti digitali</p>
+    <h1>Digital <em>Gear</em></h1>
+    <p class="lead">Streaming, musica e produttività a una frazione del prezzo ufficiale. Scegli la durata, paghi una volta e ricevi le credenziali via email — le ritrovi sempre nel tuo profilo.</p>
+    <div class="hero-stats">
+      <div class="hs"><b id="hs-save">−80%</b><span>sconto massimo sul prezzo ufficiale</span></div>
+      <div class="hs"><b>12–24h</b><span>consegna via email</span></div>
+      <div class="hs"><b id="hs-count">7</b><span>servizi premium</span></div>
+    </div>
   </div>
 </section>
 
-<!-- ═══ VIEW SWITCHER (sticky) ═══ -->
-<style>
-  .dg-nav{position:sticky;top:60px;z-index:200;background:var(--k);border-bottom:1px solid #1c1c1c;display:flex;gap:6px;padding:10px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-  .dg-nav::-webkit-scrollbar{display:none;}
-  .dg-nav-inner{display:flex;gap:6px;margin:0 auto;}
-  .dg-tab{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;padding:10px 18px;border-radius:999px;border:1.5px solid #2a2a2a;background:transparent;color:#bbb;transition:background .16s,color .16s,border-color .16s;}
-  .dg-tab:hover{border-color:#3f3f3f;color:#eee;}
-  .dg-tab.on{background:var(--dg1);border-color:var(--dg1);color:#0a0a0a;}
-  .dg-tab .dg-ic{font-size:15px;}
-  .dg-tab .dg-ct{font-family:'IBM Plex Mono',monospace;font-size:9px;opacity:.6;}
-  .dg-tab.on .dg-ct{opacity:.75;}
-  .dg-view{display:none;}
-  .dg-view.on{display:block;animation:dgFade .28s ease;}
-  @keyframes dgFade{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
-</style>
-<nav class="dg-nav" id="dg-nav">
-  <div class="dg-nav-inner">
-    <button class="dg-tab on" data-view="subs"    onclick="showDG('subs')"><span class="dg-ic">🎬</span> Abbonamenti</button>
-    <button class="dg-tab"    data-view="catalog" onclick="showDG('catalog')"><span class="dg-ic">🎮</span> Catalogo</button>
-    <button class="dg-tab"    data-view="watch"   onclick="showDG('watch')"><span class="dg-ic">🍿</span> Cosa Guardare</button>
+<!-- NAV VISTE -->
+<nav class="dg-nav" id="dg-nav" aria-label="Sezioni Digital Gear">
+  <div class="seg" role="tablist">
+    <button class="dg-tab on" role="tab" data-view="subs" onclick="showDG('subs')"><span class="e">🎬</span> Abbonamenti</button>
+    <button class="dg-tab" role="tab" data-view="catalog" onclick="showDG('catalog')"><span class="e">🎮</span> Catalogo</button>
+    <button class="dg-tab" role="tab" data-view="watch" onclick="showDG('watch')"><span class="e">🍿</span> Cosa guardare</button>
   </div>
 </nav>
 
-<!-- ═══ VIEW 1 · ABBONAMENTI ═══ -->
-<div class="dg-view on" id="view-subs">
-<!-- FILTER BAR -->
-<div class="sub-filter-bar">
-  <button class="sub-filt active" data-cat="All" onclick="filterSubs('All',this)">Tutti</button>
-  <button class="sub-filt" data-cat="Video" onclick="filterSubs('Video',this)">📺 Video</button>
-  <button class="sub-filt" data-cat="Audio" onclick="filterSubs('Audio',this)">🎵 Audio</button>
-  <button class="sub-filt" data-cat="Productivity" onclick="filterSubs('Productivity',this)">⚡ Produttività</button>
-</div>
-
-<!-- CARDS GRID -->
-<div class="sub-grid" id="subs-grid"></div>
-
-<!-- SAVINGS CALCULATOR (parte di Abbonamenti) -->
-<div class="savings-calc">
-  <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dg2);margin-bottom:8px;">Risparmio Annuale</p>
-  <h3>Calcolatore di Risparmio</h3>
-  <p style="font-size:11px;color:var(--mid);line-height:1.8;margin:10px 0 20px;font-family:'Inter',sans-serif;">Seleziona i servizi e scopri quanto risparmi in un anno scegliendo Lillofind rispetto ai prezzi ufficiali.</p>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;" id="calc-checkboxes"></div>
-  <div class="savings-result" id="savings-result">
-    <div>
-      <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:4px;">Risparmio annuale stimato</p>
-      <p id="savings-amount" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,6vw,64px);line-height:1;color:var(--led);">€0.00</p>
-    </div>
-    <div style="text-align:right;">
-      <p style="font-size:10px;color:#aaa;margin-bottom:4px;">Prezzo pieno / anno</p>
-      <p id="savings-full" style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-decoration:line-through;color:#666;">€0.00</p>
-      <p style="font-size:10px;color:#aaa;margin-top:4px;">Con Lillofind / anno</p>
-      <p id="savings-lillo" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--w);">€0.00</p>
-    </div>
-  </div>
-</div>
-</div><!-- /view-subs -->
-
-<!-- ═══ VIEW 2 · CATALOGO DIGITALE ═══ -->
-<div class="dg-view" id="view-catalog">
-<style>
-  #kg-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;gap:14px!important;}
-  .kg-card{border:1px solid #232323;border-radius:14px;background:#141414;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,border-color .15s;cursor:default;}
-  .kg-card:hover{transform:translateY(-3px);border-color:#3a3a3a;}
-  .kg-cover{position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-  .kg-cover .kg-glyph{position:absolute;top:8px;right:10px;font-size:20px;opacity:.9;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
-  .kg-cover .kg-mark{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1.5px;color:rgba(255,255,255,.96);text-shadow:0 3px 12px rgba(0,0,0,.5);text-align:center;padding:0 8px;line-height:.95;white-space:nowrap;max-width:100%;overflow:hidden;}
-  .kg-ribbon{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;background:var(--dg1);color:#0a0a0a;padding:3px 7px;border-radius:5px;font-weight:700;}
-  .kg-body{padding:11px 12px 12px;display:flex;flex-direction:column;gap:7px;flex:1;}
-  .kg-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13.5px;color:#fff;line-height:1.25;min-height:34px;}
-  .kg-meta{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8a8a8a;letter-spacing:.3px;}
-  .kg-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:4px;}
-  .kg-price{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;color:var(--dg1);}
-  .kg-cart{width:34px;height:34px;flex-shrink:0;border:none;border-radius:9px;background:var(--dg1);color:#0a0a0a;font-size:18px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;}
-  .kg-cart:hover{filter:brightness(1.05);}
-  .kg-hero{border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(120deg,#12210f 0%,#0f0f0f 55%),radial-gradient(circle at 85% 20%,rgba(200,255,0,.22),transparent 45%);padding:22px 24px;margin-bottom:16px;border:1px solid #223a12;}
-</style>
-<!-- ═══ CATALOGO DIGITALE (ANTEPRIMA — Kinguin) ═══ -->
-<section id="kg-section" style="max-width:1180px;margin:40px auto 0;padding:0 22px;">
-  <div style="border:1.5px solid #2a2a2a;border-radius:16px;background:#0f0f0f;overflow:hidden;">
-    <div style="padding:22px 24px;border-bottom:1px solid #1e1e1e;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-      <div>
-        <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:8px;">🎮 Catalogo Digitale · Anteprima</p>
-        <h2 class="bb" style="font-size:34px;line-height:1;color:#fff;">Giochi · Gift Card · Software</h2>
-        <p style="font-size:12px;color:#9a9a9a;line-height:1.7;max-width:560px;margin-top:8px;font-family:'Inter',sans-serif;">Migliaia di prodotti digitali in arrivo. Questa è un'<b style="color:#ccc;">anteprima</b> del catalogo: prezzi e consegna automatica al lancio. Nel frattempo puoi già <b style="color:#ccc;">richiedere</b> un prodotto e te lo procuriamo.</p>
+<!-- ═══ VISTA 1 · ABBONAMENTI ═══ -->
+<main class="dg-view on" id="view-subs">
+  <div class="wrap">
+    <section class="sec">
+      <div class="sec-hd">
+        <div><h2>Scegli il tuo abbonamento</h2><p>Prezzo al mese. Più mesi scegli, più risparmi rispetto al prezzo ufficiale.</p></div>
       </div>
-      <span style="flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#0a0a0a;background:var(--dg1);padding:6px 12px;border-radius:999px;height:fit-content;">In arrivo</span>
+      <div class="chips" id="sub-filters" role="tablist" aria-label="Categorie"></div>
+      <div class="sub-grid" id="subs-grid"></div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-hd"><div><h2>Come funziona</h2></div></div>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><h3>Scegli servizio e durata</h3><p>1, 3, 6 o 12 mesi: il totale si aggiorna subito sulla card.</p></div>
+        <div class="step"><div class="step-n">2</div><h3>Completa l'ordine</h3><p>Paghi in sicurezza. Non serve un account: se non ce l'hai lo creiamo noi e ti mandiamo la password via email.</p></div>
+        <div class="step"><div class="step-n">3</div><h3>Ricevi le credenziali</h3><p>Entro 12–24h via email. Le ritrovi nel profilo, in «I miei abbonamenti», con la data di scadenza.</p></div>
+      </div>
+    </section>
+
+    <section class="sec" id="calc-sec">
+      <div class="sec-hd"><div><h2>Quanto risparmi in un anno?</h2><p>Tocca i servizi che usi: confrontiamo i prezzi ufficiali con i nostri su 12 mesi.</p></div></div>
+      <div class="calc">
+        <div class="calc-pick" id="calc-checkboxes"></div>
+        <div class="calc-out">
+          <div class="co big"><span>Risparmio annuale</span><b id="savings-amount">€0,00</b></div>
+          <div class="co was"><span>Prezzo ufficiale / anno</span><b id="savings-full">€0,00</b></div>
+          <div class="co"><span>Con LILLOFIND / anno</span><b id="savings-lillo">€0,00</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-hd"><div><h2>Domande frequenti</h2></div></div>
+      <div class="faq">
+        <details><summary>Come ricevo l'abbonamento?</summary><p>Dopo il pagamento ti inviamo le credenziali via email entro 12–24 ore. Le trovi anche nel tuo profilo, nella sezione «I miei abbonamenti», insieme alla data di inizio e di scadenza.</p></details>
+        <details><summary>Devo avere un account per ordinare?</summary><p>No. Puoi ordinare come ospite: al primo ordine creiamo il tuo account con la tua email e ti inviamo una password temporanea, che puoi cambiare dal profilo.</p></details>
+        <details><summary>Come funziona l'accesso condiviso?</summary><p>Ricevi l'accesso a un account premium (per alcuni servizi con un profilo dedicato). Insieme alle credenziali trovi le istruzioni da seguire: ad esempio non modificare password o impostazioni dell'account.</p></details>
+        <details><summary>Quanto dura e come rinnovo?</summary><p>Scegli 1, 3, 6 o 12 mesi. Nel profilo vedi sempre i giorni rimanenti: per rinnovare ti basta aggiungere di nuovo il servizio al carrello.</p></details>
+        <details><summary>E se l'accesso smette di funzionare?</summary><p>Rispondi all'email con cui hai ricevuto le credenziali o scrivici dal sito: verifichiamo e ti aiutiamo a sistemare.</p></details>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ═══ VISTA 2 · CATALOGO DIGITALE (anteprima) ═══ -->
+<section class="dg-view" id="view-catalog">
+  <div class="wrap sec">
+    <div class="panel" id="kg-section">
+      <div class="panel-hd">
+        <div class="row">
+          <div>
+            <p class="eyebrow" style="margin-bottom:8px;">🎮 Catalogo digitale · anteprima</p>
+            <h2 style="font-size:clamp(24px,4vw,32px);font-weight:800;">Giochi · Gift card · Software</h2>
+            <p style="font-size:14px;color:var(--tx2);line-height:1.6;max-width:600px;margin:8px 0 0;">I prezzi e la consegna automatica arrivano al lancio. Intanto puoi già <b style="color:var(--tx);">richiedere</b> un prodotto con il pulsante ＋: te lo procuriamo e ti avvisiamo via email.</p>
+          </div>
+          <span class="pill-soon">In arrivo</span>
+        </div>
+      </div>
+      <div id="kg-tabs" role="tablist" aria-label="Categorie catalogo"></div>
+      <div id="kg-grid"></div>
     </div>
-    <div id="kg-tabs" style="display:flex;gap:8px;overflow-x:auto;padding:14px 24px 4px;-webkit-overflow-scrolling:touch;"></div>
-    <div id="kg-grid" style="padding:16px 24px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;"></div>
   </div>
 </section>
-</div><!-- /view-catalog -->
 
-<!-- ═══ VIEW 3 · COSA GUARDARE (TVMaze — dati e immagini ufficiali) ═══ -->
-<div class="dg-view" id="view-watch">
-<style>
-  #cw-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
-  .cw-card{border:1px solid #232323;border-radius:12px;background:#141414;overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s;position:relative;}
-  .cw-card:hover{transform:translateY(-3px);border-color:var(--dg1);}
-  .cw-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#1c1c1c;}
-  .cw-fallback{width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#242424,#111);color:#666;font-size:26px;}
-  .cw-kind{position:absolute;top:7px;left:7px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;background:rgba(0,0,0,.72);color:#fff;padding:3px 7px;border-radius:5px;backdrop-filter:blur(2px);}
-  .cw-rate{position:absolute;top:7px;right:7px;font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;background:rgba(0,0,0,.72);color:var(--dg1);padding:3px 7px;border-radius:5px;backdrop-filter:blur(2px);}
-  .cw-cap{padding:9px 10px 11px;}
-  .cw-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12.5px;color:#fff;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .cw-year{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8a8a8a;margin-top:3px;}
-  .cw-tab{cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;border:1.5px solid #2a2a2a;background:transparent;color:#bbb;}
-  .cw-tab.on{border-color:var(--dg1);background:var(--dg1);color:#0a0a0a;}
-  #cw-modal{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.82);display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-  #cw-modal.on{display:flex;}
-  .cw-sheet{background:#111;border:1px solid #262626;border-radius:16px;max-width:720px;width:100%;margin:auto;overflow:hidden;position:relative;}
-  .cw-x{position:absolute;top:12px;right:14px;z-index:3;background:rgba(0,0,0,.55);border:none;color:#fff;font-size:22px;width:34px;height:34px;border-radius:50%;cursor:pointer;line-height:1;}
-  .cw-prov{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .cw-prov img{width:42px;height:42px;border-radius:9px;object-fit:cover;border:1px solid #2a2a2a;}
-  .cw-cta{display:inline-block;background:var(--dg1);color:#0a0a0a;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;padding:11px 18px;border-radius:10px;text-decoration:none;border:none;cursor:pointer;}
-  .cw-spin{grid-column:1/-1;text-align:center;color:#777;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:40px 0;}
-</style>
-<section id="cw-section" style="max-width:1180px;margin:40px auto 0;padding:0 22px;">
-  <div style="border:1.5px solid #2a2a2a;border-radius:16px;background:#0f0f0f;overflow:hidden;">
-    <div style="padding:22px 24px;border-bottom:1px solid #1e1e1e;">
-      <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dg1);text-transform:uppercase;margin-bottom:8px;">🍿 Cosa Guardare</p>
-      <h2 class="bb" style="font-size:34px;line-height:1;color:#fff;">Serie TV da vedere</h2>
-      <p style="font-size:12px;color:#9a9a9a;line-height:1.7;max-width:580px;margin-top:8px;font-family:'Inter',sans-serif;">Le serie più viste e meglio votate — con trama, cast, generi e voti. Trovi il servizio giusto? <b style="color:#ccc;">Attiva l'abbonamento</b> qui sopra e risparmia. <span style="color:#666;">Dati e immagini: TVMaze — nessun contenuto ospitato.</span></p>
-      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <div id="cw-tabs" style="display:flex;gap:8px;overflow-x:auto;flex:1;min-width:170px;-webkit-overflow-scrolling:touch;"></div>
-        <input id="cw-search" type="text" autocomplete="off" placeholder="🔍 Cerca una serie…" oninput="cwSearchDebounced(this.value)" style="background:#141414;border:1.5px solid #2a2a2a;color:#fff;border-radius:999px;padding:9px 15px;font-size:12px;font-family:'Inter',sans-serif;width:210px;max-width:60vw;outline:none;"/>
+<!-- ═══ VISTA 3 · COSA GUARDARE (TVMaze) ═══ -->
+<section class="dg-view" id="view-watch">
+  <div class="wrap sec">
+    <div class="panel" id="cw-section">
+      <div class="panel-hd">
+        <p class="eyebrow" style="margin-bottom:8px;">🍿 Cosa guardare</p>
+        <h2 style="font-size:clamp(24px,4vw,32px);font-weight:800;">Serie TV da vedere</h2>
+        <p style="font-size:14px;color:var(--tx2);line-height:1.6;max-width:620px;margin:8px 0 0;">Le serie più viste e meglio votate, con trama, cast e voti. Trovato il titolo giusto? <b style="color:var(--tx);">Attiva l'abbonamento</b> e risparmia. <span style="color:var(--tx3);">Dati e immagini: TVMaze.</span></p>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div id="cw-tabs" role="tablist" aria-label="Elenco serie" style="flex:1;min-width:0;"></div>
+          <label class="sr" for="cw-search">Cerca una serie</label>
+          <input id="cw-search" class="cw-search" type="search" autocomplete="off" placeholder="🔍 Cerca una serie…" oninput="cwSearchDebounced(this.value)"/>
+        </div>
       </div>
+      <div id="cw-genre-row"></div>
+      <div id="cw-grid"></div>
     </div>
-    <div id="cw-genre-row" style="display:none;padding:12px 24px 0;flex-wrap:wrap;gap:7px;"></div>
-    <div id="cw-grid" style="padding:16px 24px 26px;display:grid;gap:14px;min-height:120px;"></div>
   </div>
 </section>
-</div><!-- /view-watch -->
-<div id="cw-modal" onclick="if(event.target===this)cwClose()"><div class="cw-sheet" id="cw-sheet"></div></div>
+<div id="cw-modal" onclick="if(event.target===this)cwClose()"><div class="cw-sheet" id="cw-sheet" role="dialog" aria-label="Dettagli serie"></div></div>
 
-<!-- FOOTER STRIP -->
-<footer style="background:var(--k);color:var(--w);padding:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid #1a1a1a;">
-  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--w);text-decoration:none;">LILLOFIND</a>
-  <p style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#555;letter-spacing:1px;">📧 Consegna digitale entro 12–24h · SSL 256-bit · Pagamento sicuro</p>
-  <a href="index.html" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dg1);letter-spacing:1px;text-decoration:none;">← Torna allo Shop</a>
+<footer class="foot">
+  <div class="wrap">
+    <a href="index.html" class="logo">LILLOFIND</a>
+    <p>📧 Consegna digitale 12–24h · Pagamento sicuro · Credenziali sempre nel profilo</p>
+    <a href="index.html">← Torna allo shop</a>
+  </div>
 </footer>
 
 <script>
@@ -593,191 +501,137 @@ const SUBSCRIPTIONS = SUBSCRIPTIONS_BASE.map(s => ({
   lillofind_price: Math.round((s.base_price + MARKUP_CONFIG.global_markup) * 100) / 100,
 }));
 
-// Deterministic "spots left" per product
-const _spotsLeft = {};
-SUBSCRIPTIONS.forEach((s,i) => { _spotsLeft[s.id] = [3,4,3,5,3,4,3][i] ?? 3; });
+// ── Formattazione prezzi (virgola italiana) ───────────
+const eur = v => '€' + (Math.round((+v||0)*100)/100).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pctOff = s => Math.round((1 - s.lillofind_price / s.official_price) * 100);
 
-// ── Cart (shared with index.html via localStorage) ─────
-function loadCart(){ return JSON.parse(localStorage.getItem('lf_cart')||'[]'); }
+// ── Carrello (condiviso con index.html via localStorage) ─
+function loadCart(){ try{ return JSON.parse(localStorage.getItem('lf_cart')||'[]'); }catch(_){ return []; } }
 function saveCart(c){ localStorage.setItem('lf_cart', JSON.stringify(c)); }
-
 function updateCartBadge(){
-  const cart = loadCart();
-  const count = cart.reduce((s,i)=>s+(i.isDigital?1:i.qty),0);
-  const badge = document.getElementById('sub-cart-count');
-  const lbl   = document.getElementById('sub-cart-lbl');
-  if(badge){ badge.textContent=count; badge.style.display=count>0?'flex':'none'; }
-  if(lbl)   lbl.textContent = count>0 ? `Carrello (${count})` : 'Carrello';
+  const count = loadCart().reduce((s,i)=>s+(i.isDigital?1:(i.qty||1)),0);
+  const b = document.getElementById('sub-cart-count');
+  if(b){ b.textContent = count; b.style.display = count>0 ? 'inline-flex' : 'none'; }
 }
+window.updateCartBadge = updateCartBadge;
 updateCartBadge();
+window.addEventListener('storage', e => { if(e.key==='lf_cart') updateCartBadge(); });
 
-// ── Toast ──────────────────────────────────────────────
 function showToast(m){
-  const t=document.getElementById('toast');
+  const t=document.getElementById('toast'); if(!t) return;
   t.textContent=m; t.classList.add('show');
-  clearTimeout(window._tt);
-  window._tt=setTimeout(()=>t.classList.remove('show'),3000);
+  clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),3000);
 }
-
-// ── Cart confirm panel ─────────────────────────────────
+window.showToast = showToast;
 function showCartConfirm(name){
-  document.getElementById('cc-name').textContent='✅ '+name+' aggiunto!';
+  document.getElementById('cc-name').textContent = name + ' aggiunto';
   document.getElementById('cart-confirm').classList.add('show');
-  clearTimeout(window._ccT);
-  window._ccT=setTimeout(closeCartConfirm, 5000);
+  clearTimeout(window._ccT); window._ccT=setTimeout(closeCartConfirm, 6000);
 }
-function closeCartConfirm(){
-  document.getElementById('cart-confirm').classList.remove('show');
+function closeCartConfirm(){ document.getElementById('cart-confirm').classList.remove('show'); }
+function goToCart(){ closeCartConfirm(); location.href='index.html?cart=1'; }
+
+// ── Durata scelta per ogni card (1/3/6/12 mesi) ───────
+const DURATIONS = [1,3,6,12];
+const _dur = {};
+function _subMonths(id){ return _dur[id] || 1; }
+function setDur(id, m){
+  _dur[id] = m;
+  const card = document.querySelector('.sc[data-id="'+id+'"]'); if(!card) return;
+  card.querySelectorAll('.sc-dur button').forEach(b=>{ const on=+b.dataset.m===m; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); });
+  updateSubTotal(id);
 }
-function goToCart(){
-  closeCartConfirm();
-  location.href='index.html?cart=1';
+window.setDur = setDur;
+function updateSubTotal(id){
+  const s = SUBSCRIPTIONS.find(x=>x.id===id); if(!s) return;
+  const m = _subMonths(id);
+  const tot = document.getElementById('tot-'+id); if(tot) tot.textContent = eur(s.lillofind_price*m);
+  const note = document.getElementById('note-'+id);
+  if(note) note.innerHTML = 'Risparmi <b>'+eur((s.official_price - s.lillofind_price)*m)+'</b> in '+m+(m>1?' mesi':' mese')+' rispetto al prezzo ufficiale';
 }
 
-// ── Durata → aggiorna il totale mostrato sulla card ────
-function _subMonths(subId){
-  const sel = document.getElementById('dur-'+subId);
-  const m = sel ? parseInt(sel.value,10) : 1;
-  return (m && m>0) ? m : 1;
-}
-function updateSubTotal(subId){
-  const sub = SUBSCRIPTIONS.find(s=>s.id===subId);
-  if(!sub) return;
-  const months = _subMonths(subId);
-  const el = document.getElementById('tot-'+subId);
-  if(el) el.textContent = '€'+(sub.lillofind_price*months).toFixed(2);
-}
-
-// ── Add to cart ────────────────────────────────────────
-function addSubToCart(subId){
-  if(!window.__subsUser){
-    document.getElementById('auth-overlay').classList.add('open');
-    return;
-  }
-  const sub = SUBSCRIPTIONS.find(s=>s.id===subId);
-  if(!sub) return;
-  const months = _subMonths(subId);
+// ── Aggiungi al carrello (stesso formato di prima: checkout e credenziali lo leggono così)
+// Non serve il login: il checkout crea l'account agli ospiti.
+function addSubToCart(id){
+  const s = SUBSCRIPTIONS.find(x=>x.id===id); if(!s) return;
+  const months = _subMonths(id);
   const cart = loadCart();
-  const idx = cart.findIndex(i=>i.id===subId);
-  if(idx>=0){ cart[idx].qty = months; cart[idx].months = months; }
-  else{
-    cart.push({
-      id:sub.id, name:sub.name,
-      price:sub.lillofind_price,
-      brand:'Lillo-Life',
-      size:'', color:'', img:'',
-      icon:sub.icon||'📱',
-      qty:months, months:months, isDigital:true, category:'Subscriptions'
-    });
-  }
+  const i = cart.findIndex(x=>x.id===id);
+  if(i>=0){ cart[i].qty = months; cart[i].months = months; }
+  else cart.push({ id:s.id, name:s.name, price:s.lillofind_price, brand:'Lillo-Life', size:'', color:'', img:'', icon:s.icon||'📱', qty:months, months:months, isDigital:true, category:'Subscriptions' });
   saveCart(cart);
   updateCartBadge();
-  showCartConfirm(sub.name + ' — ' + months + (months>1?' mesi':' mese'));
+  showCartConfirm(s.name+' · '+months+(months>1?' mesi':' mese'));
 }
+window.addSubToCart = addSubToCart;
 
-// ── Render ─────────────────────────────────────────────
+// ── Render abbonamenti ────────────────────────────────
+const CATS = [['All','Tutti'],['Video','📺 Video'],['Audio','🎵 Audio'],['Productivity','⚡ Produttività']];
+const CAT_LBL = { Video:'Video', Audio:'Audio', Productivity:'Produttività' };
 let _activeFilter = 'All';
-
-function renderSubs(cat){
-  const grid = document.getElementById('subs-grid');
-  if(!grid) return;
-  const list = cat&&cat!=='All' ? SUBSCRIPTIONS.filter(s=>s.category===cat) : SUBSCRIPTIONS;
-  if(!list.length){
-    grid.innerHTML='<div style="padding:40px;text-align:center;font-size:11px;color:#aaa;">Nessun servizio in questa categoria.</div>';
-    return;
-  }
-  grid.innerHTML = list.map(s=>{
-    const annualSaving = ((s.official_price - s.lillofind_price)*12).toFixed(2);
-    const spots = _spotsLeft[s.id] ?? 3;
-    const tips  = s.feature_tips || {};
-    return `<div class="sub-card">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="sub-icon" style="background:${s.iconBg||'#1a1a1a'}">${s.icon}</div>
-          <span class="live-dot">Available Now</span>
-        </div>
-        <span class="sub-badge">✦ Exclusive</span>
-      </div>
-      <div>
-        <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);margin-bottom:4px;">${s.category}</p>
-        <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em;">${s.name}</p>
-      </div>
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-        <div>
-          <p class="sub-price-original">Ufficiale €${s.official_price.toFixed(2)}/mese</p>
-          <p class="sub-price-lillo">€<span>${s.lillofind_price.toFixed(2)}</span><span style="font-size:13px;font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--mid);">/mese</span></p>
-        </div>
-        <div class="annual-savings-badge">
-          <span class="asb-num">€${annualSaving}</span>
-          <span class="asb-lbl">risparmio/anno</span>
-        </div>
-      </div>
-      <ul class="sub-features">
-        ${s.features.map(f=>{
-          const tip=tips[f];
-          return tip
-            ? `<li><span class="feat-tip">${f}<span class="tip-box">${tip}</span></span></li>`
-            : `<li>${f}</li>`;
-        }).join('')}
-      </ul>
-      <div class="spots-badge">⚡ Solo ${spots} posti rimasti a questo prezzo</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 10px;padding:10px 12px;background:rgba(0,0,0,.04);border-radius:10px;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label for="dur-${s.id}" style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);">Durata abbonamento</label>
-          <select id="dur-${s.id}" onchange="updateSubTotal('${s.id}')" style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px;border:1.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">
-            <option value="1">1 mese</option>
-            <option value="3">3 mesi</option>
-            <option value="6">6 mesi</option>
-            <option value="12">12 mesi</option>
-          </select>
-        </div>
-        <div style="text-align:right;">
-          <p style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dg2);">Totale</p>
-          <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;line-height:1;"><span id="tot-${s.id}">€${s.lillofind_price.toFixed(2)}</span></p>
-        </div>
-      </div>
-      <button class="sub-get-btn" onclick="addSubToCart('${s.id}')">Aggiungi al carrello →</button>
-    </div>`;
+function renderFilters(){
+  const el=document.getElementById('sub-filters'); if(!el) return;
+  el.innerHTML = CATS.map(([k,l])=>{
+    const n = k==='All' ? SUBSCRIPTIONS.length : SUBSCRIPTIONS.filter(s=>s.category===k).length;
+    if(!n) return '';
+    return `<button class="chip${k===_activeFilter?' on':''}" role="tab" aria-selected="${k===_activeFilter}" onclick="filterSubs('${k}')">${l}<span class="n">${n}</span></button>`;
   }).join('');
-
-  // Savings calculator
-  const cc = document.getElementById('calc-checkboxes');
-  if(cc){
-    cc.innerHTML = SUBSCRIPTIONS.map(s=>`
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;border:1.5px solid #e0e0e0;padding:8px 14px;font-size:10px;letter-spacing:.5px;background:#fff;transition:border-color .18s;"
-        onmouseover="this.style.borderColor='var(--dg2)'"
-        onmouseout="this.style.borderColor=document.getElementById('calc-${s.id}')?.checked?'var(--dg2)':'#e0e0e0'">
-        <input type="checkbox" style="accent-color:var(--dg2);width:15px;height:15px;" id="calc-${s.id}" onchange="updateSavingsCalc()"/>
-        <span>${s.icon} ${s.name}</span>
-        <span style="margin-left:auto;color:var(--dg2);font-weight:600;">€${s.lillofind_price.toFixed(2)}</span>
-      </label>`).join('');
-    updateSavingsCalc();
-  }
 }
+const escA = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+function cardHTML(s){
+  const m = _subMonths(s.id), tips = s.feature_tips || {};
+  return `<article class="sc" data-id="${s.id}">
+    <div class="sc-top">
+      <div class="sc-ic" style="background:${s.iconBg||'#1a1a1a'}" aria-hidden="true">${s.icon}</div>
+      <div class="sc-hd"><p class="sc-cat">${CAT_LBL[s.category]||s.category}</p><h3 class="sc-name">${s.name}</h3></div>
+      <span class="sc-off" aria-label="Sconto">−${pctOff(s)}%</span>
+    </div>
+    <div class="sc-price"><span class="sc-now">${eur(s.lillofind_price)}</span><span class="sc-per">/mese</span><span class="sc-was">ufficiale <s>${eur(s.official_price)}</s></span></div>
+    <ul class="sc-feat">${s.features.map(f=>`<li${tips[f]?` title="${escA(tips[f])}"`:''}>${f}</li>`).join('')}</ul>
+    <div>
+      <p class="sc-dur-l">Durata</p>
+      <div class="sc-dur" role="group" aria-label="Durata ${escA(s.name)}">
+        ${DURATIONS.map(d=>`<button data-m="${d}" class="${d===m?'on':''}" aria-pressed="${d===m}" onclick="setDur('${s.id}',${d})">${d} ${d>1?'mesi':'mese'}</button>`).join('')}
+      </div>
+    </div>
+    <button class="sc-cta" onclick="addSubToCart('${s.id}')"><span>Aggiungi al carrello</span><b id="tot-${s.id}">${eur(s.lillofind_price*m)}</b></button>
+    <p class="sc-note" id="note-${s.id}"></p>
+  </article>`;
+}
+function renderSubs(cat){
+  const grid=document.getElementById('subs-grid'); if(!grid) return;
+  const list = cat && cat!=='All' ? SUBSCRIPTIONS.filter(s=>s.category===cat) : SUBSCRIPTIONS;
+  grid.innerHTML = list.length ? list.map(cardHTML).join('') : '<p style="color:var(--tx3);padding:30px 0;">Nessun servizio in questa categoria.</p>';
+  list.forEach(s=>updateSubTotal(s.id));
+}
+function filterSubs(cat){ _activeFilter=cat; renderFilters(); renderSubs(cat); }
+window.filterSubs = filterSubs;
 
+// ── Calcolatore risparmio ─────────────────────────────
+const _calc = new Set();
+function renderCalc(){
+  const el=document.getElementById('calc-checkboxes'); if(!el) return;
+  el.innerHTML = SUBSCRIPTIONS.map(s=>`<button class="calc-chip" aria-pressed="${_calc.has(s.id)}" onclick="toggleCalc('${s.id}')"><span class="ci" style="background:${s.iconBg||'#1a1a1a'}">${s.icon}</span>${s.name}</button>`).join('');
+  updateSavingsCalc();
+}
+function toggleCalc(id){ _calc.has(id)?_calc.delete(id):_calc.add(id); renderCalc(); }
+window.toggleCalc = toggleCalc;
 function updateSavingsCalc(){
-  const selected = SUBSCRIPTIONS.filter(s=>document.getElementById('calc-'+s.id)?.checked);
-  const fullYear  = selected.reduce((t,s)=>t+s.official_price*12, 0);
-  const lilloYear = selected.reduce((t,s)=>t+s.lillofind_price*12, 0);
-  const saved     = fullYear - lilloYear;
-  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-  set('savings-amount','€'+saved.toFixed(2));
-  set('savings-full',  '€'+fullYear.toFixed(2));
-  set('savings-lillo', '€'+lilloYear.toFixed(2));
+  const sel = SUBSCRIPTIONS.filter(s=>_calc.has(s.id));
+  const full = sel.reduce((t,s)=>t+s.official_price*12,0), lillo = sel.reduce((t,s)=>t+s.lillofind_price*12,0);
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('savings-amount', eur(full-lillo)); set('savings-full', eur(full)); set('savings-lillo', eur(lillo));
 }
 
-function filterSubs(cat, btn){
-  _activeFilter = cat;
-  document.querySelectorAll('.sub-filt').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  renderSubs(cat);
-}
-
-// ── Handle ?cart=1 redirect from index.html ────────────
-(function handleIndexRedirect(){
-  const params = new URLSearchParams(location.search);
-  if(params.has('cart')) goToCart();
+// ── Numeri dell'hero ──────────────────────────────────
+(function(){
+  const max = Math.max(...SUBSCRIPTIONS.map(pctOff));
+  const a=document.getElementById('hs-save'); if(a) a.textContent='−'+max+'%';
+  const b=document.getElementById('hs-count'); if(b) b.textContent=SUBSCRIPTIONS.length;
 })();
+
+// ── ?cart=1 da index.html → vai al carrello ───────────
+(function(){ if(new URLSearchParams(location.search).has('cart')) goToCart(); })();
 
 // ── CATALOGO DIGITALE (Anteprima Kinguin) ──────────────
 const KINGUIN_PREVIEW = {
@@ -844,7 +698,7 @@ function renderKinguin(){
   if(!tabs||!grid) return;
   tabs.innerHTML=Object.keys(KINGUIN_PREVIEW).map(c=>{
     const on=c===_kgCat;
-    return `<button onclick="kgTab('${c.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;border:1.5px solid ${on?'var(--dg1)':'#2a2a2a'};background:${on?'var(--dg1)':'transparent'};color:${on?'#0a0a0a':'#bbb'};">${KG_ICON[c]||''} ${c} <span style="opacity:.6;">${KINGUIN_PREVIEW[c].length}</span></button>`;
+    return `<button class="cw-tab${on?' on':''}" role="tab" aria-selected="${on}" onclick="kgTab('${c.replace(/'/g,"\\'")}')">${KG_ICON[c]||''} ${c} <span style="opacity:.55;">${KINGUIN_PREVIEW[c].length}</span></button>`;
   }).join('');
   const glyph=KG_ICON[_kgCat]||'🎮';
   grid.innerHTML=KINGUIN_PREVIEW[_kgCat].map(([name,plat])=>{
@@ -855,7 +709,7 @@ function renderKinguin(){
                  : (_kgCat==='Oggetti In-Game') ? 'Ricarica · GLOBALE' : 'Chiave · GLOBALE';
     const meta = (plat?plat+' · ':'') + region;
     const mk = pc[1]||'DIGITAL';
-    const mfs = mk.length>9 ? 22 : (mk.length>6 ? 28 : 34); // scala il wordmark per non uscire dai bordi
+    const mfs = mk.length>9 ? 19 : (mk.length>6 ? 24 : 30); // scala il wordmark per non uscire dai bordi
     return `<div class="kg-card">
       <div class="kg-cover" style="background:${pc[0]}">
         <span class="kg-ribbon">In arrivo</span>
@@ -867,7 +721,7 @@ function renderKinguin(){
         <p class="kg-meta">${meta}</p>
         <div class="kg-foot">
           <span class="kg-price">Su richiesta</span>
-          <button class="kg-cart" title="Richiedi" onclick="requestKinguin('${nmJs}','${_kgCat.replace(/'/g,"\\'")}')">＋</button>
+          <button class="kg-cart" title="Richiedi questo prodotto" aria-label="Richiedi ${nm}" onclick="requestKinguin('${nmJs}','${_kgCat.replace(/'/g,"\\'")}')">＋</button>
         </div>
       </div>
     </div>`;
@@ -934,7 +788,7 @@ function cwRenderGenres(){
   if(!genres.length){ row.style.display='none'; grid.innerHTML='<p class="cw-spin">Generi non disponibili al momento.</p>'; return; }
   if(!_cwGenre || !genres.includes(_cwGenre)) _cwGenre=genres[0];
   row.style.display='flex';
-  row.innerHTML=genres.map(g=>`<button onclick="cwPickGenre('${cwEsc(g).replace(/'/g,"\\'")}')" style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;padding:6px 13px;border-radius:999px;cursor:pointer;border:1.5px solid ${g===_cwGenre?'var(--dg1)':'#2a2a2a'};background:${g===_cwGenre?'var(--dg1)':'transparent'};color:${g===_cwGenre?'#0a0a0a':'#bbb'};">${cwEsc(g)}</button>`).join('');
+  row.innerHTML=genres.map(g=>`<button onclick="cwPickGenre('${cwEsc(g).replace(/'/g,"\\'")}')" style="font-family:var(--ff);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;padding:6px 13px;border-radius:999px;cursor:pointer;border:1.5px solid ${g===_cwGenre?'var(--dg1)':'#2a2a2a'};background:${g===_cwGenre?'var(--dg1)':'transparent'};color:${g===_cwGenre?'#0a0a0a':'#bbb'};">${cwEsc(g)}</button>`).join('');
   const list=(_cwPool||[]).filter(x=>(x.genres||[]).includes(_cwGenre));
   grid.innerHTML = list.length ? list.slice(0,24).map(cwCardHTML).join('') : '<p class="cw-spin">Nessuna serie per questo genere.</p>';
 }
@@ -1001,7 +855,7 @@ async function cwDetail(type,id){
     statusLbl?`<span>• ${cwEsc(statusLbl)}</span>`:'',
   ].filter(Boolean).join('');
   const castHTML = (d.cast&&d.cast.length)
-    ? `<div style="margin-top:18px;"><p style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg1);margin-bottom:10px;">Nel cast</p>
+    ? `<div style="margin-top:18px;"><p style="font-family:var(--ff);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg1);margin-bottom:10px;">Nel cast</p>
         <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">
         ${d.cast.map(c=>`<div style="flex-shrink:0;width:74px;text-align:center;">
             ${c.img?`<img src="${cwEsc(c.img)}" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:#1c1c1c;"/>`:`<div style="width:64px;height:64px;border-radius:50%;background:#1c1c1c;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto;">🎭</div>`}
@@ -1020,39 +874,38 @@ async function cwDetail(type,id){
         ${d.poster?`<img src="${cwEsc(d.poster)}" alt="" style="width:116px;aspect-ratio:2/3;object-fit:cover;border-radius:10px;flex-shrink:0;background:#1c1c1c;"/>`:''}
         <div style="min-width:0;flex:1;">
           <h3 class="bb" style="font-size:24px;color:#fff;line-height:1.12;margin-bottom:8px;">${cwEsc(d.title)}${period?` <span style="color:#777;font-weight:400;font-size:16px;">(${cwEsc(period)})</span>`:''}</h3>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#9a9a9a;margin-bottom:10px;">${meta}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-family:var(--ff);font-size:10px;color:#9a9a9a;margin-bottom:10px;">${meta}</div>
           ${genres.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;">${genres.map(g=>`<span style="font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:#bbb;border:1px solid #333;border-radius:999px;padding:3px 9px;">${cwEsc(g)}</span>`).join('')}</div>`:''}
         </div>
       </div>
-      ${d.overview?`<p style="font-size:13px;color:#cfcfcf;line-height:1.7;font-family:'Inter',sans-serif;margin-top:16px;">${cwEsc(d.overview)}</p>`:''}
+      ${d.overview?`<p style="font-size:13px;color:#cfcfcf;line-height:1.7;font-family:var(--ff);margin-top:16px;">${cwEsc(d.overview)}</p>`:''}
       ${castHTML}
       ${ctaHTML}
     </div>`;
 }
 window.cwDetail=cwDetail;
 
-// ── DIGITAL GEAR — commutatore di viste ────────────────
+// ── Commutatore di viste (con #hash: indietro e link diretti funzionano) ─
 const _dgInit = { catalog:false, watch:false };
-window.showDG = function(view){
+window.showDG = function(view, fromHash){
   view = ['subs','catalog','watch'].includes(view) ? view : 'subs';
   document.querySelectorAll('.dg-view').forEach(v=>v.classList.remove('on'));
-  const el = document.getElementById('view-'+view); if(el) el.classList.add('on');
-  document.querySelectorAll('.dg-tab').forEach(t=>t.classList.toggle('on', t.dataset.view===view));
-  // Init "pesante" (rete) solo alla prima apertura della vista
+  const el=document.getElementById('view-'+view); if(el) el.classList.add('on');
+  document.querySelectorAll('.dg-tab').forEach(t=>{ const on=t.dataset.view===view; t.classList.toggle('on',on); t.setAttribute('aria-selected',on); });
   if(view==='catalog' && !_dgInit.catalog){ _dgInit.catalog=true; renderKinguin(); }
-  if(view==='watch'   && !_dgInit.watch){   _dgInit.watch=true;   cwTabs(); renderWatch('trending'); }
-  try{ history.replaceState(null,'','#'+view); }catch(_){}
-  // Se si è già scrollati oltre la nav, riporta all'inizio della vista
+  if(view==='watch' && !_dgInit.watch){ _dgInit.watch=true; cwTabs(); renderWatch('trending'); }
+  if(!fromHash && location.hash!=='#'+view){ try{ history.pushState(null,'','#'+view); }catch(_){} }
+  // Se si è scesi oltre la barra delle viste, torna all'inizio della vista
   const nav=document.getElementById('dg-nav');
-  if(nav){ const y=nav.getBoundingClientRect().top+window.scrollY-60; if(window.scrollY>y+2) window.scrollTo({top:y,behavior:'smooth'}); }
+  if(nav){ const hud=document.querySelector('.hud'); const y=nav.getBoundingClientRect().top+window.scrollY-(hud?hud.offsetHeight:0); if(window.scrollY>y+2) window.scrollTo({top:y,behavior:'smooth'}); }
 };
-// back/forward del browser e modifica manuale dell'hash → cambia vista
-window.addEventListener('hashchange', function(){ const v=(location.hash||'').replace('#',''); if(['subs','catalog','watch'].includes(v)) showDG(v); });
+window.addEventListener('popstate', ()=>{ const v=(location.hash||'').slice(1); showDG(['catalog','watch'].includes(v)?v:'subs', true); });
 
-// ── Init ───────────────────────────────────────────────
+// ── Avvio ─────────────────────────────────────────────
+renderFilters();
 renderSubs('All');
-const _dgStart = (location.hash||'').replace('#','');
-showDG(['catalog','watch'].includes(_dgStart) ? _dgStart : 'subs');
+renderCalc();
+(function(){ const v=(location.hash||'').slice(1); showDG(['catalog','watch'].includes(v)?v:'subs', true); })();
 </script>
 </body>
 </html>
