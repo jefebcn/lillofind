@@ -1118,11 +1118,14 @@ img{ -webkit-user-drag:none; user-select:none; }
   // Scorciatoie manifest (?go=shop|sport|lfpoints) → naviga quando l'app è pronta
   var go=new URLSearchParams(location.search).get('go');
   if(go){ var t=setInterval(function(){
-      if(typeof window.showPg==='function'){ clearInterval(t);
+      if(typeof window.showPg==='function' && (go!=='profile' || window.__fb)){ clearInterval(t);
         // Non resettare i filtri se il link porta già una ricerca/categoria.
         if(go==='shop'){ showPg('shop'); if(!_hasShopParams && window.resetFilters) resetFilters(); }
         else if(go==='sport'){ showPg('shop'); setTimeout(function(){ if(window.setFilter) setFilter('style','Sport'); }, 250); }
         else if(go==='lfpoints'){ showPg('lfpoints'); }
+        // ?go=profile (es. da Digital Gear): aspetta lo stato di login, poi
+        // apre il profilo se loggato, altrimenti la pagina di accesso.
+        else if(go==='profile'){ var _fb=window.__fb; var _un=_fb.onAuthStateChanged(_fb.auth,function(u){ setTimeout(function(){ showPg(u?'profile':'auth'); },0); try{ _un&&_un(); }catch(_){} }); }
       }
     }, 120); setTimeout(function(){ clearInterval(t); }, 8000);
   }
