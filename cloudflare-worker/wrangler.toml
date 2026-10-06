@@ -7,11 +7,14 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 FIREBASE_PROJECT_ID = "lillofind-c455c"
 # Origini ammesse per CORS (frontend). Separare con virgola.
-ALLOWED_ORIGINS = "https://lillofind-c455c.web.app,https://lillofind-c455c.firebaseapp.com,http://localhost:8000,http://localhost:5000"
+ALLOWED_ORIGINS = "https://lillofind.shop,https://www.lillofind.shop,https://lillofind-c455c.web.app,https://lillofind-c455c.firebaseapp.com,http://localhost:8000,http://localhost:5000"
 # Email autorizzate a inviare tracking ai clienti (separare con virgola).
-ADMIN_EMAILS = "yishionvt@gmail.com"
+ADMIN_EMAILS = "yishionvt@gmail.com,admin@lillofind.com"
 # Mittente email — dominio lillofind.shop verificato su Resend.
 RESEND_FROM = "LilloFind <noreply@lillofind.shop>"
+# Base pubblica del Worker: serve a /streamPlay per costruire l'URL del
+# proxy manifest HLS, che il browser deve poter raggiungere in assoluto.
+WORKER_PUBLIC_BASE = "https://lillofind.conti9708.workers.dev"
 
 # ───────────────────────────────────────────────────────────────
 # SECRET da impostare con `wrangler secret put <NOME>` (NON qui):

@@ -8,8 +8,9 @@
   },
   "vars": {
     "FIREBASE_PROJECT_ID": "lillofind-c455c",
-    "ALLOWED_ORIGINS": "https://lillofind-c455c.web.app,https://lillofind-c455c.firebaseapp.com,http://localhost:8000,http://localhost:5000",
+    "ALLOWED_ORIGINS": "https://lillofind.shop,https://www.lillofind.shop,https://lillofind-c455c.web.app,https://lillofind-c455c.firebaseapp.com,http://localhost:8000,http://localhost:5000",
     "ADMIN_EMAILS": "yishionvt@gmail.com,admin@lillofind.com",
-    "RESEND_FROM": "LilloFind <noreply@lillofind.shop>"
+    "RESEND_FROM": "LilloFind <noreply@lillofind.shop>",
+    "WORKER_PUBLIC_BASE": "https://lillofind.conti9708.workers.dev"
   }
 }
