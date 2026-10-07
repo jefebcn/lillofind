@@ -226,9 +226,33 @@ function unwrapAgentUrl(raw) {
   return null;
 }
 
+// Link di condivisione Weidian (k.youshop10.com/…, vdian.com/…): sono redirect
+// 302 verso weidian.com/item.html?itemID=… → seguo i Location e ritorno l'URL finale.
+const SHORT_LINK_RE = /(?:^|\.)(youshop\d*\.com|vdian\.com|vdian\.cn)$/i;
+async function resolveShortLink(raw) {
+  let u;
+  try { u = new URL(raw); } catch (_) { return raw; }
+  if (!SHORT_LINK_RE.test(u.hostname)) return raw;
+  let cur = u.href;
+  for (let hop = 0; hop < 5; hop++) {
+    let r;
+    try {
+      r = await fetch(cur, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(10000),
+        headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' } });
+    } catch (_) { break; }
+    const loc = r.headers.get('location');
+    if (!(r.status >= 300 && r.status < 400 && loc)) break;
+    cur = new URL(loc, cur).href;
+    if (!SHORT_LINK_RE.test(new URL(cur).hostname)) return cur;
+  }
+  if (cur === u.href) throw new HttpsError('invalid-argument', 'Link breve Weidian non risolto: apri il link e incolla l\'URL weidian.com/item.html?itemID=…');
+  return cur;
+}
+
 export async function yupooFetch(data, _ctx) {
-  const { url: rawUrl, password } = data || {};
-  if (!rawUrl || typeof rawUrl !== 'string') throw new HttpsError('invalid-argument', 'Parametro url mancante.');
+  const { url: inUrl, password } = data || {};
+  if (!inUrl || typeof inUrl !== 'string') throw new HttpsError('invalid-argument', 'Parametro url mancante.');
+  const rawUrl = await resolveShortLink(inUrl.trim());
   // Se è un link di un agent (Kakobuy & simili), scarta il wrapper e usa
   // l'URL prodotto originale che c'è dentro.
   const url = unwrapAgentUrl(rawUrl) || rawUrl;
@@ -788,10 +812,12 @@ async function weidianFetch(url) {
              || body.match(/<meta[^>]+content=["']([^"']{3,300})["'][^>]*property=["']og:title["']/i);
     if (ogT) title = ogT[1];
     if (!title) {
-      const ps = [/"itemName"\s*:\s*"([^"]{3,200})"/, /"title"\s*:\s*"([^"]{3,200})"/, /"item_name"\s*:\s*"([^"]{3,200})"/];
-      for (const p of ps) { const mm = body.match(p); if (mm) { title = mm[1]; break; } }
+      // Le pagine item recenti hanno i dati in JSON con virgolette codificate (&#34;)
+      const dec = body.replace(/\\?&#34;/g, '"').replace(/&quot;/g, '"');
+      const ps = [/"item_name"\s*:\s*"([^"]{3,400})"/, /"itemName"\s*:\s*"([^"]{3,400})"/, /"itemTitle"\s*:\s*"([^"]{3,400})"/, /"title"\s*:\s*"([^"]{3,200})"/];
+      for (const p of ps) { const mm = dec.match(p); if (mm) { title = mm[1].replace(/&amp;/g, '&').replace(/&#39;/g, "'"); break; } }
     }
-    if (!title) { const tM = body.match(/<title[^>]*>([^<]{3,300})<\/title>/i); if (tM) title = tM[1]; }
+    if (!title) { const tM = body.match(/<title[^>]*>([^<]{3,300})<\/title>/i); if (tM && !/^\s*(商品详情|微店)\s*$/.test(tM[1])) title = tM[1]; }
   }
   title = (title || '').replace(/[-–—|]?\s*(微店|weidian|Weidian).*$/gi, '').replace(/【[^】]*】/g, '').replace(/\\u[0-9a-f]{4}/gi, ' ').replace(/\s+/g, ' ').trim();
 
