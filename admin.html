@@ -2540,6 +2540,36 @@ waitFB(()=>{
 
   // Copia negli appunti il blocco "ordine fornitore" (pronto per il form agente).
 
+// ── Testi per il fornitore: SEMPRE in inglese ───────────────────────────
+// I valori degli ordini arrivano in italiano (colori, taglia "Unica",
+// personalizzazioni, nomi prodotto): qui li traduciamo per i messaggi da
+// copiare al fornitore/agente. L'interfaccia dell'admin resta in italiano.
+  const _EN_COLOR={ nero:'black', bianco:'white', bianca:'white', grigio:'grey', grigia:'grey', rosso:'red', rossa:'red', blu:'blue', azzurro:'light blue', celeste:'sky blue', verde:'green', giallo:'yellow', gialla:'yellow', arancione:'orange', arancio:'orange', rosa:'pink', viola:'purple', lilla:'lilac', marrone:'brown', beige:'beige', crema:'cream', panna:'cream', avorio:'ivory', oro:'gold', argento:'silver', bordeaux:'burgundy', 'bordò':'burgundy', kaki:'khaki', cammello:'camel', sabbia:'sand', oliva:'olive', turchese:'turquoise', fucsia:'fuchsia', salmone:'salmon', corallo:'coral', antracite:'charcoal', petrolio:'teal', ottanio:'teal', multicolore:'multicolor', trasparente:'clear', mimetico:'camo', tortora:'taupe', ghiaccio:'ice', cioccolato:'chocolate', senape:'mustard', menta:'mint', e:'and' };
+  const _EN_MOD={ chiaro:'light', chiara:'light', scuro:'dark', scura:'dark', militare:'army' };
+  const _EN_WORD=Object.assign({}, _EN_COLOR, { felpa:'hoodie', maglia:'jersey', maglietta:'t-shirt', pantaloni:'pants', pantaloncini:'shorts', pantalone:'pants', giacca:'jacket', giacchetto:'jacket', giubbotto:'jacket', piumino:'down jacket', cappello:'hat', cappellino:'cap', scarpe:'shoes', scarpa:'shoe', occhiali:'glasses', borsa:'bag', cintura:'belt', calzini:'socks', tuta:'tracksuit', camicia:'shirt', gilet:'vest', canotta:'tank top', cappuccio:'hood', con:'with', senza:'without', donna:'women', uomo:'men', bambino:'kids', trasferta:'away', casa:'home', terza:'third' });
+  const _cap=t=>t?t.charAt(0).toUpperCase()+t.slice(1):t;
+  function enColor(c){
+    if(!c) return '';
+    return String(c).split(/\s*[,\/+]\s*/).filter(Boolean).map(part=>{
+      const mods=[], base=[];
+      part.trim().toLowerCase().split(/\s+/).forEach(x=>{ if(_EN_MOD[x]) mods.push(_EN_MOD[x]); else base.push(_EN_COLOR[x]||x); });
+      return _cap([...mods,...base].join(' '));
+    }).join(', ');
+  }
+  function enSize(z){ return (!z || /^(unica|taglia unica|tu|u|one ?size)$/i.test(String(z).trim())) ? 'One size' : String(z); }
+  function enExtras(list){
+    return (list||[]).flatMap(x=>String(x).split(/\s*·\s*/)).filter(Boolean).map(x=>{
+      if(/^toppe campionato$/i.test(x)) return 'League patches';
+      let m=x.match(/^giocatore\s*(.*)$/i); if(m) return 'Player name/number: '+m[1];
+      m=x.match(/^personalizzato\s*(.*)$/i); if(m) return 'Custom name/number: '+m[1];
+      if(/^con scatola$/i.test(x)) return 'With box';
+      if(/^senza scatola$/i.test(x)) return 'Without box';
+      return x.replace(/\bNome\b/gi,'Name').replace(/\bNumero\b/gi,'Number');
+    });
+  }
+  function enName(n){ return String(n||'').replace(/[A-Za-zÀ-ÿ]+/g, w=>{ const t=_EN_WORD[w.toLowerCase()]; if(!t) return w; return w[0]===w[0].toUpperCase()?_cap(t):t; }); }
+  function enSpecs(i){ return [i.size?('Size '+enSize(i.size)):'', i.color?('Color '+enColor(i.color)):'', ...enExtras(i.addonSummary?[i.addonSummary]:[])].filter(Boolean).join(' · '); }
+
 // ══════════════════════════════════════════════════════════════════════
 // DA ORDINARE — articoli degli ordini clienti da passare al fornitore.
 // Per ogni articolo: link (album Yupoo esatto, oppure Weidian/Taobao), pezzi,
@@ -2565,14 +2595,16 @@ waitFB(()=>{
   }
   function spExtras(i){ const e=[]; if(i.addonSummary) e.push(i.addonSummary); if(i.boxOption==='con_scatola') e.push('Con scatola'); return e; }
   // Testo da incollare al fornitore: link, pezzi, taglia, colore (+ extra) su più righe.
+  // Testo da incollare al fornitore — sempre in inglese.
   function spText(r){
     const L=[];
-    L.push(r.link || '⚠️ Link mancante');
-    if(r.link && !r.exact) L.push("(link dello store: cerca l'articolo dalla foto)");
-    L.push('Pezzi: '+r.qty);
-    L.push('Taglia: '+(r.size||'unica'));
-    L.push('Colore: '+(r.color||'come in foto'));
-    if(r.extras && r.extras.length) L.push('Extra: '+r.extras.join(' · '));
+    L.push(r.link || '⚠️ Link missing');
+    if(r.link && !r.exact) L.push('(store link — please find this item from the photo)');
+    L.push('Quantity: '+r.qty);
+    L.push('Size: '+enSize(r.size));
+    L.push('Color: '+(r.color?enColor(r.color):'as in photo'));
+    const ex=enExtras(r.extras);
+    if(ex.length) L.push('Extras: '+ex.join(' · '));
     return L.join('\n');
   }
   function spOrders(f){
@@ -2595,7 +2627,7 @@ waitFB(()=>{
   }
   function spRowHTML(r, showOrders){
     const k='c'+Object.keys(_spCopy).length; _spCopy[k]=spText(r);
-    const txt=escH(_spCopy[k]).replace(/^(⚠️.*|\(link dello store.*)$/gm,'<span class="warn">$1</span>');
+    const txt=escH(_spCopy[k]).replace(/^(⚠️.*|\(store link.*)$/gm,'<span class="warn">$1</span>');
     const img=r.img?pImg(r.img):'';
     const ords=showOrders&&r.orders.size?[...r.orders]:[];
     return `<div class="sp-row">
@@ -2785,16 +2817,16 @@ waitFB(()=>{
         const lbDetailsSafe = lbDetails.replace(/'/g,"\\'");
         const onclickAttr = imgSrc ? `onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"` : '';
         // Blocco "ordine fornitore" pronto da incollare nel form dell'agente d'acquisto
-        const _specs=[i.size?('Taglia '+i.size):'', i.color?('Colore '+i.color):'', i.addonSummary||''].filter(Boolean).join(' · ');
-        const _cny=(i.supplierPriceCNY!=null && i.supplierPriceCNY!=='')?String(i.supplierPriceCNY):'10 (da confermare)';
+        const _specs=enSpecs(i);
+        const _cny=(i.supplierPriceCNY!=null && i.supplierPriceCNY!=='')?String(i.supplierPriceCNY):'10 (to be confirmed)';
         const _link=i.sourceUrl || (src&&src.url) || '';
         const _supplierText=(!i.isDigital)?encodeURIComponent(
-          'Link prodotto: '+_link+'\n'+
-          'Nome prodotto: '+(i.name||'')+'\n'+
-          'Specifiche: '+(_specs||'-')+'\n'+
-          'Quantità: '+(i.qty||1)+'\n'+
-          'Prezzo unitario (CNY): '+_cny+'\n'+
-          'Immagine: '+(imgRaw||'')
+          'Product link: '+_link+'\n'+
+          'Product name: '+enName(i.name)+'\n'+
+          'Specs: '+(_specs||'-')+'\n'+
+          'Quantity: '+(i.qty||1)+'\n'+
+          'Unit price (CNY): '+_cny+'\n'+
+          'Image: '+(imgRaw||'')
         ):'';
         return `<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:4px;transition:border-color .15s;" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
           <div ${onclickAttr} style="width:60px;height:60px;background:rgba(255,255,255,.08);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:3px;${imgSrc?'cursor:zoom-in;':''}">
@@ -2816,18 +2848,18 @@ waitFB(()=>{
       // Blocco "ordine fornitore" per TUTTI gli articoli fisici (copia unica).
       const _physItems=(o.items||[]).filter(i=>!i.isDigital);
       const _orderSupplierAll = _physItems.length ? encodeURIComponent(
-        'ORDINE '+(o.orderId||'')+'\n'+
+        'ORDER '+(o.orderId||'')+'\n'+
         _physItems.map((i,idx)=>{
-          const sp=[i.size?('Taglia '+i.size):'', i.color?('Colore '+i.color):'', i.addonSummary||''].filter(Boolean).join(' · ');
-          const cny=(i.supplierPriceCNY!=null && i.supplierPriceCNY!=='')?String(i.supplierPriceCNY):'10 (da confermare)';
+          const sp=enSpecs(i);
+          const cny=(i.supplierPriceCNY!=null && i.supplierPriceCNY!=='')?String(i.supplierPriceCNY):'10 (to be confirmed)';
           const lk=i.sourceUrl||'';
-          return '\n--- Articolo '+(idx+1)+' ---\n'+
-            'Link prodotto: '+lk+'\n'+
-            'Nome prodotto: '+(i.name||'')+'\n'+
-            'Specifiche: '+(sp||'-')+'\n'+
-            'Quantità: '+(i.qty||1)+'\n'+
-            'Prezzo unitario (CNY): '+cny+'\n'+
-            'Immagine: '+(i.img||i.imageUrl||'');
+          return '\n--- Item '+(idx+1)+' ---\n'+
+            'Product link: '+lk+'\n'+
+            'Product name: '+enName(i.name)+'\n'+
+            'Specs: '+(sp||'-')+'\n'+
+            'Quantity: '+(i.qty||1)+'\n'+
+            'Unit price (CNY): '+cny+'\n'+
+            'Image: '+(i.img||i.imageUrl||'');
         }).join('\n')
       ) : '';
       // Profitto ordine: somma su articoli fisici con costo salvato sul prodotto.
