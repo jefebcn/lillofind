@@ -822,20 +822,44 @@ async function weidianFetch(url) {
   title = (title || '').replace(/[-–—|]?\s*(微店|weidian|Weidian).*$/gi, '').replace(/【[^】]*】/g, '').replace(/\\u[0-9a-f]{4}/gi, ' ').replace(/\s+/g, ' ').trim();
 
   // ── Immagini (CDN geilicdn) ──
+  // Solo le foto del PRODOTTO: la pagina contiene anche logo negozio, QR code,
+  // banner, icone e prodotti consigliati (tutti su geilicdn). Le foto vere sono
+  // nell'array "imgs" (o equivalenti) del JSON della pagina.
   const imgSet = new Set();
+  const normImg = (u) => { u = String(u || '').trim(); if (u.startsWith('//')) u = 'https:' + u; return u.replace(/[?#!].*$/, '').replace(/@[^/]*$/, ''); };
   if (body) {
-    const imgRe = /(?:https?:)?\/\/(?:[a-z0-9\-]+\.)?geilicdn\.com\/[^\s"'<>\\)]+?\.(?:jpg|jpeg|png|webp)/gi;
-    let mm;
-    while ((mm = imgRe.exec(body)) !== null && imgSet.size < 10) {
-      let u = mm[0]; if (u.startsWith('//')) u = 'https:' + u;
-      const clean = u.replace(/[?#!].*$/, '').replace(/@[^/]*$/, '');
-      if (!clean.includes('avatar') && !clean.includes('logo') && !clean.includes('icon') && clean.length > 30) imgSet.add(clean);
+    const dec = body.replace(/\\?&#34;/g, '"').replace(/&quot;/g, '"').replace(/\\\//g, '/');
+    const arrRe = /"(?:imgs|itemImgs|item_imgs|headImgs|head_imgs|imgList|img_list|picList|pics)"\s*:\s*\[([^\]]*)\]/g;
+    let am;
+    while ((am = arrRe.exec(dec)) !== null && !imgSet.size) {
+      const urls = am[1].match(/(?:https?:)?\/\/[a-z0-9.\-]*geilicdn\.com\/[^"'\s,\]]+/gi) || [];
+      urls.forEach(u => { const c = normImg(u); if (c.length > 30) imgSet.add(c); });
     }
-    const ogI = body.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
-             || body.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
-    if (ogI && ogI[1]) { let u = ogI[1]; if (u.startsWith('//')) u = 'https:' + u; imgSet.add(u.replace(/[?#].*$/, '')); }
+    if (!imgSet.size) {
+      // Nessun array: copertina dichiarata + og:image, poi scansione filtrata.
+      for (const k of ['item_head', 'cover_url', 'itemHead', 'headImg', 'mainPic']) {
+        const km = dec.match(new RegExp('"' + k + '"\\s*:\\s*"((?:https?:)?//[^"]+)"'));
+        if (km) imgSet.add(normImg(km[1]));
+      }
+      const ogI = body.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+               || body.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+      if (ogI && ogI[1]) imgSet.add(normImg(ogI[1]));
+      const skip = new Set();
+      for (const k of ['qrcode_url', 'seller_logo', 'shop_logo', 'banner_url', 'tag_icon', 'logo', 'avatar']) {
+        const re = new RegExp('"' + k + '"\\s*:\\s*"([^"]+)"', 'g'); let sm;
+        while ((sm = re.exec(dec)) !== null) skip.add(normImg(sm[1]));
+      }
+      const imgRe = /(?:https?:)?\/\/(?:[a-z0-9\-]+\.)?geilicdn\.com\/[^\s"'<>\\)]+?\.(?:jpg|jpeg|png|webp)/gi;
+      let mm;
+      while ((mm = imgRe.exec(body)) !== null && imgSet.size < 10) {
+        const clean = normImg(mm[0]);
+        if (skip.has(clean) || clean.length <= 30) continue;
+        if (/avatar|logo|icon|qrcode|unadjust|hz_img|vshop-|passport-|live-|banner/i.test(clean)) continue;
+        imgSet.add(clean);
+      }
+    }
   }
-  let images = [...imgSet].filter(u => u.length > 20).slice(0, 8);
+  let images = [...imgSet].filter(u => /^https:\/\//.test(u) && u.length > 20).slice(0, 12);
 
   // ── Prezzo (CNY) ── Weidian a volte esprime il prezzo in centesimi (fen)
   let priceYuan = 0;
