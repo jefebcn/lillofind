@@ -470,6 +470,7 @@ function renderAlbums(){
             <span style="font-size:11px;color:#555;">€</span>
           </div>
         </div>
+        <input class="card-name-in" id="lk-${a.id}" value="${escH(a.albumUrl||'')}" onclick="event.stopPropagation()" placeholder="🔗 Link fornitore * (…x.yupoo.com/albums/123…)" style="font-size:11px;margin-top:6px;"/>
         <span class="card-brand">${escH(a.brand)}</span>
         <p class="card-status" id="st-${a.id}"></p>
       </div>
@@ -534,6 +535,15 @@ window.importSelected=async function(){
     const price=parseFloat(priceIn?.value)||0;
 
     const stEl=document.getElementById('st-'+a.id);
+    // Link fornitore obbligatorio: album Yupoo specifico (…/albums/<id>) o articolo Weidian/Taobao
+    const link=(document.getElementById('lk-'+a.id)?.value||'').trim();
+    let _h=''; try{ _h=new URL(link).hostname.toLowerCase(); }catch(_){}
+    const _okLink=!!_h && /^https?:\/\/\S+$/i.test(link) && !(/yupoo\.com$/.test(_h) && !/\/albums\/\d+/i.test(link)) && !(/weidian\.com$/.test(_h) && !/item(?:ID|_id|id)=\d+|\/item\/\d+/i.test(link)) && !(/(taobao|tmall)\.com$/.test(_h) && !/[?&]id=\d+/i.test(link));
+    if(!_okLink){
+      errors++; errLog.push(`• ${name}: link fornitore mancante o generico`);
+      if(stEl){stEl.style.display='block';stEl.style.color='#ffb84d';stEl.textContent='⚠️ Manca il link fornitore (album specifico)';}
+      continue;
+    }
     try{
       // Carica immagine via Worker → imgbb (niente Firebase Storage/Blaze)
       let imageUrl='';
@@ -548,6 +558,7 @@ window.importSelected=async function(){
         model:'Sneakers',style:'Sneakers',
         sizes,size:sizes.join(', '),
         colors:[],imageUrl,description:'',
+        sourceUrl:link,
         createdAt:imp.serverTimestamp()
       });
       saved++;

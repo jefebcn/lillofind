@@ -727,6 +727,39 @@ const MODELS = [
   'Set Completo','Altro',
 ];
 
+// ── Link fornitore obbligatorio ─────────────────────────────────
+// Ogni prodotto salvato deve avere il link alla pagina SPECIFICA del
+// fornitore (album Yupoo /albums/<id>, articolo Weidian itemID=…, Taobao id=…):
+// serve per passare gli ordini al fornitore dal pannello "Da ordinare".
+function srcCheck(raw){
+  const u=String(raw||'').trim();
+  if(!u) return { ok:false, url:'', msg:'link fornitore mancante' };
+  if(!/^https?:\/\/\S+$/i.test(u)) return { ok:false, url:u, msg:'il link deve iniziare con https://' };
+  let _h=''; try{ _h=new URL(u).hostname.toLowerCase(); }catch(_){ return { ok:false, url:u, msg:'link non valido' }; }
+    if(/yupoo\.com$/.test(_h) && !/\/albums\/\d+/i.test(u)) return { ok:false, url:u, msg:'link Yupoo generico: serve il link dell\'album (…/albums/123…)' };
+  if(/weidian\.com$/.test(_h) && !/item(?:ID|_id|id)=\d+|\/item\/\d+/i.test(u)) return { ok:false, url:u, msg:'link Weidian generico: serve il link dell\'articolo (itemID=…)' };
+  if(/(taobao|tmall)\.com$/.test(_h) && !/[?&]id=\d+/i.test(u)) return { ok:false, url:u, msg:'link Taobao generico: serve il link dell\'articolo (id=…)' };
+  return { ok:true, url:u, msg:'' };
+}
+window.srcCheck=srcCheck;
+// Aggiunge a ogni riga prodotto il campo "Link fornitore" (precompilato
+// quando il link è già noto, es. album Yupoo o articolo Taobao/Weidian).
+function addLinkField(div, id){
+  if(document.getElementById('rl-'+id)) return;
+  const pre = div.dataset.sourceUrl || '';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;';
+  wrap.innerHTML = `<p class="row-label" style="margin:0;white-space:nowrap;">🔗 Link fornitore *</p>
+    <input class="lf-in" id="rl-${id}" placeholder="https://negozio.x.yupoo.com/albums/123456789  ·  weidian.com/item.html?itemID=…  ·  item.taobao.com/item.htm?id=…" style="flex:1;min-width:220px;font-size:12px;"/>
+    <span id="rlw-${id}" style="font-size:10px;letter-spacing:.5px;"></span>`;
+  const rst = div.querySelector('#rst-'+id);
+  if(rst && rst.parentNode===div) div.insertBefore(wrap, rst); else div.appendChild(wrap);
+  const inp = wrap.querySelector('input');
+  inp.value = pre;
+  const upd = ()=>{ const c=srcCheck(inp.value); const w=wrap.querySelector('#rlw-'+id); if(w){ w.textContent=c.ok?'✓':'⚠️ '+c.msg; w.style.color=c.ok?'var(--led)':'#ffb84d'; } inp.style.borderColor=c.ok?'':'#ffb84d'; };
+  inp.addEventListener('input', upd); upd();
+}
+
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -894,6 +927,7 @@ function createRow(imgUrl, fileName){
     <div id="rst-${id}" style="display:none;margin-top:8px;font-size:10px;letter-spacing:2px;padding:3px 0;"></div>`;
 
   container.appendChild(div);
+  addLinkField(div, id);
 }
 
 window.removeRow=function(id){ const el=document.getElementById('row-'+id); if(el){el.remove();updateStats();} };
@@ -1050,13 +1084,20 @@ window.saveAll=async function(){
   btn.textContent='Salvando...'; btn.disabled=true;
 
   const rows=document.querySelectorAll('.prod-row:not(.saved-ok)');
-  let saved=0,errors=0,skipped=0;
+  let saved=0,errors=0,skipped=0,noLink=0;
 
   for(const row of rows){
     const id=row.id.replace('row-','');
     const name=document.getElementById('rn-'+id)?.value.trim();
     const price=parseFloat(document.getElementById('rp-'+id)?.value);
     if(!name||isNaN(price)||price<=0){ skipped++; continue; }
+    const _src = srcCheck(document.getElementById('rl-'+id)?.value || row.dataset.sourceUrl);
+    if(!_src.ok){
+      noLink++;
+      row.classList.add('saved-err');
+      const _r=document.getElementById('rst-'+id); if(_r){ _r.style.display='block'; _r.style.color='#FF4757'; _r.textContent='⚠️ NON SALVATO: '+_src.msg; }
+      continue;
+    }
 
     const rowBrand=row.dataset.brand||currentBrand||'';
     const rowCategory=row.dataset.category||'';
@@ -1103,7 +1144,7 @@ window.saveAll=async function(){
       const weightKg = QC ? QC.defaultWeight(category) : 0;
       // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker,
       // che richiederebbe un service account non configurato.
-      const sourceUrl = row.dataset.sourceUrl||'';
+      const sourceUrl = _src.url;
       const supplierCNY = parseFloat(row.dataset.cny)||0;
       let images=[]; try{ images=JSON.parse(row.dataset.images||'[]'); }catch(_){}
       images=[...new Set([imgUrl, ...images].filter(Boolean))].slice(0,15);
@@ -1114,12 +1155,12 @@ window.saveAll=async function(){
         colors,imageUrl:imgUrl,description,weightKg,
         ...(isBasket?{style:'basket'}:isKit?{style:'calcio'}:{}),
         ...(images.length>1?{images}:{}),
-        ...(sourceUrl?{sourceUrl}:{}),
+        sourceUrl,
         ...(supplierCNY>0?{supplierPriceCNY:supplierCNY}:{}),
         createdAt:imp.serverTimestamp()
       });
       saved++; savedCount++;
-      row.classList.add('saved-ok');
+      row.classList.remove('saved-err'); row.classList.add('saved-ok');
       if(rst){ rst.style.display='block'; rst.style.color='var(--led)'; rst.textContent='✅ SALVATO'; }
       status.textContent=savedCount+' salvati...';
     } catch(e){
@@ -1133,6 +1174,7 @@ window.saveAll=async function(){
   updateStats();
   let msg='✅ '+saved+' prodotti salvati!';
   if(skipped) msg+=' ('+skipped+' vuoti saltati)';
+  if(noLink) msg+=' ⚠️ '+noLink+' senza link fornitore NON salvati';
   if(errors)  msg+=' ⚠️ '+errors+' errori';
   toast(msg); status.textContent=msg;
   if(saved>0) setTimeout(()=>{ addRow(); updateStats(); },600);
@@ -1320,9 +1362,9 @@ window.qAddRow=function(){
 let csvRows = [];
 
 window.downloadCSVTemplate = function(){
-  const header = 'nome,prezzo,brand,tipo,taglie,colori,url_immagine';
-  const example1 = 'Nike Tech Fleece Hoodie,89.99,Nike,Hoodie,"S,M,L,XL","Nero,Grigio",https://i.ibb.co/esempio.jpg';
-  const example2 = 'Ralph Lauren Polo,49.99,Ralph Lauren,Polo,"S,M,L","Bianco,Navy,Verde",https://i.ibb.co/esempio2.jpg';
+  const header = 'nome,prezzo,brand,tipo,taglie,colori,url_immagine,link_fornitore';
+  const example1 = 'Nike Tech Fleece Hoodie,89.99,Nike,Hoodie,"S,M,L,XL","Nero,Grigio",https://i.ibb.co/esempio.jpg,https://negozio.x.yupoo.com/albums/123456789';
+  const example2 = 'Ralph Lauren Polo,49.99,Ralph Lauren,Polo,"S,M,L","Bianco,Navy,Verde",https://i.ibb.co/esempio2.jpg,https://weidian.com/item.html?itemID=1234567890';
   const blob = new Blob([header+'\n'+example1+'\n'+example2], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1379,7 +1421,8 @@ function parseCSV(text){
     tipo:    headers.findIndex(h=>h.includes('tipo')||h.includes('model')||h.includes('type')),
     taglie:  headers.findIndex(h=>h.includes('tagli')||h.includes('size')),
     colori:  headers.findIndex(h=>h.includes('color')||h.includes('colori')),
-    url:     headers.findIndex(h=>h.includes('url')||h.includes('immagine')||h.includes('img')),
+    url:     headers.findIndex(h=>(h.includes('url')||h.includes('immagine')||h.includes('img'))&&!h.includes('link')&&!h.includes('fornitore')),
+    link:    headers.findIndex(h=>h.includes('link')||h.includes('fornitore')||h.includes('album')||h.includes('fonte')),
   };
 
   if(idx.nome<0||idx.prezzo<0){ toast('⚠️ Colonne "nome" e "prezzo" obbligatorie'); return; }
@@ -1399,13 +1442,15 @@ function parseCSV(text){
       taglie: idx.taglie>=0 ? (cols[idx.taglie]||'').split(',').map(s=>s.trim()).filter(Boolean) : ['S','M','L','XL'],
       colori: idx.colori>=0 ? (cols[idx.colori]||'').split(',').map(c=>c.trim()).filter(Boolean) : [],
       url:    idx.url>=0    ? cols[idx.url]||''    : '',
+      link:   idx.link>=0   ? (cols[idx.link]||'').trim() : '',
     });
   }
 
   if(!csvRows.length){ toast('⚠️ Nessun prodotto valido trovato nel CSV'); return; }
 
   document.getElementById('csv-count-lbl').textContent = csvRows.length + ' prodotti pronti per importazione';
-  document.getElementById('csv-error-lbl').textContent = errors ? errors + ' righe saltate (nome o prezzo mancante)' : '';
+  const _noLink = csvRows.filter(r=>!srcCheck(r.link).ok).length;
+  document.getElementById('csv-error-lbl').textContent = [errors ? errors + ' righe saltate (nome o prezzo mancante)' : '', _noLink ? '⚠️ '+_noLink+' righe senza link fornitore valido (colonna "link_fornitore"): NON verranno importate' : ''].filter(Boolean).join(' · ');
   renderCSVPreview();
   document.getElementById('csv-preview').style.display = 'block';
   document.getElementById('csv-preview').scrollIntoView({behavior:'smooth', block:'start'});
@@ -1419,7 +1464,7 @@ function renderCSVPreview(){
       <td style="padding:8px 12px;">
         ${r.url ? `<img src="${r.url}" style="width:44px;height:44px;object-fit:cover;border:1px solid #1e1e1e;" onerror="this.style.opacity='.2'"/>` : '<span style="color:#333;font-size:18px;">—</span>'}
       </td>
-      <td style="padding:8px 12px;color:var(--w);font-weight:500;">${r.nome}</td>
+      <td style="padding:8px 12px;color:var(--w);font-weight:500;">${r.nome}${srcCheck(r.link).ok?'':'<br><span style="color:#ffb84d;font-size:10px;">⚠️ '+srcCheck(r.link).msg+'</span>'}</td>
       <td style="padding:8px 12px;color:var(--led);font-family:'Bebas Neue',sans-serif;font-size:16px;">€${r.prezzo.toFixed(2)}</td>
       <td style="padding:8px 12px;color:#aaa;">${r.brand||'—'}</td>
       <td style="padding:8px 12px;color:#aaa;">${r.tipo||'—'}</td>
@@ -1465,6 +1510,8 @@ window.saveCSV = async function(){
       if(QC && QC.isJewelry({name:r.nome,model:r.tipo})){ csvCat='accessori'; csvSizes=['Unica']; }
       const csvDesc = QC ? QC.genDescription({name:r.nome,brand:csvBrand,model:r.tipo,colors:r.colori,category:csvCat}) : '';
       const csvWeight = QC ? QC.defaultWeight(csvCat) : 0;
+      const _src = srcCheck(r.link);
+      if(!_src.ok){ errors++; if(stEl){ stEl.innerHTML='<span style="color:#ffb84d;font-size:10px;">⚠️ SENZA LINK</span>'; } continue; }
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name:        r.nome,
         price:       r.prezzo,
@@ -1475,6 +1522,7 @@ window.saveCSV = async function(){
         size:        csvSizes.join(', '),
         colors:      r.colori,
         imageUrl:    r.url,
+        sourceUrl:   _src.url,
         description: csvDesc,
         weightKg:    csvWeight,
         createdAt:   imp.serverTimestamp()
@@ -1672,6 +1720,7 @@ function addTaobaoRow(tb, ai){
     <div id="rst-${id}" style="display:none;margin-top:8px;font-size:10px;letter-spacing:2px;padding:3px 0;"></div>`;
 
   document.getElementById('rows-container').appendChild(div);
+  addLinkField(div, id);
   updateStats();
 }
 
@@ -1833,7 +1882,11 @@ window.analyzeAndAddRows = async function(){
     if(stEl){ stEl.textContent = '🤖 Analisi AI + dettagli...'; stEl.style.color = '#aaa'; }
 
     // Fetch AI analysis + album detail page in parallelo
-    const albumUrl = _yupooHostname ? `https://${_yupooHostname}/albums/${id}${_yupooUid?`?uid=${_yupooUid}`:''}` : null;
+    // Host dello store: quello caricato, altrimenti ricavato dalla copertina (photo.yupoo.com/<store>/…)
+    const _coverRaw = (d.cover && d.cover.includes('?url=')) ? decodeURIComponent(d.cover.split('?url=')[1].split('&')[0]) : (d.cover||'');
+    const _coverStore = (_coverRaw.match(/photo\d?\.yupoo\.com\/([^/]+)\//i)||[])[1];
+    const _albHost = _yupooHostname || (_coverStore ? _coverStore+'.x.yupoo.com' : '');
+    const albumUrl = _albHost ? `https://${_albHost}/albums/${id}${_yupooUid?`?uid=${_yupooUid}`:''}` : null;
     d.sourceUrl = albumUrl || '';   // link all'album Yupoo esatto (salvato sul prodotto)
     // De-proxy: manda all'AI l'immagine Yupoo reale, non l'URL del proxy (?url=…)
     const aiImg = (d.cover && d.cover.includes('?url=')) ? decodeURIComponent(d.cover.split('?url=')[1].split('&')[0]) : d.cover;
@@ -2103,6 +2156,7 @@ function addAnalyzedRow(d){
     <div id="rst-${id}" style="display:none;margin-top:6px;font-size:10px;letter-spacing:2px;padding:3px 0;"></div>`;
 
   container.appendChild(div);
+  addLinkField(div, id);
 
   // Auto-imposta brand globale se non ancora impostato
   if(d.analysis.brand && !currentBrand){

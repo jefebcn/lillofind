@@ -599,6 +599,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           </div>
           <p style="font-size:8px;color:var(--dim);">Clicca per selezionare/deselezionare le taglie disponibili</p>
         </div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Link fornitore * <span style="color:var(--dim);letter-spacing:1px;text-transform:none;">(album Yupoo / articolo Weidian o Taobao)</span></label><input class="lf-in" id="ad-link" placeholder="https://negozio.x.yupoo.com/albums/123456789"/></div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"><label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label><textarea class="lf-in" id="ad-desc" placeholder="Descrizione breve..."></textarea></div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
           <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Immagine Prodotto</label>
@@ -630,6 +631,11 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         </div>
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
           <input class="lf-in" id="cat-search" placeholder="Cerca per nome o brand..." style="flex:1;min-width:200px;padding:10px 14px;" oninput="renderAdminCatalog()"/>
+          <select class="lf-in" id="cat-link-filter" onchange="renderAdminCatalog()" style="width:auto;padding:10px 12px;font-size:12px;">
+            <option value="all">Tutti i prodotti</option>
+            <option value="nolink">⚠️ Senza link fornitore</option>
+          </select>
+          <button class="btn-k" onclick="exportNoLinkCSV()" style="padding:10px 14px;font-size:11px;" title="Scarica l'elenco dei prodotti senza link fornitore">⬇️ CSV senza link</button>
         </div>
         <div id="bulk-toolbar" style="display:none;align-items:center;justify-content:space-between;background:rgba(255,71,87,.1);border:1.5px solid #ff4757;padding:10px 16px;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -1238,6 +1244,14 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           <img id="edit-img-prev" style="max-height:100px;max-width:120px;object-fit:cover;margin-top:6px;display:none;border:1px solid rgba(255,255,255,.15);"/>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Link fornitore <span style="color:var(--dim);letter-spacing:1px;text-transform:none;">(album Yupoo / articolo Weidian o Taobao)</span></label>
+          <div style="display:flex;gap:8px;">
+            <input class="lf-in" id="edit-link" placeholder="https://negozio.x.yupoo.com/albums/123456789" style="flex:1;"/>
+            <a id="edit-link-open" href="#" target="_blank" rel="noopener" class="btn-k" style="padding:10px 12px;font-size:11px;text-decoration:none;display:none;">↗</a>
+          </div>
+          <p id="edit-link-warn" style="display:none;font-size:11px;color:#ffb84d;"></p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
           <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Descrizione</label>
           <textarea class="lf-in" id="edit-desc" rows="2" style="resize:vertical;"></textarea>
         </div>
@@ -1479,6 +1493,8 @@ waitFB(()=>{
     // Read selected sizes
     const sizes=[...document.querySelectorAll('.sz-chk:checked')].map(c=>c.value);
     if(!sizes.length)return showToast('⚠️ Seleziona almeno una taglia.');
+    const _src=srcCheck(document.getElementById('ad-link')?.value);
+    if(!_src.ok){ document.getElementById('ad-link')?.focus(); return showToast('⚠️ '+_src.msg); }
     // Read colors
     const colorsRaw=document.getElementById('ad-colors').value.trim();
     const colors=colorsRaw?colorsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
@@ -1497,10 +1513,11 @@ waitFB(()=>{
         imageUrl:document.getElementById('ad-img').value.trim(),
         category:'', weightKg:0,
         gender:document.getElementById('ad-gender').value||'unisex',
+        sourceUrl:_src.url,
         createdAt: fb.serverTimestamp()
       });
       showToast('✅ Prodotto salvato!');
-      ['ad-name','ad-price','ad-desc','ad-model','ad-brand','ad-img','ad-colors'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      ['ad-name','ad-price','ad-desc','ad-model','ad-brand','ad-img','ad-colors','ad-link'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
       document.querySelectorAll('.sz-chk').forEach(c=>{c.checked=false;});
       document.querySelectorAll('[id^="sz-lbl-"]').forEach(l=>{l.style.background='';l.style.color='';});
       document.getElementById('ad-style').value='';
@@ -2140,6 +2157,10 @@ waitFB(()=>{
         <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Nome Prodotto *</label>
         <input class="lf-in" id="bkn-${id}" placeholder="es. Nike Dunk Low Panda"/>
       </div>
+      <div style="display:flex;flex-direction:column;gap:4px;grid-column:1/-1;grid-row:2;">
+        <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Link fornitore * (album Yupoo / articolo Weidian o Taobao)</label>
+        <input class="lf-in" id="bkl-${id}" placeholder="https://negozio.x.yupoo.com/albums/123456789"/>
+      </div>
       <div style="display:flex;flex-direction:column;gap:4px;">
         <label style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Prezzo € *</label>
         <input class="lf-in" id="bkp-${id}" type="number" step="0.01" placeholder="89.99"/>
@@ -2189,9 +2210,12 @@ waitFB(()=>{
       const imgInput=document.getElementById('bki-'+id);
       const imgUrl=imgInput?.dataset.b64||'';
       if(!name||isNaN(price)){errors++;continue;}
+      const _src=srcCheck(document.getElementById('bkl-'+id)?.value);
+      if(!_src.ok){ errors++; row.style.borderColor='#ff4757'; showToast('⚠️ '+name+': '+_src.msg); continue; }
       try{
         await fb.addDoc(fb.collection(fb.db,'products'),{
           name,price,
+          sourceUrl:_src.url,
           brand:bulkSelectedCat.brand||'',
           model:model||bulkSelectedCat.model||'',
           category:'', weightKg:0,
@@ -2365,6 +2389,10 @@ waitFB(()=>{
   };
 
   let adminOrders = [];
+  // Cache prodotti (azzerata dopo un salvataggio per forzare il ricaricamento).
+  // Prima non era dichiarata: in un modulo ES l'assegnazione lanciava
+  // ReferenceError e i salvataggi riuscivano ma mostravano "Errore".
+  let products = [];
   // Escape HTML — i campi cliente (nome, indirizzo, note) e i nomi prodotto
   // sono dati esterni: vanno sempre passati qui prima di finire in innerHTML.
   function escH(s){
@@ -2381,6 +2409,23 @@ waitFB(()=>{
       return (window.LF_WORKER_BASE?window.LF_WORKER_BASE+'/proxyImage':_PROXY)+'?url='+encodeURIComponent(inner);
     return u;
   }
+
+
+  // ── Link fornitore (sourceUrl) ─────────────────────────────────
+  // Ogni prodotto deve avere il link alla pagina SPECIFICA del fornitore:
+  // album Yupoo (/albums/<id>), articolo Weidian (itemID=…), Taobao/Tmall (id=…).
+  // Un link allo store generico non basta per passare l'ordine.
+  function srcCheck(raw){
+    const u=String(raw||'').trim();
+    if(!u) return { ok:false, url:'', msg:'Link fornitore mancante' };
+    if(!/^https?:\/\/\S+$/i.test(u)) return { ok:false, url:u, msg:'Il link deve iniziare con https://' };
+    let _h=''; try{ _h=new URL(u).hostname.toLowerCase(); }catch(_){ return { ok:false, url:u, msg:'link non valido' }; }
+    if(/yupoo\.com$/.test(_h) && !/\/albums\/\d+/i.test(u)) return { ok:false, url:u, msg:'Link Yupoo generico: serve il link dell\'album (…/albums/123…)' };
+    if(/weidian\.com$/.test(_h) && !/item(?:ID|_id|id)=\d+|\/item\/\d+/i.test(u)) return { ok:false, url:u, msg:'Link Weidian generico: serve il link dell\'articolo (itemID=…)' };
+    if(/(taobao|tmall)\.com$/.test(_h) && !/[?&]id=\d+/i.test(u)) return { ok:false, url:u, msg:'Link Taobao generico: serve il link dell\'articolo (id=…)' };
+    return { ok:true, url:u, msg:'' };
+  }
+  window.srcCheck = srcCheck;
 
   // ── Foto rotte (album Yupoo eliminati) ─────────────────────────
   // Il Worker risponde 410 alle foto Yupoo eliminate (placeholder 图片暂时无法展示);
@@ -3487,6 +3532,9 @@ waitFB(()=>{
       + '<div>'
         + '<p style="font-size:15px;font-family:\'Manrope\',sans-serif;font-weight:600;color:#fff;">' + escH(p.name||'—') + '</p>'
         + '<p style="font-size:13px;color:rgba(255,255,255,.45);margin-top:3px;">' + escH(p.brand||'') + ' ' + (p.model?'· '+escH(p.model):'') + ' ' + escH(sizeStr) + '</p>'
+        + (srcCheck(p.sourceUrl).ok
+            ? '<a href="' + escH(p.sourceUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;color:var(--led);text-decoration:none;">🔗 Link fornitore</a>'
+            : '<span style="display:inline-block;margin-top:4px;font-size:11px;color:#ffb84d;">⚠️ Senza link fornitore</span>')
       + '</div>'
       + '<div style="text-align:right;">'
         + '<p style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:26px;">€' + (p.price||0).toFixed(2) + '</p>'
@@ -3507,12 +3555,31 @@ waitFB(()=>{
     else list.insertAdjacentHTML('beforeend', html);
     _catShown += next.length;
   }
+  // Esporta in CSV i prodotti senza link fornitore specifico (da completare a mano).
+  window.exportNoLinkCSV = function(){
+    if(!adminCatalogProducts.length){ showToast('Carica prima il catalogo (🔄 Aggiorna)'); return; }
+    const rows = adminCatalogProducts.filter(p=>!srcCheck(p.sourceUrl).ok);
+    const dep = u=>{ let r=u||''; if(r.includes('?url=')){ try{ r=decodeURIComponent(r.split('?url=')[1].split('&')[0]); }catch(_){} } return r; };
+    const q = v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+    const csv = ['id;nome;brand;prezzo;store;foto;link_fornitore'].concat(rows.map(p=>{
+      const img=dep(p.imageUrl); const st=(img.match(/photo\.yupoo\.com\/([^/]+)\//i)||[])[1]||'';
+      return [p.id,p.name,p.brand,(+p.price||0).toFixed(2),st,img,p.sourceUrl||''].map(q).join(';');
+    })).join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download='prodotti_senza_link.csv'; a.click();
+    showToast('⬇️ '+rows.length+' prodotti senza link esportati');
+  };
   window.renderAdminCatalog = function(){
     const list = document.getElementById('admin-catalog-list');
     if(!list) return;
     const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
+    const onlyNoLink = document.getElementById('cat-link-filter')?.value === 'nolink';
+    const _lf = document.getElementById('cat-link-filter');
+    if(_lf && _lf.options[1]){ const n=adminCatalogProducts.filter(p=>!srcCheck(p.sourceUrl).ok).length; _lf.options[1].textContent='⚠️ Senza link fornitore ('+n+')'; }
     _catFiltered = adminCatalogProducts.filter(p=>
-      !q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q)
+      (!q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q))
+      && (!onlyNoLink || !srcCheck(p.sourceUrl).ok)
     );
     if(!_catFiltered.length){
       list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:12px 0;">Nessun prodotto trovato.</p>';
@@ -3545,6 +3612,9 @@ waitFB(()=>{
     document.getElementById('edit-model').value = p.model||'';
     document.getElementById('edit-colors').value = (p.colors||[]).join(', ');
     document.getElementById('edit-desc').value   = p.description||'';
+    document.getElementById('edit-link').value   = p.sourceUrl||'';
+    const _lo=document.getElementById('edit-link-open'); if(_lo){ _lo.href=p.sourceUrl||'#'; _lo.style.display=p.sourceUrl?'inline-flex':'none'; }
+    const _lw=document.getElementById('edit-link-warn'); if(_lw){ const c=srcCheck(p.sourceUrl); _lw.textContent=c.ok?'':'⚠️ '+c.msg; _lw.style.display=c.ok?'none':'block'; }
     const imgUrl = p.imageUrl||'';
     document.getElementById('edit-img').value = imgUrl;
     const imgPrev = document.getElementById('edit-img-prev');
@@ -3596,6 +3666,10 @@ waitFB(()=>{
     const imgUrl = document.getElementById('edit-img').value.trim();
     const colorsRaw = document.getElementById('edit-colors').value.trim();
     const colors = colorsRaw ? colorsRaw.split(',').map(c=>c.trim()).filter(Boolean) : [];
+    const linkRaw = (document.getElementById('edit-link')?.value||'').trim();
+    const _src = srcCheck(linkRaw);
+    if(linkRaw && !_src.ok) return showToast('⚠️ '+_src.msg);
+    const sourceUrl = _src.ok ? _src.url : '';
     const sizes  = ['XS','S','M','L','XL','XXL','Unica'].filter(s=>{
       const btn = document.getElementById('esz-'+s);
       return btn && btn.dataset.on === '1';
@@ -3605,16 +3679,16 @@ waitFB(()=>{
     try{
       // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker.
       await fb.updateDoc(fb.doc(fb.db,'products',pid),
-        {name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')});
+        {name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', '), sourceUrl: sourceUrl || fb.deleteField()});
       // Update local cache
       const idx = adminCatalogProducts.findIndex(p=>p.id===pid);
-      if(idx>=0) adminCatalogProducts[idx] = {...adminCatalogProducts[idx], name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')};
+      if(idx>=0) adminCatalogProducts[idx] = {...adminCatalogProducts[idx], name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', '), sourceUrl};
       // Update main products array too
       const pi = products.findIndex(p=>p.id===pid);
       if(pi>=0) products[pi] = {...products[pi], name, price, brand, model, description:desc, imageUrl:imgUrl, colors, sizes, size:sizes.join(', ')};
       closeEditModal();
       renderAdminCatalog();
-      showToast('✅ Prodotto aggiornato!');
+      showToast(sourceUrl ? '✅ Prodotto aggiornato!' : '✅ Aggiornato — ⚠️ manca ancora il link fornitore');
     } catch(e){ console.error('saveEditProduct:',e&&e.code,e&&e.message); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
     btn.textContent = '💾 SALVA MODIFICHE →'; btn.disabled = false;
   };
