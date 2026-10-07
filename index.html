@@ -1175,10 +1175,10 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ══════════ MOBILE HEADER ══════════ -->
 <header id="mob-hdr" style="position:relative;">
   <button onclick="openDrawer()" aria-label="Apri menu" style="background:none;border:none;cursor:pointer;color:var(--k);font-size:22px;padding:8px;min-width:44px;flex-shrink:0;">☰</button>
-  <button onclick="showPg('home')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:4px;color:var(--k);white-space:nowrap;">LILLOFIND</button>
+  <button id="mob-logo" onclick="showPg('home')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:4px;color:var(--k);white-space:nowrap;">LILLOFIND</button>
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-    <div id="m-badge" style="display:none;background:var(--led);color:#fff;padding:4px 10px;border-radius:999px;font-size:10.5px;letter-spacing:.5px;cursor:pointer;" onclick="showPg('lfpoints')">
-      <span id="m-pts">0</span>pt
+    <div id="m-badge" role="button" tabindex="0" style="display:none;border-radius:999px;letter-spacing:.2px;cursor:pointer;" onclick="showPg('lfpoints')">
+      <span id="m-pts">0</span><span class="m-badge-u">pt</span>
     </div>
     <button onclick="showPg('auth')" id="m-li-btn" style="background:var(--led);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;letter-spacing:.3px;padding:8px 14px;">Accedi</button>
     <button onclick="showPg('profile')" id="m-prof-btn" style="display:none;background:none;border:none;cursor:pointer;color:var(--k);min-width:44px;min-height:44px;display:none;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
@@ -1552,12 +1552,16 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="background:var(--k);color:var(--w);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;" class="pad-mob">
       <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:12px;">Il Tuo Saldo</p>
       <div>
-        <div class="bb outline-led" id="home-pts" style="font-size:clamp(72px,11vw,148px);line-height:.9;">000</div>
+        <div class="bb" id="home-pts" style="font-size:clamp(72px,11vw,148px);line-height:.9;">000</div>
         <p style="font-size:10.5px;letter-spacing:3px;color:rgba(246,243,238,.72);margin-top:10px;text-transform:uppercase;">LFPOINTS</p>
+        <div class="lf-hud" id="home-hud" hidden>
+          <div class="lf-hud-bar" id="home-hud-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="lf-hud-fill" id="home-hud-fill" style="width:0%"></div></div>
+          <div class="lf-hud-txt"><span id="home-hud-txt"></span><span id="home-hud-num"></span></div>
+        </div>
       </div>
       <div style="border-top:1px solid #1e1e1e;padding-top:20px;display:flex;gap:32px;flex-wrap:wrap;">
         <div>
-          <p class="bb" id="home-tier" style="font-size:22px;color:var(--led);">—</p>
+          <p class="bb" id="home-tier" style="font-size:22px;">—</p>
           <p style="font-size:10.5px;color:rgba(246,243,238,.72);letter-spacing:2px;text-transform:uppercase;">Livello</p>
         </div>
         <div>
@@ -2893,7 +2897,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <div style="text-align:right;">
             <p style="font-size:10.5px;color:rgba(246,243,238,.72);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">Livello</p>
-            <p class="bb" id="pr-tier" style="font-size:16px;letter-spacing:1px;color:var(--led2);line-height:1.2;">—</p>
+            <p class="bb" id="pr-tier" style="font-size:16px;letter-spacing:1px;color:var(--tier-color,var(--led2));line-height:1.2;">—</p>
           </div>
         </div>
         <!-- Points row -->
@@ -3579,6 +3583,22 @@ img{ -webkit-user-drag:none; user-select:none; }
   ];
 
   function getTier(p){ return p>=500?'💎 PLATINUM':p>=200?'🥇 GOLD':p>=50?'🥈 SILVER':'🥉 BRONZE'; }
+  // HUD livello: stesse soglie di getTier (Bronze 0 · Silver 50 · Gold 200 · Platinum 500)
+  const LF_TIERS=[{min:0,name:'Bronze',c:'--tier-bronze'},{min:50,name:'Silver',c:'--tier-silver'},{min:200,name:'Gold',c:'--tier-gold'},{min:500,name:'Platinum',c:'--tier-plat'}];
+  function tierInfo(p){
+    p=Math.max(0,+p||0); let i=0;
+    LF_TIERS.forEach((t,k)=>{ if(p>=t.min) i=k; });
+    const cur=LF_TIERS[i], nxt=LF_TIERS[i+1]||null;
+    return { cur, nxt, left:nxt?nxt.min-p:0, pct:nxt?Math.min(100,Math.round((p-cur.min)/(nxt.min-cur.min)*100)):100 };
+  }
+  // Colore del livello per chip, saldo e profilo (variabile --tier-color usata da theme-v3.css)
+  function applyTierColor(p){ try{ document.documentElement.style.setProperty('--tier-color','var('+tierInfo(p).cur.c+')'); }catch(_){} }
+  // "+N" breve sul chip punti quando il saldo sale
+  function ptsBump(el,n){
+    if(!el||!(n>0)) return;
+    const b=document.createElement('span'); b.className='lf-pts-plus'; b.textContent='+'+n;
+    el.appendChild(b); setTimeout(()=>b.remove(),1300);
+  }
 
   // ── Toast ──────────────────────────────────────────────
   window.showToast=function(m){
@@ -3649,7 +3669,10 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // ── Back to top ────────────────────────────────────────
   window.addEventListener('scroll',()=>{
-    document.getElementById('back-top').classList.toggle('vis',window.scrollY>400);
+    const bn=document.getElementById('bottom-nav');
+    const navOn=!!(bn&&getComputedStyle(bn).display!=='none');
+    // con la bottom nav visibile compare solo dopo il primo schermo
+    document.getElementById('back-top').classList.toggle('vis',window.scrollY>(navOn?window.innerHeight:400));
   },{passive:true});
 
   // ── Cookie ─────────────────────────────────────────────
@@ -3700,7 +3723,14 @@ img{ -webkit-user-drag:none; user-select:none; }
     const nLogin=document.getElementById('n-login-btn'); if(nLogin) nLogin.style.display=li?'none':'';
     // Mobile
     const mBadge=document.getElementById('m-badge'); if(mBadge) mBadge.style.display=li?'':'none';
-    const mPts=document.getElementById('m-pts'); if(li&&mPts) mPts.textContent=ud?.lfpoints??0;
+    const mPts=document.getElementById('m-pts');
+    if(li&&mPts){
+      const now=+(ud?.lfpoints??0), prev=mPts.dataset.v===undefined?-1:+mPts.dataset.v;
+      mPts.textContent=now; mPts.dataset.v=now;
+      if(prev>=0&&now>prev) ptsBump(mBadge,now-prev);
+      applyTierColor(now);
+      if(mBadge) mBadge.setAttribute('aria-label',now+' LFPoints, livello '+tierInfo(now).cur.name);
+    }
     const mLi=document.getElementById('m-li-btn'); if(mLi) mLi.style.display=li?'none':'';
     const mProf=document.getElementById('m-prof-btn'); if(mProf) mProf.style.display=li?'':'none';
     // Drawer
@@ -3720,6 +3750,19 @@ img{ -webkit-user-drag:none; user-select:none; }
     const pts=udata?.lfpoints??0;
     const el=document.getElementById('home-pts'); if(el) el.textContent=String(pts).padStart(3,'0');
     const tEl=document.getElementById('home-tier'); if(tEl) tEl.textContent=udata?getTier(pts):'—';
+    // Barra verso il livello successivo
+    const hud=document.getElementById('home-hud');
+    if(hud){
+      hud.hidden=!udata;
+      if(udata){
+        const ti=tierInfo(pts); applyTierColor(pts);
+        const fill=document.getElementById('home-hud-fill'); if(fill) fill.style.width=ti.pct+'%';
+        const bar=document.getElementById('home-hud-bar'); if(bar) bar.setAttribute('aria-valuenow',ti.pct);
+        const tx=document.getElementById('home-hud-txt'), nm=document.getElementById('home-hud-num');
+        if(tx) tx.innerHTML=ti.nxt?('Ancora <b>'+ti.left+'</b> punti per '+ti.nxt.name):'<b>Livello massimo</b> raggiunto';
+        if(nm) nm.textContent=ti.nxt?(pts+' / '+ti.nxt.min):(pts+' pt');
+      }
+    }
     const sEl=document.getElementById('home-spent'); if(sEl) sEl.textContent=udata?'€'+(udata.totalSpent||0).toFixed(0):'€0';
     if(document.getElementById('pg-lfpoints')?.classList.contains('on')) renderRewardsTable();
     renderRecentlyViewed();
@@ -5937,7 +5980,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     set('pr-name',name||'—');
     set('pr-email',user.email||udata.email||'—');
     set('pr-spent','€'+spent.toFixed(2));
-    set('pr-tier',getTier(pts));
+    set('pr-tier',getTier(pts)); applyTierColor(pts);
     // Avatar initials
     const initEl=document.getElementById('pr-initials');
     if(initEl){
