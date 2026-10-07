@@ -38,6 +38,22 @@ function addonSummaryOf(addons) {
   return parts.join(' · ');
 }
 
+// Sconto LFPoints: UNO per account, per sempre. Se l'account ha già usato
+// uno sconto (discountUsed) qualsiasi premio residuo viene ignorato.
+export function rewardDiscount(udata, subtotal, shipping) {
+  const ar = udata && udata.activeReward;
+  if (!ar || (udata && udata.discountUsed === true)) return { discount: 0, reward: null };
+  let d = 0;
+  const val = Number(ar.val) || 0;
+  if (ar.type === 'fisso') d = Math.min(Math.max(0, val), subtotal);
+  else if (ar.type === 'percentuale') d = subtotal * (Math.min(Math.max(0, val), 100) / 100);
+  if (ar.freeShipping) d += shipping;
+  d = Math.round(Math.min(d, subtotal + shipping) * 100) / 100;
+  return { discount: d, reward: ar };
+}
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
 function escHtml(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -258,9 +274,17 @@ const TRACK17_MAP = {
   DeliveryFailure: 'in_transito', Undelivered: 'in_transito', Exception: 'in_transito', Expired: 'in_transito',
   NotFound: '', InfoReceived_2: 'spedito',
 };
-export async function track17(data, { env }) {
-  const code = String((data && data.code) || '').trim();
+export async function track17(data, { env, db, auth }) {
+  const code = String((data && data.code) || '').trim().slice(0, 60);
   if (!code) throw new HttpsError('invalid-argument', 'Codice tracking mancante.');
+  // Quota 17TRACK: solo l'admin o il cliente per il PROPRIO codice di spedizione.
+  const admins = (env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const isAdminCaller = admins.includes(String(auth.email || '').toLowerCase());
+  if (!isAdminCaller) {
+    let own = '';
+    try { const u = await db.getDoc('users', auth.uid); own = String((u.data() || {}).trackingCode || '').trim(); } catch (_) {}
+    if (!own || own !== code) throw new HttpsError('permission-denied', 'Codice non associato al tuo account.');
+  }
   const token = env.TRACK17_TOKEN;
   if (!token) return { ok: false, error: 'not-configured' };
   const carrier = (data && data.carrier) ? Number(data.carrier) : undefined;
@@ -311,11 +335,29 @@ export async function track17(data, { env }) {
 // ── sendOrderEmail ──────────────────────────────────────────────
 // Email di conferma ordine al cliente (+ notifica admin). Auth: required
 // (verifica solo il token, NON richiede il service account Firestore).
-export async function sendOrderEmail(data, { env, auth }) {
+// Le pagine vecchie lo chiamano col contenuto dell'ordine: ora il contenuto
+// viene IGNORATO e si rilegge l'ordine salvato (per orderId + uid del
+// chiamante), così non è sfruttabile per mandare email arbitrarie.
+export async function sendOrderEmail(data, { env, db, auth }) {
+  const orderId = String((data && data.orderId) || '').trim().slice(0, 40);
+  if (!orderId) return { sent: false, reason: 'no_order' };
+  let rows = [];
+  try { rows = await db.runQuery('orders', { where: [['orderId', '==', orderId], ['uid', '==', auth.uid]], limit: 1 }); }
+  catch (e) { return { sent: false, reason: 'lookup_failed' }; }
+  if (!rows.length) return { sent: false, reason: 'not_found' };
+  const o = rows[0];
+  if (o.customerEmailSent) return { sent: false, reason: 'already_sent' };
+  const r = await sendOrderEmails(o, env);
+  if (r && r.sent && o.id) { try { await db.updateDoc('orders', o.id, { customerEmailSent: true }); } catch (_) {} }
+  return r;
+}
+
+// Invia la conferma al cliente (email dell'ordine) + la notifica all'admin
+// con il blocco "ordine fornitore". `o` è l'ordine come salvato su Firestore.
+export async function sendOrderEmails(o, env) {
   if (!env.RESEND_API_KEY) return { sent: false, reason: 'no_key' };
-  const to = (auth && auth.email) ? auth.email : (data && data.email) || '';
-  if (!to) return { sent: false, reason: 'no_email' };
-  const o = data || {};
+  const to = String(o.email || '').trim();
+  if (!to || !EMAIL_RE.test(to)) return { sent: false, reason: 'no_email' };
   const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
   const payLabel = { bonifico: 'Bonifico bancario', paypal: 'PayPal', card: 'Carta' }[o.payment] || o.payment || '—';
   const nextStep = {
@@ -621,15 +663,7 @@ export async function createPaymentIntent(data, { env, db, auth }) {
   let discountAmount = 0;
   try {
     const userSnap = await db.getDoc('users', auth.uid);
-    if (userSnap.exists) {
-      const ar = userSnap.data().activeReward || null;
-      if (ar) {
-        if (ar.type === 'fisso') discountAmount = Math.min(ar.val, subtotal);
-        else if (ar.type === 'percentuale') discountAmount = subtotal * (ar.val / 100);
-        if (ar.freeShipping) discountAmount += shipping;
-        discountAmount = Math.round(discountAmount * 100) / 100;
-      }
-    }
+    if (userSnap.exists) discountAmount = rewardDiscount(userSnap.data(), subtotal, shipping).discount;
   } catch (e) { /* non bloccante */ }
 
   const total = Math.max(0, Math.round((subtotal + shipping - discountAmount) * 100) / 100);
@@ -652,7 +686,7 @@ export async function createPaymentIntent(data, { env, db, auth }) {
 }
 
 // ── validateOrder ───────────────────────────────────────────────
-export async function validateOrder(data, { env, db, auth }) {
+export async function validateOrder(data, { env, db, auth, waitUntil }) {
   const SUBSCRIPTION_CATALOG = {
     'sub-netflix':     { name: 'Netflix Premium UHD',  price: 3.90, isDigital: true },
     'sub-youtube':     { name: 'YouTube Premium',      price: 2.50, isDigital: true },
@@ -703,8 +737,11 @@ export async function validateOrder(data, { env, db, auth }) {
     return {
       id: snap.id, name: prod.name || '', price: (prod.price || 0) + addonPrice, brand: prod.brand || '',
       category: prod.category || '', weightKg: prod.weightKg || prod.weight_kg || 0,
-      boxOption: prodItems[idx].boxOption || '', qty, size: prodItems[idx].size || '',
-      color: prodItems[idx].color || '', img: prod.imageUrl || '', isDigital: prod.isDigital || false,
+      boxOption: ['con_scatola', 'senza_scatola'].includes(prodItems[idx].boxOption) ? prodItems[idx].boxOption : '',
+      qty, size: String(prodItems[idx].size || '').slice(0, 20),
+      color: String(prodItems[idx].color || '').slice(0, 60), img: prod.imageUrl || '', isDigital: prod.isDigital || false,
+      ...(prod.sourceUrl ? { sourceUrl: prod.sourceUrl } : {}),
+      ...(prod.supplierPriceCNY != null ? { supplierPriceCNY: prod.supplierPriceCNY } : {}),
       ...(addonPrice ? { addonPrice, addonSummary } : {}),
     };
   });
@@ -718,20 +755,22 @@ export async function validateOrder(data, { env, db, auth }) {
   const shipping = allDigital ? 0 : getShippingCost(totalWeight);
   const lfpoints = Math.floor(subtotal);
 
-  let discountAmount = 0, activeReward = null;
+  let discountAmount = 0, activeReward = null, udata0 = {};
   try {
     const userSnap = await db.getDoc('users', uid);
     if (userSnap.exists) {
-      const udata = userSnap.data();
-      activeReward = udata.activeReward || null;
-      if (activeReward) {
-        if (activeReward.type === 'fisso') discountAmount = Math.min(activeReward.val, subtotal);
-        else if (activeReward.type === 'percentuale') discountAmount = subtotal * (activeReward.val / 100);
-        if (activeReward.freeShipping) discountAmount += shipping;
-        discountAmount = Math.round(discountAmount * 100) / 100;
-      }
+      udata0 = userSnap.data() || {};
+      const rd = rewardDiscount(udata0, subtotal, shipping);
+      discountAmount = rd.discount; activeReward = rd.reward;
     }
   } catch (e) { console.error('Errore lettura utente:', e.message); }
+
+  // Email dell'ordine: quella dell'account; per gli ospiti anonimi (nessuna
+  // email nel token) quella digitata al checkout, validata.
+  const tokenEmail = String((auth.token && auth.token.email) || auth.email || '').trim().toLowerCase();
+  const typedEmail = String((data && data.email) || '').trim().toLowerCase().slice(0, 200);
+  const orderEmail = tokenEmail || (EMAIL_RE.test(typedEmail) ? typedEmail : '');
+  const isAnon = !!(auth.token && auth.token.firebase && auth.token.firebase.sign_in_provider === 'anonymous');
 
   const total = Math.max(0, Math.round((subtotal + shipping - discountAmount) * 100) / 100);
 
@@ -752,7 +791,7 @@ export async function validateOrder(data, { env, db, auth }) {
 
   const orderData = {
     orderId, uid,
-    email: auth.token.email || auth.email || '',
+    email: orderEmail,
     name: String(name || '').slice(0, 120),
     phone: String(phone || '').slice(0, 30),
     address: {
@@ -769,24 +808,47 @@ export async function validateOrder(data, { env, db, auth }) {
     isDigitalOrder: allDigital,
     deliveryType: allDigital ? 'digital' : 'physical',
     status: 'pending',
+    paymentStatus: paymentMethod === 'card' ? 'paid' : 'unpaid',
     createdAt: new Date(),
   };
 
-  try { await db.addDoc('orders', orderData); }
+  let orderDocId = '';
+  try { orderDocId = await db.addDoc('orders', orderData); }
   catch (e) { throw new HttpsError('internal', 'Errore nel salvataggio dell\'ordine. Riprova.'); }
 
   const paymentVerified = paymentMethod === 'card';
   try {
     const userSnap2 = await db.getDoc('users', uid);
     const currentData = userSnap2.exists ? userSnap2.data() : {};
-    const userUpdate = { totalSpent: (currentData.totalSpent || 0) + subtotal };
+    // Profilo cliente creato/aggiornato lato server (anche per gli ospiti):
+    // nome, email, telefono, indirizzo dell'ultimo ordine.
+    const userUpdate = {
+      uid,
+      totalSpent: (currentData.totalSpent || 0) + subtotal,
+      lastOrderAt: new Date(),
+      isGuest: isAnon,
+    };
+    if (orderEmail && !currentData.email) userUpdate.email = orderEmail;
+    if (orderData.name && !currentData.displayName) userUpdate.displayName = orderData.name;
+    if (orderData.phone) userUpdate.phone = orderData.phone;
+    if (orderData.address.street) userUpdate.address = orderData.address;
+    if (!currentData.createdAt) userUpdate.createdAt = new Date();
     if (paymentVerified) userUpdate.lfpoints = (currentData.lfpoints || 0) + lfpoints;
-    if (activeReward && paymentVerified) userUpdate.activeReward = DELETE_FIELD;
+    // Lo sconto si consuma con l'ordine (anche PayPal/bonifico): uno per account.
+    if (activeReward && discountAmount > 0) {
+      userUpdate.activeReward = DELETE_FIELD;
+      userUpdate.discountUsed = true;
+      userUpdate.discountUsedAt = new Date();
+      userUpdate.discountUsedOrder = orderId;
+    }
     await db.updateDoc('users', uid, userUpdate);
   } catch (e) { console.error('Errore aggiornamento utente (non critico):', e.message); }
 
-  // Notifica email (fire-and-forget; non blocca la risposta)
-  sendOrderNotification({ ...orderData, orderId, subtotal, shipping, discount: discountAmount, total }, env.RESEND_API_KEY, env.RESEND_FROM);
+  // Email conferma al cliente + notifica admin (in background, dati dall'ordine salvato)
+  const mailJob = sendOrderEmails(orderData, env)
+    .then(r => (r && r.sent && orderDocId) ? db.updateDoc('orders', orderDocId, { customerEmailSent: true }) : null)
+    .catch(e => console.error('email ordine:', e && e.message));
+  if (typeof waitUntil === 'function') waitUntil(mailJob); else await mailJob;
 
   return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints: paymentVerified ? lfpoints : 0, paymentMethod };
 }
