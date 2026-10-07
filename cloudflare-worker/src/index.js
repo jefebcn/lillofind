@@ -13,6 +13,7 @@ import * as admin from './handlers/admin.js';
 import * as checkout from './handlers/checkout.js';
 import * as scrapers from './handlers/scrapers.js';
 import * as stream from './handlers/stream.js';
+import * as loyalty from './handlers/loyalty.js';
 import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
@@ -20,9 +21,15 @@ const app = new Hono();
 // ── CORS ────────────────────────────────────────────────────────
 function corsHeaders(origin, env) {
   const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-  const ok = allowed.length === 0 || !origin || allowed.includes('*') || allowed.includes(origin);
+  const ok = allowed.length === 0 || allowed.includes('*') || (origin && allowed.includes(origin));
+  if (origin && !ok) {
+    // Origine non autorizzata: nessun Access-Control-Allow-Origin → il
+    // browser blocca la lettura della risposta.
+    return { 'Vary': 'Origin' };
+  }
   return {
-    'Access-Control-Allow-Origin': ok && origin ? origin : '*',
+    'Access-Control-Allow-Origin': origin && ok ? origin : '*',
+    'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
     'Access-Control-Max-Age': '86400',
@@ -60,7 +67,8 @@ function callable(handler, opts = {}) {
       try { body = await c.req.json(); } catch (_) { body = {}; }
       const data = body && typeof body === 'object' && 'data' in body ? body.data : body;
 
-      const ctx = { env, db: new Firestore(env), auth: null };
+      const ctx = { env, db: new Firestore(env), auth: null,
+        waitUntil: (p) => { try { c.executionCtx.waitUntil(p); } catch (_) { return p; } } };
 
       if (opts.auth === 'required' || opts.auth === 'admin' || opts.auth === 'adminEmail') {
         const token = bearerFrom(c.req.raw);
@@ -223,6 +231,12 @@ app.get('/geo', (c) => {
 // Utile subito dopo il deploy: GET /diag
 app.get('/diag', async (c) => {
   const env = c.env;
+  // Solo admin: rivela quali secret sono configurati ed eventuali errori Firestore.
+  try {
+    const decoded = await verifyIdToken(bearerFrom(c.req.raw), env.FIREBASE_PROJECT_ID);
+    const admins = (env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (!admins.includes(String(decoded.email || '').toLowerCase())) return c.json({ error: 'Solo admin' }, 403);
+  } catch (_) { return c.json({ error: 'Login admin richiesto' }, 401); }
   const out = {
     projectId: env.FIREBASE_PROJECT_ID || null,
     secrets: {
@@ -591,6 +605,9 @@ app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 
 app.post('/track17',             callable(checkout.track17,             { auth: 'required' }));
 // Email conferma ordine al cliente (utente autenticato)
 app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 'required' }));
+// LFPoints: riscatto premi e accredito inviti (prima scritti dal browser)
+app.post('/claimReward',         callable(loyalty.claimReward,          { auth: 'required' }));
+app.post('/claimReferrals',      callable(loyalty.claimReferrals,       { auth: 'required' }));
 app.post('/sendAccountEmail',    callable(checkout.sendAccountEmail,    { auth: 'required' }));
 app.post('/sendCredentialsEmail', callable(checkout.sendCredentialsEmail, { auth: 'adminEmail' }));
 // Diagnostica invio email (admin via allowlist email)
