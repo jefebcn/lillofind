@@ -92,8 +92,6 @@ h2.bb{letter-spacing:-.02em!important;}
 .sport-banner:hover .sport-banner-cta{background:#fff!important;}
 
 /* ── 6. SEZIONI / BANNER ───────────────────────────────────── */
-.led-strip,.led-strip-sm{display:none!important;}
-section[style*="border-bottom:2px solid var(--k)"]{border-bottom:1px solid var(--border)!important;}
 #brand-showcase{background:var(--w)!important;}
 #home-tier{color:var(--tier-color,var(--led2))!important;}
 .brand-tile{border:1px solid var(--border)!important;border-radius:14px!important;transition:border-color .2s,transform .2s;}
