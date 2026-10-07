@@ -1552,7 +1552,7 @@ window.fetchTaobaoItems = async function(){
   const raw = (document.getElementById('tb-urls')?.value||'').trim();
   if(!raw){ toast('⚠️ Incolla almeno un URL (Taobao o Weidian)'); return; }
 
-  const _agentRe=/taobao|tb\.cn|tmall|aliexpress|weidian|koudai|1688|kakobuy|cnfans|mulebuy|hoobuy|acbuy|allchinabuy|sifukj|kameymall|orientdig|joyabuy|ponybuy|superbuy|pandabuy|basetao|cssbuy|wegobuy|hagobuy|loongbuy|itaobuy|oopbuy|lovegobuy|eastmallbuy/i;
+  const _agentRe=/taobao|tb\.cn|tmall|aliexpress|weidian|koudai|youshop\d*\.com|vdian|1688|kakobuy|cnfans|mulebuy|hoobuy|acbuy|allchinabuy|sifukj|kameymall|orientdig|joyabuy|ponybuy|superbuy|pandabuy|basetao|cssbuy|wegobuy|hagobuy|loongbuy|itaobuy|oopbuy|lovegobuy|eastmallbuy/i;
   const urls = raw.split(/\n+/).map(u=>u.trim()).filter(u=>u.length>5 && _agentRe.test(u));
   if(!urls.length){ toast('⚠️ Nessun URL valido rilevato (Taobao/Tmall/AliExpress/Weidian o link agent Kakobuy/CNFans…)'); return; }
 
