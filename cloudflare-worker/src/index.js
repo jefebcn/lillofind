@@ -14,6 +14,7 @@ import * as checkout from './handlers/checkout.js';
 import * as scrapers from './handlers/scrapers.js';
 import * as stream from './handlers/stream.js';
 import * as loyalty from './handlers/loyalty.js';
+import * as catalog from './handlers/catalog.js';
 import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
@@ -210,6 +211,9 @@ app.get('/proxyImage', async (c) => {
     });
   }
 });
+
+// ── Catalogo shop (da Cloudflare KV, 0 letture Firestore) ───────
+app.get('/catalog', (c) => catalog.getCatalog(c));
 
 // ── Health check ────────────────────────────────────────────────
 app.get('/', (c) => c.json({ ok: true, service: 'lillofind-worker' }));
@@ -608,6 +612,9 @@ app.post('/sendOrderEmail',      callable(checkout.sendOrderEmail,      { auth: 
 // LFPoints: riscatto premi e accredito inviti (prima scritti dal browser)
 app.post('/claimReward',         callable(loyalty.claimReward,          { auth: 'required' }));
 app.post('/claimReferrals',      callable(loyalty.claimReferrals,       { auth: 'required' }));
+// Catalogo shop su Cloudflare KV (pubblicato dall'admin)
+app.post('/publishCatalog',      callable(catalog.publishCatalog,       { auth: 'adminEmail' }));
+app.post('/markCatalogDirty',    callable(catalog.markCatalogDirty,     { auth: 'adminEmail' }));
 app.post('/sendAccountEmail',    callable(checkout.sendAccountEmail,    { auth: 'required' }));
 app.post('/sendCredentialsEmail', callable(checkout.sendCredentialsEmail, { auth: 'adminEmail' }));
 // Diagnostica invio email (admin via allowlist email)
