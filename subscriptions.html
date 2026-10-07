@@ -213,7 +213,7 @@ body.dg h1,body.dg h2,body.dg h3{font-family:var(--ff-h);letter-spacing:-.02em;m
 .kg-cover{position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .kg-cover .kg-glyph{position:absolute;top:8px;right:10px;font-size:20px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
 .kg-cover .kg-mark{font-family:var(--ff-h);font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.96);text-shadow:0 3px 12px rgba(0,0,0,.5);text-align:center;padding:0 8px;line-height:.95;white-space:nowrap;max-width:100%;overflow:hidden;}
-.kg-ribbon{position:absolute;top:8px;left:8px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:var(--ac);color:var(--ac-ink);padding:3px 8px;border-radius:6px;}
+.kg-ribbon{position:absolute;top:8px;left:8px;font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:var(--ac);color:var(--ac-ink);padding:3px 8px;border-radius:6px;}
 .kg-body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1;}
 .kg-title{font-weight:800;font-size:14px;color:var(--tx);line-height:1.25;min-height:35px;margin:0;}
 .kg-meta{font-size:11.5px;color:var(--tx3);margin:0;}
@@ -228,7 +228,7 @@ body.dg h1,body.dg h2,body.dg h3{font-family:var(--ff-h);letter-spacing:-.02em;m
 .cw-card:hover{transform:translateY(-3px);border-color:var(--ac-line);}
 .cw-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#1c1c1c;}
 .cw-fallback{width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#242424,#111);color:#666;font-size:26px;}
-.cw-kind{position:absolute;top:7px;left:7px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;background:rgba(0,0,0,.72);color:#fff;padding:3px 7px;border-radius:6px;}
+.cw-kind{position:absolute;top:7px;left:7px;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;background:rgba(0,0,0,.72);color:#fff;padding:3px 7px;border-radius:6px;}
 .cw-rate{position:absolute;top:7px;right:7px;font-size:11px;font-weight:800;background:rgba(0,0,0,.72);color:var(--ac);padding:3px 7px;border-radius:6px;}
 .cw-cap{padding:9px 10px 11px;}
 .cw-name{font-weight:800;font-size:13px;color:var(--tx);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0;}
@@ -858,12 +858,12 @@ async function cwDetail(type,id){
     statusLbl?`<span>• ${cwEsc(statusLbl)}</span>`:'',
   ].filter(Boolean).join('');
   const castHTML = (d.cast&&d.cast.length)
-    ? `<div style="margin-top:18px;"><p style="font-family:var(--ff);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dg1);margin-bottom:10px;">Nel cast</p>
+    ? `<div style="margin-top:18px;"><p style="font-family:var(--ff);font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--dg1);margin-bottom:10px;">Nel cast</p>
         <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">
         ${d.cast.map(c=>`<div style="flex-shrink:0;width:74px;text-align:center;">
             ${c.img?`<img src="${cwEsc(c.img)}" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:#1c1c1c;"/>`:`<div style="width:64px;height:64px;border-radius:50%;background:#1c1c1c;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto;">🎭</div>`}
             <p style="font-size:10px;color:#ddd;margin-top:5px;line-height:1.2;">${cwEsc(c.name)}</p>
-            ${c.char?`<p style="font-size:9px;color:#777;line-height:1.2;">${cwEsc(c.char)}</p>`:''}
+            ${c.char?`<p style="font-size:10.5px;color:#777;line-height:1.2;">${cwEsc(c.char)}</p>`:''}
           </div>`).join('')}
         </div></div>`
     : '';
@@ -878,7 +878,7 @@ async function cwDetail(type,id){
         <div style="min-width:0;flex:1;">
           <h3 class="bb" style="font-size:24px;color:#fff;line-height:1.12;margin-bottom:8px;">${cwEsc(d.title)}${period?` <span style="color:#777;font-weight:400;font-size:16px;">(${cwEsc(period)})</span>`:''}</h3>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-family:var(--ff);font-size:10px;color:#9a9a9a;margin-bottom:10px;">${meta}</div>
-          ${genres.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;">${genres.map(g=>`<span style="font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:#bbb;border:1px solid #333;border-radius:999px;padding:3px 9px;">${cwEsc(g)}</span>`).join('')}</div>`:''}
+          ${genres.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;">${genres.map(g=>`<span style="font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:#bbb;border:1px solid #333;border-radius:999px;padding:3px 9px;">${cwEsc(g)}</span>`).join('')}</div>`:''}
         </div>
       </div>
       ${d.overview?`<p style="font-size:13px;color:#cfcfcf;line-height:1.7;font-family:var(--ff);margin-top:16px;">${cwEsc(d.overview)}</p>`:''}

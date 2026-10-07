@@ -755,7 +755,7 @@ textarea.lf-in{resize:vertical;min-height:80px;}
   display:inline-flex;align-items:center;justify-content:center;
   width:15px;height:15px;border-radius:50%;
   background:rgba(255,255,255,.05);color:var(--w3);
-  font-size:9px;font-weight:600;cursor:help;
+  font-size:10.5px;font-weight:600;cursor:help;
   font-family:'Inter',sans-serif;letter-spacing:0;
   user-select:none;flex-shrink:0;transition:background .15s,color .15s;
   position:relative;opacity:.75;
@@ -1975,7 +1975,7 @@ function confirmInvest() {
       <div class="prev-row"><span class="prev-key">Profitto</span><span class="prev-val green">+€ ${fmtNum(profit)}</span></div>
       <div class="prev-row" style="border:none;padding-top:10px;"><span class="prev-key">Totale Previsto</span><span class="prev-val gold" style="font-size:22px;">€ ${fmtNum(total)}</span></div>
     </div>
-    <p style="font-size:9px;color:var(--w3);line-height:1.8;margin-bottom:16px;">
+    <p style="font-size:10.5px;color:var(--w3);line-height:1.8;margin-bottom:16px;">
       ${selTypeVal==='locked'?'⚠️ Il capitale bloccato non può essere ritirato prima della scadenza. Questo tipo di investimento garantisce il rendimento massimo disponibile.':'ℹ️ Il capitale flessibile può essere richiesto prima della scadenza contattando il supporto tramite la sezione Richieste.'}
     </p>`;
   openModal('modal-confirm');
@@ -2384,7 +2384,7 @@ function openRedeem(id, infoOnly=false) {
       <div class="prev-row"><span class="prev-key">Scadenza</span><span class="prev-val">${new Date(inv.endDate).toLocaleDateString('it-IT')}</span></div>
       <div class="prev-row" style="border:none"><span class="prev-key">Totale</span><span class="prev-val gold" style="font-size:22px;">€ ${fmtNum(inv.capital+inv.profit)}</span></div>
     </div>
-    ${!isMatured?'<div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);padding:12px;font-size:9px;color:var(--red);line-height:1.8;margin-bottom:16px;">⚠️ Questo investimento non è ancora maturato. Per richiedere un rientro anticipato, contatta il supporto tramite la sezione Richieste.</div>':'<div style="background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.2);padding:12px;font-size:9px;color:var(--g);line-height:1.8;margin-bottom:16px;">✅ Investimento maturato! Puoi procedere al riscatto dei fondi.</div>'}
+    ${!isMatured?'<div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);padding:12px;font-size:10.5px;color:var(--red);line-height:1.8;margin-bottom:16px;">⚠️ Questo investimento non è ancora maturato. Per richiedere un rientro anticipato, contatta il supporto tramite la sezione Richieste.</div>':'<div style="background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.2);padding:12px;font-size:10.5px;color:var(--g);line-height:1.8;margin-bottom:16px;">✅ Investimento maturato! Puoi procedere al riscatto dei fondi.</div>'}
   `;
   const btn = document.querySelector('#modal-redeem .btn-primary');
   btn.style.display = isMatured&&!infoOnly ? 'flex':'none';
@@ -2425,7 +2425,7 @@ function openEarlyExit(id) {
   const lostProfit = parseFloat((inv.profit - proratedProfit).toFixed(2));
 
   document.getElementById('modal-early-body').innerHTML = `
-    <div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);padding:14px;font-size:9px;color:#FF4757;line-height:1.9;margin-bottom:16px;">
+    <div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);padding:14px;font-size:10.5px;color:#FF4757;line-height:1.9;margin-bottom:16px;">
       ⚠️ Stai per disdire un investimento flessibile in anticipo. Riceverai solo il rendimento maturato fino ad oggi. Il profitto rimanente andrà perso.
     </div>
     <div class="preview" style="margin-bottom:16px;">
@@ -2491,9 +2491,9 @@ function renderRequests() {
         </div>
         <div class="req-status ${r.status}"><div class="status-dot"></div>${r.status==='pending'?'In attesa':r.status==='approved'?'Approvato':'Rifiutato'}</div>
       </div>
-      ${r.amount?`<div style="font-size:9px;color:var(--w3);">Importo: <span style="color:var(--g);">€ ${fmtNum(r.amount)}</span></div>`:''}
-      ${r.subject?`<div style="font-size:9px;color:var(--w3);">Oggetto: ${r.subject}</div>`:''}
-      <div style="font-size:9px;color:var(--w3);margin-top:4px;">${new Date(r.date).toLocaleDateString('it-IT')}</div>
+      ${r.amount?`<div style="font-size:10.5px;color:var(--w3);">Importo: <span style="color:var(--g);">€ ${fmtNum(r.amount)}</span></div>`:''}
+      ${r.subject?`<div style="font-size:10.5px;color:var(--w3);">Oggetto: ${r.subject}</div>`:''}
+      <div style="font-size:10.5px;color:var(--w3);margin-top:4px;">${new Date(r.date).toLocaleDateString('it-IT')}</div>
     </div>`).join('');
 }
 

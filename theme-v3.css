@@ -21,7 +21,7 @@
   --drop:#b8471f;         /* accento unico: urgenza / promo (bianco sopra = 5.3:1) */
   --drop-soft:#f7e4da;
   --mid:#5c5b54;          /* testo secondario */
-  --dim:#6f6d64;          /* era #a6a49b (2.2:1) → ora 4.5:1 */
+  --dim:#64625a;          /* era #a6a49b (2.2:1) → ≥4.5:1 anche sui beige più scuri (#e8e4da) */
   --border:#e6e1d6;
   --border-2:#d3ccbe;
   --ink-soft:#34342f;
@@ -35,52 +35,43 @@ body{background:var(--w);}
 :focus-visible{outline:none;box-shadow:var(--ring)!important;border-radius:8px;}
 
 /* ── 2. TIPOGRAFIA ─────────────────────────────────────────── */
-/* micro-testi a 8–9px → 10.5px leggibili */
-[style*="font-size:8px"],[style*="font-size:9px"]{font-size:10.5px!important;}
 .bnav-lbl{font-size:10px!important;letter-spacing:.2px!important;}
-/* Eyebrow / label di sezione: unico stile */
-.slbl{font-size:11px!important;letter-spacing:.16em!important;font-weight:700;color:var(--mid);}
-section[style*="background:var(--k)"] .slbl{color:var(--led2)!important;}
 /* Prezzi e numeri: cifre tabellari, niente "ballo" */
 .bb,#m-pts,#home-pts,#home-spent{font-variant-numeric:tabular-nums;}
 /* Titoli sezione: tracking stretto e coerente */
 h2.bb{letter-spacing:-.02em!important;}
-#home-carousel-wrap span[style*="letter-spacing:3px"]{
-  font-family:'Bricolage Grotesque',sans-serif!important;font-weight:800;
-  letter-spacing:-.02em!important;font-size:clamp(24px,5vw,34px)!important;}
 
 /* ── 3. BADGE SYSTEM (Novità · Urgenza · Stile) ─────────────── */
+/* Una sola forma: radius 6px, 10px, 700, maiuscolo, tracking .08em */
+.lf-badge{display:inline-flex;align-items:center;gap:6px;border-radius:var(--badge-r);
+  font-size:10px;font-weight:700;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;
+  padding:5px 8px;white-space:nowrap;}
+.lf-badge--new{background:#fff;color:var(--k);box-shadow:0 1px 6px rgba(0,0,0,.08);}
+.lf-badge--new::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--led);}
+.lf-badge--drop{background:var(--drop);color:#fff;}
+.lf-badge--soldout{background:var(--k);color:#fff;}
+.lf-badge--style{background:var(--accent-soft);color:var(--led);}
+.lf-badge-pos{position:absolute;top:12px;left:12px;z-index:3;}
+.carousel-card .lf-badge-pos{top:8px;left:8px;}
+/* Eyebrow: etichetta sopra i titoli di sezione */
+.lf-eyebrow{font-size:11px;letter-spacing:.16em;font-weight:700;text-transform:uppercase;color:var(--mid);}
+.lf-eyebrow--on-dark{color:var(--led2);}
+/* Titolo di sezione (h2) */
+.lf-section-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:-.02em;
+  line-height:1.02;font-size:clamp(28px,5vw,48px);}
+/* Bottone secondario su fondo scuro */
+.btn-g.btn-g--on-dark{border-color:rgba(246,243,238,.4)!important;color:var(--w)!important;}
+.btn-g.btn-g--on-dark:hover{background:var(--w)!important;color:var(--k)!important;}
 .led-badge{
   border:1px solid rgba(95,103,68,.28)!important;background:var(--accent-soft)!important;
   box-shadow:none!important;border-radius:999px!important;
   font-size:10.5px!important;letter-spacing:.14em!important;font-weight:700;
   color:var(--led)!important;padding:6px 12px!important;}
-/* card prodotto: badge in alto a sx */
-.pcard span[style*="top:12px;left:12px"]{
-  border-radius:var(--badge-r)!important;text-transform:uppercase;font-size:10px!important;
-  letter-spacing:.08em!important;padding:5px 8px!important;}
-/* "Novità" → discreto (è su quasi tutto, non deve urlare) */
-.pcard span[style*="background:var(--led);color:#fff"]{
-  background:rgba(255,255,255,.94)!important;color:var(--k)!important;
-  box-shadow:0 1px 6px rgba(0,0,0,.08);display:inline-flex;align-items:center;gap:6px;}
-.pcard span[style*="background:var(--led);color:#fff"]::before{
-  content:"";width:6px;height:6px;border-radius:50%;background:var(--led);}
-/* Urgenza → unico accento drop */
-.pcard span[style*="#c9603f"],
-.carousel-card span[style*="#ff4500"]{
-  background:var(--drop)!important;color:#fff!important;border-radius:var(--badge-r)!important;
-  font-size:10px!important;font-weight:700;letter-spacing:.08em!important;padding:4px 7px!important;
-  top:8px!important;left:8px!important;}
-/* Brand nel carosello: via il lime */
-.carousel-card p[style*="200,255,0"]{color:var(--led2)!important;font-weight:700;}
-/* Esaurito */
-.pcard span[style*="letter-spacing:3px;padding:8px 18px"]{letter-spacing:.14em!important;}
 
 /* ── 4. CARD PRODOTTO ──────────────────────────────────────── */
 .pcard{border-color:var(--border)!important;border-radius:18px!important;}
 .pcard h4{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
   min-height:2.6em;font-size:13.5px!important;}
-.pcard p[style*="text-transform:uppercase"]{color:var(--dim)!important;}
 .pcard .btn-led{width:40px;height:40px;padding:0!important;border-radius:12px!important;font-size:18px!important;}
 @media(max-width:520px){ /* su mobile 2 colonne: le taglie sono rumore */
   .pcard div[style*="flex-wrap:wrap;margin-bottom:12px"]{display:none!important;}
@@ -94,20 +85,11 @@ h2.bb{letter-spacing:-.02em!important;}
 .btn-g:hover{background:var(--k)!important;color:var(--w)!important;}
 .sport-banner-cta{background:var(--w)!important;color:var(--k)!important;}
 .sport-banner:hover .sport-banner-cta{background:#fff!important;}
-/* Banner Digital: bottone in palette brand */
-button[style*="linear-gradient(135deg,var(--dg1),var(--dg2))"]{
-  background:var(--led)!important;border-radius:999px!important;letter-spacing:.08em!important;}
-span[style*="rgba(181,168,157,.3)"]{border-color:rgba(169,177,131,.35)!important;border-radius:999px!important;}
-/* "Ricevi notifica" (banner In arrivo) — era quasi invisibile */
-button[style*="border:1.5px solid #2a2a2a"]{
-  border-color:rgba(246,243,238,.5)!important;color:var(--w)!important;border-radius:999px!important;}
 
 /* ── 6. SEZIONI / BANNER ───────────────────────────────────── */
 .led-strip,.led-strip-sm{display:none!important;}
 section[style*="border-bottom:2px solid var(--k)"]{border-bottom:1px solid var(--border)!important;}
-div[style*="200,255,0,.025"]{display:none!important;}       /* righe lime residue */
 #brand-showcase{background:var(--w)!important;}
-#brand-showcase p[style*="color:#aaa"]{color:var(--dim)!important;}
 #home-tier{color:var(--tier-color,var(--led2))!important;}
 .brand-tile{border:1px solid var(--border)!important;border-radius:14px!important;transition:border-color .2s,transform .2s;}
 .brand-tile:hover{border-color:var(--k)!important;transform:translateY(-2px);}
@@ -133,7 +115,7 @@ div[style*="200,255,0,.025"]{display:none!important;}       /* righe lime residu
 .lf-hud-txt{display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;color:rgba(246,243,238,.72);}
 .lf-hud-txt b{color:var(--w);}
 /* Bottom nav: indicatore attivo a pillola */
-.bnav-btn{color:#7d7b72!important;}
+.bnav-btn{color:var(--dim)!important;}   /* era #7d7b72 (4.2:1) → AA */
 .bnav-btn.active{color:var(--k)!important;font-weight:700;}
 .bnav-btn.active .bnav-icon{background:var(--accent-soft);border-radius:999px;width:54px;}
 .bnav-btn.active .bnav-icon svg{color:var(--led);}
