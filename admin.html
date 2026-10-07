@@ -194,6 +194,51 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
 .st-box{background:var(--hud-surf);border:1px solid var(--hud-line);border-radius:14px;padding:20px;min-width:0;}
 .st-sec{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin:26px 0 12px;font-weight:700;}
 
+/* Pannello "Da ordinare" (ordini al fornitore) */
+.sp-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.sp-seg{display:inline-flex;gap:4px;padding:4px;background:var(--hud-surf);border:1px solid var(--hud-line);border-radius:12px;overflow-x:auto;max-width:100%;}
+.sp-seg button{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 14px;border:none;border-radius:9px;background:transparent;color:rgba(255,255,255,.6);font:700 13px 'Manrope',sans-serif;cursor:pointer;white-space:nowrap;}
+.sp-seg button.on{background:var(--hud-bg);color:var(--hud);box-shadow:inset 0 0 0 1px rgba(184,199,126,.3);}
+.sp-seg .sp-s{display:none;}
+.sp-seg .n{font-size:11px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;}
+.sp-seg button.on .n{background:var(--hud);color:#12150b;}
+.sp-group,.sp-order{background:var(--hud-surf);border:1px solid var(--hud-line);border-radius:16px;margin-bottom:14px;overflow:hidden;}
+.sp-ghd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--hud-line);background:rgba(255,255,255,.02);}
+.sp-gname{font-size:16px;font-weight:800;color:#fff;margin:0;}
+.sp-gsub{font-size:12px;color:rgba(255,255,255,.5);margin:3px 0 0;}
+.sp-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 16px;border-bottom:1px solid var(--hud-line);}
+.sp-row:last-child{border-bottom:none;}
+.sp-th{width:64px;height:64px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.sp-th img{width:100%;height:100%;object-fit:cover;}
+.sp-name{font-size:13px;color:rgba(255,255,255,.6);margin:0 0 6px;}
+.sp-txt{margin:0;padding:10px 12px;background:#0b0b0a;border:1px solid var(--hud-line);border-radius:10px;font:500 13px/1.6 ui-monospace,Menlo,Consolas,monospace;color:#f3f1ea;white-space:pre-wrap;word-break:break-all;}
+.sp-txt .warn{color:#f0c030;}
+.sp-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:11.5px;color:rgba(255,255,255,.45);}
+.sp-meta a{color:var(--hud);text-decoration:none;font-weight:700;}
+.sp-copy{height:40px;padding:0 14px;border-radius:11px;border:1px solid var(--hud-line);background:var(--hud-surf);color:#fff;font:700 13px 'Manrope',sans-serif;cursor:pointer;white-space:nowrap;}
+.sp-copy:hover{border-color:rgba(184,199,126,.5);}
+.sp-copy.ok{background:var(--hud);color:#12150b;border-color:var(--hud);}
+.sp-copy-all{background:var(--hud);color:#12150b;border-color:var(--hud);}
+.sp-ohd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--hud-line);}
+.sp-oid{font-size:15px;font-weight:800;color:#fff;margin:0;}
+.sp-osub{font-size:12px;color:rgba(255,255,255,.5);margin:3px 0 0;}
+.sp-oact{display:flex;gap:8px;flex-wrap:wrap;}
+.sp-done{border-color:rgba(46,204,113,.45)!important;color:#7ddc9c!important;background:rgba(46,204,113,.08)!important;}
+.sp-empty{padding:40px 16px;text-align:center;color:rgba(255,255,255,.45);font-size:14px;background:var(--hud-surf);border:1px dashed var(--hud-line);border-radius:16px;}
+.sp-foot{display:flex;justify-content:flex-end;margin-top:6px;}
+@media(max-width:600px){
+  .sp-bar{flex-direction:column;align-items:stretch;}
+  .sp-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);}
+  .sp-seg button{justify-content:center;padding:0 6px;font-size:12.5px;}
+  .sp-seg .sp-l{display:none;} .sp-seg .sp-s{display:inline;}
+  .sp-row{grid-template-columns:52px minmax(0,1fr);gap:10px;padding:12px;}
+  .sp-th{width:52px;height:52px;}
+  .sp-row .sp-copy{grid-column:1/-1;width:100%;}
+  .sp-ghd,.sp-ohd{padding:12px;}
+  .sp-ghd .sp-copy,.sp-oact,.sp-oact .sp-copy{width:100%;}
+  .sp-oact .sp-copy{flex:1;}
+}
+
 /* Ricerca rapida (Ctrl+K) */
 #cmdk{position:fixed;inset:0;z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:12vh 16px 16px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
 #cmdk.open{display:flex;}
@@ -350,6 +395,10 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <span class="anav-icon">📋</span>Ordini
         <span class="anav-badge" id="orders-nav-badge" style="display:none;">0</span>
       </button>
+      <button class="anav-btn" data-pg="fornitore" onclick="showAdminPg('fornitore')">
+        <span class="anav-icon">🛒</span>Da ordinare
+        <span class="anav-badge" id="supp-nav-badge" style="display:none;"></span>
+      </button>
       <button class="anav-btn" data-pg="spedizioni" onclick="showAdminPg('spedizioni')">
         <span class="anav-icon">🚚</span>Spedizioni
       </button>
@@ -427,6 +476,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <button class="qa-btn primary" onclick="quickNewProduct()">➕ Nuovo prodotto</button>
         <button class="qa-btn" onclick="showAdminPg('importa')">⚡ Importa da Yupoo</button>
         <button class="qa-btn" onclick="goPendingOrders()">📋 Ordini in attesa</button>
+        <button class="qa-btn" onclick="showAdminPg('fornitore')">🛒 Da ordinare</button>
         <button class="qa-btn" onclick="showAdminPg('spedizioni')">🚚 Spedizioni</button>
         <button class="qa-btn" onclick="quickBrokenPhotos()">🧹 Foto rotte</button>
         <button class="qa-btn" onclick="window.open('index.html','_blank')">🛍 Apri shop</button>
@@ -466,6 +516,27 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <div id="admin-orders-list" style="display:flex;flex-direction:column;gap:10px;">
         <p style="font-size:10px;color:var(--dim);letter-spacing:1px;">Clicca "Aggiorna" per caricare gli ordini.</p>
       </div>
+    </div>
+
+    <!-- ─── PAGE: DA ORDINARE (ordini al fornitore) ─── -->
+    <div class="apg hidden" id="apg-fornitore">
+      <div class="apg-hdr">
+        <h1 class="apg-title bb">🛒 Da ordinare</h1>
+        <button class="icon-btn" onclick="refreshSupplierPanel()" title="Aggiorna ordini" aria-label="Aggiorna ordini" style="margin-left:auto;"><span>🔄</span></button>
+      </div>
+      <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin:-8px 0 16px;max-width:720px;">Ogni articolo ordinato dai clienti con il suo link (album Yupoo, Weidian, Taobao), i pezzi, la taglia e il colore — su più righe, pronto da copiare e incollare al fornitore. Quando hai passato l'ordine, segnalo come <b>ordinato</b>.</p>
+      <div class="sp-bar">
+        <div class="sp-seg" id="sp-filters" role="tablist" aria-label="Stato">
+          <button data-f="todo" onclick="spSetFilter('todo')">Da ordinare <span class="n">0</span></button>
+          <button data-f="unpaid" onclick="spSetFilter('unpaid')"><span class="sp-l">In attesa di pagamento</span><span class="sp-s">Da pagare</span> <span class="n">0</span></button>
+          <button data-f="done" onclick="spSetFilter('done')">Già ordinati <span class="n">0</span></button>
+        </div>
+        <div class="sp-seg" id="sp-views" role="tablist" aria-label="Vista">
+          <button data-v="supplier" onclick="spSetView('supplier')">🏪 Per fornitore</button>
+          <button data-v="order" onclick="spSetView('order')">📋 Per ordine</button>
+        </div>
+      </div>
+      <div id="sp-body"><p style="font-size:13px;color:rgba(255,255,255,.5);">Caricamento ordini…</p></div>
     </div>
 
     <!-- ─── PAGE: PRODOTTI ─── -->
@@ -2468,6 +2539,163 @@ waitFB(()=>{
   };
 
   // Copia negli appunti il blocco "ordine fornitore" (pronto per il form agente).
+
+// ══════════════════════════════════════════════════════════════════════
+// DA ORDINARE — articoli degli ordini clienti da passare al fornitore.
+// Per ogni articolo: link (album Yupoo esatto, oppure Weidian/Taobao), pezzi,
+// taglia e colore su più righe, pronti da copiare. Raggruppabili per fornitore
+// (stesso link + taglia + colore → pezzi sommati). Un ordine passato al
+// fornitore si segna con supplierOrdered:true (resta tracciato).
+// ══════════════════════════════════════════════════════════════════════
+  let _spFilter='todo', _spView='supplier';
+  window._spCopy={};
+  function spLink(i){
+    if(i.sourceUrl) return { url:i.sourceUrl, exact:true };
+    const s=sourceLink(i.img||i.imageUrl||'');
+    return (s && s.url) ? { url:s.url, exact:false } : { url:'', exact:false };
+  }
+  function spSupplier(url){
+    if(!url) return { key:'?', label:'Link mancante', site:'' };
+    let m=url.match(/https?:\/\/([a-z0-9_-]+)\.x\.yupoo\.com/i);
+    if(m) return { key:'yp:'+m[1].toLowerCase(), label:m[1], site:'Yupoo' };
+    if(/weidian\.com|geilicdn/i.test(url)){ const sm=url.match(/[?&](?:userid|shopId)=(\d+)/i); return { key:'wd:'+(sm?sm[1]:''), label:sm?('Weidian '+sm[1]):'Weidian', site:'Weidian' }; }
+    if(/taobao|tmall/i.test(url)) return { key:'tb', label:'Taobao', site:'Taobao' };
+    if(/1688\.com/i.test(url)) return { key:'1688', label:'1688', site:'1688' };
+    try{ const h=new URL(url).hostname; return { key:h, label:h, site:'' }; }catch(_){ return { key:'?', label:'Altro', site:'' }; }
+  }
+  function spExtras(i){ const e=[]; if(i.addonSummary) e.push(i.addonSummary); if(i.boxOption==='con_scatola') e.push('Con scatola'); return e; }
+  // Testo da incollare al fornitore: link, pezzi, taglia, colore (+ extra) su più righe.
+  function spText(r){
+    const L=[];
+    L.push(r.link || '⚠️ Link mancante');
+    if(r.link && !r.exact) L.push("(link dello store: cerca l'articolo dalla foto)");
+    L.push('Pezzi: '+r.qty);
+    L.push('Taglia: '+(r.size||'unica'));
+    L.push('Colore: '+(r.color||'come in foto'));
+    if(r.extras && r.extras.length) L.push('Extra: '+r.extras.join(' · '));
+    return L.join('\n');
+  }
+  function spOrders(f){
+    return (typeof adminOrders!=='undefined' ? adminOrders : []).filter(o=>{
+      if(!(o.items||[]).some(i=>!i.isDigital)) return false;
+      if(f==='todo')   return o.status==='confirmed' && !o.supplierOrdered;
+      if(f==='unpaid') return o.status==='pending' && !o.supplierOrdered;
+      if(f==='done')   return !!o.supplierOrdered;
+      return false;
+    });
+  }
+  window.updateSuppBadge=function(){
+    const b=document.getElementById('supp-nav-badge'); if(!b) return;
+    const n=spOrders('todo').length;
+    b.textContent=n; b.style.display=n>0?'flex':'none';
+  };
+  function spItemRow(i){
+    const L=spLink(i);
+    return { link:L.url, exact:L.exact, size:i.size||'', color:i.color||'', extras:spExtras(i), qty:(+i.qty||1), name:i.name||'', img:i.img||i.imageUrl||'', orders:new Set() };
+  }
+  function spRowHTML(r, showOrders){
+    const k='c'+Object.keys(_spCopy).length; _spCopy[k]=spText(r);
+    const txt=escH(_spCopy[k]).replace(/^(⚠️.*|\(link dello store.*)$/gm,'<span class="warn">$1</span>');
+    const img=r.img?pImg(r.img):'';
+    const ords=showOrders&&r.orders.size?[...r.orders]:[];
+    return `<div class="sp-row">
+      <div class="sp-th">${img?`<img src="${img}" alt="" loading="lazy" onerror="this.remove()">`:'📦'}</div>
+      <div style="min-width:0;">
+        <p class="sp-name">${escH(r.name||'Articolo')}</p>
+        <pre class="sp-txt">${txt}</pre>
+        <div class="sp-meta">${r.link?`<a href="${escH(r.link)}" target="_blank" rel="noopener">Apri link ↗</a>`:''}${ords.length?`<span>Ordini: ${ords.map(escH).join(', ')}</span>`:''}</div>
+      </div>
+      <button class="sp-copy" data-k="${k}" onclick="spCopy(this)">📋 Copia</button>
+    </div>`;
+  }
+  window.spCopy=function(btn){
+    const t=_spCopy[btn.dataset.k]; if(t==null) return;
+    const done=()=>{ const old=btn.textContent; btn.classList.add('ok'); btn.textContent='✓ Copiato'; setTimeout(()=>{ btn.classList.remove('ok'); btn.textContent=old; },1500); };
+    try{ navigator.clipboard.writeText(t).then(done,()=>showToast('Copia non riuscita')); }catch(_){ showToast('Copia non riuscita'); }
+  };
+  window.spSetFilter=function(f){ _spFilter=f; renderSupplierPanel(); };
+  window.spSetView=function(v){ _spView=v; renderSupplierPanel(); };
+  window.renderSupplierPanel=function(){
+    const el=document.getElementById('sp-body'); if(!el) return;
+    window._spCopy={};
+    const counts={ todo:spOrders('todo').length, unpaid:spOrders('unpaid').length, done:spOrders('done').length };
+    document.querySelectorAll('#sp-filters [data-f]').forEach(b=>{ b.classList.toggle('on',b.dataset.f===_spFilter); b.setAttribute('aria-selected',b.dataset.f===_spFilter); const n=b.querySelector('.n'); if(n) n.textContent=counts[b.dataset.f]; });
+    document.querySelectorAll('#sp-views [data-v]').forEach(b=>{ b.classList.toggle('on',b.dataset.v===_spView); b.setAttribute('aria-selected',b.dataset.v===_spView); });
+    const orders=spOrders(_spFilter);
+    if(!orders.length){
+      el.innerHTML='<div class="sp-empty">'+({todo:'✓ Niente da ordinare: tutti gli ordini confermati sono già stati passati al fornitore.',unpaid:'Nessun ordine in attesa di pagamento.',done:'Nessun ordine segnato come ordinato.'}[_spFilter])+'</div>';
+      return;
+    }
+    let html='';
+    if(_spView==='supplier'){
+      const groups={};
+      orders.forEach(o=>(o.items||[]).filter(i=>!i.isDigital).forEach(i=>{
+        const r0=spItemRow(i), sup=spSupplier(r0.link);
+        const g=groups[sup.key]=groups[sup.key]||{ sup, rows:{}, pcs:0 };
+        const key=[r0.link||('id:'+i.id), r0.size, r0.color, r0.extras.join('|')].join('¦');
+        const r=g.rows[key]=g.rows[key]||{ ...r0, qty:0, orders:new Set() };
+        r.qty+=r0.qty; g.pcs+=r0.qty; r.orders.add(o.orderId||o._docId);
+      }));
+      html=Object.values(groups).sort((a,b)=>b.pcs-a.pcs).map(g=>{
+        const rows=Object.values(g.rows);
+        const ka='c'+Object.keys(_spCopy).length+'all'; _spCopy[ka]=rows.map(spText).join('\n\n');
+        return `<section class="sp-group">
+          <div class="sp-ghd">
+            <div><p class="sp-gname">🏪 ${escH(g.sup.label)}</p><p class="sp-gsub">${g.sup.site?escH(g.sup.site)+' · ':''}${rows.length} ${rows.length>1?'articoli':'articolo'} · ${g.pcs} ${g.pcs>1?'pezzi':'pezzo'}</p></div>
+            <button class="sp-copy sp-copy-all" data-k="${ka}" onclick="spCopy(this)">📋 Copia tutto (${g.pcs} pz)</button>
+          </div>
+          ${rows.map(r=>spRowHTML(r,true)).join('')}
+        </section>`;
+      }).join('');
+    } else {
+      html=orders.map(o=>{
+        const items=(o.items||[]).filter(i=>!i.isDigital).map(spItemRow);
+        const ka='c'+Object.keys(_spCopy).length+'ord'; _spCopy[ka]=items.map(spText).join('\n\n');
+        const pcs=items.reduce((t,r)=>t+r.qty,0);
+        const d=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}):'';
+        return `<section class="sp-order">
+          <div class="sp-ohd">
+            <div><p class="sp-oid">${escH(o.orderId||o._docId)}</p><p class="sp-osub">${escH(o.name||'Cliente')}${d?' · '+d:''} · ${pcs} ${pcs>1?'pezzi':'pezzo'}</p></div>
+            <div class="sp-oact">
+              <button class="sp-copy sp-copy-all" data-k="${ka}" onclick="spCopy(this)">📋 Copia tutto l'ordine</button>
+              ${o.supplierOrdered
+                ? `<button class="sp-copy sp-done" onclick="spMarkOrdered(['${o._docId}'],false)" title="Annulla">✓ Ordinato · annulla</button>`
+                : `<button class="sp-copy" onclick="spMarkOrdered(['${o._docId}'],true)">✓ Segna come ordinato</button>`}
+            </div>
+          </div>
+          ${items.map(r=>spRowHTML(r,false)).join('')}
+        </section>`;
+      }).join('');
+    }
+    if(_spFilter!=='done'){
+      const ids=orders.map(o=>o._docId);
+      html+=`<div class="sp-foot"><button class="sp-copy" onclick="spMarkOrdered(${escH(JSON.stringify(ids))},true)">✓ Segna ${ids.length>1?'questi '+ids.length+' ordini':"quest'ordine"} come ordinati</button></div>`;
+    }
+    el.innerHTML=html;
+  };
+  window.spMarkOrdered=async function(ids,val){
+    const fb=window.__fb; if(!fb||!ids||!ids.length) return;
+    if(val && ids.length>1 && !confirm('Segnare '+ids.length+' ordini come già ordinati al fornitore?')) return;
+    let ok=0;
+    for(const id of ids){
+      try{
+        await fb.updateDoc(fb.doc(fb.db,'orders',id), val ? { supplierOrdered:true, supplierOrderedAt:fb.serverTimestamp() } : { supplierOrdered:false });
+        const o=adminOrders.find(x=>x._docId===id); if(o) o.supplierOrdered=val; ok++;
+      }catch(e){ console.warn('supplierOrdered',id,e&&e.code); }
+    }
+    showToast(ok===ids.length ? (val?'✓ Segnati come ordinati':'↩︎ Riportati tra i da ordinare') : '⚠️ Aggiornati '+ok+' di '+ids.length);
+    renderSupplierPanel(); updateSuppBadge();
+  };
+  window.refreshSupplierPanel=async function(){
+    const el=document.getElementById('sp-body'); if(el) el.innerHTML='<p style="font-size:13px;color:rgba(255,255,255,.5);">Caricamento ordini…</p>';
+    try{ await loadAdminOrders(); }catch(_){}
+    renderSupplierPanel();
+  };
+  window.openSupplierPanel=function(){
+    if(typeof adminOrders==='undefined' || !adminOrders.length) refreshSupplierPanel();
+    else renderSupplierPanel();
+  };
+
   window.adminCopySupplier = function(btn){
     try{
       const txt = decodeURIComponent(btn.dataset.copy||'');
@@ -2477,20 +2705,24 @@ waitFB(()=>{
       setTimeout(()=>{ btn.textContent=old; }, 1500);
     }catch(_){ showToast('Copia non riuscita'); }
   };
-  let _marginCatLoading = false;
+  let _marginCatLoading = false, _marginCatTried = false;
   window.renderAdminOrders = function(){
     const list = document.getElementById('admin-orders-list');
     if(!list) return;
-    // Carica una volta il catalogo (costi) per calcolare i margini negli ordini.
-    if(!adminCatalogProducts.length && !_marginCatLoading){
-      _marginCatLoading = true;
-      loadAdminCatalog().then(()=>{ _marginCatLoading=false; try{ renderAdminOrders(); }catch(_){} }).catch(()=>{ _marginCatLoading=false; });
+    // Carica UNA volta il catalogo (costi) per calcolare i margini negli ordini.
+    // Un solo tentativo: se il catalogo risulta vuoto o la lettura fallisce,
+    // prima si ricaricava e ridisegnava all'infinito (pagina bloccata e
+    // richieste continue a Firestore).
+    if(!adminCatalogProducts.length && !_marginCatLoading && !_marginCatTried){
+      _marginCatLoading = true; _marginCatTried = true;
+      loadAdminCatalog().then(()=>{ _marginCatLoading=false; if(adminCatalogProducts.length){ try{ renderAdminOrders(); }catch(_){} } }).catch(()=>{ _marginCatLoading=false; });
     }
     const filter = document.getElementById('orders-filter')?.value || 'all';
     const filtered = filter==='all' ? adminOrders : adminOrders.filter(o=>o.status===filter);
     const pending = adminOrders.filter(o=>o.status==='pending').length;
     const badge = document.getElementById('admin-orders-count');
     if(badge){ badge.textContent = pending; badge.style.display = pending>0?'inline-flex':'none'; }
+    try{ updateSuppBadge(); if(document.getElementById('apg-fornitore') && !document.getElementById('apg-fornitore').classList.contains('hidden')) renderSupplierPanel(); }catch(_){}
     const navBadge = document.getElementById('orders-nav-badge');
     if(navBadge){ navBadge.textContent = pending; navBadge.style.display = pending>0?'flex':'none'; }
     // Dashboard recent orders preview
@@ -4137,6 +4369,7 @@ waitFB(()=>{
     if(name==='abbonamenti') loadSubsBoard();
     if(name==='investimenti') invInit();
     if(name==='richieste') loadProductRequests();
+    if(name==='fornitore') openSupplierPanel();
     if(name==='costi'){ if(!adminCatalogProducts.length){ try{ loadAdminCatalog(); }catch(_){} } try{ loadFxRates(); }catch(_){} }
     // Carica l'importer solo la prima volta che apri la sezione (lazy)
     if(name==='importa'){ const f=document.getElementById('importa-frame'); if(f && !f.getAttribute('src')) f.setAttribute('src','importer.html'); }
