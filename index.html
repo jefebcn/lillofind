@@ -512,6 +512,7 @@ body.prod-open #sp-toast{display:none!important;}
   #hero-stats > div{ padding:8px 10px !important; min-width:60px !important; }
   #hero-stats p.bb{ font-size:13px !important; margin-bottom:1px !important; }
   #hero-stats p:last-child{ font-size:10.5px !important; }
+  #hero-stats > div.hs-ship{ min-width:150px !important; flex:2.2 !important; }
 
   /* HOME SECTIONS — compact paddings */
   .latest-drops-section{ padding:20px 16px !important; }
@@ -1319,8 +1320,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       'hero.badge2':'SS 2026 — Drop Live Now',
       'hero.tagline':'Premium streetwear, no compromises.',
       'hero.features':'Nike · Jordan · Bape · Supreme · and more — 1:1 Quality · DHL Shipping · Free 30-day returns',
-      'sec.collections':'The Collections','sec.browse':'Browse by Category','sec.viewall':'VIEW ALL',
-      'sec.freshdrops':'FRESH DROPS','sec.seeall':'See all','sport.badge':'New Section',
+      'sec.collections':'The Collections','sec.browse':'Browse by Category','sec.viewall':'View all →','sec.latest':'Latest arrivals','hero.cta':'Shop the drop →',
+      'sec.freshdrops':'Fresh Drops','sec.seeall':'See all','sport.badge':'New Section',
       'sport.perf':'Performance & Street','sport.sub2':'Sneakers and technical wear from sport brands. No excuses — start now.',
       'sport.h':'IT ARRIVED','sport.sub':'Sneakers, tech and streetwear from the best sport brands.','sport.cta':'DISCOVER SPORT',
       'foot.help':'Help','foot.company':'Company','foot.legal':'Legal','foot.follow':'Follow us',
@@ -1426,7 +1427,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <p style="font-size:16px;color:var(--ink-soft);line-height:1.5;font-weight:500;margin-bottom:6px;" data-i18n="hero.tagline">Streetwear premium, senza compromessi.</p>
         <p style="font-size:13px;color:var(--mid);letter-spacing:.2px;line-height:1.8;margin-bottom:24px;" data-i18n="hero.features">Nike · Jordan · Bape · Supreme · e molto altro<br/>Qualità 1:1 · Spedizione DHL · Reso 30gg gratis</p>
         <div class="hero-cta-row">
-          <button class="btn-led" onclick="showPg('shop')" style="min-width:160px;font-size:13px;padding:16px 22px;">Shop the Drop →</button>
+          <button class="btn-led" onclick="showPg('shop')" style="min-width:160px;font-size:13px;padding:16px 22px;" data-i18n="hero.cta">Scopri il drop →</button>
           <button class="btn-g" onclick="showPg('lfpoints')" style="min-width:140px;padding:16px 22px;">⦡ LFPoints</button>
         </div>
       </div>
@@ -1452,13 +1453,9 @@ img{ -webkit-user-drag:none; user-select:none; }
 
     <!-- Stats bar -->
     <div id="hero-stats" style="position:relative;z-index:5;border-top:1px solid var(--border);display:flex;overflow-x:auto;background:var(--w);-webkit-overflow-scrolling:touch;">
-      <div style="flex:1;min-width:80px;padding:16px;border-right:1px solid var(--border);">
-        <p class="bb" style="font-size:20px;color:var(--k);margin-bottom:2px;">DHL</p>
-        <p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Express</p>
-      </div>
-      <div style="flex:1;min-width:80px;padding:16px;border-right:1px solid var(--border);">
-        <p class="bb" style="font-size:20px;color:var(--k);margin-bottom:2px;">10–15</p>
-        <p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Giorni lav.</p>
+      <div class="hs-ship" style="flex:2.2;min-width:190px;padding:16px;border-right:1px solid var(--border);">
+        <p class="bb" style="font-size:20px;color:var(--k);margin-bottom:2px;">Spedizione tracciata DHL</p>
+        <p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">10–15 gg lavorativi</p>
       </div>
       <div style="flex:1;min-width:80px;padding:16px;border-right:1px solid var(--border);">
         <p class="bb" style="font-size:20px;color:var(--k);margin-bottom:2px;">30gg</p>
@@ -1485,7 +1482,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:8px;" data-i18n="sec.collections">Le Collezioni</p>
           <h2 class="lf-section-title" style="color:var(--w);" data-i18n="sec.browse">Sfoglia per<br>Categoria</h2>
         </div>
-        <button onclick="showPg('shop');resetFilters()" class="bb" style="background:none;border:none;color:var(--led2);font-size:13px;letter-spacing:1px;cursor:pointer;white-space:nowrap;padding-bottom:6px;display:inline-flex;align-items:center;gap:6px;"><span data-i18n="sec.viewall">VEDI TUTTO</span> <span style="font-size:16px;">→</span></button>
+        <button class="btn-g btn-g--on-dark" onclick="showPg('shop');resetFilters()" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
       </div>
       <div id="home-cat-circles"></div>
     </div>
@@ -1496,9 +1493,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="display:flex;justify-content:space-between;align-items:center;padding:0 24px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <span style="width:8px;height:8px;border-radius:50%;background:var(--led);display:inline-block;animation:pulse-led 2s ease-in-out infinite;"></span>
-        <h2 class="lf-section-title" data-i18n="sec.freshdrops">FRESH DROPS</h2>
+        <h2 class="lf-section-title" data-i18n="sec.freshdrops">Fresh Drops</h2>
       </div>
-      <button class="btn-g" onclick="showPg('shop')" style="padding:8px 18px;font-size:12px;min-height:0;">Vedi tutti →</button>
+      <button class="btn-g" onclick="showPg('shop')" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
     </div>
     <!-- Carousel track — populated by JS after products load -->
     <div id="home-carousel" style="display:flex;gap:12px;padding:0 24px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none;" class="hide-scrollbar">
@@ -1617,8 +1614,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   <!-- LATEST DROPS -->
   <section style="padding:48px 24px;border-bottom:2px solid var(--k);">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
-      <h2 class="lf-section-title">Latest Drop</h2>
-      <button class="btn-g" style="padding:8px 16px;font-size:10.5px;" onclick="showPg('shop')">View All →</button>
+      <h2 class="lf-section-title" data-i18n="sec.latest">Ultimi arrivi</h2>
+      <button class="btn-g" onclick="showPg('shop')" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
     </div>
     <div id="home-prods" class="pgrid"></div>
   </section>
@@ -1645,7 +1642,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <p class="lf-eyebrow" style="margin-bottom:8px;">Nel Catalogo</p>
           <h2 class="lf-section-title">I Brand.</h2>
         </div>
-        <button class="btn-g" style="padding:8px 16px;font-size:10.5px;" onclick="showPg('shop')">Shop All →</button>
+        <button class="btn-g" onclick="showPg('shop')" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
       </div>
 
       <!-- Brand grid -->
@@ -3773,7 +3770,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <div style="padding:8px 8px 10px;">
             ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:1px;">${p.brand}</p>`:''}
-            <p style="font-size:10.5px;font-family:'Manrope',monospace;line-height:1.3;margin-bottom:4px;">${(p.name||'').slice(0,24)}${(p.name||'').length>24?'…':''}</p>
+            <p style="font-size:10.5px;font-family:'Manrope',monospace;line-height:1.3;margin-bottom:4px;">${cleanTitle(p.name,24)}</p>
             <p class="bb" style="font-size:14px;">€${(p.price||0).toFixed(0)}</p>
           </div>
         </div>`).join(''));
@@ -4325,8 +4322,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
       <div style="padding:16px 15px 15px;">
         ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:600;">${p.brand}</p>`:''}
-        <h4 style="font-size:14px;font-weight:600;line-height:1.3;margin-bottom:8px;color:var(--k);">${p.name}</h4>
-        ${(p.sizes&&p.sizes.length)?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;">${p.sizes.slice(0,6).map(s=>`<span style="border:1px solid var(--border-2);border-radius:6px;padding:2px 7px;font-size:10.5px;color:var(--mid);">${s}</span>`).join('')}</div>`:p.size?`<p style="font-size:11px;color:var(--dim);margin-bottom:10px;">Taglia ${p.size}</p>`:'<div style="margin-bottom:10px;"></div>'}
+        <h4 style="font-size:14px;font-weight:600;line-height:1.3;margin-bottom:8px;color:var(--k);" title="${(p.name||'').replace(/"/g,'&quot;')}">${cleanTitle(p.name)}</h4>
+        ${(p.sizes&&p.sizes.length)?`<div class="pc-sizes">${p.sizes.slice(0,6).map(s=>`<span>${s}</span>`).join('')}</div><p class="pc-sizes-compact">${p.sizes.length>1?'Taglie':'Taglia'} ${sizeRange(p.sizes)}</p>`:p.size?`<p style="font-size:11px;color:var(--dim);margin-bottom:10px;">Taglia ${p.size}</p>`:'<div style="margin-bottom:10px;"></div>'}
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div>
             <span class="bb" style="font-size:22px;color:var(--k);">€${(p.price||0).toFixed(2)}</span>
@@ -4429,7 +4426,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const p=products.find(x=>x.id===pid);
     if(!p)return;
     try{
-      document.title=`${p.name}${p.brand?' · '+p.brand:''} — €${(p.price||0).toFixed(0)} | LilloFind`;
+      document.title=`${cleanTitle(p.name)}${p.brand?' · '+p.brand:''} — €${(p.price||0).toFixed(0)} | LilloFind`;
       const ogt=document.querySelector('meta[property="og:title"]'); if(ogt) ogt.setAttribute('content',p.name+' — LilloFind');
       const ogi=document.querySelector('meta[property="og:image"]'); if(ogi&&p.imageUrl) ogi.setAttribute('content',pImg(p.imageUrl));
       history.replaceState(null,'',location.pathname+'?p='+encodeURIComponent(pid));
@@ -4489,7 +4486,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="padding:28px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;max-height:85vh;">
           <div>
             ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">${p.brand}</p>`:''}
-            <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(22px,3vw,34px);line-height:1.1;margin-bottom:8px;">${p.name}</h2>
+            <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(22px,3vw,34px);line-height:1.1;margin-bottom:8px;">${cleanTitle(p.name,90)}</h2>
             ${p.model?`<p style="font-size:11px;color:var(--mid);letter-spacing:1px;">Modello: ${p.model}</p>`:''}
             ${p.description?`<p style="font-size:12px;color:var(--mid);line-height:1.8;margin-top:8px;">${p.description}</p>`:''}
           </div>
@@ -4706,7 +4703,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           </div>
           <div style="padding:12px 10px;">
             ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
-            <h4 style="font-size:12px;margin-bottom:2px;font-family:'Manrope',monospace;">${p.name}</h4>
+            <h4 style="font-size:12px;margin-bottom:2px;font-family:'Manrope',monospace;">${cleanTitle(p.name)}</h4>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
               <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
               ${isSoldOut?`<span style="font-size:10.5px;letter-spacing:1px;color:#999;text-transform:uppercase;padding:6px 10px;border:1px solid #ddd;">Esaurito</span>`:`<button class="btn-k" style="padding:6px 10px;font-size:10.5px;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">ADD+</button>`}
@@ -5023,7 +5020,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span class="lf-badge lf-badge--soldout">Esaurito</span></div>':''}
           <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
             ${p.brand?`<p style="font-size:10.5px;color:var(--led2);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
-            <p style="font-size:10.5px;color:#fff;line-height:1.2;font-family:'Manrope',monospace;">${(p.name||'').length>22?(p.name||'').slice(0,22)+'…':p.name||''}</p>
+            <p style="font-size:10.5px;color:#fff;line-height:1.2;font-family:'Manrope',monospace;">${cleanTitle(p.name,24)}</p>
             <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:16px;color:#fff;margin-top:3px;">€${(p.price||0).toFixed(0)}</p>
           </div>
         </div>
@@ -5061,7 +5058,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             ${window._isAdmin?`<button onclick="event.stopPropagation();adminDeleteProduct('${p.id}')" title="Elimina prodotto" style="position:absolute;top:6px;right:6px;z-index:5;width:30px;height:30px;border:none;border-radius:8px;background:rgba(201,80,63,.95);color:#fff;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.3);">🗑</button>`:''}
             <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
               ${p.brand?`<p style="font-size:10.5px;color:var(--led2);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
-              <p style="font-size:10.5px;color:#fff;line-height:1.2;font-family:'Manrope',monospace;">${(p.name||'').length>22?(p.name||'').slice(0,22)+'…':p.name||''}</p>
+              <p style="font-size:10.5px;color:#fff;line-height:1.2;font-family:'Manrope',monospace;">${cleanTitle(p.name,24)}</p>
               <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:16px;color:#fff;margin-top:3px;">€${(p.price||0).toFixed(0)}</p>
             </div>
           </div>
@@ -5122,6 +5119,42 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   // ── Cloudflare image proxy (bypassa hotlink protection Yupoo) ──
   const _PROXY='https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
+  // ── Titoli prodotto in vetrina ─────────────────────────────────────
+  // I titoli copiati dai fornitori ("Overseas purchase of brand new authentic
+  // … for men and women! 100% quality 正品代购") vengono accorciati e ripuliti
+  // SOLO in visualizzazione: il nome salvato su Firestore non cambia.
+  const _TITLE_JUNK=[/\boverseas purchas(e|ing)( of)?\b/gi,/\bpurchasing agent\b|\bdaigou\b/gi,/\bbrand[- ]new\b/gi,
+    /\b100% ?(authentic|genuine|original|quality)( guaranteed)?\b/gi,/\b(authentic|genuine|official)\b/gi,/\b(high|top|best)[- ]quality\b/gi,
+    /\bquality guaranteed\b/gi,/\bfree shipping\b/gi,/\bhot sale\b/gi,/\bnew arrivals?\b/gi,/\bin stock\b/gi,
+    /\bfor (both )?(men and women|men & women|women and men)\b/gi,/\bmen'?s and women'?s\b/gi];
+  function cleanTitle(name, max){
+    const raw=String(name||''); max=max||60;
+    let t=raw.replace(/[【\[][^】\]]*[】\]]/g,' ')                         // [promo] 【促销】
+             .replace(/[　-〿㐀-鿿豈-﫿＀-￯]+/g,' '); // cinese + punteggiatura full-width
+    _TITLE_JUNK.forEach(r=>{ t=t.replace(r,' '); });
+    const first=t.split(/[!?]|\.\s/)[0];                                     // prima frase
+    if(first.replace(/\s+/g,'').length>=6) t=first;
+    t=t.replace(/\s+/g,' ').replace(/^[\s,.;:!\-–—|·&]+|[\s,;:!\-–—|·&]+$/g,'').trim();
+    if(t.length>max){
+      let c=t.slice(0,max+1); const sp=c.lastIndexOf(' ');
+      c=(sp>max*0.6?c.slice(0,sp):c.slice(0,max)).replace(/[\s,;:\-–—|·&]+$/,'');
+      t=c+'…';
+    }
+    if(t && t[0]!==t[0].toUpperCase()) t=t[0].toUpperCase()+t.slice(1);
+    return t || raw;
+  }
+  window.cleanTitle=cleanTitle;
+  // Taglie in una riga sola ("XS–XXL", "39–45"): su mobile al posto delle chip.
+  const _SZ_ORDER=['XXS','XS','S','M','L','XL','XXL','XXXL','3XL','4XL'];
+  function sizeRange(sizes){
+    const a=(sizes||[]).map(x=>String(x).trim()).filter(Boolean); if(!a.length) return '';
+    if(a.length===1) return a[0];
+    const num=a.every(x=>/^\d+(\.\d+)?$/.test(x));
+    const rank=x=>num?parseFloat(x):(_SZ_ORDER.indexOf(x.toUpperCase())>-1?_SZ_ORDER.indexOf(x.toUpperCase()):999);
+    const sorted=a.slice().sort((x,y)=>rank(x)-rank(y));
+    if(!num && rank(sorted[0])===999) return a.join(' · ');
+    return sorted[0]+'–'+sorted[sorted.length-1];
+  }
   function pImg(url){
     if(!url) return '';
     const u=url.startsWith('//')?'https:'+url:url;
@@ -5240,7 +5273,7 @@ img{ -webkit-user-drag:none; user-select:none; }
                 ${item.isDigital?`<span class="digital-badge">✦ Digitale</span>`:''}
               </div>
               <p style="font-size:14px;font-weight:600;line-height:1.3;margin:2px 0;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`onclick="openProduct('${item.id}')"`:''}>
-                ${item.name}
+                ${cleanTitle(item.name)}
               </p>
               <p style="font-size:11px;color:var(--dim);">${item.isDigital?`€${item.price.toFixed(2)}/mese · <strong style="color:var(--k);">${_mLbl}</strong>`:`${item.size?`SZ ${item.size} · `:''}${_wkg} kg`}</p>
             </div>
@@ -5319,7 +5352,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     body.innerHTML=`
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         ${prod.imageUrl?`<img src="${pImg(prod.imageUrl)}" style="width:60px;height:60px;object-fit:cover;border:1px solid var(--border);" onerror="this.style.display='none'">`:''}
-        <div><p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;">${prod.name||'Prodotto'}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;color:var(--led);">€${price.toFixed(2)}</p></div>
+        <div><p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;">${prod.name?cleanTitle(prod.name):'Prodotto'}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;color:var(--led);">€${price.toFixed(2)}</p></div>
       </div>
       ${sizes.length?`<div style="margin-bottom:18px;">
         <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Seleziona Taglia *</p>
@@ -5479,7 +5512,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <div style="flex:1;min-width:0;">
           <p style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${!i.isDigital?'cursor:pointer;text-decoration:underline;text-underline-offset:2px;':''}" ${!i.isDigital?`onclick="openProduct('${i.id}')"`:''}>
-            ${i.name}
+            ${cleanTitle(i.name)}
           </p>
           <p style="font-size:10.5px;color:var(--mid);margin-top:1px;">${i.isDigital?('📧 Abbonamento · '+(i.qty>1?i.qty+' mesi':'1 mese')):([i.size?'SZ '+i.size:'',i.color||'',i.boxOption==='con_scatola'?'📦 Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;')}</p>
         </div>
@@ -7550,7 +7583,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     _stickyPrice = price;
     const bar = document.getElementById('sticky-atc');
     if(!bar) return;
-    document.getElementById('sticky-atc-name').textContent  = name;
+    document.getElementById('sticky-atc-name').textContent  = cleanTitle(name);
     document.getElementById('sticky-atc-price').textContent = '€' + price.toFixed(2);
     bar.style.display = 'flex';
     requestAnimationFrame(()=>requestAnimationFrame(()=>bar.classList.add('visible')));
@@ -7657,7 +7690,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             ? `<img src="${pImg(p.imageUrl)}" class="search-drop-thumb" onerror="this.style.display='none'">`
             : `<div class="search-drop-thumb" style="display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>`}
           <div class="search-drop-info">
-            <div class="search-drop-name">${p.name||'—'}</div>
+            <div class="search-drop-name">${p.name?cleanTitle(p.name):'—'}</div>
             <div class="search-drop-brand">${p.brand||''}</div>
           </div>
           <div class="search-drop-price">€${(p.price||0).toFixed(0)}</div>

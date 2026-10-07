@@ -73,8 +73,13 @@ h2.bb{letter-spacing:-.02em!important;}
 .pcard h4{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
   min-height:2.6em;font-size:13.5px!important;}
 .pcard .btn-led{width:40px;height:40px;padding:0!important;border-radius:12px!important;font-size:18px!important;}
-@media(max-width:520px){ /* su mobile 2 colonne: le taglie sono rumore */
-  .pcard div[style*="flex-wrap:wrap;margin-bottom:12px"]{display:none!important;}
+/* Taglie: chip su desktop, una riga sola ("Taglie XS–XXL") su mobile */
+.pc-sizes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;}
+.pc-sizes span{border:1px solid var(--border-2);border-radius:6px;padding:2px 7px;font-size:10.5px;color:var(--mid);}
+.pc-sizes-compact{display:none;font-size:11.5px;color:var(--mid);margin-bottom:10px;}
+@media(max-width:520px){ /* su mobile 2 colonne: le chip sono rumore */
+  .pc-sizes{display:none;}
+  .pc-sizes-compact{display:block;}
 }
 .carousel-card{border-radius:16px!important;border-color:#2a2a26!important;}
 
