@@ -341,9 +341,17 @@ export async function track17(data, { env, db, auth }) {
 export async function sendOrderEmail(data, { env, db, auth }) {
   const orderId = String((data && data.orderId) || '').trim().slice(0, 40);
   if (!orderId) return { sent: false, reason: 'no_order' };
-  let rows = [];
+  let rows = null;
   try { rows = await db.runQuery('orders', { where: [['orderId', '==', orderId], ['uid', '==', auth.uid]], limit: 1 }); }
-  catch (e) { return { sent: false, reason: 'lookup_failed' }; }
+  catch (e) { rows = null; }
+  if (rows === null) {
+    // Firestore non raggiungibile dal Worker (es. service account non
+    // configurato): ripiego sui dati inviati, ma il destinatario è SOLO
+    // l'email dell'account autenticato — mai un indirizzo scelto dal client.
+    const to = String((auth && (auth.email || (auth.token && auth.token.email))) || '').trim().toLowerCase();
+    if (!to) return { sent: false, reason: 'no_email' };
+    return sendOrderEmails({ ...(data || {}), orderId, email: to }, env);
+  }
   if (!rows.length) return { sent: false, reason: 'not_found' };
   const o = rows[0];
   if (o.customerEmailSent) return { sent: false, reason: 'already_sent' };
