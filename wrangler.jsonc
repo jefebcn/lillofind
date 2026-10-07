@@ -6,6 +6,10 @@
   "observability": {
     "enabled": true
   },
+  // Catalogo dello shop (0 letture Firestore per visita): spazio KV "lillofind-catalog".
+  "kv_namespaces": [
+    { "binding": "CATALOG", "id": "7607b12a95ff47bda2c646e1b9806048" }
+  ],
   "vars": {
     "FIREBASE_PROJECT_ID": "lillofind-c455c",
     "ALLOWED_ORIGINS": "https://lillofind.shop,https://www.lillofind.shop,https://lillofind-c455c.web.app,https://lillofind-c455c.firebaseapp.com,http://localhost:8000,http://localhost:5000",
