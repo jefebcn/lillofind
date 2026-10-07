@@ -46,6 +46,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Spazio KV "catalog" per il catalogo dello shop (0 letture Firestore per
+      # visita). Lo crea se non esiste e lo collega al Worker come CATALOG.
+      - name: KV catalogo (crea se manca e collega)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          find_id() {
+            npx wrangler kv namespace list 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const a=JSON.parse(s.slice(s.indexOf("[")));const n=a.find(x=>x.title==="lillofind-catalog");process.stdout.write(n?n.id:"")}catch(e){}})'
+          }
+          ID="$(find_id)"
+          if [ -z "$ID" ]; then npx wrangler kv namespace create catalog; ID="$(find_id)"; fi
+          if [ -z "$ID" ]; then echo "Impossibile creare/trovare il KV 'lillofind-catalog'"; exit 1; fi
+          printf '\n[[kv_namespaces]]\nbinding = "CATALOG"\nid = "%s"\n' "$ID" >> wrangler.toml
+          echo "KV catalogo collegato: $ID"
+
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
