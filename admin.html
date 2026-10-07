@@ -226,6 +226,13 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
 .sp-done{border-color:rgba(46,204,113,.45)!important;color:#7ddc9c!important;background:rgba(46,204,113,.08)!important;}
 .sp-empty{padding:40px 16px;text-align:center;color:rgba(255,255,255,.45);font-size:14px;background:var(--hud-surf);border:1px dashed var(--hud-line);border-radius:16px;}
 .sp-foot{display:flex;justify-content:flex-end;margin-top:6px;}
+.sp-opts{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:-4px 0 14px;font-size:13px;color:rgba(255,255,255,.65);}
+.sp-opts label{display:inline-flex;align-items:center;gap:7px;cursor:pointer;}
+.sp-opts input{width:16px;height:16px;accent-color:var(--hud);}
+.sp-fix{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.sp-fix input{flex:1;min-width:180px;height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--hud-line);background:#0b0b0a;color:#fff;font:500 12.5px 'Manrope',sans-serif;}
+.sp-fix input:focus{outline:none;border-color:rgba(184,199,126,.5);}
+.sp-fix .sp-copy{height:38px;font-size:12px;}
 @media(max-width:600px){
   .sp-bar{flex-direction:column;align-items:stretch;}
   .sp-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);}
@@ -535,6 +542,9 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           <button data-v="supplier" onclick="spSetView('supplier')">🏪 Per fornitore</button>
           <button data-v="order" onclick="spSetView('order')">📋 Per ordine</button>
         </div>
+      </div>
+      <div class="sp-opts">
+        <label><input type="checkbox" id="sp-opt-name" onchange="spSetOpt('name',this.checked)"> Includi il nome dell'articolo nel testo copiato</label>
       </div>
       <div id="sp-body"><p style="font-size:13px;color:rgba(255,255,255,.5);">Caricamento ordini…</p></div>
     </div>
@@ -2577,7 +2587,10 @@ waitFB(()=>{
 // (stesso link + taglia + colore → pezzi sommati). Un ordine passato al
 // fornitore si segna con supplierOrdered:true (resta tracciato).
 // ══════════════════════════════════════════════════════════════════════
-  let _spFilter='todo', _spView='supplier';
+  let _spFilter='todo', _spView='supplier', _spFixN=0;
+  let _spOpts={ name:false };
+  try{ Object.assign(_spOpts, JSON.parse(localStorage.getItem('lf_sp_opts')||'{}')); }catch(_){}
+  window.spSetOpt=function(k,v){ _spOpts[k]=!!v; try{ localStorage.setItem('lf_sp_opts',JSON.stringify(_spOpts)); }catch(_){} renderSupplierPanel(); };
   window._spCopy={};
   function spLink(i){
     if(i.sourceUrl) return { url:i.sourceUrl, exact:true };
@@ -2600,6 +2613,7 @@ waitFB(()=>{
     const L=[];
     L.push(r.link || '⚠️ Link missing');
     if(r.link && !r.exact) L.push('(store link — please find this item from the photo)');
+    if(_spOpts.name && r.name) L.push('Item: '+enName(r.name));
     L.push('Quantity: '+r.qty);
     L.push('Size: '+enSize(r.size));
     L.push('Color: '+(r.color?enColor(r.color):'as in photo'));
@@ -2623,7 +2637,7 @@ waitFB(()=>{
   };
   function spItemRow(i){
     const L=spLink(i);
-    return { link:L.url, exact:L.exact, size:i.size||'', color:i.color||'', extras:spExtras(i), qty:(+i.qty||1), name:i.name||'', img:i.img||i.imageUrl||'', orders:new Set() };
+    return { pid:i.id||'', link:L.url, exact:L.exact, size:i.size||'', color:i.color||'', extras:spExtras(i), qty:(+i.qty||1), name:i.name||'', img:i.img||i.imageUrl||'', orders:new Set() };
   }
   function spRowHTML(r, showOrders){
     const k='c'+Object.keys(_spCopy).length; _spCopy[k]=spText(r);
@@ -2636,6 +2650,10 @@ waitFB(()=>{
         <p class="sp-name">${escH(r.name||'Articolo')}</p>
         <pre class="sp-txt">${txt}</pre>
         <div class="sp-meta">${r.link?`<a href="${escH(r.link)}" target="_blank" rel="noopener">Apri link ↗</a>`:''}${ords.length?`<span>Ordini: ${ords.map(escH).join(', ')}</span>`:''}</div>
+        ${(!r.exact && r.pid) ? (()=>{ const fid='sp-fix-'+(++_spFixN); return `<div class="sp-fix">
+          <input id="${fid}" placeholder="Incolla il link esatto (album Yupoo / Weidian / Taobao)…" autocomplete="off" onkeydown="if(event.key==='Enter')this.nextElementSibling.click()">
+          <button class="sp-copy" data-pid="${escH(r.pid)}" onclick="spSaveLink(this.dataset.pid,'${fid}',this)">💾 Salva sul prodotto</button>
+        </div>`; })() : ''}
       </div>
       <button class="sp-copy" data-k="${k}" onclick="spCopy(this)">📋 Copia</button>
     </div>`;
@@ -2645,11 +2663,29 @@ waitFB(()=>{
     const done=()=>{ const old=btn.textContent; btn.classList.add('ok'); btn.textContent='✓ Copiato'; setTimeout(()=>{ btn.classList.remove('ok'); btn.textContent=old; },1500); };
     try{ navigator.clipboard.writeText(t).then(done,()=>showToast('Copia non riuscita')); }catch(_){ showToast('Copia non riuscita'); }
   };
+  // Salva il link esatto sul prodotto del catalogo: questo e i prossimi ordini lo useranno.
+  window.spSaveLink=async function(pid,inputId,btn){
+    const fb=window.__fb; if(!fb||!pid) return;
+    const v=(document.getElementById(inputId)?.value||'').trim();
+    if(!/^https?:\/\/\S+$/i.test(v)){ showToast('Incolla un link valido (https://…)'); return; }
+    if(btn){ btn.disabled=true; btn.textContent='Salvataggio…'; }
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'products',pid), { sourceUrl:v });
+      adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(i.id===pid) i.sourceUrl=v; }));
+      try{ const p=(adminCatalogProducts||[]).find(x=>x.id===pid); if(p) p.sourceUrl=v; }catch(_){}
+      showToast('💾 Link salvato sul prodotto');
+      renderSupplierPanel();
+    }catch(e){
+      showToast('⚠️ Errore salvataggio ('+((e&&e.code)||'riprova')+')');
+      if(btn){ btn.disabled=false; btn.textContent='💾 Salva sul prodotto'; }
+    }
+  };
   window.spSetFilter=function(f){ _spFilter=f; renderSupplierPanel(); };
   window.spSetView=function(v){ _spView=v; renderSupplierPanel(); };
   window.renderSupplierPanel=function(){
     const el=document.getElementById('sp-body'); if(!el) return;
     window._spCopy={};
+    const _optN=document.getElementById('sp-opt-name'); if(_optN) _optN.checked=!!_spOpts.name;
     const counts={ todo:spOrders('todo').length, unpaid:spOrders('unpaid').length, done:spOrders('done').length };
     document.querySelectorAll('#sp-filters [data-f]').forEach(b=>{ b.classList.toggle('on',b.dataset.f===_spFilter); b.setAttribute('aria-selected',b.dataset.f===_spFilter); const n=b.querySelector('.n'); if(n) n.textContent=counts[b.dataset.f]; });
     document.querySelectorAll('#sp-views [data-v]').forEach(b=>{ b.classList.toggle('on',b.dataset.v===_spView); b.setAttribute('aria-selected',b.dataset.v===_spView); });
