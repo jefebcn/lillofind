@@ -53,3 +53,10 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare-worker
           command: deploy
+          # Service account Firestore per il Worker: lo stesso già usato dal
+          # deploy Firebase (secret GitHub GOOGLE_CREDENTIALS). Senza, il Worker
+          # non può leggere/scrivere Firestore (ordini, punti, email ordine).
+          secrets: |
+            FIREBASE_SERVICE_ACCOUNT
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_CREDENTIALS }}
