@@ -434,7 +434,6 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   #prod-modal-grid .pg-thumb{width:52px!important;height:52px!important;}
 }
 /* Nascondi il toast social-proof mentre il dettaglio prodotto è aperto (evita sovrapposizioni) */
-body.prod-open #sp-toast{display:none!important;}
 
 /* ── LED BADGE ───────────────────────────────── */
 .led-badge{
@@ -806,23 +805,6 @@ img{ -webkit-user-drag:none; user-select:none; }
 #sticky-atc-btn{background:var(--led);color:#fff;border:none;padding:12px 20px;font-family:"Manrope",monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;box-shadow:none;flex-shrink:0;}
 @media(min-width:769px){#sticky-atc{display:none!important;}}
 
-/* ── SOCIAL PROOF TOAST ──────────────────────────── */
-#sp-toast{
-  position:fixed;bottom:96px;left:16px;z-index:8000;
-  background:var(--k);color:var(--w);
-  padding:12px 16px;max-width:280px;min-width:220px;
-  border-left:3px solid var(--led);
-  box-shadow:0 4px 20px rgba(0,0,0,.25);
-  transform:translateX(-120%);transition:transform .4s cubic-bezier(.4,0,.2,1);
-  pointer-events:none;
-}
-#sp-toast.show{transform:translateX(0);}
-#sp-toast-name{font-size:10.5px;font-weight:600;color:var(--led);letter-spacing:1px;margin-bottom:3px;}
-#sp-toast-msg{font-size:10.5px;color:rgba(246,243,238,.72);line-height:1.5;}
-#sp-toast-dot{display:inline-block;width:7px;height:7px;background:#2ecc71;border-radius:50%;margin-right:6px;animation:dot-blink 1s ease-in-out infinite;}
-@keyframes dot-blink{0%,100%{opacity:1;}50%{opacity:.3;}}
-@media(min-width:769px){#sp-toast{bottom:32px;}}
-
 /* ── PERFORMANCE — layout containment & compositing hints ── */
 .pcard{contain:layout style;}
 #s-grid .pcard{content-visibility:auto;contain-intrinsic-size:0 260px;}
@@ -1135,10 +1117,6 @@ img{ -webkit-user-drag:none; user-select:none; }
 </script>
 
 <!-- ══════════ SOCIAL PROOF TOAST ══════════ -->
-<div id="sp-toast">
-  <div id="sp-toast-name"><span id="sp-toast-dot"></span><span id="sp-toast-who"></span></div>
-  <div id="sp-toast-msg"></div>
-</div>
 
 <!-- ══════════ BACK TO TOP ══════════ -->
 <button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Torna su">↑</button>
@@ -1321,7 +1299,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       'hero.tagline':'Premium streetwear, no compromises.',
       'hero.features':'Nike · Jordan · Bape · Supreme · and more — 1:1 Quality · DHL Shipping · Free 30-day returns',
       'sec.collections':'The Collections','sec.browse':'Browse by Category','sec.viewall':'View all →','sec.latest':'Latest arrivals','hero.cta':'Shop the drop →',
-      'sec.freshdrops':'Fresh Drops','sec.seeall':'See all','sport.badge':'New Section',
+      'sec.picks':'Picked for you','sec.seeall':'See all','sport.badge':'New Section',
       'sport.perf':'Performance & Street','sport.sub2':'Sneakers and technical wear from sport brands. No excuses — start now.',
       'sport.h':'IT ARRIVED','sport.sub':'Sneakers, tech and streetwear from the best sport brands.','sport.cta':'DISCOVER SPORT',
       'foot.help':'Help','foot.company':'Company','foot.legal':'Legal','foot.follow':'Follow us',
@@ -1493,7 +1471,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div style="display:flex;justify-content:space-between;align-items:center;padding:0 24px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <span style="width:8px;height:8px;border-radius:50%;background:var(--led);display:inline-block;animation:pulse-led 2s ease-in-out infinite;"></span>
-        <h2 class="lf-section-title" data-i18n="sec.freshdrops">Fresh Drops</h2>
+        <h2 class="lf-section-title" data-i18n="sec.picks">Scelti per te</h2>
       </div>
       <button class="btn-g" onclick="showPg('shop')" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
     </div>
@@ -1859,8 +1837,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     </div>
   </section>
 
-  <!-- SOCIAL PROOF — Testimonials -->
-  <section style="padding:56px 24px;border-bottom:2px solid var(--k);background:var(--w);">
+  <!-- SOCIAL PROOF — recensioni reali (collezione "reviews"); nascosta finché non ce ne sono -->
+  <section id="home-reviews" style="display:none;padding:56px 24px;border-bottom:2px solid var(--k);background:var(--w);">
     <div style="max-width:1100px;margin:0 auto;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:36px;flex-wrap:wrap;gap:8px;">
         <div>
@@ -1868,10 +1846,8 @@ img{ -webkit-user-drag:none; user-select:none; }
           <h2 class="lf-section-title">Dicono di noi.</h2>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="display:flex;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--k)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <span style="font-size:11px;letter-spacing:1px;color:#333;">4.9/5 · 200+ ordini</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--led)" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span id="rev-summary" style="font-size:12px;letter-spacing:.5px;color:var(--mid);font-weight:600;"></span>
         </div>
       </div>
       <div class="rev-marquee"><div class="rev-track" id="rev-track"></div></div>
@@ -1886,95 +1862,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     @media(max-width:600px){.rev-card{flex-basis:80vw;width:80vw;}}
     @keyframes rev-scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
     @media(prefers-reduced-motion:reduce){.rev-track{animation:none;}}
+    .rev-track.rev-static{animation:none;flex-wrap:wrap;width:auto;}
   </style>
-  <script>
-  (function(){
-    var R=[
-      ["Federico B.","Torino","Adidas Samba OG arrivate in 9 giorni, imballaggio curatissimo e foto QC prima della spedizione. Servizio top, tornerò sicuro.",5],
-      ["Lorenzo T.","Roma","Ho fatto le foto QC e sono rimasto a bocca aperta. Spedito il giorno dopo e ricevuto senza problemi doganali.",5],
-      ["Andrea S.","Napoli","Supreme Box Logo hoodie perfetta. I LFPOINTS mi hanno fatto risparmiare 15€ sul secondo ordine. Fedeltà top.",5],
-      ["Giulia R.","Milano","Yeezy Slide identiche all'originale, comodissime. Consegna DHL rapida e tracking sempre aggiornato.",5],
-      ["Marco V.","Bologna","Jordan 4 pazzesche, materiali di qualità. Assistenza gentile e disponibile su tutto.",5],
-      ["Sofia L.","Firenze","Prima volta un po' scettica, poi le foto QC mi hanno convinta. Prodotto arrivato perfetto.",5],
-      ["Matteo C.","Verona","Nike Dunk Panda spettacolari. Cuciture precise, box inclusa. Rapporto qualità prezzo assurdo.",5],
-      ["Chiara M.","Genova","Felpa Bape arrivata in una settimana. Tessuto pesante e stampe perfette. Consigliatissimo.",5],
-      ["Davide P.","Palermo","New Balance 550 impeccabili. Spedizione veloce e nessuna tassa doganale come promesso.",5],
-      ["Alessia F.","Bari","Servizio clienti super disponibile, mi hanno seguito passo passo. Scarpe stupende.",5],
-      ["Simone G.","Catania","Ordine tracciato fino a casa. Air Force 1 perfette, sembrano prese in negozio.",5],
-      ["Martina D.","Padova","Le foto QC fanno la differenza: sai già cosa ricevi. Qualità 1:1 reale.",5],
-      ["Luca N.","Brescia","Travis Scott arrivate top. Un po' di attesa in dogana ma tutto ok, come spiegato.",4],
-      ["Elena B.","Modena","Seconda volta che ordino, sempre perfetto. Programma punti che regala sconti veri.",5],
-      ["Riccardo A.","Reggio C.","Off-White fantastiche. Packaging curato e QR tag inclusi. Molto soddisfatto.",5],
-      ["Francesca T.","Perugia","Consegna in 10 giorni, comunicazione impeccabile via email ad ogni step.",5],
-      ["Gabriele S.","Livorno","Jordan 1 Chicago da urlo. Colori fedeli, pelle di qualità. Tornerò presto.",5],
-      ["Valentina C.","Cagliari","Slide comodissime e arrivate prima del previsto. Servizio serio e affidabile.",5],
-      ["Stefano R.","Trieste","Ottima esperienza, foto QC su richiesta e spedizione sicura. 10 e lode.",5],
-      ["Ilaria M.","Parma","Hoodie Supreme perfetta, taglia giusta. Assistenza rapida su WhatsApp.",5],
-      ["Antonio L.","Salerno","Dunk Low arrivate in condizioni perfette. Nessun problema doganale, tutto liscio.",5],
-      ["Beatrice V.","Bergamo","Qualità superiore alle aspettative. I LFPOINTS sono un bel bonus in più.",5],
-      ["Nicola P.","Vicenza","Yeezy 350 fantastiche, boost reale. Consegna DHL puntuale, consiglio a tutti.",5],
-      ["Giorgia F.","Ferrara","Prodotto identico alle foto. Reso facile quando ho sbagliato taglia. Top.",5],
-      ["Tommaso B.","Latina","Panda Dunk perfette per l'estate. Spedizione tracciata e veloce.",5],
-      ["Sara D.","Ancona","Servizio impeccabile dall'ordine alla consegna. Scarpe stupende, ci risiamo!",5],
-      ["Emanuele G.","Pescara","Air Max 97 arrivate benissimo. Materiali premium, cuciture perfette.",5],
-      ["Aurora S.","Como","Prima esperienza con LilloFind, superata ogni aspettativa. Consigliatissimo.",5],
-      ["Filippo R.","Novara","Jordan 11 spettacolari, vernice perfetta. Un piccolo ritardo in dogana ma ok.",4],
-      ["Camilla M.","Lecce","Felpa arrivata morbidissima. Assistenza gentile e sempre presente.",5],
-      ["Michele T.","Monza","New Balance comodissime, sembrano originali al 100%. Servizio serio.",5],
-      ["Alice P.","Rimini","Ordine perfetto, foto QC prima della spedizione. Mi sento sicura ad acquistare.",5],
-      ["Jacopo V.","Sassari","Travis Scott da paura. Packaging con tag e box. Spedizione rapida.",5],
-      ["Federica L.","Terni","LFPOINTS accumulati e sconto usato subito. Qualità e convenienza insieme.",5],
-      ["Dario B.","Foggia","Dunk arrivate impeccabili. Comunicazione costante via email, zero stress.",5],
-      ["Noemi C.","Trento","Slide comode e belle, arrivate in 8 giorni. Ottimo servizio clienti.",5],
-      ["Christian S.","Prato","Jordan 4 top di gamma. Materiali e finiture di alto livello. Tornerò.",5],
-      ["Rebecca F.","La Spezia","Prodotto perfetto, spedizione sicura e tracciata. Consiglio a occhi chiusi.",5],
-      ["Alberto M.","Pisa","Air Force impeccabili, box inclusa. Rapporto qualità/prezzo imbattibile.",5],
-      ["Vanessa T.","Cosenza","Hoodie Bape stupenda, stampe nitide. Assistenza velocissima. 5 stelle.",5],
-      ["Manuel R.","Varese","Yeezy Slide comode e fedeli. Consegna DHL in tempi ottimi.",5],
-      ["Ludovica B.","Asti","Seconda volta, sempre perfetto. Le foto QC sono una garanzia.",5],
-      ["Samuele P.","Ragusa","Nike TN arrivate benissimo. Nessuna tassa extra, tutto come promesso.",5],
-      ["Eleonora V.","Pavia","Servizio serio e prodotti di qualità. I punti fedeltà sono un plus.",5],
-      ["Cristian L.","Udine","Jordan 1 High spettacolari. Pelle vera e cuciture precise. Consigliato.",5],
-      ["Arianna M.","Caserta","Consegna rapida e prodotto perfetto. Assistenza sempre disponibile.",5],
-      ["Pietro T.","Lucca","Dunk Low arrivate in una settimana. Qualità 1:1 confermata dalle foto QC.",5],
-      ["Marta F.","Treviso","Felpa perfetta, taglia giusta. Esperienza di acquisto top dall'inizio alla fine.",5],
-      ["Enrico B.","Alessandria","New Balance 550 pazzesche. Spedizione tracciata e sicura, zero problemi.",5],
-      ["Giada C.","Massa","Slide comodissime, arrivate prima del previsto. Servizio impeccabile.",5],
-      ["Leonardo S.","Cremona","Travis Scott top, materiali premium. Un po' di attesa ma ne è valsa la pena.",4],
-      ["Serena P.","Imperia","Prodotto identico alle foto ufficiali. LFPOINTS che fanno risparmiare davvero.",5],
-      ["Fabio V.","Potenza","Air Max arrivate perfette. Comunicazione costante, mi sono sentito seguito.",5],
-      ["Roberta M.","Benevento","Hoodie Supreme di qualità altissima. Consiglio LilloFind a tutti gli amici.",5],
-      ["Andrea G.","Vercelli","Jordan 4 impeccabili. Box e tag inclusi. Spedizione DHL rapidissima.",5],
-      ["Silvia T.","Savona","Ottima esperienza, foto QC e reso semplice. Prodotti stupendi.",5],
-      ["Mattia L.","Rovigo","Dunk Panda perfette. Nessun problema doganale, tutto liscio come promesso.",5],
-      ["Debora B.","Grosseto","Slide comode e belle. Assistenza gentile e veloce. Tornerò sicuramente.",5],
-      ["Gianluca P.","Teramo","Yeezy 350 fantastiche, comodissime. Consegna puntuale e tracciata.",5],
-      ["Veronica C.","Frosinone","Prima volta e non ultima. Qualità reale e servizio clienti eccellente.",5]
-    ];
-    var track=document.getElementById('rev-track');
-    if(!track) return;
-    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-    var STAR='<svg width="12" height="12" viewBox="0 0 24 24" fill="#6f7552" stroke="none" style="margin-right:1px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
-    function card(r){
-      var stars=''; for(var i=0;i<(r[3]||5);i++) stars+=STAR;
-      var initial=esc(r[0].charAt(0));
-      return '<div class="rev-card">'
-        +'<div style="display:flex;gap:2px;margin-bottom:14px;">'+stars+'</div>'
-        +'<p class="rev-quote">“'+esc(r[2])+'”</p>'
-        +'<div style="display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:14px;">'
-          +'<div style="width:34px;height:34px;background:var(--led);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:\'Bricolage Grotesque\',sans-serif;font-size:15px;color:#fff;flex-shrink:0;">'+initial+'</div>'
-          +'<div style="min-width:0;"><p style="font-size:12px;font-weight:700;">'+esc(r[0])+'</p><p style="font-size:10.5px;color:var(--dim);">'+esc(r[1])+' · Ordine verificato</p></div>'
-          +'<div style="margin-left:auto;border:1px solid var(--border-2);border-radius:999px;padding:3px 9px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--led);flex-shrink:0;">✓</div>'
-        +'</div></div>';
-    }
-    // ordine pseudo-casuale stabile (senza Math.random per non spostare ad ogni render)
-    var html=R.map(card).join('');
-    // duplico il contenuto: l'animazione a -50% crea un loop infinito senza stacchi
-    track.innerHTML=html+html;
-    // velocità proporzionale al numero di recensioni
-    track.style.animationDuration=(R.length*2.4)+'s';
-  })();
-  </script>
 
   <!-- LILLOFIND CLUB -->
   <section style="padding:56px 24px;border-bottom:1px solid var(--border);background:var(--w);">
@@ -3431,7 +3320,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div class="foot-badge">🚀 DHL Express</div>
         <div class="foot-badge">🇪🇺 GDPR</div>
         <div class="foot-badge">♻️ Eco Packaging</div>
-        <div class="foot-badge">⭐ 4.9/5</div>
+        <div class="foot-badge" id="foot-rating" style="display:none;"></div>
       </div>
     </div>
 
@@ -3919,6 +3808,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
   function _afterProds(){
     try{buildChips();updateFilterUI();buildNavMenus();}catch(_){}
+    loadReviews().then(()=>{ try{ refreshRatings(); renderTestimonials(); }catch(_){} });
     try{renderHomeProds();}catch(_){}
     try{
       if(document.getElementById('pg-shop')?.classList.contains('on')){
@@ -4335,22 +4225,76 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
   };
 
+  // ── Dati reali per la vetrina ──────────────────────────────────────
+  // Giacenza: solo se il prodotto ha un campo numerico "stock" (> 0).
+  function realStock(p){ const n=Number(p&&p.stock); return (p&&p.stock!=null&&p.stock!==''&&Number.isFinite(n)&&n>0)?Math.floor(n):null; }
+  // Recensioni: SOLO quelle reali della collezione "reviews" (una lettura per
+  // sessione, poi cache 30 min). Niente stelle se il prodotto non ne ha.
+  let _revList=null, _revStats={};
+  async function loadReviews(){
+    if(_revList) return _revList;
+    try{ const c=JSON.parse(sessionStorage.getItem('lf_reviews')||'null'); if(c&&Date.now()-c.t<30*60*1000) _revList=c.list; }catch(_){}
+    if(!_revList){
+      const fb=window.__fb; if(!fb) return [];
+      try{
+        const sn=await fb.getDocs(fb.collection(fb.db,'reviews'));
+        _revList=sn.docs.map(d=>{ const r=d.data()||{}; return {productId:r.productId||'',rating:+r.rating||0,text:String(r.text||''),userName:String(r.userName||''),ts:(r.createdAt&&r.createdAt.seconds)||0}; })
+          .filter(r=>r.productId&&r.rating>=1&&r.rating<=5);
+        try{ sessionStorage.setItem('lf_reviews',JSON.stringify({t:Date.now(),list:_revList})); }catch(_){}
+      }catch(e){ console.warn('reviews',e&&e.code); _revList=[]; }
+    }
+    _revStats={};
+    _revList.forEach(r=>{ const o=_revStats[r.productId]||(_revStats[r.productId]={sum:0,n:0}); o.sum+=r.rating; o.n++; });
+    return _revList;
+  }
+  function ratingBadge(pid){ const o=_revStats[pid]; return (o&&o.n)?('★ '+(o.sum/o.n).toFixed(1)+' ('+o.n+') · '):''; }
+  function refreshRatings(){ document.querySelectorAll('.pc-rating[data-pid]').forEach(el=>{ el.innerHTML=ratingBadge(el.dataset.pid); }); }
+  // "Dicono di noi": recensioni reali con testo; la sezione resta nascosta finché non ce ne sono.
+  function renderTestimonials(){
+    const sec=document.getElementById('home-reviews'), track=document.getElementById('rev-track');
+    const all=_revList||[];
+    const foot=document.getElementById('foot-rating');
+    if(foot){ if(all.length){ const avg=all.reduce((a,r)=>a+r.rating,0)/all.length; foot.textContent='⭐ '+avg.toFixed(1)+'/5 · '+all.length+' recensioni'; foot.style.display=''; } else foot.style.display='none'; }
+    if(!sec||!track) return;
+    const list=all.filter(r=>r.text.trim().length>=10).sort((a,b)=>b.ts-a.ts).slice(0,12);
+    if(!list.length){ sec.style.display='none'; return; }
+    const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const STAR='<svg width="12" height="12" viewBox="0 0 24 24" fill="var(--led)" aria-hidden="true" style="margin-right:1px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+    const card=r=>{
+      const p=(products||[]).find(x=>x.id===r.productId);
+      const name=r.userName.trim()||'Cliente';
+      return '<div class="rev-card">'
+        +'<div style="display:flex;gap:2px;margin-bottom:14px;" aria-label="'+r.rating+' su 5">'+STAR.repeat(r.rating)+'</div>'
+        +'<p class="rev-quote">“'+esc(r.text.slice(0,240))+'”</p>'
+        +'<div style="display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:14px;">'
+          +'<div style="width:34px;height:34px;background:var(--led);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">'+esc(name.charAt(0).toUpperCase())+'</div>'
+          +'<div style="min-width:0;"><p style="font-size:12px;font-weight:700;">'+esc(name)+'</p>'+(p?'<p style="font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(cleanTitle(p.name,34))+'</p>':'')+'</div>'
+        +'</div></div>';
+    };
+    const html=list.map(card).join('');
+    const avg=all.reduce((a,r)=>a+r.rating,0)/all.length;
+    const sum=document.getElementById('rev-summary'); if(sum) sum.textContent=avg.toFixed(1)+'/5 · '+all.length+' recension'+(all.length===1?'e':'i');
+    // scorrimento continuo solo con abbastanza recensioni (contenuto duplicato per il loop)
+    const loop=list.length>=4;
+    track.classList.toggle('rev-static',!loop);
+    track.innerHTML=loop?html+html:html;
+    if(loop) track.style.animationDuration=(list.length*7)+'s';
+    sec.style.display='';
+  }
+
   function cardHTML(p){
     const isNew=(p.createdAt?.seconds&&(Date.now()/1000-p.createdAt.seconds)<604800);
     const inWish=wishlist.includes(p.id);
-    // FOMO: deterministic low-stock flag based on product id hash
-    const pidHash=p.id?p.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0):0;
-    const stockNum=[2,3,4,1,3,2][pidHash%6];
     const isSoldOut=p.soldOut===true;
-    const isLowStock=!isSoldOut&&stockNum<=3;
+    // "Solo N rimasti" solo con una giacenza reale (campo p.stock) ≤ 3
+    const stockNum=realStock(p);
+    const isLowStock=!isSoldOut&&stockNum!==null&&stockNum<=3;
     const delBtn='';
     const stockBadge=isSoldOut
       ?'' /* overlay centrale "ESAURITO" sull'immagine → niente badge ridondante */
       :isNew?`<span class="lf-badge lf-badge--new lf-badge-pos">Novità</span>`
       :isLowStock?`<span class="lf-badge lf-badge--drop lf-badge-pos">Solo ${stockNum} rimasti</span>`
       :(p.style?`<span class="lf-badge lf-badge--style lf-badge-pos">${p.style}</span>`:'');
-    // rating deterministico (4.5–4.9) per estetica premium
-    const rating=(4.5+(pidHash%5)/10).toFixed(1);
     return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.75':''}" onclick="openProduct('${p.id}')">
       <div style="aspect-ratio:1/1;background:#efece4;overflow:hidden;position:relative;">
         ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" data-pid="${p.id}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;${isSoldOut?'filter:grayscale(.6);':''}" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10.5px;color:#c3bfb4;letter-spacing:2px;">NO IMG</div>`}
@@ -4370,7 +4314,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div>
             <span class="bb" style="font-size:22px;color:var(--k);">€${(p.price||0).toFixed(2)}</span>
-            <span style="display:block;font-size:11px;color:var(--led);font-weight:600;">★ ${rating} · +${Math.floor(p.price||0)} LFPTS</span>
+            <span style="display:block;font-size:11px;color:var(--led);font-weight:600;"><span class="pc-rating" data-pid="${p.id}">${ratingBadge(p.id)}</span>+${Math.floor(p.price||0)} LFPTS</span>
           </div>
           ${isSoldOut?`<span style="font-size:11px;letter-spacing:.3px;color:var(--dim);padding:8px 12px;border:1px solid var(--border-2);border-radius:999px;">Esaurito</span>`:`<button class="btn-led" style="padding:9px 16px;font-size:12px;min-height:0;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">＋</button>`}
         </div>
@@ -4733,9 +4677,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       grid.textContent = '';
       grid.insertAdjacentHTML('afterbegin', items.map(p => {
         const isSoldOut = p.soldOut===true;
-        const pidHash = p.id?p.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0):0;
-        const stockNum = [2,3,4,1,3,2][pidHash%6];
-        const isLow = !isSoldOut && stockNum<=3;
+        const stockNum = realStock(p);
+        const isLow = !isSoldOut && stockNum!==null && stockNum<=3;
         return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" onclick="openProduct('${p.id}')">
           <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
             ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10.5px;color:var(--dim);letter-spacing:2px;">NO IMG</div>'}
@@ -5077,8 +5020,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     const track = document.getElementById('home-carousel');
     if(!track||!products.length) return;
     requestAnimationFrame(()=>{
-      // Rotazione: a OGNI visita mostra un mix casuale di prodotti diversi,
-      // così la sezione sembra sempre aggiornata (in realtà pesca dal catalogo).
+      // Rotazione: a ogni visita un mix casuale dal catalogo. Non sono per forza
+      // novità, per questo la sezione si chiama «Scelti per te» e non «Fresh Drops».
       const base = products.filter(p=>!isSportOnly(p));
       const inStock = base.filter(p=>p.soldOut!==true);
       const src = inStock.length>=12 ? inStock : base.slice();
@@ -5087,9 +5030,8 @@ img{ -webkit-user-drag:none; user-select:none; }
       const pool = shuffled.slice(0, Math.min(shuffled.length, 20));
       const cards = pool.map(p=>{
         const isSoldOut = p.soldOut===true;
-        const pidHash=p.id?p.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0):0;
-        const stockNum=[2,3,4,1,3,2][pidHash%6];
-        const isLow=!isSoldOut&&stockNum<=3;
+        const stockNum=realStock(p);
+        const isLow=!isSoldOut&&stockNum!==null&&stockNum<=3;
         return `<div class="carousel-card" onclick="openProduct('${p.id}')">
           <div style="aspect-ratio:3/4;background:var(--k);overflow:hidden;position:relative;">
             ${p.imageUrl
@@ -5097,7 +5039,7 @@ img{ -webkit-user-drag:none; user-select:none; }
               : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#333;letter-spacing:2px;">NO IMG</div>`
             }
             ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span class="lf-badge lf-badge--soldout">Esaurito</span></div>':''}
-            ${isLow&&!isSoldOut?`<span class="lf-badge lf-badge--drop lf-badge-pos">Ultimi</span>`:''}
+            ${isLow&&!isSoldOut?`<span class="lf-badge lf-badge--drop lf-badge-pos">Solo ${stockNum} rimasti</span>`:''}
             ${window._isAdmin?`<button onclick="event.stopPropagation();adminDeleteProduct('${p.id}')" title="Elimina prodotto" style="position:absolute;top:6px;right:6px;z-index:5;width:30px;height:30px;border:none;border-radius:8px;background:rgba(201,80,63,.95);color:#fff;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.3);">🗑</button>`:''}
             <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
               ${p.brand?`<p style="font-size:10.5px;color:var(--led2);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
@@ -7569,42 +7511,6 @@ img{ -webkit-user-drag:none; user-select:none; }
     };
     // We patch via showPg override below
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // FEATURE 8 — Social proof toast notifications
-  // ══════════════════════════════════════════════════════════════
-  (function initSocialToast(){
-    const ENTRIES = [
-      {name:'Luca M.', city:'Milano',     item:'Nike Dunk Low Panda'},
-      {name:'Sofia R.', city:'Roma',      item:'Supreme Box Logo Hoodie'},
-      {name:'Marco T.', city:'Torino',    item:'Jordan 4 Retro Black Cat'},
-      {name:'Giulia B.', city:'Napoli',   item:'Adidas Yeezy 350 V2'},
-      {name:'Andrea C.', city:'Firenze',  item:'Bape Shark Hoodie'},
-      {name:'Matteo P.', city:'Bologna',  item:'Off-White x Nike AF1'},
-      {name:'Chiara V.', city:'Venezia',  item:'New Balance 9060'},
-      {name:'Davide F.', city:'Palermo',  item:'CDG Play T-Shirt'},
-      {name:'Elena M.', city:'Genova',    item:'Carhartt WIP Detroit Jacket'},
-      {name:'Francesco L.', city:'Bari',  item:'Jordan 1 High OG'},
-    ];
-    const toast = document.getElementById('sp-toast');
-    const who   = document.getElementById('sp-toast-who');
-    const msgEl = document.getElementById('sp-toast-msg');
-    if(!toast||!who||!msgEl) return;
-
-    let idx = 0;
-    function showNext(){
-      const e = ENTRIES[idx % ENTRIES.length];
-      idx++;
-      who.textContent = e.name + ' da ' + e.city;
-      msgEl.textContent = 'ha appena acquistato ' + e.item;
-      toast.classList.add('show');
-      setTimeout(()=>toast.classList.remove('show'), 4000);
-      // Next in 45-75s random
-      setTimeout(showNext, 45000 + Math.random() * 30000);
-    }
-    // First show after 12s
-    setTimeout(showNext, 12000);
-  })();
 
   // ══════════════════════════════════════════════════════════════
   // FEATURE 9 — Sticky Add to Cart
