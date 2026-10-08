@@ -15,6 +15,7 @@ import * as scrapers from './handlers/scrapers.js';
 import * as stream from './handlers/stream.js';
 import * as loyalty from './handlers/loyalty.js';
 import * as catalog from './handlers/catalog.js';
+import * as telemetry from './handlers/telemetry.js';
 import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
@@ -214,6 +215,9 @@ app.get('/proxyImage', async (c) => {
 
 // ── Catalogo shop (da Cloudflare KV, 0 letture Firestore) ───────
 app.get('/catalog', (c) => catalog.getCatalog(c));
+
+// ── Errori JavaScript del sito → log del Worker ──────────────────
+app.post('/clientError', (c) => telemetry.clientError(c));
 
 // ── Health check ────────────────────────────────────────────────
 app.get('/', (c) => c.json({ ok: true, service: 'lillofind-worker' }));
