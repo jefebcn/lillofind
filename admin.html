@@ -2700,6 +2700,7 @@ waitFB(()=>{
   const _cap=t=>t?t.charAt(0).toUpperCase()+t.slice(1):t;
   function enColor(c){
     if(!c) return '';
+    if(/^\s*come (in|da) foto\s*$/i.test(String(c))) return 'As in photo';
     return String(c).split(/\s*[,\/+]\s*/).filter(Boolean).map(part=>{
       const mods=[], base=[];
       part.trim().toLowerCase().split(/\s+/).forEach(x=>{ if(_EN_MOD[x]) mods.push(_EN_MOD[x]); else base.push(_EN_COLOR[x]||x); });
