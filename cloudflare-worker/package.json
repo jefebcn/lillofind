@@ -9,7 +9,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
-    "test": "node test/logic.test.mjs",
+    "test": "node test/logic.test.mjs && node test/handlers.test.mjs && node test/catalog.test.mjs",
     "smoke": "bash smoke-test.sh"
   },
   "dependencies": {
