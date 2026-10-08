@@ -2691,7 +2691,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const tc=document.getElementById('fs-active-tags');
     if(tc){
       let html=tags.map(([k,v])=>
-        `<span class="af-tag" onclick="toggleF('${k}','${v}');updateFilterUI();">${v} <span class="af-tag-x">×</span></span>`
+        `<span class="af-tag" data-key="${_attr(k)}" data-val="${_attr(v)}" onclick="toggleF(this.dataset.key,this.dataset.val);updateFilterUI();">${_attr(v)} <span class="af-tag-x">×</span></span>`
       ).join('');
       if(filters.priceMin!=null){
         const lbl=filters.priceMax>=99999?('> €'+filters.priceMin):('€'+filters.priceMin+'–'+filters.priceMax);
@@ -3289,7 +3289,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           `<div style="margin-bottom:8px;">
             <div class="fs-grp">${g}</div>
             <div style="display:flex;flex-wrap:wrap;gap:2px;">
-              ${labels.map(lbl=>`<span class="chip" data-key="model" data-val="${lbl}" onclick="toggleF('model','${lbl}')">${lbl}</span>`).join('')}
+              ${labels.map(lbl=>`<span class="chip" data-key="model" data-val="${_attr(lbl)}" onclick="toggleF(this.dataset.key,this.dataset.val)">${_attr(lbl)}</span>`).join('')}
             </div>
           </div>`
         ).join('');
@@ -3302,7 +3302,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           if(ia>=0) return -1; if(ib>=0) return 1;
           return parseFloat(a)-parseFloat(b)||a.localeCompare(b);
         });
-        html=`<div class="size-box-grid">${vals.map(v=>`<div class="size-box" data-key="size" data-val="${v}" onclick="toggleF('size','${v}')">${v}</div>`).join('')}</div>`;
+        html=`<div class="size-box-grid">${vals.map(v=>`<div class="size-box" data-key="size" data-val="${_attr(v)}" onclick="toggleF(this.dataset.key,this.dataset.val)">${_attr(v)}</div>`).join('')}</div>`;
         htmlMob=html;
       } else if(k==='color'){
         // Colori raggruppati in famiglie (Blu Scuro/Navy/Royal → "Blu") e swatch
@@ -3315,14 +3315,14 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         html=`<div class="swatch-grid">${labels.map(lbl=>{
           const col=fam[lbl];
           const light=/^#f/i.test(col);
-          return `<div class="swatch" data-key="color" data-val="${lbl}" title="${lbl}" onclick="toggleF('color','${lbl}')" style="background:${col};${light?'box-shadow:inset 0 0 0 1px var(--border-2);':''}"></div>`;
+          return `<div class="swatch" data-key="color" data-val="${_attr(lbl)}" title="${_attr(lbl)}" onclick="toggleF(this.dataset.key,this.dataset.val)" style="background:${col};${light?'box-shadow:inset 0 0 0 1px var(--border-2);':''}"></div>`;
         }).join('')}</div>`;
         htmlMob=html;
       } else {
         // brand: raggruppa le varianti sotto la denominazione canonica
         const raw = k==='brand' ? products.map(p=>canonBrand(p.brand)) : products.map(p=>p[k]);
         const vals=[...new Set(raw.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-        html=vals.map(v=>`<span class="chip" data-key="${k}" data-val="${v}" onclick="toggleF('${k}','${v}')">${v}</span>`).join('');
+        html=vals.map(v=>`<span class="chip" data-key="${k}" data-val="${_attr(v)}" onclick="toggleF(this.dataset.key,this.dataset.val)">${_attr(v)}</span>`).join('');
         htmlMob=html;
       }
 
@@ -3693,6 +3693,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
             ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${s}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${p.size}</span>`:''}
             ${((p.sizes&&p.sizes.length)||p.size)?`<button onclick="openSizeGuide('${(p.model||'').replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--led-text);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;"><svg class=ic aria-hidden=true><use href=icons.svg#ruler></use></svg> Guida taglie</button>`:''}
           </div>
+          <p style="font-size:12.5px;color:var(--mid);margin:-4px 0 0;"><b style="color:var(--k);font-weight:600;">Colore:</b> ${(p.colors&&p.colors.length)?p.colors.map(c=>String(c).replace(/[<>&"]/g,'')).join(' · '):'come in foto'}</p>
           <div style="border-top:1px solid var(--border);padding-top:16px;">
             <p style="font-family:var(--font-display);font-size:42px;margin-bottom:6px;">€${(p.price||0).toFixed(2)}</p>
             <div style="border:1px solid color-mix(in srgb,var(--led2) 64%,transparent);padding:5px 10px;background:color-mix(in srgb,var(--led2) 8%,transparent);display:inline-flex;align-items:center;gap:6px;">
@@ -4532,10 +4533,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 
   // ── Buy — shows size/color picker ─────────────────────
   let _buyPid=null,_buyPrice=0;
+  // Valori (taglie, colori) messi in attributi HTML: niente rotture con apici o virgolette
+  function _attr(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   window.buy=function(pid,price){
     hideStickyATC(); // si apre la scelta taglia: via la barra "Aggiungi"
     // Guest: può aggiungere al carrello senza account; l'accesso (o ospite) avviene al checkout
     _buyPid=pid; _buyPrice=price;
+    _pickedSz=''; _pickedCol=''; // niente scelte rimaste da un prodotto aperto prima
     try{ lfTrack('add_to_cart',{value:price,currency:'EUR',item_id:pid}); }catch(_){}
     const prod=products.find(p=>p.id===pid)||{id:pid,price};
     const sizes=prod.sizes&&prod.sizes.length?prod.sizes:(prod.size?[prod.size]:[]);
@@ -4551,19 +4555,22 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       ${sizes.length?`<div style="margin-bottom:18px;">
         <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Seleziona Taglia *</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;" id="picker-sizes">
-          ${sizes.map(s=>`<button onclick="pickSz('${s}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:var(--font-body);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${s}</button>`).join('')}
+          ${sizes.map(s=>`<button type="button" data-v="${_attr(s)}" onclick="pickSz(this.dataset.v,this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:var(--font-body);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${_attr(s)}</button>`).join('')}
         </div>
         <p id="sz-err" style="font-size:10.5px;color:red;margin-top:6px;display:none;">Seleziona una taglia</p>
       </div>`:''}
       ${colors.length?`<div style="margin-bottom:18px;">
         <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Colore Desiderato *</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;" id="picker-colors">
-          ${colors.map(c=>`<button onclick="pickCol('${c}',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:var(--font-body);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${c}</button>`).join('')}
+          ${colors.map(c=>`<button type="button" data-v="${_attr(c)}" onclick="pickCol(this.dataset.v,this)" style="padding:10px 16px;border:1.5px solid var(--k);background:none;font-family:var(--font-body);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;">${_attr(c)}</button>`).join('')}
         </div>
         <p id="col-err" style="font-size:10.5px;color:red;margin-top:6px;display:none;">Seleziona un colore</p>
       </div>`:`<div style="margin-bottom:18px;">
-        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Colore Desiderato</p>
-        <input id="picker-color-input" class="lf-in" placeholder="es. Nero, Bianco, Verde militare..."/>
+        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Colore</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="picker-colors">
+          <button type="button" onclick="pickCol('Come in foto',this)" style="padding:10px 16px;border:1.5px solid var(--k);background:var(--ink);color:var(--w);font-family:var(--font-body);font-size:11px;letter-spacing:1px;cursor:pointer;">Come in foto</button>
+        </div>
+        <input id="picker-color-input" class="lf-in" placeholder="Altro colore? Scrivilo qui (facoltativo)" style="margin-top:10px;"/>
       </div>`}
       ${window.isFootballKit(prod)?`<div style="margin-bottom:18px;border:1.5px solid color-mix(in srgb,var(--led2) 48%,transparent);background:color-mix(in srgb,var(--led2) 5%,transparent);padding:14px 16px;">
         <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:var(--led-text);"><svg class=ic aria-hidden=true><use href=icons.svg#soccer-ball></use></svg> Personalizza la maglia <span style="color:var(--dim);text-transform:none;letter-spacing:0;">(opzionale)</span></p>
@@ -4585,6 +4592,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       </div>`:''}`;
     document.getElementById('picker-selsize').textContent = '';
     document.getElementById('picker-selcolor').textContent = '';
+    if(!colors.length){ _pickedCol='Come in foto'; document.getElementById('picker-selcolor').textContent='Come in foto'; }
     modal.classList.add('open');
   };
   let _pickedSz='', _pickedCol='';
@@ -4643,10 +4651,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }
     // Color: either picked from chips or typed
     let finalColor=_pickedCol;
-    if(!finalColor){
-      const inp=document.getElementById('picker-color-input');
-      if(inp) finalColor=inp.value.trim();
-    }
+    const _typed=(document.getElementById('picker-color-input')?.value||'').trim();
+    if(_typed && (!colors.length || !finalColor)) finalColor=_typed;
     if(colors.length&&!_pickedCol){
       const e=document.getElementById('col-err'); if(e)e.style.display='block'; return;
     }
@@ -6359,7 +6365,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(type === 'football') filters.football = !!value;
     if(type === 'basket') filters.basket = !!value;
     // Highlight the matching chip if visible
-    document.querySelectorAll(`.chip[data-key="${type}"][data-val="${value}"],.size-box[data-key="${type}"][data-val="${value}"]`).forEach(c=>c.classList.add('on'));
+    document.querySelectorAll(`.chip[data-key="${type}"][data-val="${CSS.escape(String(value))}"],.size-box[data-key="${type}"][data-val="${CSS.escape(String(value))}"]`).forEach(c=>c.classList.add('on'));
     const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=value?'':'none';
     const rstm=document.getElementById('rst-btn-m'); if(rstm) rstm.style.display=value?'':'none';
     if(typeof updateFilterUI === 'function') updateFilterUI();
@@ -6379,8 +6385,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     setTimeout(()=>{
       filters = {model:model||'',brand:brand||'',size:'',style:'',color:''};
       document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
-      if(model) document.querySelectorAll(`.chip[data-key="model"][data-val="${model}"]`).forEach(c=>c.classList.add('on'));
-      if(brand) document.querySelectorAll(`.chip[data-key="brand"][data-val="${brand}"]`).forEach(c=>c.classList.add('on'));
+      if(model) document.querySelectorAll(`.chip[data-key="model"][data-val="${CSS.escape(String(model))}"]`).forEach(c=>c.classList.add('on'));
+      if(brand) document.querySelectorAll(`.chip[data-key="brand"][data-val="${CSS.escape(String(brand))}"]`).forEach(c=>c.classList.add('on'));
       const rst=document.getElementById('rst-btn'); if(rst) rst.style.display=(model||brand)?'':'none';
       if(typeof updateFilterUI==='function') updateFilterUI();
       if(typeof renderShop==='function') renderShop();
