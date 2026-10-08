@@ -2995,6 +2995,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(_prodsLoaded || _prodsLoading) return;
     _prodsLoading=true;
     const fb=window.__fb;
+    // Se dopo 12s non è arrivato nulla (Firestore ritenta a lungo quando la quota
+    // è finita), avvisa subito: se poi i prodotti arrivano, la pagina si aggiorna.
+    const _slow=setTimeout(()=>{ if(!_prodsLoaded) showCatalogDown(); },12000);
     try{
       // Carica TUTTI i prodotti SENZA orderBy: un orderBy('createdAt') escluderebbe
       // dalla query i documenti privi del campo createdAt (comportamento Firestore),
@@ -3006,6 +3009,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         // Fallback: lettura completa (costosa: 1 lettura per prodotto).
         const s=await fb.getDocs(fb.collection(fb.db,'products'));
         all=s.docs.map(d=>({id:d.id,...d.data()}));
+        // Con la quota esaurita Firestore può rispondere con una lista vuota
+        // invece di un errore: per questo shop non è mai un risultato valido.
+        if(!all.length) throw Object.assign(new Error('Catalogo vuoto o non raggiungibile'),{code:'empty'});
       }
       const _broken=_brokenPids();
       products=all.filter(p=>p.hidden!==true && !_broken[p.id]);
@@ -3018,7 +3024,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       showCatalogDown();
       // riprova da solo (es. catalogo appena pubblicato o quota ripristinata)
       clearTimeout(window._prodRetry); window._prodRetry=setTimeout(()=>{ _prodsLoaded=false; loadAllProducts(); },120000);
-    }finally{ _prodsLoading=false; }
+    }finally{ _prodsLoading=false; clearTimeout(_slow); }
   }
   // Catalogo non raggiungibile: avviso chiaro al posto delle sezioni vuote.
   function showCatalogDown(){
