@@ -1391,14 +1391,13 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div class="hero-wrap">
       <!-- Poster crossfade -->
       <div class="hero-frame">
-        <!-- Prima le foto senza testo segnaposto. hero4/hero5 hanno testo di template
-             ("Stuck in the void", "Lost in comfort"); hero6.jpg (testo di un'altra
-             agenzia, "At Conceptial…") è fuori rotazione finché non viene sostituita. -->
-        <img src="hero2.png" class="hero-slide-img" style="animation-delay:0s;" alt="LilloFind drop" fetchpriority="high"/>
-        <img src="hero3.jpeg" class="hero-slide-img" style="animation-delay:-28s;" alt="" loading="lazy"/>
-        <img src="hero1.png" class="hero-slide-img" style="animation-delay:-21s;" alt="" loading="lazy"/>
-        <img src="hero4.jpg" class="hero-slide-img" style="animation-delay:-14s;" alt="" loading="lazy"/>
-        <img src="hero5.jpg" class="hero-slide-img" style="animation-delay:-7s;" alt="" loading="lazy"/>
+        <!-- Solo foto senza testo segnaposto. hero4/5/6.jpg sono fuori rotazione:
+             contengono testo di template ("Stuck in the void", "Lost in comfort",
+             "At Conceptial…"). Per aggiungere una foto: un <img> qui e aggiorna
+             durata/keyframes qui sotto (7s per slide). -->
+        <img src="hero2.jpg" class="hero-slide-img" style="animation-delay:0s;" alt="LilloFind drop" fetchpriority="high"/>
+        <img src="hero3.jpeg" class="hero-slide-img" style="animation-delay:-14s;" alt="" loading="lazy"/>
+        <img src="hero1.jpg" class="hero-slide-img" style="animation-delay:-7s;" alt="" loading="lazy"/>
       </div>
       <!-- Testo -->
       <div class="hero-text">
@@ -1420,9 +1419,9 @@ img{ -webkit-user-drag:none; user-select:none; }
       #pg-hero-section{display:block!important;min-height:0!important;height:auto!important;}
       .hero-wrap{max-width:1200px;margin:0 auto;padding:30px 20px 22px;display:grid;grid-template-columns:1fr;gap:26px;align-items:center;}
       .hero-frame{position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:4/5;border-radius:22px;overflow:hidden;box-shadow:var(--shadow-lg);background:var(--accent-soft);}
-      .hero-slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0;animation:hero-xfade 35s ease-in-out infinite both;}
-      /* 5 slide × 7s, dissolvenza incrociata di ~1.2s */
-      @keyframes hero-xfade{0%,16.5%{opacity:1;}20%,96.5%{opacity:0;}100%{opacity:1;}}
+      .hero-slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0;animation:hero-xfade 21s ease-in-out infinite both;}
+      /* 3 slide × 7s, dissolvenza incrociata di ~1.2s */
+      @keyframes hero-xfade{0%,27.6%{opacity:1;}33.3%,94.3%{opacity:0;}100%{opacity:1;}}
       @media(prefers-reduced-motion:reduce){.hero-slide-img{animation:none!important;opacity:0;}.hero-slide-img:first-child{opacity:1;}}
       .hero-text{text-align:center;}
       .hero-text h1{font-size:clamp(46px,12vw,80px);line-height:.92;letter-spacing:.5px;}
@@ -1734,7 +1733,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">La collezione completa di sneakers 1:1, dai classici agli ultimi drop.</p>
             <span style="font-size:13px;font-weight:600;color:var(--led-text);">Scopri →</span>
           </div>
-          <div style="width:42%;background:url('hero1.png') center/cover no-repeat;flex-shrink:0;"></div>
+          <div style="width:42%;background:url('hero1.jpg') center/cover no-repeat;flex-shrink:0;"></div>
         </div>
 
         <div class="cat-block" onclick="showPg('shop');resetFilters()" style="display:flex;align-items:stretch;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .25s,box-shadow .25s;min-height:190px;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-sm)'">
@@ -1743,7 +1742,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">Felpe, tee e capi statement dei brand più iconici.</p>
             <span style="font-size:13px;font-weight:600;color:var(--led-text);">Scopri →</span>
           </div>
-          <div style="width:42%;background:url('hero2.png') center/cover no-repeat;flex-shrink:0;"></div>
+          <div style="width:42%;background:url('hero2.jpg') center/cover no-repeat;flex-shrink:0;"></div>
         </div>
 
         <div class="cat-block" onclick="showPg('shop');resetFilters()" style="display:flex;align-items:stretch;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .25s,box-shadow .25s;min-height:190px;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-sm)'">
