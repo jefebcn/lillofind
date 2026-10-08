@@ -11,8 +11,8 @@
    Con cache:'no-cache' il browser chiede sempre al server se la pagina è
    cambiata (risposta 304 leggera se è uguale).
 */
-const CACHE = 'lillofind-v5';
-const STATIC = ['/', '/index.html', '/stream.html', '/manifest.json', '/style.css',
+const CACHE = 'lillofind-v6';
+const STATIC = ['/', '/index.html', '/stream.html', '/manifest.json', '/style.css', '/index.css',
   '/theme-v3.css', '/firebase.js', '/icon-192.png', '/icon-512.png', '/assets/og-image.jpg'];
 
 self.addEventListener('install', (e) => {
