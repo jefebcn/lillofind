@@ -23,6 +23,7 @@ on:
       - main
     paths:
       - 'cloudflare-worker/**'
+      - '.github/workflows/cloudflare-worker-deploy.yml'
   workflow_dispatch:
 
 jobs:
@@ -63,7 +64,33 @@ jobs:
           printf '\n[[kv_namespaces]]\nbinding = "CATALOG"\nid = "%s"\n' "$ID" >> wrangler.toml
           echo "KV catalogo collegato: $ID"
 
+      # Anche Cloudflare Workers Builds pubblica questo Worker a ogni push: se
+      # parte nello stesso momento, il caricamento dei secret fallisce
+      # ("latest version isn't currently deployed", code 10214). In quel caso
+      # si aspetta che finisca e si riprova una volta.
       - name: Deploy Worker
+        id: deploy1
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare-worker
+          command: deploy
+          # Service account Firestore per il Worker: lo stesso già usato dal
+          # deploy Firebase (secret GitHub GOOGLE_CREDENTIALS). Senza, il Worker
+          # non può leggere/scrivere Firestore (ordini, punti, email ordine).
+          secrets: |
+            FIREBASE_SERVICE_ACCOUNT
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Attendi Workers Builds prima di riprovare
+        if: steps.deploy1.outcome == 'failure'
+        run: sleep 90
+
+      - name: Deploy Worker (secondo tentativo)
+        if: steps.deploy1.outcome == 'failure'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
