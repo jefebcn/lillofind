@@ -123,10 +123,6 @@ h2.bb{letter-spacing:-.02em!important;}
 #home-tier{color:var(--tier-color,var(--led2))!important;}
 .brand-tile{border:1px solid var(--border)!important;border-radius:14px!important;transition:border-color .2s,transform .2s;}
 .brand-tile:hover{border-color:var(--k)!important;transform:translateY(-2px);}
-/* Barra trust sotto l'hero → chip leggibili */
-#hero-stats{background:var(--card)!important;border-top:1px solid var(--border)!important;border-bottom:1px solid var(--border);}
-#hero-stats > div{padding:14px 16px!important;}
-#hero-stats p.bb{font-size:17px!important;}
 
 /* ── 7. HUD: punti, livello, navigazione ───────────────────── */
 #m-badge{
