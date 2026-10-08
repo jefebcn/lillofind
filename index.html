@@ -150,7 +150,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 /* ── TOAST ───────────────────────────────────── */
 #toast{
   position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;
-  background:var(--k);color:var(--w);padding:13px 22px;
+  background:var(--ink);color:var(--on-ink);padding:13px 22px;
   font-size:11px;letter-spacing:2px;text-transform:uppercase;
   white-space:nowrap;border-radius:0;
   opacity:0;transition:opacity .3s;pointer-events:none;
@@ -169,8 +169,8 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 
 /* ── TIER CARDS ──────────────────────────────── */
 .tier-c{border:1.5px solid var(--border-2);padding:20px;color:var(--dim);transition:all .3s;}
-.tier-c.unlocked{border-color:var(--k);background:var(--k);color:var(--w);}
-.tier-c.unlocked .tier-glow{color:var(--led);}
+.tier-c.unlocked{border-color:var(--k);background:var(--ink);color:var(--on-ink);}
+.tier-c.unlocked .tier-glow{color:var(--led-text);}
 
 /* ── PROFILE TABS ────────────────────────────── */
 .prof-tab{
@@ -179,8 +179,8 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   padding:14px 16px;cursor:pointer;color:#444;white-space:nowrap;
   transition:color .2s,border-color .2s;min-height:48px;
 }
-.prof-tab.on{color:var(--led);border-bottom-color:var(--led);}
-.prof-tab:hover{color:var(--led);}
+.prof-tab.on{color:var(--led-text);border-bottom-color:var(--led);}
+.prof-tab:hover{color:var(--led-text);}
 .ptab{display:none;}
 .ptab.on{display:block;}
 
@@ -190,7 +190,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 .lf-slider{position:absolute;cursor:pointer;inset:0;background:#ddd;transition:.3s;border-radius:0;}
 .lf-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:var(--w);transition:.3s;}
 .lf-toggle input:checked+.lf-slider{background:var(--led);}
-.lf-toggle input:checked+.lf-slider:before{transform:translateX(22px);background:var(--k);}
+.lf-toggle input:checked+.lf-slider:before{transform:translateX(22px);background:var(--ink);}
 
 /* ── SECTION LABEL ───────────────────────────── */
 .slbl{font-size:10.5px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);}
@@ -235,7 +235,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   min-height:56px;min-width:48px;
   transition:color .2s;touch-action:manipulation;
 }
-.bnav-btn.active,.bnav-btn:hover{color:var(--led);}
+.bnav-btn.active,.bnav-btn:hover{color:var(--led-text);}
 .bnav-btn:active{transform:scale(.9);}
 .bnav-icon{display:flex;align-items:center;justify-content:center;width:28px;height:28px;}
 .bnav-icon svg{transition:filter .2s;}
@@ -264,7 +264,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   padding:10px 12px;font-family:'Manrope',sans-serif;font-size:15px;font-weight:600;color:var(--k);
   border-radius:8px;transition:background .12s,color .12s;break-inside:avoid;
 }
-.nav-dd-item:hover{background:var(--accent-soft);color:var(--led);}
+.nav-dd-item:hover{background:var(--accent-soft);color:var(--led-text);}
 
 /* ── MOBILE HEADER ───────────────────────────── */
 #mob-hdr{
@@ -299,7 +299,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   cursor:pointer;text-align:left;transition:color .2s;
   font-family:'Manrope',sans-serif;text-decoration:none;
 }
-.flink:hover{color:var(--led);}
+.flink:hover{color:var(--led-text);}
 
 /* ── STRIPE BG ───────────────────────────────── */
 .stripe{background-image:repeating-linear-gradient(90deg,transparent 0,transparent 39px,rgba(0,0,0,.03) 39px,rgba(0,0,0,.03) 40px);}
@@ -320,7 +320,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 /* ── COOKIE BANNER ───────────────────────────── */
 #cookie-bar{
   position:fixed;bottom:0;left:0;width:100%;z-index:150;
-  background:var(--k);color:var(--w);padding:16px 20px;
+  background:var(--ink);color:var(--on-ink);padding:16px 20px;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
   border-top:2px solid var(--led);
   transform:translateY(100%);transition:transform .4s ease;
@@ -336,13 +336,13 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   text-transform:uppercase;color:var(--dim);flex:1;
 }
 .ck-step.active{color:var(--k);}
-.ck-step.done{color:var(--led);}
+.ck-step.done{color:var(--led-text);}
 .ck-step-num{
   width:26px;height:26px;border-radius:50%;border:2px solid currentColor;
   display:flex;align-items:center;justify-content:center;font-size:11px;
   flex-shrink:0;transition:all .3s;
 }
-.ck-step.active .ck-step-num{background:var(--k);color:var(--w);border-color:var(--k);}
+.ck-step.active .ck-step-num{background:var(--ink);color:var(--on-ink);border-color:var(--k);}
 .ck-step.done .ck-step-num{background:var(--led);color:#fff;border-color:var(--led);}
 .ck-step-line{flex:1;height:1px;background:#ddd;margin:0 6px;}
 .ck-step.done~.ck-step-line{background:var(--led);}
@@ -359,7 +359,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 
 /* ── ADMIN ORDERS ────────────────────────────────── */
 .admin-order-card{
-  border:1.5px solid var(--border);background:#fff;padding:16px 18px;
+  border:1.5px solid var(--border);background:var(--card);padding:16px 18px;
   transition:border-color .2s;
 }
 .admin-order-card:hover{border-color:var(--k);}
@@ -375,7 +375,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
 /* ── BACK TO TOP ─────────────────────────────── */
 #back-top{
   display:none;position:fixed;bottom:96px;right:16px;z-index:80;
-  background:var(--k);color:var(--led);width:44px;height:44px;
+  background:var(--ink);color:var(--led-text);width:44px;height:44px;
   font-size:18px;border:none;cursor:pointer;border-left:2px solid var(--led);
   font-family:'Manrope',monospace;transition:opacity .2s;
 }
@@ -440,7 +440,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:'Manrope',sans-ser
   display:inline-flex;align-items:center;gap:6px;
   border:1.5px solid var(--led);padding:4px 10px;
   font-size:10.5px;letter-spacing:2px;text-transform:uppercase;
-  color:var(--led);background:color-mix(in srgb,var(--led2) 10%,transparent);
+  color:var(--led-text);background:color-mix(in srgb,var(--led2) 10%,transparent);
   box-shadow:none;
 }
 
@@ -678,7 +678,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 .sport-banner-ov{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(18,20,15,.95) 0%,rgba(18,20,15,.78) 42%,rgba(18,20,15,.35) 72%,rgba(18,20,15,.2) 100%);}
 .sport-banner-lines{position:absolute;inset:0;z-index:1;opacity:.14;pointer-events:none;
   background:repeating-linear-gradient(115deg,transparent 0 34px,var(--led2) 34px 36px);}
-.sport-banner-runner{position:absolute;right:4%;bottom:0;z-index:1;height:88%;width:auto;color:var(--led);opacity:.22;pointer-events:none;}
+.sport-banner-runner{position:absolute;right:4%;bottom:0;z-index:1;height:88%;width:auto;color:var(--led-text);opacity:.22;pointer-events:none;}
 @media(max-width:640px){.sport-banner-runner{right:-6%;opacity:.13;}}
 .sport-banner-txt{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:44px 24px;width:100%;}
 .sport-banner-h{font-size:clamp(56px,13vw,132px);line-height:.82;font-weight:800;letter-spacing:2px;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.4);}
@@ -739,7 +739,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   touch-action:manipulation;
 }
 .size-box:hover{border-color:var(--k);}
-.size-box.on{border:2px solid var(--led);color:var(--led);background:color-mix(in srgb,var(--led2) 10%,transparent);box-shadow:none;}
+.size-box.on{border:2px solid var(--led);color:var(--led-text);background:color-mix(in srgb,var(--led2) 10%,transparent);box-shadow:none;}
 
 /* ── COLOR SWATCH FILTERS ───────────────────────── */
 .swatch-grid{display:flex;flex-wrap:wrap;gap:7px;}
@@ -756,12 +756,12 @@ img{ -webkit-user-drag:none; user-select:none; }
 .swatch-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;}
 /* ── GENDER TABS ─────────────────────────────────── */
 .g-tab{padding:6px 20px;border-radius:999px;border:1.5px solid var(--k);background:transparent;font-size:12px;cursor:pointer;font-weight:600;letter-spacing:.5px;transition:all .15s;color:var(--mid);}
-.g-tab:hover{border-color:var(--led);color:var(--led);}
+.g-tab:hover{border-color:var(--led);color:var(--led-text);}
 .g-tab.active{background:var(--led);border-color:var(--led);color:#fff;font-weight:700;}
 /* ── SKELETON LOADING ────────────────────────────── */
 .skel{background:#e8e8e8;border-radius:0;animation:skel-pulse 1.5s ease-in-out infinite;}
 @keyframes skel-pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
-.skel-card{border:1.5px solid #e8e8e8;padding:0;overflow:hidden;background:#fff;}
+.skel-card{border:1.5px solid #e8e8e8;padding:0;overflow:hidden;background:var(--card);}
 .skel-img{width:100%;aspect-ratio:4/3;background:var(--border);animation:skel-pulse 1.5s ease-in-out infinite;}
 .skel-body{padding:14px;}
 .skel-line{height:12px;background:var(--border);margin-bottom:8px;border-radius:0;animation:skel-pulse 1.5s ease-in-out infinite;}
@@ -792,7 +792,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 /* ── STICKY ADD TO CART (mobile modal) ──────────── */
 #sticky-atc{
   display:none;position:fixed;bottom:0;left:0;right:0;z-index:600;
-  background:var(--k);padding:12px 16px 16px;
+  background:var(--ink);padding:12px 16px 16px;
   border-top:2px solid var(--led);
   box-shadow:0 -4px 24px rgba(0,0,0,.3);
   transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
@@ -800,7 +800,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 #sticky-atc.visible{transform:translateY(0);}
 #sticky-atc-inner{display:flex;gap:10px;align-items:center;max-width:600px;margin:0 auto;}
 #sticky-atc-info{flex:1;min-width:0;}
-#sticky-atc-name{font-size:11px;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
+#sticky-atc-name{font-size:11px;color:var(--on-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
 #sticky-atc-price{font-family:"Bricolage Grotesque",sans-serif;font-size:20px;color:var(--led2);}
 #sticky-atc-btn{background:var(--led);color:#fff;border:none;padding:12px 20px;font-family:"Manrope",monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;box-shadow:none;flex-shrink:0;}
 @media(min-width:769px){#sticky-atc{display:none!important;}}
@@ -834,7 +834,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 .digital-badge{
   display:inline-flex;align-items:center;gap:5px;
   background:var(--accent-soft);border:1px solid var(--led);
-  color:var(--led);font-family:'Manrope',monospace;
+  color:var(--led-text);font-family:'Manrope',monospace;
   font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;
   padding:3px 8px;
 }
@@ -874,7 +874,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   color:var(--dim);background:none;border:none;cursor:pointer;
   padding:0;display:none;transition:color .15s;
 }
-.fs-reset-btn:hover{color:var(--led);}
+.fs-reset-btn:hover{color:var(--led-text);}
 
 /* active filter tags */
 #fs-active-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
@@ -883,7 +883,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   padding:4px 8px 4px 11px;border-radius:999px;
   background:var(--accent-soft);
   border:1px solid var(--led2);
-  font-size:10.5px;letter-spacing:.3px;color:var(--led);font-weight:600;
+  font-size:10.5px;letter-spacing:.3px;color:var(--led-text);font-weight:600;
   cursor:pointer;transition:background .15s;
 }
 .af-tag:hover{background:#e2e6d6;}
@@ -898,7 +898,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   transition:all .15s;
   font-family:'Manrope',sans-serif;text-align:center;
 }
-.gtrio-btn:hover{border-color:var(--led);color:var(--led);}
+.gtrio-btn:hover{border-color:var(--led);color:var(--led-text);}
 .gtrio-btn.active{border-color:var(--led);color:#fff;background:var(--led);}
 
 /* accordion sections */
@@ -910,8 +910,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   text-transform:uppercase;font-weight:600;
   font-family:'Manrope',sans-serif;transition:color .15s;
 }
-.fsec-hd:hover{color:var(--led);}
-.fsec-hd.has-active{color:var(--led);}
+.fsec-hd:hover{color:var(--led-text);}
+.fsec-hd.has-active{color:var(--led-text);}
 .fsec-arr{font-size:10.5px;transition:transform .2s;opacity:.5;}
 .fsec-hd.collapsed .fsec-arr{transform:rotate(-90deg);}
 .fsec-bd{padding-bottom:12px;}
@@ -924,7 +924,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   background:var(--card);
   margin:2px;padding:6px 12px;font-size:11px;
 }
-#filter-aside .chip:hover{background:var(--accent-soft);color:var(--led);border-color:var(--led);}
+#filter-aside .chip:hover{background:var(--accent-soft);color:var(--led-text);border-color:var(--led);}
 #filter-aside .chip.on{background:var(--led);color:#fff;border-color:var(--led);}
 
 /* group labels inside sidebar */
@@ -935,7 +935,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   border-color:var(--border-2);background:var(--card);border-radius:var(--radius-sm);
   color:var(--mid);min-width:36px;min-height:36px;font-size:11px;
 }
-#filter-aside .size-box:hover{border-color:var(--led);color:var(--led);background:var(--accent-soft);}
+#filter-aside .size-box:hover{border-color:var(--led);color:var(--led-text);background:var(--accent-soft);}
 #filter-aside .size-box.on{border-color:var(--led);color:#fff;background:var(--led);}
 
 /* swatches in sidebar */
@@ -990,23 +990,24 @@ img{ -webkit-user-drag:none; user-select:none; }
 }
 </style>
 <link rel="stylesheet" href="theme-v3.css"/>
+<script>try{if(localStorage.getItem('lf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(_){}</script>
 </head>
 <body>
 
-<a href="#main" style="position:absolute;left:-9999px;top:0;z-index:100000;background:var(--k);color:#fff;padding:10px 16px;border-radius:0 0 8px 0;" onfocus="this.style.left='0'" onblur="this.style.left='-9999px'">Vai al contenuto</a>
+<a href="#main" style="position:absolute;left:-9999px;top:0;z-index:100000;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 8px 0;" onfocus="this.style.left='0'" onblur="this.style.left='-9999px'">Vai al contenuto</a>
 
 <!-- ══════════ TOAST ══════════ -->
 <div id="toast"></div>
 
 <!-- ══════════ INSTALLA APP (PWA) ══════════ -->
-<div id="pwa-install" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:9000;background:var(--k);color:var(--w);border-radius:16px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.35);align-items:center;gap:12px;max-width:480px;margin:0 auto;">
+<div id="pwa-install" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:9000;background:var(--ink);color:var(--on-ink);border-radius:16px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.35);align-items:center;gap:12px;max-width:480px;margin:0 auto;">
   <img src="icon-192.png" alt="" style="width:44px;height:44px;border-radius:10px;flex-shrink:0;"/>
   <div style="flex:1;min-width:0;">
     <p style="font-weight:700;font-size:14px;line-height:1.2;">Installa l'app LilloFind</p>
     <p style="font-size:11px;opacity:.72;line-height:1.3;">Drop, offerte e ordini a portata di tap.</p>
   </div>
   <button onclick="lfInstall()" style="background:var(--led);color:#fff;border:none;padding:10px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Installa</button>
-  <button onclick="lfDismissInstall()" aria-label="Chiudi" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;opacity:.55;line-height:1;">×</button>
+  <button onclick="lfDismissInstall()" aria-label="Chiudi" style="background:none;border:none;color:var(--on-ink);font-size:20px;cursor:pointer;opacity:.55;line-height:1;">×</button>
 </div>
 
 <script>
@@ -1030,7 +1031,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     d.id='lf-ios-install';
     d.style.cssText='position:fixed;inset:0;background:rgba(20,20,17,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:22px;';
     d.onclick=function(e){ if(e.target===d) d.remove(); };
-    d.innerHTML='<div style="background:#fff;color:#23231f;max-width:360px;width:100%;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">'
+    d.innerHTML='<div style="background:var(--card);color:#23231f;max-width:360px;width:100%;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">'
       +'<div style="background:#23231f;color:#f5f2ec;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;">Installa su iPhone</strong><span onclick="document.getElementById(\'lf-ios-install\').remove()" style="cursor:pointer;font-size:20px;opacity:.7;">×</span></div>'
       +'<div style="padding:20px;font-size:14px;line-height:1.7;">'
       +'<p style="margin-bottom:14px;">Aggiungi LilloFind alla schermata Home in 2 passaggi:</p>'
@@ -1059,7 +1060,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     d.id='lf-onboard';
     d.style.cssText='position:fixed;inset:0;background:rgba(20,20,17,.78);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;';
     d.onclick=function(e){ if(e.target===d) lfCloseOnboard(); };
-    d.innerHTML='<div style="background:#fff;color:#23231f;width:100%;max-width:480px;border-radius:22px 22px 0 0;box-shadow:0 -12px 50px rgba(0,0,0,.35);overflow:hidden;animation:fadeup .35s ease;">'
+    d.innerHTML='<div style="background:var(--card);color:#23231f;width:100%;max-width:480px;border-radius:22px 22px 0 0;box-shadow:0 -12px 50px rgba(0,0,0,.35);overflow:hidden;animation:fadeup .35s ease;">'
       +'<div style="background:radial-gradient(120% 100% at 50% 0%,#26271f,#161812);color:#f5f2ec;padding:26px 24px 20px;text-align:center;position:relative;">'
       +'<span onclick="lfCloseOnboard()" style="position:absolute;top:14px;right:16px;font-size:22px;cursor:pointer;opacity:.6;">×</span>'
       +'<p style="font-weight:800;letter-spacing:8px;font-size:16px;margin-bottom:8px;">LILLOFIND</p>'
@@ -1123,7 +1124,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 <!-- ══════════ NEWSLETTER POPUP ══════════ -->
 <div id="nl-popup" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px;">
-  <div style="background:var(--k);color:var(--w);width:100%;max-width:520px;position:relative;border-top:3px solid var(--led);">
+  <div style="background:var(--ink);color:var(--on-ink);width:100%;max-width:520px;position:relative;border-top:3px solid var(--led);">
     <button onclick="closeNlPopup()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:#555;font-size:20px;cursor:pointer;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;z-index:1;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -1131,9 +1132,9 @@ img{ -webkit-user-drag:none; user-select:none; }
       <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:10px;">Members Only</p>
       <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(32px,5vw,48px);line-height:.95;margin-bottom:12px;">EARLY ACCESS.<br/>PRIMA DI TUTTI.</h2>
       <div style="height:2px;width:40px;background:var(--led);box-shadow:0 0 12px var(--led);margin-bottom:16px;"></div>
-      <p style="font-size:11px;color:#666;line-height:1.8;margin-bottom:24px;">Iscriviti alla Drop Alert e ricevi i nuovi arrivi <strong style="color:var(--w);">24h prima</strong> dell'apertura al pubblico. Più <strong style="color:var(--led);">10% di sconto</strong> sul primo ordine.</p>
+      <p style="font-size:11px;color:rgba(246,243,238,.72);line-height:1.8;margin-bottom:24px;">Iscriviti alla Drop Alert e ricevi i nuovi arrivi <strong style="color:var(--on-ink);">24h prima</strong> dell'apertura al pubblico. Più <strong style="color:var(--led-text);">10% di sconto</strong> sul primo ordine.</p>
       <div style="display:flex;gap:0;margin-bottom:12px;">
-        <input id="nl-popup-mail" style="flex:1;border:1px solid #333;border-right:none;background:transparent;padding:14px 16px;font-family:'Manrope',monospace;font-size:12px;color:var(--w);outline:none;min-width:0;" placeholder="La tua email..."/>
+        <input id="nl-popup-mail" style="flex:1;border:1px solid #333;border-right:none;background:transparent;padding:14px 16px;font-family:'Manrope',monospace;font-size:12px;color:var(--on-ink);outline:none;min-width:0;" placeholder="La tua email..."/>
         <button onclick="subNLPopup()" style="background:var(--led);color:#fff;border:none;padding:14px 18px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;flex-shrink:0;font-weight:bold;">Entra →</button>
       </div>
       <p style="font-size:10.5px;color:rgba(246,243,238,.72);letter-spacing:1px;">Niente spam. Disiscrivi in qualsiasi momento.</p>
@@ -1192,15 +1193,15 @@ img{ -webkit-user-drag:none; user-select:none; }
         <button onclick="showPg('lfpoints');closeDrawer();" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LFPoints</button>
         <button onclick="location.href='subscriptions.html';" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Digital Gear</button>
         <div style="height:1px;background:var(--border);margin:12px 0;"></div>
-        <a href="vault.html" class="drawer-link" style="text-decoration:none;color:var(--led);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> LF Vault — Investimenti</a>
+        <a href="vault.html" class="drawer-link" style="text-decoration:none;color:var(--led-text);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> LF Vault — Investimenti</a>
       </div>
     </div>
     <div style="padding:20px 24px;border-top:1px solid var(--border);">
       <div id="d-pts-wrap" style="display:none;margin-bottom:16px;">
         <p class="lf-eyebrow" style="margin-bottom:4px;">Il tuo saldo</p>
-        <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:32px;color:var(--led);"><span id="d-pts">0</span> PTS</p>
+        <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:32px;color:var(--led-text);"><span id="d-pts">0</span> PTS</p>
       </div>
-      <p style="font-size:10.5px;color:#333;letter-spacing:1px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b6c5c3c6c6d9c4c2f6dadfdadad9d0dfd8d298d5d9db">[email&#160;protected]</a></p>
+      <p style="font-size:10.5px;color:var(--ink-soft);letter-spacing:1px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b6c5c3c6c6d9c4c2f6dadfdadad9d0dfd8d298d5d9db">[email&#160;protected]</a></p>
     </div>
   </nav>
 </div>
@@ -1212,16 +1213,16 @@ img{ -webkit-user-drag:none; user-select:none; }
   cursor:pointer;text-align:left;border-bottom:1px solid var(--border);
   min-height:52px;transition:color .2s;width:100%;
 }
-.drawer-link:hover{color:var(--led);}
+.drawer-link:hover{color:var(--led-text);}
 .drawer-acc{
   display:flex;align-items:center;justify-content:space-between;width:100%;
   padding:14px 8px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;
   color:var(--k);background:none;border:none;border-bottom:1px solid var(--border);
   cursor:pointer;min-height:52px;text-align:left;transition:color .2s;
 }
-.drawer-acc:hover{color:var(--led);}
+.drawer-acc:hover{color:var(--led-text);}
 .drawer-acc-arr{font-size:10.5px;opacity:.5;transition:transform .2s;}
-.drawer-acc.open .drawer-acc-arr{transform:rotate(180deg);opacity:1;color:var(--led);}
+.drawer-acc.open .drawer-acc-arr{transform:rotate(180deg);opacity:1;color:var(--led-text);}
 .drawer-sub{display:none;padding:4px 0 10px 6px;}
 .drawer-sub.open{display:block;}
 .drawer-sub button{
@@ -1229,7 +1230,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   padding:12px 12px;font-family:'Manrope',sans-serif;font-size:15px;font-weight:600;
   color:var(--k);cursor:pointer;border-radius:8px;transition:background .12s,color .12s;
 }
-.drawer-sub button:hover{background:var(--accent-soft);color:var(--led);}
+.drawer-sub button:hover{background:var(--accent-soft);color:var(--led-text);}
 .drawer-sub .nav-dd-grp{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);font-weight:700;margin:8px 12px 4px;}
 </style>
 
@@ -1264,7 +1265,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       .util-l .u-it svg{opacity:.7;}
       .util-sep{width:1px;height:11px;background:var(--border-2);display:inline-block;flex-shrink:0;}
       .util-r{display:flex;align-items:center;gap:16px;flex-shrink:0;}
-      #u-pts{align-items:center;gap:6px;color:var(--led);font-weight:700;background:var(--card);border:1px solid var(--border-2);border-radius:999px;padding:3px 12px;letter-spacing:.5px;line-height:1;}
+      #u-pts{align-items:center;gap:6px;color:var(--led-text);font-weight:700;background:var(--card);border:1px solid var(--border-2);border-radius:999px;padding:3px 12px;letter-spacing:.5px;line-height:1;}
       #u-out{font-family:'Manrope',sans-serif;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--mid);background:none;border:none;cursor:pointer;padding:0;transition:color .15s;}
       #u-out:hover{color:var(--k);}
       .util-lang{display:inline-flex;align-items:center;gap:4px;}
@@ -1405,7 +1406,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <span style="width:6px;height:6px;border-radius:50%;background:var(--led);display:inline-block;"></span>
           <span data-i18n="hero.badge2">SS 2026 — Drop Live Ora</span>
         </div>
-        <h1 class="bb" style="color:var(--k);margin:0;">DEFINE<br/>YOUR<br/><span style="color:var(--led);">DROP.</span></h1>
+        <h1 class="bb" style="color:var(--k);margin:0;">DEFINE<br/>YOUR<br/><span style="color:var(--led-text);">DROP.</span></h1>
         <div style="width:56px;height:3px;background:var(--led);border-radius:2px;margin:20px auto;" class="hero-divider-line"></div>
         <p style="font-size:16px;color:var(--ink-soft);line-height:1.5;font-weight:500;margin-bottom:6px;" data-i18n="hero.tagline">Streetwear premium, senza compromessi.</p>
         <p style="font-size:13px;color:var(--mid);letter-spacing:.2px;line-height:1.8;margin-bottom:24px;" data-i18n="hero.features">Nike · Jordan · Bape · Supreme · e molto altro<br/>Qualità 1:1 · Spedizione DHL · Reso 30gg gratis</p>
@@ -1447,7 +1448,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">Reso gratis</p>
       </div>
       <div style="flex:1;min-width:80px;padding:16px;border-right:1px solid var(--border);">
-        <p class="bb" style="font-size:20px;color:var(--led);margin-bottom:2px;">1:1</p>
+        <p class="bb" style="font-size:20px;color:var(--led-text);margin-bottom:2px;">1:1</p>
         <p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">€ → LFPTS</p>
       </div>
       <div style="flex:1;min-width:80px;padding:16px;">
@@ -1460,12 +1461,12 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 
   <!-- CATEGORY TILES -->
-  <section style="padding:56px 0 52px;background:var(--k);overflow:hidden;">
+  <section style="padding:56px 0 52px;background:var(--ink);overflow:hidden;">
     <div style="max-width:1200px;margin:0 auto;">
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 24px;margin-bottom:26px;">
         <div>
           <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:8px;" data-i18n="sec.collections">Le Collezioni</p>
-          <h2 class="lf-section-title" style="color:var(--w);" data-i18n="sec.browse">Sfoglia per<br>Categoria</h2>
+          <h2 class="lf-section-title" style="color:var(--on-ink);" data-i18n="sec.browse">Sfoglia per<br>Categoria</h2>
         </div>
         <button class="btn-g btn-g--on-dark" onclick="showPg('shop');resetFilters()" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
       </div>
@@ -1492,7 +1493,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   </section>
 
   <!-- SPORT SECTION -->
-  <section id="home-sport-wrap" style="background:#161812;color:var(--w);border-bottom:1px solid var(--border);overflow:hidden;">
+  <section id="home-sport-wrap" style="background:#161812;color:var(--on-ink);border-bottom:1px solid var(--border);overflow:hidden;">
     <!-- BANNER cliccabile: foto prodotto sport + scritta motivazionale -->
     <div class="sport-banner" onclick="showPg('shop');setTimeout(()=>setFilter('style','Sport'),80)">
       <!-- Foto di sfondo (impostata da JS col primo prodotto sport) -->
@@ -1532,7 +1533,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       </p>
       <button class="btn-led" onclick="showPg('lfpoints')">Scopri i Premi →</button>
     </div>
-    <div style="background:var(--k);color:var(--w);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;" class="pad-mob">
+    <div style="background:var(--ink);color:var(--on-ink);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;" class="pad-mob">
       <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:12px;">Il Tuo Saldo</p>
       <div>
         <div class="bb" id="home-pts" style="font-size:clamp(72px,11vw,148px);line-height:.9;">000</div>
@@ -1557,7 +1558,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 
   <!-- AUTH CTA (per guest) -->
-  <section id="home-auth-cta" style="background:var(--k);color:var(--w);padding:48px 36px;border-bottom:1px solid var(--border);display:none;" class="pad-mob">
+  <section id="home-auth-cta" style="background:var(--ink);color:var(--on-ink);padding:48px 36px;border-bottom:1px solid var(--border);display:none;" class="pad-mob">
     <div style="max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;">
       <div>
         <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:8px;">Sei nuovo qui?</p>
@@ -1572,7 +1573,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   </section>
 
   <!-- DIGITAL GEAR CTA BANNER -->
-  <section style="background:var(--k);color:var(--w);padding:0;border-bottom:1px solid var(--border);overflow:hidden;position:relative;">
+  <section style="background:var(--ink);color:var(--on-ink);padding:0;border-bottom:1px solid var(--border);overflow:hidden;position:relative;">
     <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,color-mix(in srgb,var(--led2) 16%,transparent) 0%,transparent 60%);pointer-events:none;"></div>
     <div style="max-width:1100px;margin:0 auto;padding:40px 36px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;position:relative;">
       <div style="flex:1;min-width:240px;">
@@ -1591,7 +1592,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <span style="border:1px solid color-mix(in srgb,var(--led2) 48%,transparent);border-radius:999px;color:var(--led2);padding:5px 12px;font-family:'Manrope',monospace;font-size:10.5px;letter-spacing:1px;">🤖 ChatGPT+</span>
           <span style="border:1px solid color-mix(in srgb,var(--led2) 48%,transparent);border-radius:999px;color:var(--led2);padding:5px 12px;font-family:'Manrope',monospace;font-size:10.5px;letter-spacing:1px;">🎨 Canva Pro</span>
         </div>
-        <button onclick="location.href='subscriptions.html'" style="background:var(--led);color:var(--w);border:none;border-radius:999px;letter-spacing:.08em;padding:14px 32px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 20px rgba(142,121,99,.3);" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Esplora Digital Gear →</button>
+        <button onclick="location.href='subscriptions.html'" style="background:var(--led);color:var(--on-ink);border:none;border-radius:999px;letter-spacing:.08em;padding:14px 32px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 20px rgba(142,121,99,.3);" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Esplora Digital Gear →</button>
       </div>
     </div>
   </section>
@@ -1606,16 +1607,16 @@ img{ -webkit-user-drag:none; user-select:none; }
   </section>
 
   <!-- COMING SOON BANNER -->
-  <section style="background:var(--k);padding:40px 24px;border-bottom:1px solid var(--border);overflow:hidden;position:relative;">
+  <section style="background:var(--ink);padding:40px 24px;border-bottom:1px solid var(--border);overflow:hidden;position:relative;">
     <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="width:8px;height:8px;background:var(--led);border-radius:50%;display:inline-block;animation:blink 1.2s infinite;box-shadow:0 0 8px var(--led);"></span>
           <span class="lf-eyebrow lf-eyebrow--on-dark">In arrivo</span>
         </div>
-        <p class="bb" style="font-size:clamp(20px,5vw,32px);color:var(--w);letter-spacing:2px;line-height:1;">Molti altri prodotti in arrivo prossimamente.</p>
+        <p class="bb" style="font-size:clamp(20px,5vw,32px);color:var(--on-ink);letter-spacing:2px;line-height:1;">Molti altri prodotti in arrivo prossimamente.</p>
       </div>
-      <button onclick="document.getElementById('nl-mail').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('nl-mail').focus()" style="background:none;border:1.5px solid rgba(246,243,238,.5);border-radius:999px;color:var(--w);padding:11px 20px;font-family:'Manrope',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .2s;" onmouseover="this.style.borderColor='var(--led)';this.style.color='var(--led)'" onmouseout="this.style.borderColor='rgba(246,243,238,.5)';this.style.color='var(--w)'">Ricevi notifica →</button>
+      <button onclick="document.getElementById('nl-mail').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('nl-mail').focus()" style="background:none;border:1.5px solid rgba(246,243,238,.5);border-radius:999px;color:var(--on-ink);padding:11px 20px;font-family:'Manrope',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .2s;" onmouseover="this.style.borderColor='var(--led)';this.style.color='var(--led-text)'" onmouseout="this.style.borderColor='rgba(246,243,238,.5)';this.style.color='var(--w)'">Ricevi notifica →</button>
     </div>
   </section>
 
@@ -1634,7 +1635,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;" id="brand-grid-home">
 
         <!-- Nike -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Nike'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Nike'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg" width="52" height="20"><path d="M0 30 Q50-10 100 5 L60 30 Z" fill="#111"/></svg>
           </div>
@@ -1642,13 +1643,13 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Jordan -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Jordan'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Jordan'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:32px;">🏀</div>
           <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:var(--k);">JORDAN</span>
         </div>
 
         <!-- Adidas -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Adidas'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Adidas'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <svg viewBox="0 0 60 50" xmlns="http://www.w3.org/2000/svg" width="40" height="34"><polygon points="30,2 58,48 2,48" fill="none" stroke="#111" stroke-width="5"/><line x1="15" y1="38" x2="45" y2="38" stroke="#111" stroke-width="5"/><line x1="20" y1="27" x2="40" y2="27" stroke="#111" stroke-width="5"/></svg>
           </div>
@@ -1656,7 +1657,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Supreme -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Supreme'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Supreme'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:28px;background:#e8111a;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial Black',sans-serif;font-size:10.5px;font-weight:900;color:#fff;letter-spacing:.5px;">Supreme</span>
           </div>
@@ -1664,13 +1665,13 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Bape -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Bape'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Bape'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:30px;">🦍</div>
           <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:2px;color:var(--k);">BAPE</span>
         </div>
 
         <!-- Off-White -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Off-White'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Off-White'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial',sans-serif;font-size:10.5px;font-weight:900;color:var(--k);letter-spacing:.5px;text-align:center;line-height:1.4;">OFF<br/>WHITE</span>
           </div>
@@ -1678,7 +1679,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- New Balance -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','New Balance'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','New Balance'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Arial Black',sans-serif;font-size:28px;font-weight:900;color:#c8102e;">N</span>
           </div>
@@ -1686,7 +1687,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
 
         <!-- Stüssy -->
-        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Stussy'),120)" style="border:1.5px solid var(--border);background:#fff;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
+        <div class="brand-tile" onclick="showPg('shop');setTimeout(()=>setFilter('brand','Stussy'),120)" style="border:1.5px solid var(--border);background:var(--card);padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;">
           <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
             <span style="font-family:'Georgia',serif;font-size:22px;font-weight:700;color:var(--k);font-style:italic;">Stüssy</span>
           </div>
@@ -1731,7 +1732,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
             <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Sneakers</h3>
             <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">La collezione completa di sneakers 1:1, dai classici agli ultimi drop.</p>
-            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+            <span style="font-size:13px;font-weight:600;color:var(--led-text);">Scopri →</span>
           </div>
           <div style="width:42%;background:url('hero1.png') center/cover no-repeat;flex-shrink:0;"></div>
         </div>
@@ -1740,7 +1741,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
             <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Streetwear</h3>
             <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">Felpe, tee e capi statement dei brand più iconici.</p>
-            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+            <span style="font-size:13px;font-weight:600;color:var(--led-text);">Scopri →</span>
           </div>
           <div style="width:42%;background:url('hero2.png') center/cover no-repeat;flex-shrink:0;"></div>
         </div>
@@ -1749,7 +1750,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
             <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Hype &amp; Luxury</h3>
             <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">I pezzi più ricercati del momento, selezionati per te.</p>
-            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+            <span style="font-size:13px;font-weight:600;color:var(--led-text);">Scopri →</span>
           </div>
           <div style="width:42%;background:url('hero3.jpeg') center/cover no-repeat;flex-shrink:0;"></div>
         </div>
@@ -1758,7 +1759,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="flex:1;padding:28px 26px;display:flex;flex-direction:column;justify-content:center;">
             <h3 class="bb" style="font-size:28px;margin-bottom:8px;color:var(--k);">Nuovi Drop</h3>
             <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">Le ultime uscite ogni settimana. Sii sempre il primo.</p>
-            <span style="font-size:13px;font-weight:600;color:var(--led);">Scopri →</span>
+            <span style="font-size:13px;font-weight:600;color:var(--led-text);">Scopri →</span>
           </div>
           <div style="width:42%;background:linear-gradient(135deg,var(--led),var(--led2));flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:44px;">🔥</div>
         </div>
@@ -1909,7 +1910,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
     #pg-shop main h2.bb{position:relative;padding-left:16px;}
     #pg-shop main h2.bb::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:6px;border-radius:999px;background:linear-gradient(180deg,var(--led2),var(--led));}
-    #pg-shop #s-count{background:rgba(153,160,116,.14);color:var(--led);padding:5px 12px;border-radius:999px;font-weight:600;letter-spacing:.5px;}
+    #pg-shop #s-count{background:rgba(153,160,116,.14);color:var(--led-text);padding:5px 12px;border-radius:999px;font-weight:600;letter-spacing:.5px;}
     /* barra ricerca: focus glow più morbido */
     #pg-shop #shop-search:focus{box-shadow:0 0 0 3px rgba(153,160,116,.18);}
   </style>
@@ -2066,7 +2067,7 @@ img{ -webkit-user-drag:none; user-select:none; }
               <span style="color:var(--mid);">Spedizione DHL</span><span id="cart-ship">—</span>
             </div>
             <div id="cart-disc-row" style="display:none;justify-content:space-between;font-size:11px;">
-              <span style="color:var(--led);">Bonus Riscattato</span><span id="cart-disc" style="color:var(--led);font-weight:600;"></span>
+              <span style="color:var(--led-text);">Bonus Riscattato</span><span id="cart-disc" style="color:var(--led-text);font-weight:600;"></span>
             </div>
             <div id="cart-ship-tier" style="font-size:10.5px;color:var(--dim);letter-spacing:1px;"></div>
           </div>
@@ -2083,13 +2084,13 @@ img{ -webkit-user-drag:none; user-select:none; }
             <span class="bb" style="font-size:20px;">Totale</span>
             <span class="bb" style="font-size:20px;" id="cart-total">€0.00</span>
           </div>
-          <p id="cart-pts-preview" style="font-size:10.5px;color:var(--led);letter-spacing:1px;margin-bottom:20px;"></p>
+          <p id="cart-pts-preview" style="font-size:10.5px;color:var(--led-text);letter-spacing:1px;margin-bottom:20px;"></p>
           <!-- Discount code -->
           <div style="display:flex;gap:0;margin-bottom:16px;">
             <input class="lf-in" id="cart-coupon" placeholder="Codice sconto / LFPOINTS" style="flex:1;border-right:none;font-size:11px;"/>
             <button onclick="applyCoupon()" class="btn-k" style="padding:0 16px;font-size:10.5px;flex-shrink:0;">Applica</button>
           </div>
-          <div id="cart-coupon-msg" style="font-size:10.5px;color:var(--led);margin-bottom:12px;display:none;"></div>
+          <div id="cart-coupon-msg" style="font-size:10.5px;color:var(--led-text);margin-bottom:12px;display:none;"></div>
           <!-- QC Service checkbox -->
           <div id="qc-option" style="border:1.5px solid color-mix(in srgb,var(--led2) 48%,transparent);padding:14px 16px;background:color-mix(in srgb,var(--led2) 5%,transparent);margin-bottom:16px;display:none;">
             <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;">
@@ -2097,7 +2098,7 @@ img{ -webkit-user-drag:none; user-select:none; }
               <div>
                 <p style="font-size:11px;font-weight:600;margin-bottom:3px;">Foto QC pre-spedizione</p>
                 <p style="font-size:10.5px;color:var(--mid);line-height:1.6;margin-bottom:3px;">Ricevi 3-4 foto reali del tuo ordine prima che venga spedito. Conferma la qualità in anticipo.</p>
-                <p id="qc-price-lbl" style="font-size:10.5px;color:var(--led);letter-spacing:1px;">Gratis per membri Silver+ · €2.90 per altri</p>
+                <p id="qc-price-lbl" style="font-size:10.5px;color:var(--led-text);letter-spacing:1px;">Gratis per membri Silver+ · €2.90 per altri</p>
               </div>
             </label>
           </div>
@@ -2161,21 +2162,21 @@ img{ -webkit-user-drag:none; user-select:none; }
         <!-- Digital delivery notice (shown for digital-only carts) -->
         <div id="ck-digital-notice" style="display:none;border:2px solid var(--led);padding:24px;margin-bottom:20px;background:var(--accent-soft);">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <span style="background:var(--led);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📧</span>
+            <span style="background:var(--led);color:var(--on-ink);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📧</span>
             <p class="bb" style="font-size:22px;">Consegna Digitale</p>
           </div>
           <div style="background:var(--accent-soft);border-left:3px solid var(--led);padding:14px 18px;">
             <p style="font-size:12px;line-height:1.8;color:var(--mid);">
               Il tuo ordine contiene solo <strong style="color:var(--k);">servizi digitali</strong>. Le credenziali di accesso saranno inviate via <strong style="color:var(--k);">email entro 12–24 ore</strong> dalla conferma dell'ordine. Nessuna spedizione fisica richiesta.
             </p>
-            <p style="font-size:10.5px;color:var(--led);margin-top:10px;letter-spacing:1px;text-transform:uppercase;">✦ Spedizione: Gratuita · Consegna via Email</p>
+            <p style="font-size:10.5px;color:var(--led-text);margin-top:10px;letter-spacing:1px;text-transform:uppercase;">✦ Spedizione: Gratuita · Consegna via Email</p>
           </div>
         </div>
 
         <!-- Contatti cliente (sempre obbligatori, anche per prodotti digitali) -->
         <div id="ck-contact-section" style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">1</span>
+            <span style="background:var(--ink);color:var(--on-ink);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">1</span>
             <p class="bb" style="font-size:22px;">👤 Dati Cliente</p>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
@@ -2189,7 +2190,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <!-- Shipping (solo prodotti fisici) -->
         <div id="ck-shipping-section" style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">2</span>
+            <span style="background:var(--ink);color:var(--on-ink);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">2</span>
             <p class="bb" style="font-size:22px;">📦 Indirizzo di Spedizione</p>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="grid-1-mob">
@@ -2205,7 +2206,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <!-- Payment method -->
         <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">2</span>
+            <span style="background:var(--ink);color:var(--on-ink);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">2</span>
             <p class="bb" style="font-size:22px;">💳 Metodo di Pagamento</p>
           </div>
           <div style="display:flex;flex-direction:column;gap:0;border:1.5px solid var(--border);">
@@ -2225,7 +2226,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <!-- Card disabled banner -->
             <div style="padding:10px 18px;border-bottom:1px solid #ffe0a0;background:#fffbea;display:flex;align-items:center;gap:10px;">
               <span style="font-size:14px;">⚠️</span>
-              <p style="font-size:10.5px;color:#a0700a;line-height:1.5;"><strong>Pagamento con carta momentaneamente non disponibile.</strong> Utilizza il bonifico bancario per completare l'ordine.</p>
+              <p style="font-size:10.5px;color:#7f5a08;line-height:1.5;"><strong>Pagamento con carta momentaneamente non disponibile.</strong> Utilizza il bonifico bancario per completare l'ordine.</p>
             </div>
             <!-- Card fields -->
             <div id="pay-card-fields" style="padding:16px 18px;border-bottom:1px solid var(--border);background:var(--w);">
@@ -2257,9 +2258,9 @@ img{ -webkit-user-drag:none; user-select:none; }
               <div>
                 <p style="font-size:12px;font-weight:500;">Bonifico Bancario</p>
                 <p style="font-size:10.5px;color:var(--dim);">L'ordine viene confermato alla ricezione del bonifico (1–3 giorni).</p>
-                <p style="font-size:10.5px;color:var(--led);margin-top:3px;letter-spacing:1px;">+5% LFPOINTS bonus — Scelta consigliata</p>
+                <p style="font-size:10.5px;color:var(--led-text);margin-top:3px;letter-spacing:1px;">+5% LFPOINTS bonus — Scelta consigliata</p>
               </div>
-              <span style="margin-left:auto;font-size:11px;letter-spacing:1px;color:var(--led);white-space:nowrap;">+5% PTS</span>
+              <span style="margin-left:auto;font-size:11px;letter-spacing:1px;color:var(--led-text);white-space:nowrap;">+5% PTS</span>
             </label>
             <div id="pay-bonifico-fields" style="display:none;padding:16px 18px;background:#f8f8f8;">
               <p style="font-size:10.5px;font-weight:600;margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;">Dati Bancari</p>
@@ -2278,7 +2279,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <!-- Notes -->
         <div style="border:2px solid var(--k);padding:24px;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <span style="background:var(--k);color:var(--w);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">3</span>
+            <span style="background:var(--ink);color:var(--on-ink);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">3</span>
             <p class="bb" style="font-size:22px;">📝 Note sull'Ordine</p>
           </div>
           <textarea class="lf-in" id="ck-notes" placeholder="Istruzioni di consegna, orari preferiti..." style="min-height:80px;"></textarea>
@@ -2287,7 +2288,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
       <!-- Right: summary -->
       <div>
-        <div style="border:1.5px solid #ddd;border-radius:4px;padding:20px;position:sticky;top:130px;background:#fff;">
+        <div style="border:1.5px solid var(--border-2);border-radius:4px;padding:20px;position:sticky;top:130px;background:var(--card);">
           <!-- Header -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:1.5px solid var(--k);">
             <span style="font-size:14px;">📋</span>
@@ -2306,16 +2307,16 @@ img{ -webkit-user-drag:none; user-select:none; }
               <span id="ck-ship" style="font-weight:500;">—</span>
             </div>
             <div id="ck-disc-row" style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
-              <span style="color:var(--led);">Sconto</span>
-              <span id="ck-disc" style="color:var(--led);font-weight:500;">—</span>
+              <span style="color:var(--led-text);">Sconto</span>
+              <span id="ck-disc" style="color:var(--led-text);font-weight:500;">—</span>
             </div>
           </div>
           <!-- Total row -->
-          <div style="display:flex;justify-content:space-between;align-items:center;background:#f8f8f8;border:1.5px solid var(--k);padding:12px 14px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--w);border:1.5px solid var(--k);padding:12px 14px;margin-bottom:8px;">
             <span style="font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;">Totale</span>
             <span style="font-size:18px;font-weight:700;" id="ck-total">€0.00</span>
           </div>
-          <p id="ck-pts-preview" style="font-size:10.5px;color:var(--led);letter-spacing:1px;margin-bottom:16px;text-align:right;"></p>
+          <p id="ck-pts-preview" style="font-size:10.5px;color:var(--led-text);letter-spacing:1px;margin-bottom:16px;text-align:right;"></p>
           <button onclick="placeOrder()" class="btn-led cta-primary-glow" style="width:100%;font-size:12px;padding:16px;letter-spacing:1.5px;">🔒 CONFERMA ORDINE →</button>
           <div style="margin-top:10px;display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
             <span style="font-size:10.5px;color:var(--dim);letter-spacing:.5px;">🔒 SSL 256-bit</span>
@@ -2333,7 +2334,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 
 <!-- ── Stripe Payment Modal ─────────────────────────── -->
 <div id="stripe-payment-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;max-width:480px;width:100%;position:relative;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;">
+  <div style="background:var(--card);max-width:480px;width:100%;position:relative;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;">
     <!-- Header -->
     <div style="padding:24px 24px 16px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;">
       <div>
@@ -2350,7 +2351,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <!-- Payment Element mount -->
     <div style="padding:20px 24px 0;">
       <div id="stripe-payment-element"></div>
-      <div id="stripe-payment-error" style="font-size:10.5px;color:#c00;margin-top:10px;display:none;padding:8px;background:#fff5f5;"></div>
+      <div id="stripe-payment-error" style="font-size:10.5px;color:var(--danger);margin-top:10px;display:none;padding:8px;background:#fff5f5;"></div>
     </div>
     <!-- Submit -->
     <div style="padding:20px 24px 24px;">
@@ -2363,21 +2364,21 @@ img{ -webkit-user-drag:none; user-select:none; }
 <div id="pg-lfpoints" class="pg">
 
   <style>
-    #pg-lfpoints .lfp-hero{position:relative;background:var(--k);color:var(--w);padding:60px 24px 54px;overflow:hidden;}
+    #pg-lfpoints .lfp-hero{position:relative;background:var(--ink);color:var(--on-ink);padding:60px 24px 54px;overflow:hidden;}
     #pg-lfpoints .lfp-hero::before{content:'';position:absolute;top:-40%;right:-8%;width:62%;height:180%;background:radial-gradient(circle,rgba(153,160,116,.30),transparent 62%);pointer-events:none;}
     #pg-lfpoints .lfp-hero > *{position:relative;z-index:1;}
     #pg-lfpoints .lfp-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:clamp(64px,11vw,150px);line-height:.86;background:linear-gradient(175deg,#c3caa0,var(--led2) 45%,var(--led));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 34px rgba(153,160,116,.35));}
     #pg-lfpoints .lfp-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(245,242,236,.22);border-radius:999px;padding:8px 15px;font-size:11px;letter-spacing:1px;color:var(--led2);background:rgba(153,160,116,.10);font-weight:600;}
     #pg-lfpoints .lfp-sec{padding:52px 24px;max-width:1180px;margin:0 auto;}
     #pg-lfpoints .lfp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-    #pg-lfpoints .lfp-step{position:relative;border:1.5px solid rgba(35,35,31,.12);border-radius:var(--radius);padding:26px 22px;background:#fff;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;}
+    #pg-lfpoints .lfp-step{position:relative;border:1.5px solid rgba(35,35,31,.12);border-radius:var(--radius);padding:26px 22px;background:var(--card);overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;}
     #pg-lfpoints .lfp-step:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(35,35,31,.10);border-color:var(--led2);}
     #pg-lfpoints .lfp-step .num{position:absolute;top:12px;right:18px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:56px;color:rgba(35,35,31,.06);line-height:1;}
     #pg-lfpoints .lfp-step .ic{width:54px;height:54px;border-radius:15px;background:rgba(153,160,116,.15);display:flex;align-items:center;justify-content:center;font-size:27px;margin-bottom:14px;}
     #pg-lfpoints .lfp-step h3{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;margin-bottom:8px;}
-    #pg-lfpoints .lfp-tbl{border:1.5px solid rgba(35,35,31,.14);border-radius:var(--radius);overflow:hidden;background:#fff;overflow-x:auto;}
+    #pg-lfpoints .lfp-tbl{border:1.5px solid rgba(35,35,31,.14);border-radius:var(--radius);overflow:hidden;background:var(--card);overflow-x:auto;}
     #pg-lfpoints .lfp-thead,#pg-lfpoints .rw{display:grid;grid-template-columns:76px 1.05fr .85fr 1.55fr;gap:12px;align-items:center;min-width:560px;}
-    #pg-lfpoints .lfp-thead{background:var(--k);color:var(--w);padding:13px 18px;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;}
+    #pg-lfpoints .lfp-thead{background:var(--ink);color:var(--on-ink);padding:13px 18px;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;}
     #pg-lfpoints .rw{padding:13px 18px;border-bottom:1px solid #ededea;position:relative;transition:background .15s;}
     #pg-lfpoints .rw:last-child{border-bottom:none;}
     #pg-lfpoints .rw:hover{background:#faf9f6;}
@@ -2386,9 +2387,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     #pg-lfpoints .rw-pts{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:6px 11px;border-radius:999px;background:rgba(35,35,31,.08);color:var(--k);font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px;}
     #pg-lfpoints .rw.on .rw-pts{background:var(--led);color:#fff;}
     #pg-lfpoints .rw-lab{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:21px;color:var(--k);}
-    #pg-lfpoints .rw.on .rw-lab{color:var(--led);}
+    #pg-lfpoints .rw.on .rw-lab{color:var(--led-text);}
     #pg-lfpoints .rw-type{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);border:1px solid rgba(35,35,31,.14);border-radius:999px;padding:3px 9px;justify-self:start;}
-    #pg-lfpoints .rw-ok{color:var(--led);font-weight:700;font-size:10.5px;letter-spacing:.5px;}
+    #pg-lfpoints .rw-ok{color:var(--led-text);font-weight:700;font-size:10.5px;letter-spacing:.5px;}
     #pg-lfpoints .rw-miss{color:var(--dim);font-size:10.5px;}
     #pg-lfpoints .lfp-tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
     #pg-lfpoints .lfp-tier{position:relative;border-radius:16px;padding:24px 20px;overflow:hidden;border:1.5px solid transparent;transition:transform .2s,box-shadow .2s;}
@@ -2544,7 +2545,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div id="lfp-cta-member" style="display:none;">
       <div class="lfp-cta-card">
         <div style="font-size:34px;margin-bottom:6px;">👑</div>
-        <h2 class="bb" style="font-size:clamp(38px,6vw,72px);margin-bottom:12px;">Sei già <span style="color:var(--led);">Membro.</span></h2>
+        <h2 class="bb" style="font-size:clamp(38px,6vw,72px);margin-bottom:12px;">Sei già <span style="color:var(--led-text);">Membro.</span></h2>
         <p id="lfp-cta-pts-line" style="font-size:12px;color:var(--mid);margin-bottom:26px;letter-spacing:.3px;"></p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
           <button class="btn-led" onclick="showPg('shop')">Vai allo Shop →</button>
@@ -2560,8 +2561,8 @@ img{ -webkit-user-drag:none; user-select:none; }
   .glbl{display:block;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:10px 0 4px;}
   #pg-group .lf-in{margin-bottom:2px;}
   #team-req-modal .lf-in{margin-bottom:2px;}
-  #pg-group .g-vis{flex:1;border:1.5px solid var(--border);background:#fff;border-radius:8px;padding:9px 8px;font-size:11px;cursor:pointer;transition:all .15s;font-family:'Manrope',sans-serif;}
-  #pg-group .g-vis.on{border-color:var(--k);background:var(--k);color:#fff;}
+  #pg-group .g-vis{flex:1;border:1.5px solid var(--border);background:var(--card);border-radius:8px;padding:9px 8px;font-size:11px;cursor:pointer;transition:all .15s;font-family:'Manrope',sans-serif;}
+  #pg-group .g-vis.on{border-color:var(--k);background:var(--ink);color:#fff;}
   @media(max-width:720px){ #pg-group .group-grid{grid-template-columns:1fr!important;} }
 </style>
 <!-- ════════════════════════════════════════════════════════
@@ -2569,7 +2570,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 ════════════════════════════════════════════════════════ -->
 <div id="pg-group" class="pg">
   <div style="max-width:1100px;margin:0 auto;padding:32px 20px 80px;">
-    <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:8px;">Risparmia sulla spedizione</p>
+    <p class="lf-eyebrow" style="margin-bottom:8px;">Risparmia sulla spedizione</p>
     <h1 class="bb" style="font-size:clamp(34px,7vw,60px);line-height:.95;margin-bottom:10px;">Spedizione di Gruppo</h1>
     <p style="font-size:14px;color:var(--mid);line-height:1.7;max-width:640px;">Mettetevi d'accordo in più persone: un solo pacco, una sola spedizione, meno costi per tutti. Crea un gruppo o uniscitene a uno esistente.</p>
 
@@ -2640,7 +2641,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   <!-- LED top -->
   <div style="display:flex;min-height:88vh;">
     <!-- Left promo panel (desktop) -->
-    <div class="hide-mob" style="flex:1;background:var(--k);color:var(--w);padding:60px 56px;display:flex;flex-direction:column;justify-content:space-between;">
+    <div class="hide-mob" style="flex:1;background:var(--ink);color:var(--on-ink);padding:60px 56px;display:flex;flex-direction:column;justify-content:space-between;">
       <p class="bb" style="font-size:15px;letter-spacing:5px;color:#555;">LILLOFIND</p>
       <div>
         <div class="led-badge" style="margin-bottom:20px;">⬡ Members Only</div>
@@ -2655,7 +2656,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       </div>
       <div style="border-top:1px solid #1e1e1e;padding-top:24px;">
         <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin-bottom:8px;">Tasso Fedeltà</p>
-        <p class="bb" style="font-size:36px;color:var(--led);">1€ = 1 LFPT</p>
+        <p class="bb" style="font-size:36px;color:var(--led-text);">1€ = 1 LFPT</p>
       </div>
     </div>
     <!-- Right form -->
@@ -2670,13 +2671,13 @@ img{ -webkit-user-drag:none; user-select:none; }
       <div id="reg-social-proof" style="display:none;background:color-mix(in srgb,var(--led2) 10%,transparent);border:1.5px solid color-mix(in srgb,var(--led2) 48%,transparent);padding:14px 16px;margin-bottom:20px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <p style="font-size:10.5px;color:var(--led);letter-spacing:2px;text-transform:uppercase;font-weight:bold;">Bonus di Benvenuto</p>
+          <p style="font-size:10.5px;color:var(--led-text);letter-spacing:2px;text-transform:uppercase;font-weight:bold;">Bonus di Benvenuto</p>
         </div>
         <p style="font-size:11px;color:var(--k);line-height:1.7;">Ricevi subito <strong>50 LFPOINTS</strong> all'iscrizione — già sufficienti per uno sconto di <strong>€5</strong> sul primo ordine.</p>
       </div>
 
       <!-- Google Sign-in -->
-      <button onclick="doGoogleAuth()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 20px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-family:'Manrope',monospace;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:border-color .2s,box-shadow .2s;margin-bottom:4px;" onmouseover="this.style.borderColor='var(--k)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.borderColor='#ddd';this.style.boxShadow='none'">
+      <button onclick="doGoogleAuth()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 20px;border:1.5px solid #ddd;background:var(--card);cursor:pointer;font-family:'Manrope',monospace;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:border-color .2s,box-shadow .2s;margin-bottom:4px;" onmouseover="this.style.borderColor='var(--k)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.borderColor='#ddd';this.style.boxShadow='none'">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Continua con Google
       </button>
@@ -2698,7 +2699,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <label style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;">Password</label>
           <input class="lf-in" id="a-pass" type="password" placeholder="min. 6 caratteri" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
         </div>
-        <button id="forgot-pass-btn" onclick="resetPassword()" style="align-self:flex-end;background:none;border:none;cursor:pointer;font-size:12px;color:var(--led);font-weight:600;padding:2px 0;margin-top:-6px;" data-i18n="auth.forgot">Password dimenticata?</button>
+        <button id="forgot-pass-btn" onclick="resetPassword()" style="align-self:flex-end;background:none;border:none;cursor:pointer;font-size:12px;color:var(--led-text);font-weight:600;padding:2px 0;margin-top:-6px;" data-i18n="auth.forgot">Password dimenticata?</button>
         <button class="btn-led" id="auth-cta" onclick="doAuth()" style="margin-top:4px;width:100%;">Accedi →</button>
         <button onclick="switchTab(authTab==='li'?'reg':'li')" class="btn-g" style="width:100%;">
           <span id="switch-tab-lbl">Non hai un account? Registrati</span>
@@ -2769,7 +2770,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <!-- ─── OVERVIEW ────────────────────────────────────── -->
     <div id="prof-sec-overview">
       <!-- ── HERO CARD ─────────────────────────────── -->
-      <div style="background:var(--k);color:var(--w);padding:28px 24px 20px;margin-bottom:20px;border-left:4px solid var(--led);position:relative;overflow:hidden;">
+      <div style="background:var(--ink);color:var(--on-ink);padding:28px 24px 20px;margin-bottom:20px;border-left:4px solid var(--led);position:relative;overflow:hidden;">
         <!-- decorative background lines -->
         <div style="position:absolute;top:0;right:0;width:180px;height:100%;opacity:.04;background:repeating-linear-gradient(90deg,var(--led) 0,var(--led) 1px,transparent 1px,transparent 22px);pointer-events:none;"></div>
         <!-- Top row: avatar + tier badge -->
@@ -2855,7 +2856,7 @@ img{ -webkit-user-drag:none; user-select:none; }
             <span style="font-size:17px;">🔑</span>
             <p class="lf-eyebrow lf-eyebrow--on-dark" style="margin:0;">I Miei Abbonamenti</p>
           </div>
-          <div id="my-subs-list" style="padding:16px;background:#fff;">
+          <div id="my-subs-list" style="padding:16px;background:var(--card);">
             <p style="font-size:12px;color:var(--dim);line-height:1.6;text-align:center;padding:8px 4px;">Caricamento…</p>
           </div>
         </div>
@@ -2908,7 +2909,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     <div id="prof-sec-tracking" class="prof-sec">
       <h2 class="bb" style="font-size:40px;margin-bottom:24px;">📦 Traccia Pacco</h2>
       <div id="pr-tracking-wrap" style="border:2px solid var(--k);overflow:hidden;">
-        <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="background:var(--ink);color:var(--on-ink);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
           <p class="bb" style="font-size:20px;letter-spacing:2px;">Stato Spedizione</p>
           <span id="pr-track-status-badge" style="display:none;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;background:var(--led);color:#fff;">—</span>
         </div>
@@ -2978,18 +2979,18 @@ img{ -webkit-user-drag:none; user-select:none; }
             <span style="font-size:20px;">💻</span>
             <div><p style="font-size:12px;">Browser attuale</p><p style="font-size:10.5px;color:var(--dim);">Questa sessione</p></div>
           </div>
-          <span style="font-size:10.5px;color:var(--led);letter-spacing:1px;text-transform:uppercase;">Attiva</span>
+          <span style="font-size:10.5px;color:var(--led-text);letter-spacing:1px;text-transform:uppercase;">Attiva</span>
         </div>
         <div style="margin-top:16px;">
-          <button onclick="handleLogout()" class="btn-g" style="padding:10px 18px;font-size:10.5px;color:#c00;border-color:#c00;" onmouseover="this.style.background='#c00';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#c00'">Esci da tutti i dispositivi</button>
+          <button onclick="handleLogout()" class="btn-g" style="padding:10px 18px;font-size:10.5px;color:var(--danger);border-color:var(--danger);" onmouseover="this.style.background='var(--danger)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--danger)'">Esci da tutti i dispositivi</button>
         </div>
       </div>
 
       <!-- Account delete -->
-      <div style="border:2px solid #ffdddd;padding:24px;background:#fff9f9;">
-        <p class="lf-eyebrow" style="margin-bottom:8px;color:#c00;">Zona Pericolosa</p>
-        <p style="font-size:11px;color:#c00;margin-bottom:16px;line-height:1.7;">L'eliminazione dell'account è permanente. Tutti i tuoi LFPOINTS e dati verranno cancellati.</p>
-        <button onclick="confirmDeleteAccount()" class="btn-g" style="padding:10px 18px;font-size:10.5px;color:#c00;border-color:#c00;" onmouseover="this.style.background='#c00';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#c00'">Elimina Account</button>
+      <div style="border:2px solid color-mix(in srgb,var(--danger) 22%,var(--card));padding:24px;background:color-mix(in srgb,var(--danger) 4%,var(--card));">
+        <p class="lf-eyebrow" style="margin-bottom:8px;color:var(--danger);">Zona Pericolosa</p>
+        <p style="font-size:11px;color:var(--danger);margin-bottom:16px;line-height:1.7;">L'eliminazione dell'account è permanente. Tutti i tuoi LFPOINTS e dati verranno cancellati.</p>
+        <button onclick="confirmDeleteAccount()" class="btn-g" style="padding:10px 18px;font-size:10.5px;color:var(--danger);border-color:var(--danger);" onmouseover="this.style.background='var(--danger)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--danger)'">Elimina Account</button>
       </div>
     </div>
 
@@ -3082,7 +3083,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 ════════════════════════════════════════════════════════ -->
 <!-- ══ SIZE/COLOR PICKER MODAL ══ -->
 <div class="modal-bg" id="size-picker-modal" onclick="if(event.target===this){this.classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();}" style="align-items:flex-end;">
-  <div style="background:#fff;width:100%;max-width:480px;padding:28px 22px;border-top:3px solid var(--k);max-height:90vh;overflow-y:auto;">
+  <div style="background:var(--card);width:100%;max-width:480px;padding:28px 22px;border-top:3px solid var(--k);max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:2px;">Scegli Opzioni</p>
       <button onclick="document.getElementById('size-picker-modal').classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();" style="background:none;border:none;font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
@@ -3156,9 +3157,9 @@ img{ -webkit-user-drag:none; user-select:none; }
     }
   </style>
   <div class="modal-box" style="padding:0;max-width:960px;width:100%;">
-    <div style="background:var(--k);color:var(--w);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;">
+    <div style="background:var(--ink);color:var(--on-ink);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;">
       <p style="font-size:10.5px;letter-spacing:3px;text-transform:uppercase;color:#999;">Dettaglio Prodotto</p>
-      <button onclick="closeProd()" style="background:none;border:none;color:var(--w);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+      <button onclick="closeProd()" style="background:none;border:none;color:var(--on-ink);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
     </div>
     <div id="prod-modal-body"></div>
   </div>
@@ -3169,9 +3170,9 @@ img{ -webkit-user-drag:none; user-select:none; }
 ════════════════════════════════════════════════════════ -->
 <div id="size-modal" class="modal-bg">
   <div class="modal-box" style="padding:0;">
-    <div style="background:var(--k);color:var(--w);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="background:var(--ink);color:var(--on-ink);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
       <p class="bb" style="font-size:24px;letter-spacing:2px;">Guida Taglie</p>
-      <button onclick="document.getElementById('size-modal').classList.remove('open')" style="background:none;border:none;color:var(--w);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
+      <button onclick="document.getElementById('size-modal').classList.remove('open')" style="background:none;border:none;color:var(--on-ink);font-size:20px;cursor:pointer;min-width:44px;min-height:44px;">✕</button>
     </div>
     <div style="padding:24px;">
       <!-- TAB switcher -->
@@ -3235,7 +3236,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       <span style="width:6px;height:6px;background:var(--led);border-radius:50%;display:inline-block;animation:blink 1.4s infinite;"></span>
       <span class="lf-eyebrow lf-eyebrow--on-dark">Product Request</span>
     </div>
-    <p class="bb" style="font-size:clamp(22px,6vw,32px);letter-spacing:1px;color:var(--w);margin-bottom:10px;line-height:1.2;">Non trovi il prodotto che stai cercando?</p>
+    <p class="bb" style="font-size:clamp(22px,6vw,32px);letter-spacing:1px;color:var(--on-ink);margin-bottom:10px;line-height:1.2;">Non trovi il prodotto che stai cercando?</p>
     <p style="font-size:11px;color:rgba(246,243,238,.72);letter-spacing:.5px;margin-bottom:36px;line-height:1.8;">Inviaci una foto e ti faremo sapere in <span style="color:var(--led2);font-weight:700;">48 ore</span> la disponibilità di questo articolo.</p>
 
     <!-- Drop zone -->
@@ -3253,11 +3254,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     <input type="file" id="pr-file-input" accept="image/*" style="display:none;" onchange="prHandleFile(this)"/>
 
     <div id="pr-actions" style="display:none;margin-bottom:14px;">
-      <button onclick="prRemoveFile()" style="background:none;border:1px solid #2a2a2a;color:#666;padding:7px 16px;font-family:'Manrope',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✕ Rimuovi foto</button>
+      <button onclick="prRemoveFile()" style="background:none;border:1px solid rgba(246,243,238,.3);color:rgba(246,243,238,.72);padding:7px 16px;font-family:'Manrope',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✕ Rimuovi foto</button>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <input id="pr-note" class="lf-in" placeholder="Descrivi il prodotto: brand, colore, taglia..." style="width:100%;box-sizing:border-box;background:var(--k);border-color:#222;color:var(--w);"/>
+      <input id="pr-note" class="lf-in" placeholder="Descrivi il prodotto: brand, colore, taglia..." style="width:100%;box-sizing:border-box;background:var(--ink);border-color:#222;color:var(--on-ink);"/>
       <button onclick="sendProductRequest()" class="btn-led" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px;">Invia richiesta →</button>
     </div>
     <p style="font-size:10.5px;color:rgba(246,243,238,.72);margin-top:18px;letter-spacing:1px;">⏱ Risposta in 48 ore &nbsp;·&nbsp; Solo prodotti autentici</p>
@@ -3267,7 +3268,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ════════════════════════════════════════════════════════
      FOOTER
 ════════════════════════════════════════════════════════ -->
-<footer style="background:var(--k);color:#f5f2ec;margin-top:0;overflow:hidden;position:relative;">
+<footer style="background:var(--ink);color:#f5f2ec;margin-top:0;overflow:hidden;position:relative;">
   <style>
     footer .flink{display:flex;align-items:center;gap:9px;color:rgba(245,242,236,.62);font-family:'Manrope',sans-serif;font-size:13px;letter-spacing:.2px;font-weight:500;background:none;border:none;padding:6px 0;cursor:pointer;text-align:left;transition:color .18s,transform .18s;}
     footer .flink:hover{color:var(--led2);transform:translateX(4px);}
@@ -3382,15 +3383,15 @@ img{ -webkit-user-drag:none; user-select:none; }
 ════════════════════════════════════════════════════════ -->
 <div id="info-modal" class="modal-bg" onclick="if(event.target===this)closeInfo()" style="align-items:flex-start;padding-top:40px;">
   <div class="modal-box" style="padding:0;max-width:600px;">
-    <div style="background:var(--k);color:var(--w);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;z-index:1;">
+    <div style="background:var(--ink);color:var(--on-ink);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;z-index:1;">
       <p class="bb" id="info-title" style="font-size:22px;letter-spacing:2px;flex:1;min-width:0;"></p>
       <div id="info-lang" style="display:none;gap:4px;flex-shrink:0;">
-        <button onclick="switchInfoLang('it')" data-l="it" style="background:none;border:1px solid rgba(255,255,255,.3);color:var(--w);font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 9px;border-radius:6px;cursor:pointer;">IT</button>
-        <button onclick="switchInfoLang('en')" data-l="en" style="background:none;border:1px solid rgba(255,255,255,.3);color:var(--w);font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 9px;border-radius:6px;cursor:pointer;">EN</button>
+        <button onclick="switchInfoLang('it')" data-l="it" style="background:none;border:1px solid rgba(255,255,255,.3);color:var(--on-ink);font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 9px;border-radius:6px;cursor:pointer;">IT</button>
+        <button onclick="switchInfoLang('en')" data-l="en" style="background:none;border:1px solid rgba(255,255,255,.3);color:var(--on-ink);font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 9px;border-radius:6px;cursor:pointer;">EN</button>
       </div>
-      <button onclick="closeInfo()" style="background:none;border:none;color:var(--w);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+      <button onclick="closeInfo()" style="background:none;border:none;color:var(--on-ink);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
     </div>
-    <div id="info-body" style="padding:28px 24px;font-size:12px;color:#333;line-height:1.9;"></div>
+    <div id="info-body" style="padding:28px 24px;font-size:12px;color:var(--ink-soft);line-height:1.9;"></div>
   </div>
 </div>
 
@@ -3689,7 +3690,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     requestAnimationFrame(()=>{
       grid.textContent='';
       grid.insertAdjacentHTML('afterbegin', items.map(p=>`
-        <div onclick="openProduct('${p.id}')" style="cursor:pointer;border:1.5px solid var(--border);background:#fff;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='var(--k)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
+        <div onclick="openProduct('${p.id}')" style="cursor:pointer;border:1.5px solid var(--border);background:var(--card);transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='var(--k)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
           <div style="aspect-ratio:3/4;background:#f5f5f5;overflow:hidden;position:relative;">
             ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:''}
           </div>
@@ -4307,7 +4308,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div>
             <span class="bb" style="font-size:22px;color:var(--k);">€${(p.price||0).toFixed(2)}</span>
-            <span style="display:block;font-size:11px;color:var(--led);font-weight:600;"><span class="pc-rating" data-pid="${p.id}">${ratingBadge(p.id)}</span>+${Math.floor(p.price||0)} LFPTS</span>
+            <span style="display:block;font-size:11px;color:var(--led-text);font-weight:600;"><span class="pc-rating" data-pid="${p.id}">${ratingBadge(p.id)}</span>+${Math.floor(p.price||0)} LFPTS</span>
           </div>
           ${isSoldOut?`<span style="font-size:11px;letter-spacing:.3px;color:var(--dim);padding:8px 12px;border:1px solid var(--border-2);border-radius:999px;">Esaurito</span>`:`<button class="btn-led" style="padding:9px 16px;font-size:12px;min-height:0;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">＋</button>`}
         </div>
@@ -4348,7 +4349,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const th=isShoe?['EU','US','CM']:['Taglia','IT','Torace (cm)'];
     const rows=isShoe?shoeRows:clothRows;
     const html=`<div id="lf-sizeguide" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(20,20,17,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;">
-      <div style="background:#fff;max-width:420px;width:100%;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);">
+      <div style="background:var(--card);max-width:420px;width:100%;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);">
           <p class="bb" style="font-size:18px;">Guida Taglie ${isShoe?'· Scarpe':'· Abbigliamento'}</p>
           <button onclick="document.getElementById('lf-sizeguide').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mid);">×</button>
@@ -4474,19 +4475,19 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="border:1px solid #e8e8e8;padding:14px 16px;background:var(--w);">
             <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Qualità 1:1 — Cosa include</p>
             <div style="display:flex;flex-direction:column;gap:7px;">
-              <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--led);font-size:11px;flex-shrink:0;margin-top:1px;">✓</span><p style="font-size:11px;color:#333;line-height:1.5;">Materiali identici all'originale — stesso peso e texture</p></div>
-              <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--led);font-size:11px;flex-shrink:0;margin-top:1px;">✓</span><p style="font-size:11px;color:#333;line-height:1.5;">Tag, box e accessori originali inclusi</p></div>
-              <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--led);font-size:11px;flex-shrink:0;margin-top:1px;">✓</span><p style="font-size:11px;color:#333;line-height:1.5;">Cuciture di precisione e colori fedeli al campione</p></div>
+              <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--led-text);font-size:11px;flex-shrink:0;margin-top:1px;">✓</span><p style="font-size:11px;color:var(--ink-soft);line-height:1.5;">Materiali identici all'originale — stesso peso e texture</p></div>
+              <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--led-text);font-size:11px;flex-shrink:0;margin-top:1px;">✓</span><p style="font-size:11px;color:var(--ink-soft);line-height:1.5;">Tag, box e accessori originali inclusi</p></div>
+              <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--led-text);font-size:11px;flex-shrink:0;margin-top:1px;">✓</span><p style="font-size:11px;color:var(--ink-soft);line-height:1.5;">Cuciture di precisione e colori fedeli al campione</p></div>
             </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${s}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${p.size}</span>`:''}
-            ${((p.sizes&&p.sizes.length)||p.size)?`<button onclick="openSizeGuide('${(p.model||'').replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--led);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;">📏 Guida taglie</button>`:''}
+            ${((p.sizes&&p.sizes.length)||p.size)?`<button onclick="openSizeGuide('${(p.model||'').replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--led-text);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;">📏 Guida taglie</button>`:''}
           </div>
           <div style="border-top:1px solid var(--border);padding-top:16px;">
             <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:42px;margin-bottom:6px;">€${(p.price||0).toFixed(2)}</p>
             <div style="border:1px solid color-mix(in srgb,var(--led2) 64%,transparent);padding:5px 10px;background:color-mix(in srgb,var(--led2) 8%,transparent);display:inline-flex;align-items:center;gap:6px;">
-              <span style="font-size:10.5px;color:var(--led);letter-spacing:2px;">⬡ +${Math.floor(p.price||0)} LFPOINTS al checkout</span>
+              <span style="font-size:10.5px;color:var(--led-text);letter-spacing:2px;">⬡ +${Math.floor(p.price||0)} LFPOINTS al checkout</span>
             </div>
           </div>
           <div style="font-size:10.5px;color:var(--mid);display:flex;flex-direction:column;gap:7px;">
@@ -4498,13 +4499,13 @@ img{ -webkit-user-drag:none; user-select:none; }
           <div style="border:1.5px solid color-mix(in srgb,var(--led2) 48%,transparent);padding:12px 16px;background:color-mix(in srgb,var(--led2) 5%,transparent);">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <p style="font-size:10.5px;color:var(--led);letter-spacing:2px;text-transform:uppercase;font-weight:bold;">Servizio QC disponibile</p>
+              <p style="font-size:10.5px;color:var(--led-text);letter-spacing:2px;text-transform:uppercase;font-weight:bold;">Servizio QC disponibile</p>
             </div>
-            <p style="font-size:10.5px;color:#666;line-height:1.7;">Aggiungi il QC nel carrello: riceverai 3-4 foto reali del tuo articolo prima della spedizione. Gratis per i membri Silver+.</p>
+            <p style="font-size:10.5px;color:var(--mid);line-height:1.7;">Aggiungi il QC nel carrello: riceverai 3-4 foto reali del tuo articolo prima della spedizione. Gratis per i membri Silver+.</p>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
             ${p.soldOut===true
-              ? `<button style="flex:1;background:var(--k);color:#fff;border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;" onclick="notifyWhenAvailable('${p.id}')">🔔 Avvisami quando disponibile</button>`
+              ? `<button style="flex:1;background:var(--ink);color:#fff;border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;" onclick="notifyWhenAvailable('${p.id}')">🔔 Avvisami quando disponibile</button>`
               : `<button style="flex:1;background:var(--led);color:#fff;border:none;padding:14px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:none;" onclick="buy('${p.id}',${p.price||0});closeProd();">${(window.LF_LANG==='en')?'Add to Cart →':'Aggiungi al Carrello →'}</button>`}
             <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:'Manrope',monospace;font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${inWish?'❤️':'♡'}</button>
             <button style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--k);" onclick="shareProduct('${p.name.replace(/'/g,"\\'")}',${p.price||0},'${p.id}')" title="Condividi questo prodotto">
@@ -4522,7 +4523,7 @@ img{ -webkit-user-drag:none; user-select:none; }
                 <div style="width:90px;height:90px;background:#f0f0f0;overflow:hidden;margin-bottom:6px;">
                   ${rp.imageUrl?`<img src="${pImg(rp.imageUrl)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:''}
                 </div>
-                <p style="font-size:10.5px;line-height:1.3;color:#333;">${rp.name}</p>
+                <p style="font-size:10.5px;line-height:1.3;color:var(--ink-soft);">${cleanTitle(rp.name,40)}</p>
                 <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;">€${(rp.price||0).toFixed(0)}</p>
               </div>`).join('')}
             </div>
@@ -4576,11 +4577,11 @@ img{ -webkit-user-drag:none; user-select:none; }
         </div>
         <textarea id="rev-text" placeholder="Com'è andata? (facoltativo)" style="width:100%;border:1.5px solid var(--border-2);border-radius:10px;padding:10px;font-family:'Manrope',sans-serif;font-size:13px;resize:vertical;min-height:60px;"></textarea>
         <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
-          <label style="font-size:12px;color:var(--led);cursor:pointer;text-decoration:underline;">📷 Aggiungi foto<input type="file" accept="image/*" onchange="lfReviewPhoto(this)" style="display:none;"></label>
+          <label style="font-size:12px;color:var(--led-text);cursor:pointer;text-decoration:underline;">📷 Aggiungi foto<input type="file" accept="image/*" onchange="lfReviewPhoto(this)" style="display:none;"></label>
           <img id="rev-photo-prev" style="display:none;width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"/>
         </div>
-        <button onclick="submitReview('${pid}')" style="margin-top:10px;background:var(--k);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
-      </div>`:`<p style="font-size:12px;color:var(--dim);margin-top:8px;"><a onclick="showPg('auth')" style="color:var(--led);cursor:pointer;text-decoration:underline;">Accedi</a> per lasciare una recensione.</p>`;
+        <button onclick="submitReview('${pid}')" style="margin-top:10px;background:var(--ink);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
+      </div>`:`<p style="font-size:12px;color:var(--dim);margin-top:8px;"><a onclick="showPg('auth')" style="color:var(--led-text);cursor:pointer;text-decoration:underline;">Accedi</a> per lasciare una recensione.</p>`;
     _reviewRating=0; _reviewPhoto='';
     box.innerHTML=head+(list||'')+form;
   };
@@ -4757,7 +4758,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
     box.onclick=e=>{ if(e.target===box) box.remove(); };
     const opt=a=>a.map(x=>`<option value="${x}">${x}</option>`).join('');
-    box.innerHTML=`<div style="background:#fff;color:var(--k);max-width:460px;width:100%;border-radius:16px;overflow:hidden;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">
+    box.innerHTML=`<div style="background:var(--card);color:var(--k);max-width:460px;width:100%;border-radius:16px;overflow:hidden;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">
       <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
         <strong style="font-size:15px;">${isB?'🏀':'⚽'} Richiedi una squadra</strong>
         <span onclick="document.getElementById('team-req-modal').remove()" style="cursor:pointer;font-size:22px;opacity:.5;">×</span>
@@ -4991,10 +4992,10 @@ img{ -webkit-user-drag:none; user-select:none; }
     const cards=pool.map(p=>{
       const isSoldOut=p.soldOut===true;
       return `<div class="carousel-card" onclick="openProduct('${p.id}')">
-        <div style="aspect-ratio:3/4;background:var(--k);overflow:hidden;position:relative;">
+        <div style="aspect-ratio:3/4;background:var(--ink);overflow:hidden;position:relative;">
           ${p.imageUrl
             ? `<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`
-            : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#333;letter-spacing:2px;">NO IMG</div>`
+            : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:rgba(246,243,238,.72);letter-spacing:2px;">NO IMG</div>`
           }
           ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span class="lf-badge lf-badge--soldout">Esaurito</span></div>':''}
           <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
@@ -5026,10 +5027,10 @@ img{ -webkit-user-drag:none; user-select:none; }
         const stockNum=realStock(p);
         const isLow=!isSoldOut&&stockNum!==null&&stockNum<=3;
         return `<div class="carousel-card" onclick="openProduct('${p.id}')">
-          <div style="aspect-ratio:3/4;background:var(--k);overflow:hidden;position:relative;">
+          <div style="aspect-ratio:3/4;background:var(--ink);overflow:hidden;position:relative;">
             ${p.imageUrl
               ? `<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`
-              : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#333;letter-spacing:2px;">NO IMG</div>`
+              : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:rgba(246,243,238,.72);letter-spacing:2px;">NO IMG</div>`
             }
             ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span class="lf-badge lf-badge--soldout">Esaurito</span></div>':''}
             ${isLow&&!isSoldOut?`<span class="lf-badge lf-badge--drop lf-badge-pos">Solo ${stockNum} rimasti</span>`:''}
@@ -5234,11 +5235,11 @@ img{ -webkit-user-drag:none; user-select:none; }
       const _months=item.qty; // per gli abbonamenti digitali qty = numero di mesi
       const _mLbl=_months>1?_months+' mesi':'1 mese';
       const _boxHtml=_shoe?`<div style="display:flex;gap:4px;margin-top:5px;">
-        <button onclick="setBoxOption(${idx},'con_scatola')" style="font-size:10.5px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='con_scatola'?'background:var(--k);color:var(--w);':'background:none;color:var(--k);'}">📦 Con Scatola</button>
-        <button onclick="setBoxOption(${idx},'senza_scatola')" style="font-size:10.5px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='senza_scatola'?'background:var(--k);color:var(--w);':'background:none;color:var(--k);'}">Senza Scatola</button>
+        <button onclick="setBoxOption(${idx},'con_scatola')" style="font-size:10.5px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='con_scatola'?'background:var(--ink);color:var(--on-ink);':'background:none;color:var(--k);'}">📦 Con Scatola</button>
+        <button onclick="setBoxOption(${idx},'senza_scatola')" style="font-size:10.5px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='senza_scatola'?'background:var(--ink);color:var(--on-ink);':'background:none;color:var(--k);'}">Senza Scatola</button>
       </div>`:'';
       return `<div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
-        <div style="width:76px;height:76px;background:${item.isDigital?'linear-gradient(135deg,#f5f0eb,#ede6de)':'#f0f0f0'};flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:12px;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`onclick="openProduct('${item.id}')"`:''}>
+        <div style="width:76px;height:76px;background:${item.isDigital?'var(--accent-soft)':'var(--border)'};flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:12px;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`onclick="openProduct('${item.id}')"`:''}>
           ${item.img?`<img src="${pImg(item.img)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:''}
           ${item.isDigital&&!item.img?`<span style="font-size:28px;">${item.icon||'📱'}</span>`:''}
           ${!item.isDigital&&!item.img?'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:var(--dim);">IMG</div>':''}
@@ -5261,8 +5262,8 @@ img{ -webkit-user-drag:none; user-select:none; }
             </div>
           </div>
           ${_boxHtml}
-          ${item.addonSummary?`<p style="font-size:10.5px;color:var(--mid);margin-top:5px;display:flex;align-items:center;gap:5px;"><span style="color:var(--led);">⚽</span>${item.addonSummary}${item.addonPrice?` <span style="color:var(--dim);">(+€${item.addonPrice.toFixed(0)})</span>`:''}</p>`:''}
-          <p style="font-size:10.5px;color:var(--led);letter-spacing:.5px;font-weight:600;margin-top:6px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
+          ${item.addonSummary?`<p style="font-size:10.5px;color:var(--mid);margin-top:5px;display:flex;align-items:center;gap:5px;"><span style="color:var(--led-text);">⚽</span>${item.addonSummary}${item.addonPrice?` <span style="color:var(--dim);">(+€${item.addonPrice.toFixed(0)})</span>`:''}</p>`:''}
+          <p style="font-size:10.5px;color:var(--led-text);letter-spacing:.5px;font-weight:600;margin-top:6px;">+${Math.floor(item.price*item.qty)} LFPTS al completamento</p>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;">
             <div style="display:flex;align-items:center;gap:6px;">
               ${item.isDigital?`<span style="font-size:10.5px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-right:4px;">Durata</span>`:''}
@@ -5270,7 +5271,7 @@ img{ -webkit-user-drag:none; user-select:none; }
               <span style="font-size:14px;font-weight:600;min-width:${item.isDigital?'52px':'22px'};text-align:center;">${item.isDigital?_mLbl:item.qty}</span>
               <button onclick="changeQty(${idx},1)" style="width:34px;height:34px;border:1.5px solid var(--border-2);background:var(--card);border-radius:10px;cursor:pointer;font-size:16px;color:var(--k);">+</button>
             </div>
-            <button onclick="removeCart(${idx})" style="font-size:12px;color:#c0503f;background:none;border:none;cursor:pointer;letter-spacing:.3px;font-weight:600;padding:6px;">Rimuovi</button>
+            <button onclick="removeCart(${idx})" style="font-size:12px;color:var(--danger);background:none;border:none;cursor:pointer;letter-spacing:.3px;font-weight:600;padding:6px;">Rimuovi</button>
           </div>
         </div>
       </div>`;
@@ -5330,7 +5331,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     body.innerHTML=`
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         ${prod.imageUrl?`<img src="${pImg(prod.imageUrl)}" style="width:60px;height:60px;object-fit:cover;border:1px solid var(--border);" onerror="this.style.display='none'">`:''}
-        <div><p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;">${prod.name?cleanTitle(prod.name):'Prodotto'}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;color:var(--led);">€${price.toFixed(2)}</p></div>
+        <div><p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;">${prod.name?cleanTitle(prod.name):'Prodotto'}</p><p style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;color:var(--led-text);">€${price.toFixed(2)}</p></div>
       </div>
       ${sizes.length?`<div style="margin-bottom:18px;">
         <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Seleziona Taglia *</p>
@@ -5350,7 +5351,7 @@ img{ -webkit-user-drag:none; user-select:none; }
         <input id="picker-color-input" class="lf-in" placeholder="es. Nero, Bianco, Verde militare..."/>
       </div>`}
       ${window.isFootballKit(prod)?`<div style="margin-bottom:18px;border:1.5px solid color-mix(in srgb,var(--led2) 48%,transparent);background:color-mix(in srgb,var(--led2) 5%,transparent);padding:14px 16px;">
-        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:var(--led);">⚽ Personalizza la maglia <span style="color:var(--dim);text-transform:none;letter-spacing:0;">(opzionale)</span></p>
+        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:var(--led-text);">⚽ Personalizza la maglia <span style="color:var(--dim);text-transform:none;letter-spacing:0;">(opzionale)</span></p>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:14px;">
           <input type="checkbox" id="addon-badges" onchange="updateAddonNote()" style="width:18px;height:18px;accent-color:var(--led);flex-shrink:0;"/>
           <span style="font-size:12px;">Toppe / Badges campionato <span style="color:var(--dim);">(Serie A, Champions…)</span> <strong>+€${LF_BADGES_PRICE.toFixed(0)}</strong></span>
@@ -5365,7 +5366,7 @@ img{ -webkit-user-drag:none; user-select:none; }
           <input id="addon-name" oninput="updateAddonNote()" class="lf-in" maxlength="14" placeholder="NOME (es. YILDIZ)" style="flex:1;text-transform:uppercase;"/>
           <input id="addon-number" oninput="updateAddonNote()" class="lf-in" maxlength="2" inputmode="numeric" placeholder="N°" style="width:64px;text-align:center;"/>
         </div>
-        <p id="picker-addon-note" style="font-size:11px;color:var(--led);margin-top:10px;display:none;"></p>
+        <p id="picker-addon-note" style="font-size:11px;color:var(--led-text);margin-top:10px;display:none;"></p>
       </div>`:''}`;
     document.getElementById('picker-selsize').textContent = '';
     document.getElementById('picker-selcolor').textContent = '';
@@ -5375,14 +5376,14 @@ img{ -webkit-user-drag:none; user-select:none; }
   window.pickSz=function(s,btn){
     _pickedSz=s;
     document.querySelectorAll('#picker-sizes button').forEach(b=>{b.style.background='';b.style.color='';});
-    btn.style.background='var(--k)';btn.style.color='var(--w)';
+    btn.style.background='var(--ink)';btn.style.color='var(--w)';
     const e=document.getElementById('sz-err'); if(e) e.style.display='none';
     document.getElementById('picker-selsize').textContent=s;
   };
   window.pickCol=function(c,btn){
     _pickedCol=c;
     document.querySelectorAll('#picker-colors button').forEach(b=>{b.style.background='';b.style.color='';});
-    btn.style.background='var(--k)';btn.style.color='var(--w)';
+    btn.style.background='var(--ink)';btn.style.color='var(--w)';
     const e=document.getElementById('col-err'); if(e) e.style.display='none';
     document.getElementById('picker-selcolor').textContent=c;
   };
@@ -5467,7 +5468,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!msg)return;
     if(!code){showToast('Inserisci un codice.');return;}
     if(code==='LILLO10'){msg.style.display='block';msg.textContent='✅ Sconto 10% applicato!';showToast('✅ Codice valido!');}
-    else{msg.style.display='block';msg.style.color='#c00';msg.textContent='⚠️ Codice non valido o scaduto.';}
+    else{msg.style.display='block';msg.style.color='var(--danger)';msg.textContent='⚠️ Codice non valido o scaduto.';}
   };
   function renderCheckoutSummary(){
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
@@ -5620,7 +5621,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(confirmEl){
         confirmEl.innerHTML=`
           <div style="background:#0a0a0a;border:2px solid var(--led);padding:32px 28px;max-width:480px;width:90%;text-align:center;">
-            <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;letter-spacing:3px;color:var(--led);margin-bottom:6px;">ORDINE REGISTRATO</p>
+            <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;letter-spacing:3px;color:var(--led-text);margin-bottom:6px;">ORDINE REGISTRATO</p>
             <p style="font-size:10.5px;color:#555;letter-spacing:2px;margin-bottom:22px;">${orderId}</p>
             <div style="background:#0d0d18;border:1px solid #003087;padding:18px;margin-bottom:20px;text-align:left;">
               <p style="font-size:10.5px;color:#6699cc;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">🅿 COMPLETA IL PAGAMENTO PAYPAL</p>
@@ -5630,9 +5631,9 @@ img{ -webkit-user-drag:none; user-select:none; }
               </a>
               <p style="font-size:10.5px;color:rgba(246,243,238,.72);margin-bottom:6px;">Oppure invia manualmente a: <span style="color:#6cf;font-family:monospace;">${PAYPAL_EMAIL}</span></p>
               <p style="font-size:11px;color:rgba(246,243,238,.72);">Nella nota del pagamento indica obbligatoriamente:</p>
-              <p style="font-family:monospace;font-size:14px;color:var(--led);margin-top:4px;letter-spacing:1px;">${orderId}</p>
+              <p style="font-family:monospace;font-size:14px;color:var(--led-text);margin-top:4px;letter-spacing:1px;">${orderId}</p>
             </div>
-            <p style="font-size:10.5px;color:#555;margin-bottom:20px;">I tuoi <strong style="color:var(--led);">+${Math.floor(subtotal)} LFPOINTS</strong> verranno accreditati alla conferma del pagamento.</p>
+            <p style="font-size:10.5px;color:#555;margin-bottom:20px;">I tuoi <strong style="color:var(--led-text);">+${Math.floor(subtotal)} LFPOINTS</strong> verranno accreditati alla conferma del pagamento.</p>
             <button onclick="document.getElementById('order-confirm-overlay').style.display='none';showPg('shop');" style="background:var(--led);color:#fff;border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;letter-spacing:3px;padding:14px 32px;width:100%;">HO CAPITO — VAI ALLO SHOP</button>
           </div>`;
         confirmEl.style.display='flex';
@@ -5962,12 +5963,12 @@ img{ -webkit-user-drag:none; user-select:none; }
         if(usedUp&&!isActive){
           actionHtml=`<div style="margin-top:8px;padding:5px 10px;font-size:10.5px;width:100%;background:#f0f0f0;color:#999;letter-spacing:1px;text-transform:uppercase;box-sizing:border-box;">🔒 Già usato</div>`;
         } else if(isActive){
-          actionHtml=`<div style="margin-top:8px;padding:5px 10px;font-size:10.5px;width:100%;background:color-mix(in srgb,var(--led2) 32%,transparent);color:var(--led);letter-spacing:1px;text-transform:uppercase;border:1px solid var(--led);box-sizing:border-box;">✓ Nel carrello</div>`;
+          actionHtml=`<div style="margin-top:8px;padding:5px 10px;font-size:10.5px;width:100%;background:color-mix(in srgb,var(--led2) 32%,transparent);color:var(--led-text);letter-spacing:1px;text-transform:uppercase;border:1px solid var(--led);box-sizing:border-box;">✓ Nel carrello</div>`;
         } else if(ok&&!ar&&!usedUp){
           actionHtml=`<button onclick="claimReward('${r.label}')" class="btn-led" style="margin-top:8px;padding:5px 10px;font-size:10.5px;width:100%;">Riscatta</button>`;
         }
         return `<div style="border:1.5px solid ${borderColor};padding:14px 12px;text-align:center;${bgStyle}">
-          <p class="bb" style="font-size:22px;${((ok&&!usedUp)||isActive)?'color:var(--led)':''}">${r.label}</p>
+          <p class="bb" style="font-size:22px;${((ok&&!usedUp)||isActive)?'color:var(--led-text)':''}">${r.label}</p>
           <p style="font-size:10.5px;color:var(--dim);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">${r.pts} pts</p>
           ${actionHtml}
         </div>`;
@@ -6038,14 +6039,14 @@ img{ -webkit-user-drag:none; user-select:none; }
             </div>
           </div>
           ${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?`<div style="margin-top:10px;">
-            <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led);margin-bottom:6px;font-weight:700;">📸 Foto QC del tuo articolo</p>
+            <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led-text);margin-bottom:6px;font-weight:700;">📸 Foto QC del tuo articolo</p>
             <div style="display:flex;gap:6px;overflow-x:auto;">
               ${o.qcPhotos.map(u=>`<img src="${pImg(u)}" onclick="openLightbox('${pImg(u)}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:zoom-in;flex-shrink:0;" onerror="this.style.display='none'">`).join('')}
             </div></div>`:''}
         </div>`;
       }).join('');
     }catch(e){
-      wrap.innerHTML='<p style="font-size:11px;color:#c00;">Errore nel caricamento ordini.</p>';
+      wrap.innerHTML='<p style="font-size:11px;color:var(--danger);">Errore nel caricamento ordini.</p>';
     }
   }
   window.renderOrderHistory=renderOrderHistory;
@@ -6103,7 +6104,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     const barColor=s.expired?'#c0503f':(s.remDays<=7?'#e0952f':'#66a80f');
     const statusLbl=s.expired?'Scaduto':(s.remDays<=7?('Scade tra '+s.remDays+'g'):(s.remDays+' giorni rimasti'));
     const svc=(c.service||'Abbonamento').replace(/</g,'&lt;');
-    return `<div style="border:1px solid #e8e8e8;border-radius:12px;padding:14px;margin-bottom:12px;background:#fff;">
+    return `<div style="border:1px solid #e8e8e8;border-radius:12px;padding:14px;margin-bottom:12px;background:var(--card);">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
         <p style="font-size:15px;font-weight:700;">${svc}</p>
         <span style="font-size:10.5px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:${s.expired?'#fbe9e6':'rgba(102,168,15,.12)'};color:${barColor};font-weight:700;white-space:nowrap;">${statusLbl}</span>
@@ -6176,11 +6177,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     const membersList=(g.members||[]).map(m=>_esc(m.name||'Utente')).join(', ');
     let action='';
     if(isHost) action=`<button class="btn-g" style="padding:8px 14px;font-size:10.5px;" onclick="closeGroup('${g.id}')">${g.status==='closed'?'Riapri':'Chiudi gruppo'}</button>`;
-    else if(mem) action=`<button class="btn-g" style="padding:8px 14px;font-size:10.5px;color:#c0503f;border-color:#e6c3bd;" onclick="leaveGroup('${g.id}')">Esci</button>`;
+    else if(mem) action=`<button class="btn-g" style="padding:8px 14px;font-size:10.5px;color:var(--danger);border-color:#e6c3bd;" onclick="leaveGroup('${g.id}')">Esci</button>`;
     else if(closed) action=`<span style="font-size:10.5px;color:var(--dim);">Chiuso</span>`;
     else if(full) action=`<span style="font-size:10.5px;color:var(--dim);">Al completo</span>`;
     else action=`<button class="btn-led" style="padding:8px 16px;font-size:10.5px;" onclick="joinGroup('${g.id}')">Unisciti</button>`;
-    return `<div style="border:1px solid #e8e8e8;border-radius:12px;padding:14px 15px;margin-bottom:10px;background:#fff;${closed?'opacity:.7;':''}">
+    return `<div style="border:1px solid #e8e8e8;border-radius:12px;padding:14px 15px;margin-bottom:10px;background:var(--card);${closed?'opacity:.7;':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div style="min-width:0;">
           <p style="font-size:15px;font-weight:700;line-height:1.2;">${_esc(g.title||'Gruppo')} ${g.visibility==='private'?'🔒':''}</p>
@@ -6208,7 +6209,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const boardG=groups.filter(g=>g.visibility==='public'&&g.status!=='closed'&&!(g.hostUid===user.uid||_isMember(g)));
       mine.innerHTML=myG.length?myG.map(g=>groupCardHTML(g,'mine')).join(''):'<p style="font-size:12px;color:var(--dim);">Non fai ancora parte di nessun gruppo. Creane uno o unisciti con un codice.</p>';
       board.innerHTML=boardG.length?boardG.map(g=>groupCardHTML(g,'board')).join(''):'<p style="font-size:12px;color:var(--dim);">Nessun gruppo pubblico aperto al momento. Crea il primo! 🚀</p>';
-    }catch(e){ console.warn('group',e&&e.code); mine.innerHTML='<p style="font-size:12px;color:#c00;">Errore nel caricamento.</p>'; }
+    }catch(e){ console.warn('group',e&&e.code); mine.innerHTML='<p style="font-size:12px;color:var(--danger);">Errore nel caricamento.</p>'; }
   }
   window.renderGroupPage=renderGroupPage;
   window.createGroup=async function(){
@@ -6296,7 +6297,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       box.innerHTML='<div style="background:#0a0a0a;color:#fff;max-width:420px;width:100%;border-radius:18px;overflow:hidden;border:2px solid var(--led);box-shadow:0 20px 60px rgba(0,0,0,.5);">'
         +'<div style="padding:28px 26px 22px;text-align:center;">'
         +'<div style="font-size:40px;margin-bottom:10px;">🚚</div>'
-        +'<p class="bb" style="font-size:12px;letter-spacing:3px;color:var(--led);text-transform:uppercase;margin-bottom:8px;">Novità</p>'
+        +'<p class="bb" style="font-size:12px;letter-spacing:3px;color:var(--led-text);text-transform:uppercase;margin-bottom:8px;">Novità</p>'
         +'<h2 class="bb" style="font-size:30px;line-height:1.05;margin-bottom:12px;">Spedizione di Gruppo</h2>'
         +'<p style="font-size:13px;color:#c9c9c4;line-height:1.6;margin-bottom:6px;">Ordina in gruppo con amici e <b style="color:#fff;">risparmiate sulla spedizione</b>: un solo pacco, una sola spedizione.</p>'
         +'<p style="font-size:11px;color:#8a8a86;line-height:1.5;margin-bottom:20px;">⚠️ Il pacco arriva a <b style="color:#c9c9c4;">un solo destinatario</b> (non viene diviso) — consigliato tra persone che si conoscono.</p>'
@@ -6503,7 +6504,7 @@ img{ -webkit-user-drag:none; user-select:none; }
       const bits=[]; if(_liveTrack.event) bits.push(_liveTrack.event); if(_liveTrack.location) bits.push('· '+_liveTrack.location);
       const evLine=bits.join(' ');
       liveHTML=`<div style="margin-bottom:20px;background:rgba(111,117,82,.08);border:1px solid var(--led);border-radius:10px;padding:14px 16px;">
-        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led);margin-bottom:6px;">📡 Stato in tempo reale${_liveTrack.carrier?' · '+_liveTrack.carrier:''}</p>
+        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led-text);margin-bottom:6px;">📡 Stato in tempo reale${_liveTrack.carrier?' · '+_liveTrack.carrier:''}</p>
         ${evLine?`<p style="font-size:12px;color:var(--k);line-height:1.5;">${evLine}</p>`:'<p style="font-size:12px;color:var(--mid);">Il corriere non ha ancora registrato eventi. Riprova più tardi.</p>'}
         ${_liveTrack.est?`<p style="font-size:10.5px;color:var(--mid);margin-top:4px;">📅 Consegna stimata: ${String(_liveTrack.est).slice(0,10)}</p>`:''}
       </div>`;
@@ -6518,17 +6519,17 @@ img{ -webkit-user-drag:none; user-select:none; }
       ${liveHTML}
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Stato spedizione</span>
-        <span id="pr-track-livehint" style="font-size:10.5px;letter-spacing:1px;color:var(--led);">${_liveTrack?'· aggiornato dal corriere':'· aggiornamento in corso…'}</span>
+        <span id="pr-track-livehint" style="font-size:10.5px;letter-spacing:1px;color:var(--led-text);">${_liveTrack?'· aggiornato dal corriere':'· aggiornamento in corso…'}</span>
       </div>
       <div style="margin-bottom:20px;">${stepsHTML}</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;">
         <button id="pr-track-refresh" onclick="refreshTrackingLive()" style="display:inline-flex;align-items:center;gap:8px;background:var(--led);color:#fff;border:none;padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
           🔄 Aggiorna ora
         </button>
-        <a href="${track17Url}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--k);color:var(--w);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+        <a href="${track17Url}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--on-ink);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
           📡 Dettagli completi →
         </a>
-        <a href="${dhlUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--k);border:1.5px solid var(--k);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='var(--k)';this.style.color='var(--w)'" onmouseout="this.style.background='transparent';this.style.color='var(--k)'">
+        <a href="${dhlUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--k);border:1.5px solid var(--k);padding:12px 20px;font-family:'Manrope',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='var(--ink)';this.style.color='var(--w)'" onmouseout="this.style.background='transparent';this.style.color='var(--k)'">
           🌐 DHL.com
         </a>
       </div>`;
@@ -6883,13 +6884,13 @@ img{ -webkit-user-drag:none; user-select:none; }
     if(!user){ showToast('Accedi per invitare gli amici 👆'); showPg('auth'); return; }
     const link='https://lillofind.shop/?ref='+encodeURIComponent(user.uid);
     const html=`<div id="lf-ref" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(20,20,17,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:22px;">
-      <div style="background:#fff;color:var(--k);max-width:400px;width:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg);">
-        <div style="background:var(--k);color:var(--w);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;">🎁 Invita un amico</strong><span onclick="document.getElementById('lf-ref').remove()" style="cursor:pointer;font-size:20px;opacity:.7;">×</span></div>
+      <div style="background:var(--card);color:var(--k);max-width:400px;width:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg);">
+        <div style="background:var(--ink);color:var(--on-ink);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;">🎁 Invita un amico</strong><span onclick="document.getElementById('lf-ref').remove()" style="cursor:pointer;font-size:20px;opacity:.7;">×</span></div>
         <div style="padding:22px;">
-          <p style="font-size:14px;line-height:1.6;color:var(--mid);margin-bottom:16px;">Condividi il tuo link: quando un amico si iscrive, ricevi <strong style="color:var(--led);">${REFERRAL_POINTS} LFPOINTS</strong> (=€${(REFERRAL_POINTS/10).toFixed(0)}). Lui riceve 50 punti di benvenuto.</p>
+          <p style="font-size:14px;line-height:1.6;color:var(--mid);margin-bottom:16px;">Condividi il tuo link: quando un amico si iscrive, ricevi <strong style="color:var(--led-text);">${REFERRAL_POINTS} LFPOINTS</strong> (=€${(REFERRAL_POINTS/10).toFixed(0)}). Lui riceve 50 punti di benvenuto.</p>
           <div style="display:flex;gap:8px;margin-bottom:12px;">
             <input id="lf-ref-link" value="${link}" readonly style="flex:1;min-width:0;border:1.5px solid var(--border-2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--k);"/>
-            <button onclick="lfCopyRef()" class="bb" style="background:var(--k);color:#fff;border:none;border-radius:10px;padding:0 16px;font-size:12px;cursor:pointer;">Copia</button>
+            <button onclick="lfCopyRef()" class="bb" style="background:var(--ink);color:#fff;border:none;border-radius:10px;padding:0 16px;font-size:12px;cursor:pointer;">Copia</button>
           </div>
           <button onclick="lfShareRef('${link}')" style="width:100%;background:var(--led);color:#fff;border:none;padding:12px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;">Condividi il link →</button>
         </div>
@@ -7145,25 +7146,17 @@ img{ -webkit-user-drag:none; user-select:none; }
   };
 
   // ── THEME ────────────────────────────────────────────────
+  // Tema: i colori stanno in theme-v3.css (:root e :root[data-theme="dark"]);
+  // qui si cambia solo l'attributo. Il tema salvato è già applicato nel <head>.
   window.setTheme=function(t){
-    if(t==='dark'){
-      document.documentElement.style.setProperty('--w','#1a1a1a');
-      document.documentElement.style.setProperty('--k','#f0f0f0');
-      document.documentElement.style.setProperty('--card','#111');
-      document.documentElement.style.setProperty('--border','#333');
-      document.body.style.background='#1a1a1a';
-    } else {
-      document.documentElement.style.setProperty('--w','#f5f5f5');
-      document.documentElement.style.setProperty('--k','#0a0a0a');
-      document.documentElement.style.setProperty('--card','#fff');
-      document.documentElement.style.setProperty('--border','#222');
-      document.body.style.background='#f5f5f5';
-    }
-    localStorage.setItem('lf_theme',t);
-    showToast(t==='dark'?'🌙 Tema scuro attivato':'☀️ Tema chiaro attivato');
+    const dark=t==='dark';
+    if(dark) document.documentElement.setAttribute('data-theme','dark');
+    else document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('lf_theme',dark?'dark':'light'); }catch(_){}
+    document.getElementById('theme-light')?.setAttribute('aria-pressed',String(!dark));
+    document.getElementById('theme-dark')?.setAttribute('aria-pressed',String(dark));
+    showToast(dark?'🌙 Tema scuro attivato':'☀️ Tema chiaro attivato');
   };
-  // Apply saved theme
-  if(localStorage.getItem('lf_theme')==='dark') window.setTheme('dark');
 
   // ── PATCH renderProfile to also load new tabs ────────────
   // NOTE: renderProfile is a module-scoped function, NOT on window — reference it directly
@@ -7774,15 +7767,15 @@ img{ -webkit-user-drag:none; user-select:none; }
 <!-- ── Vault Unlock Banner ────────────────────────────────────── -->
 <div id="vault-unlock-banner" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:20px;">
   <div style="background:#0a0a0a;border:2px solid var(--led);max-width:420px;width:100%;padding:36px 28px;text-align:center;box-shadow:none;position:relative;">
-    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:4px;color:var(--led);margin-bottom:12px;">LF VAULT</div>
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;letter-spacing:4px;color:var(--led-text);margin-bottom:12px;">LF VAULT</div>
     <div style="font-size:40px;margin-bottom:16px;">🔓</div>
     <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;margin-bottom:8px;line-height:1.2;">COMPLIMENTI!</p>
-    <p style="font-size:13px;color:#bbb;margin-bottom:20px;line-height:1.5;">Hai sbloccato l'accesso a <strong style="color:var(--led);">LF Vault</strong></p>
+    <p style="font-size:13px;color:#bbb;margin-bottom:20px;line-height:1.5;">Hai sbloccato l'accesso a <strong style="color:var(--led-text);">LF Vault</strong></p>
     <div style="background:#0d0d00;border:1px solid var(--led);padding:14px 20px;margin-bottom:24px;display:inline-block;">
       <span style="font-size:10.5px;letter-spacing:3px;color:rgba(246,243,238,.72);text-transform:uppercase;display:block;margin-bottom:4px;">Password di accesso</span>
-      <span style="font-family:monospace;font-size:32px;color:var(--led);font-weight:700;letter-spacing:6px;">2809</span>
+      <span style="font-family:monospace;font-size:32px;color:var(--led-text);font-weight:700;letter-spacing:6px;">2809</span>
     </div>
-    <p style="font-size:11px;color:#555;margin-bottom:20px;">Questo banner si chiude automaticamente in <span id="vault-banner-cd" style="color:var(--led);font-weight:700;">5</span>s</p>
+    <p style="font-size:11px;color:#555;margin-bottom:20px;">Questo banner si chiude automaticamente in <span id="vault-banner-cd" style="color:var(--led-text);font-weight:700;">5</span>s</p>
     <button onclick="closeVaultBanner();window.location.href='vault.html'" style="background:var(--led);color:#fff;border:none;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;letter-spacing:3px;padding:12px 32px;width:100%;">ACCEDI AL VAULT</button>
   </div>
 </div>

@@ -62,7 +62,7 @@ body{
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ── SECTION LABEL ───────────────────────────── */
-.slbl{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--led);font-weight:600;}
+.slbl{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--led-text,var(--led));font-weight:600;}
 
 /* ── INPUTS ──────────────────────────────────── */
 .lf-in{
@@ -85,7 +85,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
 /* ── BUTTONS (pill, morbidi) ─────────────────── */
 .btn-k{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  background:var(--k);color:#f5f2ec;border:none;
+  background:var(--ink,var(--k));color:#f5f2ec;border:none;
   padding:14px 30px;min-height:50px;
   font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;
   letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
@@ -117,7 +117,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   letter-spacing:.4px;cursor:pointer;border-radius:var(--radius-pill);
   transition:all .2s;-webkit-appearance:none;
 }
-.btn-g:hover{border-color:var(--led);color:var(--led);}
+.btn-g:hover{border-color:var(--led);color:var(--led-text,var(--led));}
 .btn-g:active{transform:scale(.97);}
 
 .btn-w{
@@ -138,7 +138,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   cursor:pointer;border-radius:var(--radius-pill);
   transition:all .15s;user-select:none;min-height:38px;color:var(--ink-soft);
 }
-.chip:hover{border-color:var(--led);color:var(--led);}
+.chip:hover{border-color:var(--led);color:var(--led-text,var(--led));}
 .chip.on{background:var(--led);color:#fff;border-color:var(--led);}
 
 /* ── NAV BUTTONS ─────────────────────────────── */
@@ -148,7 +148,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   color:var(--k);transition:color .2s;padding:8px 4px;min-height:44px;
   display:inline-flex;align-items:center;
 }
-.nbtn:hover{color:var(--led);}
+.nbtn:hover{color:var(--led-text,var(--led));}
 
 /* ── PAGES / ANIMATION ───────────────────────── */
 .pg{display:none;}
@@ -161,7 +161,7 @@ textarea.lf-in{resize:vertical;min-height:90px;}
   display:inline-flex;align-items:center;gap:6px;
   border:1px solid var(--led2);padding:5px 12px;border-radius:var(--radius-pill);
   font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:1.5px;font-weight:600;
-  text-transform:uppercase;color:var(--led);background:var(--accent-soft);
+  text-transform:uppercase;color:var(--led-text,var(--led));background:var(--accent-soft);
 }
 
 /* ── UTILITY SUPERFICI ───────────────────────── */
