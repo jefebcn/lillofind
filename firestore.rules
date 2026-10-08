@@ -23,19 +23,19 @@ service cloud.firestore {
         || request.resource.data.isAdmin == resource.data.get('isAdmin', false);
     }
 
-    // Sconto: uno solo per account, per sempre. True se l'utente ha GIÀ usato
-    // uno sconto (flag discountUsed sul suo doc). Se il doc non esiste, non ha
-    // ancora usato nulla.
-    function discountAlreadyUsed(uid) {
-      return exists(/databases/$(database)/documents/users/$(uid))
-        && get(/databases/$(database)/documents/users/$(uid)).data.get('discountUsed', false) == true;
+    // Campi del profilo che il cliente può scrivere da sé. Tutto il resto
+    // (lfpoints, activeReward, discountUsed, totalSpent, credenziali,
+    // tracking, isAdmin…) lo scrivono SOLO il Worker (service account) o
+    // l'admin: prima il browser poteva darsi punti e sconti dalla console.
+    function selfUserKeys() {
+      return ['uid', 'email', 'displayName', 'phone', 'address', 'addresses',
+              'notifications', 'preferredSize', 'preferredBrands', 'birthday',
+              'gender', 'language', 'isGuest', 'lastOrderAt', 'createdAt', 'photoURL'];
     }
-    // Impedisce di rimettere discountUsed a false/rimuoverlo una volta true
-    // (write-once): così il flag non può essere "azzerato" per riottenere lo sconto.
-    function noDiscountReset() {
-      return !(resource != null && resource.data.get('discountUsed', false) == true)
-        || (request.resource != null && request.resource.data.get('discountUsed', false) == true);
+    function isAnon() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
+    function str(v, max) { return v is string && v.size() <= max; }
 
     // Products — lettura pubblica, scrittura solo admin
     match /products/{id} {
@@ -57,17 +57,10 @@ service cloud.firestore {
                     || (signedIn() && request.auth.token.email != null
                         && exists(/databases/$(database)/documents/users/$(resource.data.uid))
                         && get(/databases/$(database)/documents/users/$(resource.data.uid)).data.get('email','') == request.auth.token.email);
-      // Creazione ordine: l'ordine deve essere del proprio uid. Un ordine CON
-      // sconto (discount>0) è ammesso solo se l'account non ha ancora usato uno
-      // sconto → enforcement server-side "uno sconto per account, per sempre".
-      // Gli ordini senza sconto passano sempre. Admin bypassa.
-      allow create: if isAdmin() || (
-        signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && (request.resource.data.get('discount', 0) <= 0
-            || !discountAlreadyUsed(request.auth.uid))
-      );
-      allow update, delete: if isAdmin();
+      // Gli ordini li crea SOLO il Worker (/validateOrder), che ricalcola
+      // prezzi, spedizione e sconto dal catalogo: dal browser si potevano
+      // scrivere prezzi, totale e stato arbitrari.
+      allow create, update, delete: if isAdmin();
     }
 
     // Users — utente legge/scrive il proprio doc (per uid); legge anche eventuali
@@ -79,20 +72,40 @@ service cloud.firestore {
                    || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email);
       // Scrittura sul proprio doc; discountUsed è write-once (non azzerabile)
       // così non si può "resettare" lo sconto già usato. Admin bypassa.
-      allow create: if isAdmin() || (request.auth.uid == uid && noSelfAdmin());
-      allow update: if isAdmin() || (request.auth.uid == uid && noSelfAdmin() && noDiscountReset());
+      // Creazione: bonus di benvenuto max 50 punti, nessuno sconto/spesa.
+      allow create: if isAdmin() || (
+        signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(selfUserKeys().concat(['lfpoints', 'totalSpent']))
+        && (!('lfpoints' in request.resource.data) || (request.resource.data.lfpoints is int && request.resource.data.lfpoints >= 0 && request.resource.data.lfpoints <= 50))
+        && (!('totalSpent' in request.resource.data) || request.resource.data.totalSpent == 0)
+      );
+      allow update: if isAdmin() || (
+        signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(selfUserKeys())
+      );
       allow delete: if isAdmin();
     }
 
     // Richieste prodotto ("non trovo prodotto") — chiunque può inviare, solo admin legge
     match /product_requests/{id} {
-      allow create: if true;
+      // Forma e dimensioni limitate (foto max ~900KB, testi brevi).
+      allow create: if request.resource.data.keys().hasOnly(['note', 'image', 'userId', 'userEmail', 'ts',
+            'type', 'sport', 'team', 'year', 'kit', 'category', 'personalization', 'email', 'uid', 'status', 'createdAt'])
+        && (!('note' in request.resource.data) || str(request.resource.data.note, 2000))
+        && (!('image' in request.resource.data) || request.resource.data.image == null || str(request.resource.data.image, 900000))
+        && (!('team' in request.resource.data) || str(request.resource.data.team, 120))
+        && (!('email' in request.resource.data) || str(request.resource.data.email, 200))
+        && (!('personalization' in request.resource.data) || str(request.resource.data.personalization, 120));
       allow read, update, delete: if isAdmin();
     }
 
     // Avvisami quando disponibile — chiunque può iscriversi, solo admin legge
     match /stock_alerts/{id} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasOnly(['productId', 'productName', 'email', 'notified', 'createdAt'])
+        && str(request.resource.data.productId, 60)
+        && str(request.resource.data.email, 200)
+        && (!('productName' in request.resource.data) || str(request.resource.data.productName, 300))
+        && request.resource.data.get('notified', false) == false;
       allow read, update, delete: if isAdmin();
     }
 
@@ -109,20 +122,23 @@ service cloud.firestore {
         && (!('page' in request.resource.data)    || request.resource.data.page.size() <= 300)
         && (!('vid' in request.resource.data)     || request.resource.data.vid.size() <= 60)
         && (!('country' in request.resource.data) || request.resource.data.country.size() <= 8)
-        && (!('city' in request.resource.data)    || request.resource.data.city.size() <= 60);
+        && (!('city' in request.resource.data)    || request.resource.data.city.size() <= 60)
+        // una sessione esistente non può essere riassegnata a un altro visitatore
+        && (resource == null || !('vid' in resource.data) || request.resource.data.get('vid', '') == resource.data.vid);
     }
 
     // Referral — il nuovo utente crea il doc riferendo se stesso come "referred";
     // solo il referrer può leggerlo e segnarlo "credited" (per accreditarsi i punti).
     match /referrals/{id} {
-      allow create: if signedIn()
+      // L'accredito dei punti lo fa il Worker (/claimReferrals), non il browser.
+      allow create: if signedIn() && !isAnon()
+        && request.resource.data.keys().hasOnly(['referrer', 'referred', 'credited', 'createdAt'])
         && request.resource.data.referred == request.auth.uid
-        && request.resource.data.referrer != request.auth.uid;
+        && str(request.resource.data.referrer, 128)
+        && request.resource.data.referrer != request.auth.uid
+        && request.resource.data.get('credited', false) == false;
       allow read:   if isAdmin() || (signedIn() && resource.data.referrer == request.auth.uid);
-      allow update: if signedIn() && resource.data.referrer == request.auth.uid
-        && request.resource.data.referrer == resource.data.referrer
-        && request.resource.data.referred == resource.data.referred;
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     // Spedizione di gruppo — utenti loggati leggono i gruppi (bacheca pubblica
@@ -136,12 +152,25 @@ service cloud.firestore {
         && request.resource.data.keys().size() <= 16
         && request.resource.data.title is string && request.resource.data.title.size() <= 120
         && request.resource.data.members is list && request.resource.data.members.size() <= 30;
+      // L'host gestisce il gruppo; gli altri possono solo AGGIUNGERE o
+      // TOGLIERE se stessi dai membri (prima potevano riscrivere tutta la lista).
       allow update: if signedIn()
         && request.resource.data.members is list && request.resource.data.members.size() <= 30
         && request.resource.data.hostUid == resource.data.hostUid
         && (
              request.auth.uid == resource.data.hostUid
-             || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+                 && (
+                      // entra: lista vecchia + 1 elemento che è se stesso
+                      (request.resource.data.members.size() == resource.data.members.size() + 1
+                        && request.resource.data.members.hasAll(resource.data.members)
+                        && request.resource.data.members[resource.data.members.size()].uid == request.auth.uid)
+                      // esce: tolto esattamente un elemento, il proprio
+                      || (request.resource.data.members.size() == resource.data.members.size() - 1
+                        && resource.data.members.hasAll(request.resource.data.members)
+                        && resource.data.members.removeAll(request.resource.data.members).size() == 1
+                        && resource.data.members.removeAll(request.resource.data.members)[0].uid == request.auth.uid)
+                    ))
            );
       allow delete: if isAdmin() || (signedIn() && resource.data.hostUid == request.auth.uid);
     }
@@ -150,8 +179,13 @@ service cloud.firestore {
     // (una recensione per il proprio account); modifica/eliminazione admin.
     match /reviews/{id} {
       allow read: if true;
-      allow create: if signedIn()
+      allow create: if signedIn() && !isAnon()
+        && request.resource.data.keys().hasOnly(['productId', 'userId', 'userName', 'rating', 'text', 'photo', 'createdAt'])
         && request.resource.data.userId == request.auth.uid
+        && str(request.resource.data.productId, 60)
+        && (!('userName' in request.resource.data) || str(request.resource.data.userName, 80))
+        && (!('text' in request.resource.data) || str(request.resource.data.text, 600))
+        && (!('photo' in request.resource.data) || str(request.resource.data.photo, 400000))
         && request.resource.data.rating is int
         && request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
       allow update, delete: if isAdmin();

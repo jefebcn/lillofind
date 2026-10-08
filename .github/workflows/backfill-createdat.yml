@@ -20,7 +20,11 @@ jobs:
           node-version: '20'
 
       - name: Setup Google credentials
-        run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > /tmp/gcloud-key.json
+        # Il secret passa da una variabile d'ambiente (non interpolato nello script):
+        # niente rotture con apici nel JSON e niente esposizione nella riga di comando.
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: printf '%s' "$GOOGLE_CREDENTIALS" > /tmp/gcloud-key.json
 
       - name: Install firebase-admin
         run: npm init -y && npm install firebase-admin@12
