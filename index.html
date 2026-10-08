@@ -122,7 +122,7 @@
       if(started) return; started=true;
       await loadGeo();
       beat(fresh);
-      setInterval(function(){ if(document.visibilityState==='visible') beat(false); }, 30000);
+      setInterval(function(){ if(document.visibilityState==='visible') beat(false); }, 90000);
       document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') beat(false); });
     }
     var tries=0, iv=setInterval(function(){ if(window.__fb && window.__fb.setDoc){ clearInterval(iv); start(); } else if(++tries>80){ clearInterval(iv); } }, 250);
@@ -3000,17 +3000,54 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       // dalla query i documenti privi del campo createdAt (comportamento Firestore),
       // facendo sparire i prodotti importati senza quel campo. L'ordinamento per
       // data si fa lato client qui sotto.
-      const s=await fb.getDocs(fb.collection(fb.db,'products'));
-      const docs=s.docs;
+      let all=null;
+      try{ all=await _loadCatalogSnapshot(fb); }catch(e){ console.warn('snapshot catalogo non disponibile:',e&&e.message); }
+      if(!all){
+        // Fallback: lettura completa (costosa: 1 lettura per prodotto).
+        const s=await fb.getDocs(fb.collection(fb.db,'products'));
+        all=s.docs.map(d=>({id:d.id,...d.data()}));
+      }
       const _broken=_brokenPids();
-      products=docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.hidden!==true && !_broken[p.id]);
+      products=all.filter(p=>p.hidden!==true && !_broken[p.id]);
       products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       _prodsLoaded=true;
+      { const car=document.getElementById('home-carousel-wrap'); if(car) car.style.display=''; }
       _afterProds();
     }catch(e){
       console.error('loadAllProducts error:',e&&e.code,e&&e.message);
-      const el=document.getElementById('s-load'); if(el) el.textContent='Errore caricamento prodotti. Riprova.';
+      showCatalogDown();
+      // riprova da solo (es. catalogo appena pubblicato o quota ripristinata)
+      clearTimeout(window._prodRetry); window._prodRetry=setTimeout(()=>{ _prodsLoaded=false; loadAllProducts(); },120000);
     }finally{ _prodsLoading=false; }
+  }
+  // Catalogo non raggiungibile: avviso chiaro al posto delle sezioni vuote.
+  function showCatalogDown(){
+    const box='<div class="lf-cat-down" role="status">'+ic('arrows-clockwise')+'<div><b>Catalogo in aggiornamento</b><span>I prodotti tornano tra pochi minuti: la pagina si aggiorna da sola.</span></div></div>';
+    const hp=document.getElementById('home-prods'); if(hp) hp.innerHTML=box;
+    const sl=document.getElementById('s-load'); if(sl) sl.innerHTML=box;
+    const car=document.getElementById('home-carousel-wrap'); if(car) car.style.display='none';
+  }
+
+  // Catalogo pubblicato dall'admin su Cloudflare (Worker /catalog): 0 letture
+  // Firestore per visita. In più legge da Firestore solo i prodotti creati
+  // DOPO la pubblicazione (importazioni recenti), così le novità compaiono subito.
+  async function _loadCatalogSnapshot(fb){
+    const base=window.LF_WORKER_BASE; if(!base) return null;
+    const r=await fetch(base+'/catalog',{cache:'no-cache'});
+    if(!r.ok) return null;
+    const cat=await r.json();
+    if(!cat||!Array.isArray(cat.products)||!cat.products.length) return null;
+    const all=cat.products;
+    if(cat.builtAtMs){
+      try{
+        const ns=await fb.getDocs(fb.query(fb.collection(fb.db,'products'),fb.where('createdAt','>',new Date(cat.builtAtMs))));
+        if(ns.size){
+          const seen=new Set(all.map(p=>p.id));
+          ns.docs.forEach(d=>{ if(!seen.has(d.id)) all.push({id:d.id,...d.data()}); });
+        }
+      }catch(e){ console.warn('novità catalogo:',e&&e.code); }
+    }
+    return all;
   }
 
   // Alias retro-compatibili (varie parti del codice chiamano questi nomi)
@@ -3725,18 +3762,21 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       revs.sort((a,b)=>((b.createdAt?.seconds)||0)-((a.createdAt?.seconds)||0));
     }catch(e){ console.warn('reviews load',e&&e.code); }
     const avg=revs.length?(revs.reduce((s,r)=>s+(r.rating||0),0)/revs.length):0;
-    const logged=!!(window.__fb&&window.__fb.auth&&window.__fb.auth.currentUser);
+    const _cu=window.__fb&&window.__fb.auth&&window.__fb.auth.currentUser;
+    const logged=!!(_cu && !_cu.isAnonymous);
+    const _esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const _okPhoto=v=>typeof v==='string' && /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(v);
     const head=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <p style="font-size:10.5px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);">Recensioni</p>
         ${revs.length?`<span>${starsHTML(Math.round(avg),15)}</span><span style="font-size:12px;color:var(--mid);">${avg.toFixed(1)} · ${revs.length}</span>`:'<span style="font-size:12px;color:var(--dim);">Ancora nessuna</span>'}
       </div>`;
     const list=revs.slice(0,6).map(r=>`<div style="border-top:1px solid #f0efe9;padding:10px 0;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span style="font-size:13px;font-weight:600;">${(r.userName||'Cliente').replace(/</g,'&lt;')}</span>
+          <span style="font-size:13px;font-weight:600;">${_esc(r.userName||'Cliente')}</span>
           <span>${starsHTML(r.rating||0,12)}</span>
         </div>
-        ${r.text?`<p style="font-size:13px;color:var(--mid);line-height:1.6;margin-top:4px;">${(r.text||'').replace(/</g,'&lt;')}</p>`:''}
-        ${r.photo?`<img src="${r.photo}" onclick="openLightbox('${r.photo}')" style="width:88px;height:88px;object-fit:cover;border-radius:8px;margin-top:8px;cursor:zoom-in;border:1px solid var(--border);" alt="Foto recensione"/>`:''}
+        ${r.text?`<p style="font-size:13px;color:var(--mid);line-height:1.6;margin-top:4px;">${_esc(r.text)}</p>`:''}
+        ${_okPhoto(r.photo)?`<img src="${r.photo}" onclick="openLightbox(this.src)" style="width:88px;height:88px;object-fit:cover;border-radius:8px;margin-top:8px;cursor:zoom-in;border:1px solid var(--border);" alt="Foto recensione"/>`:''}
       </div>`).join('');
     const form=logged?`<div style="margin-top:14px;border-top:1px solid #e8e8e8;padding-top:12px;">
         <p style="font-size:12px;color:var(--mid);margin-bottom:6px;">Lascia una recensione</p>
@@ -3748,7 +3788,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <label style="font-size:12px;color:var(--led-text);cursor:pointer;text-decoration:underline;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg> Aggiungi foto<input type="file" accept="image/*" onchange="lfReviewPhoto(this)" style="display:none;"></label>
           <img id="rev-photo-prev" style="display:none;width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"/>
         </div>
-        <button onclick="submitReview('${pid}')" style="margin-top:10px;background:var(--ink);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
+        <button data-pid="${_esc(pid)}" onclick="submitReview(this.dataset.pid)" style="margin-top:10px;background:var(--ink);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
       </div>`:`<p style="font-size:12px;color:var(--dim);margin-top:8px;"><a onclick="showPg('auth')" style="color:var(--led-text);cursor:pointer;text-decoration:underline;">Accedi</a> per lasciare una recensione.</p>`;
     _reviewRating=0; _reviewPhoto='';
     box.innerHTML=head+(list||'')+form;
@@ -4729,7 +4769,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const fb=window.__fb;
     try{
       const validateOrder=lfCallable('validateOrder');
-      const result=await validateOrder({..._pendingOrderData,stripePaymentIntentId:paymentIntent.id});
+      const {_items:_omit, ...serverPayload}=_pendingOrderData||{};
+      const result=await validateOrder({...serverPayload,stripePaymentIntentId:paymentIntent.id});
       _handleOrderSuccess(result.data,_pendingOrderData);
     }catch(e){
       showToast('⚠️ Pagamento completato ma errore nel salvataggio. Contatta il supporto.');
@@ -4765,22 +4806,6 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }
 
     if(method==='card'){
-      // L'ordine con carta è creato lato server (callable validateOrder), che non
-      // crea il documento profilo. Lo garantiamo qui (crea per gli ospiti, aggiorna
-      // per gli altri) così ogni cliente che ordina ha il suo profilo.
-      try{
-        const fb=window.__fb;
-        if(fb && user){
-          const pe=((orderData&&orderData.email)||user.email||'').toLowerCase();
-          const prof={ uid:user.uid, email:pe,
-            displayName:(orderData&&orderData.name)||(udata&&udata.displayName)||'',
-            phone:(orderData&&orderData.phone)||(udata&&udata.phone)||'',
-            address:(orderData&&orderData.shippingAddress)||(udata&&udata.address)||null,
-            isGuest:!!user.isAnonymous, lastOrderAt:fb.serverTimestamp() };
-          if(!(udata&&udata.createdAt)) prof.createdAt=fb.serverTimestamp();
-          fb.setDoc(fb.doc(fb.db,'users',user.uid), prof, {merge:true}).catch(()=>{});
-        }
-      }catch(_){}
       showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
       if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
       setTimeout(()=>showPg('shop'),1200);
@@ -4969,8 +4994,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }
     if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Elaborazione...';}
     try{
-      const result=await validateOrderClient(_orderPayload);
-      _handleOrderSuccess(result,_orderPayload);
+      const {_items:_omit, ...serverPayload}=_orderPayload;
+      const res=await lfCallable('validateOrder')(serverPayload);
+      _handleOrderSuccess(res.data,_orderPayload);
     }catch(e){
       console.error('placeOrder error:',e.code,e.message);
       showToast('⚠️ '+(e.message||'Si è verificato un errore. Riprova.'));
@@ -4979,94 +5005,10 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }
   };
 
-  // Registra l'ordine direttamente su Firestore (PayPal/Bonifico) — non usa il Worker.
-  async function validateOrderClient(payload){
-    const fb=window.__fb;
-    if(!user) throw new Error('Login richiesto.');
-    const items=payload._items||[];
-    if(!items.length) throw new Error('Carrello vuoto.');
-    const allDigital=items.every(i=>i.isDigital);
-    const subtotal=items.reduce((s,i)=>s+(i.price||0)*i.qty,0);
-    const phys=items.filter(i=>!i.isDigital);
-    const totW=phys.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
-    const shipping=allDigital?0:getShippingCost(totW);
-    // Sconto: uno solo per account, per sempre. Se già usato in passato, ignora
-    // qualsiasi premio residuo.
-    let discount=0; const ar=(udata&&udata.activeReward&&!udata.discountUsed)?udata.activeReward:null;
-    if(ar){
-      if(ar.type==='fisso') discount=Math.min(ar.val,subtotal);
-      else if(ar.type==='percentuale') discount=subtotal*(ar.val/100);
-      if(ar.freeShipping) discount+=shipping;
-      discount=Math.round(discount*100)/100;
-    }
-    const total=Math.max(0,Math.round((subtotal+shipping-discount)*100)/100);
-    const lfpoints=Math.floor(subtotal);
-    const orderId='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
-    const orderData={
-      orderId, uid:user.uid, email:payload.email||user.email||'',
-      name:payload.name||'', phone:payload.phone||'',
-      address:payload.shippingAddress||{street:'',city:'',zip:'',country:'Italia'},
-      notes:payload.notes||'',
-      items:items.map(i=>{
-        // Arricchisci con link fonte e prezzo CNY fornitore (dal catalogo) così
-        // finiscono sull'ordine e nell'email di notifica per l'agente d'acquisto.
-        const _p=(typeof products!=='undefined'&&products)?products.find(pp=>pp.id===i.id):null;
-        return {id:i.id,name:i.name||'',price:i.price||0,brand:i.brand||'',category:i.category||'',boxOption:i.boxOption||'',qty:i.qty,size:i.size||'',color:i.color||'',img:i.img||i.imageUrl||(_p&&_p.imageUrl)||'',isDigital:!!i.isDigital,
-          ...(_p&&_p.sourceUrl?{sourceUrl:_p.sourceUrl}:{}),
-          ...(_p&&_p.supplierPriceCNY!=null?{supplierPriceCNY:_p.supplierPriceCNY}:{}),
-          ...(i.addonSummary?{addonSummary:i.addonSummary,addonPrice:i.addonPrice||0}:{})};
-      }),
-      subtotal, shipping, discount, total,
-      payment:payload.paymentMethod||'bonifico',
-      lfpoints, isDigitalOrder:allDigital, deliveryType:allDigital?'digital':'physical',
-      status:'pending', paymentStatus:'unpaid', createdAt:fb.serverTimestamp(),
-    };
-    // ── Profilo cliente: crea/aggiorna SEMPRE il documento users/{uid} a ogni
-    // ordine (anche per gli ospiti, che prima non avevano alcun profilo perché
-    // updateDoc falliva su un doc inesistente). Con setDoc({merge:true}) il
-    // profilo viene creato se manca e aggiornato se esiste — così ogni cliente
-    // che ordina ha il suo profilo con nome, email, telefono e indirizzo.
-    const prevSpent=(udata&&udata.totalSpent)||0;
-    const profEmail=(payload.email||user.email||'').toLowerCase();
-    const profBase={
-      uid:user.uid,
-      email:profEmail,
-      displayName:payload.name||(udata&&udata.displayName)||'',
-      phone:payload.phone||(udata&&udata.phone)||'',
-      address:payload.shippingAddress||(udata&&udata.address)||null,
-      isGuest:!!(user.isAnonymous),
-      lastOrderAt:fb.serverTimestamp(),
-    };
-    // createdAt solo la prima volta (non sovrascrivere quello esistente).
-    if(!(udata&&udata.createdAt)) profBase.createdAt=fb.serverTimestamp();
-
-    if(discount>0){
-      // Ordine SCONTATO: creo l'ordine e segno discountUsed in un'unica scrittura
-      // ATOMICA (writeBatch). Le Firestore rules rifiutano un ordine con sconto se
-      // l'account ha già usato uno sconto → enforcement server-side non aggirabile.
-      const batch=fb.writeBatch(fb.db);
-      const oref=fb.doc(fb.collection(fb.db,'orders'));
-      batch.set(oref, orderData);
-      // set({merge:true}) invece di update: crea il profilo se non esiste.
-      batch.set(fb.doc(fb.db,'users',user.uid), {
-        ...profBase,
-        totalSpent:prevSpent+subtotal,
-        activeReward:null, discountUsed:true, discountUsedAt:fb.serverTimestamp(), discountUsedOrder:orderId
-      }, {merge:true});
-      try{ await batch.commit(); }
-      catch(e){ throw new Error('Sconto non più disponibile: è previsto un solo sconto per account. Rimuovi il premio e riprova.'); }
-      if(udata){ udata.discountUsed=true; udata.activeReward=null; udata.totalSpent=prevSpent+subtotal; }
-    } else {
-      await fb.addDoc(fb.collection(fb.db,'orders'),orderData);
-      // Crea/aggiorna il profilo cliente (per gli ospiti lo crea da zero).
-      try{ await fb.setDoc(fb.doc(fb.db,'users',user.uid), {...profBase, totalSpent:prevSpent+subtotal}, {merge:true}); }catch(e){ console.warn('ensure profile:',e&&e.code); }
-    }
-    // Aggiorna lo stato locale così il profilo mostra subito nome/email/telefono.
-    if(udata){ udata.email=udata.email||profEmail; udata.displayName=udata.displayName||profBase.displayName; udata.phone=udata.phone||profBase.phone; if(profBase.address&&!udata.address) udata.address=profBase.address; udata.totalSpent=prevSpent+subtotal; }
-    // Email di conferma ordine (fire-and-forget — non blocca il checkout)
-    try{ lfCallable('sendOrderEmail')({orderId,name:orderData.name,email:orderData.email||'',items:orderData.items,subtotal,shipping,discount,total,payment:orderData.payment,address:orderData.address}); }catch(_){}
-    return { orderId, subtotal, shipping, discount, total, lfpoints:0, paymentMethod:payload.paymentMethod||'bonifico' };
-  }
+  // L'ordine (tutti i metodi di pagamento) lo crea il Worker /validateOrder:
+  // ricalcola prezzi, spedizione e sconto dal catalogo, crea/aggiorna il
+  // profilo cliente e invia le email. Prima PayPal/bonifico scrivevano
+  // l'ordine dal browser con prezzi e totale non verificati.
   updateCartBadge();
 
   // ── Handle redirect from subscriptions.html ─────────────
@@ -5488,17 +5430,17 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const pts=udata.lfpoints||0;
     if(pts<r.pts){showToast('Punti insufficienti.');return;}
     if(udata.activeReward){showToast('Hai già un bonus attivo nel carrello!');return;}
-    const newPts=pts-r.pts;
+    if(user.isAnonymous){showToast('Crea un account per riscattare i premi.');return;}
     try{
-      const ref=fb.doc(fb.db,'users',user.uid);
-      const ar={label:r.label,type:r.type,val:r.val,pts:r.pts,redeemedAt:Date.now()};
-      await fb.updateDoc(ref,{lfpoints:newPts,activeReward:ar});
+      // Riscatto verificato dal Worker (i punti non sono più scrivibili dal browser)
+      const res=await lfCallable('claimReward')({label:r.label});
+      const newPts=res.data.lfpoints, ar=res.data.activeReward;
       udata={...udata,lfpoints:newPts,activeReward:ar};
       updateNav(user,udata);updateHomeDisplay();
       renderProfile();
       renderCart();
       showToast(`🎁 Bonus ${r.label} riscattato! Applicato al prossimo ordine.`);
-    }catch(e){showToast('Errore nel riscatto. Riprova.');}
+    }catch(e){showToast('⚠️ '+((e&&e.message)||'Errore nel riscatto. Riprova.'));}
   };
 
   window.savePrefs=async function(){
@@ -6075,15 +6017,15 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   async function claimReferralRewards(){
     const fb=window.__fb;
     if(!user||!fb) return;
+    if(user.isAnonymous) return;
     try{
       const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'referrals'),fb.where('referrer','==',user.uid)));
-      const pending=snap.docs.filter(d=>d.data().credited!==true);
-      if(!pending.length) return;
-      let gained=0;
-      for(const d of pending){ try{ await fb.updateDoc(fb.doc(fb.db,'referrals',d.id),{credited:true}); gained+=REFERRAL_POINTS; }catch(_){} }
+      if(!snap.docs.some(d=>d.data().credited!==true)) return;
+      // Accredito verificato dal Worker (un invitato reale conta una volta sola)
+      const res=await lfCallable('claimReferrals')({});
+      const gained=(res.data&&res.data.gained)||0;
       if(gained>0){
-        const newPts=(udata?.lfpoints||0)+gained;
-        try{ await fb.updateDoc(fb.doc(fb.db,'users',user.uid),{lfpoints:newPts}); }catch(_){}
+        const newPts=res.data.lfpoints;
         udata={...udata,lfpoints:newPts};
         try{updateNav(user,udata);}catch(_){} try{updateHomeDisplay();}catch(_){}
         try{ lfTrack('referral_reward',{value:gained}); }catch(_){}

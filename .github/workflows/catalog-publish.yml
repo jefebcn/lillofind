@@ -1,0 +1,61 @@
+# Pubblica ogni mattina il catalogo dello shop su Cloudflare KV.
+# Lo shop legge il catalogo da lì (GET /catalog del Worker): 0 letture
+# Firestore per visita. Questo job legge i prodotti UNA volta (~6.400 letture,
+# ~13% della quota gratuita) subito dopo il reset giornaliero della quota.
+# Avviabile anche a mano: GitHub → Actions → "Pubblica catalogo shop" → Run workflow.
+name: Pubblica catalogo shop
+
+on:
+  schedule:
+    - cron: '3 7 * * *'   # 09:03 ora legale italiana (reset quota = mezzanotte Pacifico)
+    - cron: '3 8 * * *'   # 09:03 ora solare / rinfresco
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Credenziali Google (service account Firebase)
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: printf '%s' "$GOOGLE_CREDENTIALS" > "$RUNNER_TEMP/gcloud-key.json"
+
+      - name: Leggi i prodotti da Firestore
+        working-directory: scripts
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
+        run: |
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund firebase-admin@12 >/dev/null
+          node publish-catalog.mjs
+
+      - name: Dipendenze Worker (wrangler)
+        working-directory: cloudflare-worker
+        run: npm ci
+
+      - name: Scrivi il catalogo nel KV
+        working-directory: cloudflare-worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          ID="$(npx wrangler kv namespace list 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const a=JSON.parse(s.slice(s.indexOf("[")));const n=a.find(x=>x.title==="lillofind-catalog");process.stdout.write(n?n.id:"")}catch(e){}})')"
+          if [ -z "$ID" ]; then echo "KV 'lillofind-catalog' non trovato"; exit 1; fi
+          npx wrangler kv key put catalog --path ../scripts/catalog.json --namespace-id "$ID"
+          npx wrangler kv key put "catalog:meta" --path ../scripts/catalog-meta.json --namespace-id "$ID"
+          echo "Catalogo pubblicato nel KV $ID"
+          curl -s "https://lillofind.conti9708.workers.dev/catalog?meta=1"

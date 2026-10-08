@@ -649,7 +649,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <div class="admin-card" style="margin-top:20px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
           <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);">Catalogo Prodotti</p>
-          <button class="btn-k" onclick="loadAdminCatalog()" style="padding:8px 16px;font-size:10px;">🔄 Aggiorna</button>
+          <button class="btn-k" onclick="loadAdminCatalog(true)" style="padding:8px 16px;font-size:10px;">🔄 Aggiorna</button>
+          <button class="btn-k" onclick="publishCatalogNow(this)" style="padding:8px 16px;font-size:10px;" title="Pubblica il catalogo per lo shop (lo shop legge ~15 documenti invece di tutti i prodotti)">📤 Pubblica catalogo</button>
         </div>
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
           <input class="lf-in" id="cat-search" placeholder="Cerca per nome o brand..." style="flex:1;min-width:200px;padding:10px 14px;" oninput="renderAdminCatalog()"/>
@@ -1261,6 +1262,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
+          <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">Altre taglie <span style="color:var(--dim);letter-spacing:1px;text-transform:none;">(scarpe/numeri, separate da virgola — es. 40, 41, 42)</span></label>
+          <input class="lf-in" id="edit-sizes-extra" placeholder="es. 39, 40, 41, 42" style="margin-bottom:10px;"/>
           <label style="font-size:9px;letter-spacing:2px;text-transform:uppercase;">URL Immagine</label>
           <input class="lf-in" id="edit-img" placeholder="https://..." oninput="updateEditPreview()"/>
           <img id="edit-img-prev" style="max-height:100px;max-width:120px;object-fit:cover;margin-top:6px;display:none;border:1px solid rgba(255,255,255,.15);"/>
@@ -1490,14 +1493,17 @@ waitFB(()=>{
   window.previewImgFile=function(input){
     const file=input.files[0];
     if(!file)return;
-    const reader=new FileReader();
-    reader.onload=e=>{
-      // Store b64 in the URL field so adminSave picks it up
-      document.getElementById('ad-img').value=e.target.result;
-      document.getElementById('prev-img').src=e.target.result;
+    const urlEl=document.getElementById('ad-img');
+    const btn=document.getElementById('ad-btn');
+    urlEl.value=''; urlEl.placeholder='⏳ Caricamento immagine…';
+    if(btn) btn.disabled=true;
+    uploadImageFile(file).then(url=>{
+      urlEl.value=url; urlEl.placeholder='https://...';
+      document.getElementById('prev-img').src=url;
       document.getElementById('img-prev').style.display='inline-flex';
-    };
-    reader.readAsDataURL(file);
+      showToast('🖼 Immagine caricata');
+    }).catch(e=>{ urlEl.placeholder='https://...'; showToast('⚠️ Upload immagine fallito: '+((e&&e.message)||'')); })
+      .finally(()=>{ if(btn) btn.disabled=false; });
   };
 
   window.toggleSzLabel=function(sz){
@@ -1559,7 +1565,8 @@ waitFB(()=>{
     try{
       await fb.deleteDoc(fb.doc(fb.db,'products',pid));
       showToast('🗑 Prodotto eliminato.');
-      loadAdminCatalog();
+      adminCatalogProducts = adminCatalogProducts.filter(p=>p.id!==pid);
+      renderAdminCatalog();
     }catch(e){ console.error('deleteProd:',e&&e.code,e&&e.message); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
   };
 
@@ -1604,13 +1611,34 @@ waitFB(()=>{
   let _trackBoard=[];
   function trbTs(v){ return v&&v.seconds?v.seconds*1000:(v&&v.toMillis?v.toMillis():0); }
   function trbDate(ms){ if(!ms) return '—'; try{ const d=new Date(ms); return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return '—'; } }
+  // Cache utenti (collezione piccola) condivisa tra le sezioni per 3 minuti.
+  let _usersCache=null, _usersAt=0, _usersPromise=null;
+  async function getUsersCached(force){
+    const fb=window.__fb;
+    if(!force && _usersCache && Date.now()-_usersAt<3*60*1000) return _usersCache;
+    if(_usersPromise) return _usersPromise;
+    _usersPromise=fb.getDocs(fb.collection(fb.db,'users')).then(s=>{ _usersCache=s.docs.map(d=>({id:d.id,...d.data()})); _usersAt=Date.now(); return _usersCache; }).finally(()=>{ _usersPromise=null; });
+    return _usersPromise;
+  }
+  window.getUsersCached=getUsersCached;
+  async function findUserByEmail(email){
+    const fb=window.__fb; const e=String(email||'').trim().toLowerCase();
+    try{
+      const q=await fb.getDocs(fb.query(fb.collection(fb.db,'users'),fb.where('email','==',e),fb.limit(1)));
+      if(!q.empty) return { id:q.docs[0].id, ...q.docs[0].data() };
+    }catch(_){}
+    // fallback: email salvata con maiuscole
+    const all=await getUsersCached();
+    return all.find(u=>(u.email||'').toLowerCase()===e) || null;
+  }
   window.loadTrackingBoard=async function(){
     const fb=window.__fb; const list=document.getElementById('trb-list'); const st=document.getElementById('trb-status');
     if(!list) return;
     if(!fb){ list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Firebase non pronto…</p>'; return; }
     list.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4);">Caricamento…</p>';
     try{
-      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
+      // Solo i profili con un codice tracking (query mirata, non tutta la collezione)
+      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'users'),fb.where('trackingCode','>','')));
       const rows=[];
       snap.forEach(d=>{ const u=d.data()||{}; if(u.trackingCode) rows.push({uid:d.id,email:u.email||'—',code:u.trackingCode,product:u.trackingProduct||'',status:u.trackingStatus||'',note:u.trackingNote||'',updated:trbTs(u.trackingUpdatedAt)}); });
       rows.sort((a,b)=>b.updated-a.updated);
@@ -1688,7 +1716,9 @@ waitFB(()=>{
   let _subsRows=[]; let _subsFilter='all';
   function subDaysInfo(startISO, months){
     const start = startISO ? new Date(startISO+'T00:00:00') : new Date();
-    const end = new Date(start); end.setMonth(end.getMonth() + (parseInt(months)||1));
+    const end = new Date(start);
+    const _d = end.getDate(); end.setDate(1); end.setMonth(end.getMonth() + (parseInt(months)||1));
+    end.setDate(Math.min(_d, new Date(end.getFullYear(), end.getMonth()+1, 0).getDate()));
     const now = new Date(), msDay = 86400000;
     const totalDays = Math.max(1, Math.round((end-start)/msDay));
     const remDays = Math.ceil((end-now)/msDay);
@@ -1707,8 +1737,8 @@ waitFB(()=>{
       }
       const rows=[];
       adminOrders.forEach(o=>{ if(Array.isArray(o.credentials)) o.credentials.forEach(c=>{ if(c&&(c.login||c.password||c.link)) rows.push({src:'order',docId:o._docId,email:o.email||'—',name:o.name||'',c}); }); });
-      const usnap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
-      usnap.forEach(d=>{ const u=d.data()||{}; if(Array.isArray(u.subscriptions)) u.subscriptions.forEach(c=>{ if(c&&(c.login||c.password||c.link)) rows.push({src:'user',uid:d.id,email:u.email||'—',name:u.name||'',subs:u.subscriptions,c}); }); });
+      const usnap=await getUsersCached();
+      usnap.forEach(u=>{ if(Array.isArray(u.subscriptions)) u.subscriptions.forEach(c=>{ if(c&&(c.login||c.password||c.link)) rows.push({src:'user',uid:u.id,email:u.email||'—',name:u.name||'',subs:u.subscriptions,c}); }); });
       rows.forEach(r=>{ r.info=subDaysInfo(r.c.startISO,r.c.months); });
       // Ordina: prima gli attivi per scadenza più vicina, poi gli scaduti (più recenti in alto)
       rows.sort((a,b)=>{ if(a.info.expired!==b.info.expired) return a.info.expired?1:-1; if(!a.info.expired) return a.info.remDays-b.info.remDays; return b.info.end-a.info.end; });
@@ -2076,10 +2106,8 @@ waitFB(()=>{
     btn.textContent='...'; btn.disabled=true;
     try{
       // Find user by email: query users collection
-      const q=fb.query(fb.collection(fb.db,'users'));
-      const snap=await fb.getDocs(q);
-      let targetUid=null;
-      snap.forEach(d=>{ if((d.data().email||'').toLowerCase()===email) targetUid=d.id; });
+      const _u=await findUserByEmail(email);
+      const targetUid=_u?_u.id:null;
       if(!targetUid){showToast('⚠️ Utente non trovato con questa email.');btn.textContent='Assegna Tracking →';btn.disabled=false;return;}
       const trackData={trackingCode:code,trackingProduct:product||'—',trackingStatus:status,trackingNote:note,trackingUpdatedAt:fb.serverTimestamp()};
       await fb.updateDoc(fb.doc(fb.db,'users',targetUid),trackData);
@@ -2199,16 +2227,17 @@ waitFB(()=>{
     rows.appendChild(div);
   };
 
+  const _bkUploads = {};
   window.handleBulkImg=function(input,id){
     const file=input.files[0];
     if(!file)return;
     const prev=document.getElementById('bkprev-'+id);
-    const reader=new FileReader();
-    reader.onload=e=>{
-      input.dataset.b64=e.target.result;
-      if(prev){prev.src=e.target.result;prev.style.display='block';}
-    };
-    reader.readAsDataURL(file);
+    input.dataset.url=''; input.dataset.uploading='1';
+    _bkUploads[id]=uploadImageFile(file).then(url=>{
+      input.dataset.url=url;
+      if(prev){prev.src=url;prev.style.display='block';}
+    }).catch(e=>{ showToast('⚠️ Upload immagine fallito: '+((e&&e.message)||'')); })
+      .finally(()=>{ input.dataset.uploading=''; });
   };
 
   window.saveBulkProducts=async function(){
@@ -2230,7 +2259,8 @@ waitFB(()=>{
       const name=document.getElementById('bkn-'+id)?.value.trim();
       const price=parseFloat(document.getElementById('bkp-'+id)?.value);
       const imgInput=document.getElementById('bki-'+id);
-      const imgUrl=imgInput?.dataset.b64||'';
+      if(_bkUploads[id]){ try{ await _bkUploads[id]; }catch(_){} }
+      const imgUrl=imgInput?.dataset.url||'';
       if(!name||isNaN(price)){errors++;continue;}
       const _src=srcCheck(document.getElementById('bkl-'+id)?.value);
       if(!_src.ok){ errors++; row.style.borderColor='#ff4757'; showToast('⚠️ '+name+': '+_src.msg); continue; }
@@ -2246,6 +2276,8 @@ waitFB(()=>{
           createdAt: fb.serverTimestamp()
         });
         saved++;
+        // Riga salvata → rimossa, così un secondo "Salva" non crea doppioni.
+        row.remove(); i--;
         if(status) status.textContent=`${saved} prodotti salvati...`;
       } catch(e){ console.error('bulkSave:',e&&e.code,e&&e.message); errors++; }
     }
@@ -2269,16 +2301,15 @@ waitFB(()=>{
     wrap.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
     try{
       // Lettura diretta Firestore — non richiede FIREBASE_SERVICE_ACCOUNT sul Worker
-      const [usersSnap, ordersSnap, productsSnap] = await Promise.all([
-        fb.getDocs(fb.collection(fb.db, 'users')),
+      const [users, ordersSnap, catalog] = await Promise.all([
+        getUsersCached(),
         fb.getDocs(fb.collection(fb.db, 'orders')),
-        fb.getDocs(fb.collection(fb.db, 'products')),
+        getAdminCatalog(),
       ]);
-      const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       // Mappa costi per calcolare il profitto (costo salvato sul prodotto).
       const costMap = {};
-      productsSnap.docs.forEach(d => { const c = d.data().costEUR; if (typeof c === 'number') costMap[d.id] = c; });
+      catalog.forEach(p => { if (typeof p.costEUR === 'number') costMap[p.id] = p.costEUR; });
 
       const now = Date.now(), ms30d = 30*24*60*60*1000, cutoff30d = now - ms30d;
       const d0 = new Date(), startOfMonth = new Date(d0.getFullYear(), d0.getMonth(), 1).getTime();
@@ -2302,11 +2333,15 @@ waitFB(()=>{
       for(const o of orders){
         totalOrders++;
         if(o.status==='pending')pendingOrders++; else if(o.status==='confirmed')confirmedOrders++;
-        const rev=o.total||0; totalRevenue+=rev; totalShipping+=o.shipping||0;
         const cMs=o.createdAt?.seconds?o.createdAt.seconds*1000:0;
-        if(cMs&&cMs>=startOfMonth) monthlyRevenue+=rev;
-        usersWithOrders.add(o.uid||'');
-        (o.items||[]).forEach(i=>{ const qty=i.qty||1; itemsSold+=qty; const k=i.name||'Unknown'; productSales[k]=(productSales[k]||0)+qty; });
+        if(o.uid) usersWithOrders.add(o.uid);
+        // Incassi e venduto: solo ordini CONFERMATI (pagati). Prima contavano
+        // anche ordini non pagati, scaduti e annullati.
+        if(o.status==='confirmed'){
+          const rev=o.total||0; totalRevenue+=rev; totalShipping+=o.shipping||0;
+          if(cMs&&cMs>=startOfMonth) monthlyRevenue+=rev;
+          (o.items||[]).forEach(i=>{ const qty=i.qty||1; itemsSold+=qty; const k=i.name||'Unknown'; productSales[k]=(productSales[k]||0)+qty; });
+        }
         // Profitto: solo ordini confermati, articoli fisici con costo salvato.
         if(o.status==='confirmed'){
           let op=0;
@@ -2422,6 +2457,37 @@ waitFB(()=>{
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
+  // URL sicuro per src/href: solo http(s) (o data:image per le anteprime).
+  // Blocca javascript:, attributi spezzati da virgolette, ecc.
+  function safeUrl(u, allowData){
+    const v=String(u||'').trim();
+    if(/^https?:\/\/[^\s"'<>]+$/i.test(v)) return v;
+    if(v.startsWith('//') && /^\/\/[^\s"'<>]+$/.test(v)) return 'https:'+v;
+    if(allowData && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/i.test(v)) return v;
+    return '';
+  }
+  window.safeUrl=safeUrl;
+
+  // Carica un'immagine su ImgBB tramite il Worker (ridimensionata a max 1600px)
+  // e restituisce l'URL. Prima le foto finivano in base64 DENTRO i documenti
+  // Firestore (limite 1 MiB → salvataggi falliti e catalogo pesante).
+  async function uploadImageFile(file){
+    const dataUrl=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); });
+    let out=dataUrl;
+    try{
+      const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=dataUrl; });
+      const max=1600, sc=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      out=c.toDataURL('image/jpeg',0.86);
+    }catch(_){}
+    const r=await lfCallable('uploadImage')({imageBase64:out});
+    const url=r&&r.data&&r.data.url;
+    if(!url) throw new Error('Upload non riuscito');
+    return url;
+  }
+  window.uploadImageFile=uploadImageFile;
+
   const _PROXY='https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
   function pImg(url){
     if(!url) return '';
@@ -2459,7 +2525,7 @@ waitFB(()=>{
     btn.disabled=true; btn.textContent='⏳ Scansione…'; list.innerHTML=''; _bkBroken=[];
     document.getElementById('bk-hide-btn').disabled=true; document.getElementById('bk-del-btn').disabled=true;
     try{
-      const snap=await fb.getDocs(fb.collection(fb.db,'products'));
+      const snap=await adminCatalogSnap();
       const all=snap.docs.map(d=>({id:d.id,...d.data()}));
       const hiddenN=all.filter(p=>p.hidden===true).length;
       const todo=all.filter(p=>p.hidden!==true && p.imageUrl && /yupoo\.com|yunjifen\.com/.test(p.imageUrl));
@@ -2558,7 +2624,8 @@ waitFB(()=>{
     return o.status === 'pending' && o.payment !== 'card';
   }
   function orderAgeHours(o){
-    return o.createdAt?.seconds ? (Date.now()/1000 - o.createdAt.seconds)/3600 : 0;
+    const ref = (o.reactivatedAt && o.reactivatedAt.seconds) ? o.reactivatedAt.seconds : (o.createdAt && o.createdAt.seconds);
+    return ref ? (Date.now()/1000 - ref)/3600 : 0;
   }
   function orderAgeLabel(o){
     const h = orderAgeHours(o);
@@ -2568,6 +2635,7 @@ waitFB(()=>{
     return Math.round(h/24)+'g fa';
   }
 
+  const _expiring = new Set();   // evita doppie scritture se loadAdminOrders gira in parallelo
   window.loadAdminOrders = async function(){
     const fb = window.__fb;
     if(!fb) return;
@@ -2582,7 +2650,8 @@ waitFB(()=>{
 
       // Auto-annullamento: ordini non pagati più vecchi della soglia → 'expired'.
       // Gira quando l'admin apre/aggiorna il pannello (niente cron/server richiesto).
-      const toExpire = adminOrders.filter(o => isUnpaidOrder(o) && orderAgeHours(o) > UNPAID_EXPIRY_HOURS);
+      const toExpire = adminOrders.filter(o => isUnpaidOrder(o) && orderAgeHours(o) > UNPAID_EXPIRY_HOURS && !_expiring.has(o._docId));
+      toExpire.forEach(o=>_expiring.add(o._docId));
       if(toExpire.length){
         for(const o of toExpire){
           try{
@@ -2600,7 +2669,11 @@ waitFB(()=>{
       adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(i.id && !i.isDigital && (!i.img || !i.sourceUrl || i.supplierPriceCNY==null)) missingIds.add(i.id); }));
       if(missingIds.size){
         try{
-          const fetches = [...missingIds].map(id=>fb.getDoc(fb.doc(fb.db,'products',id)));
+          const _cat = adminCatalogProducts.length ? new Map(adminCatalogProducts.map(p=>[p.id,p])) : null;
+          const fetches = [...missingIds].map(id=>{
+            if(_cat){ const p=_cat.get(id); return Promise.resolve({ id, exists:()=>!!p, data:()=>p||{} }); }
+            return fb.getDoc(fb.doc(fb.db,'products',id));
+          });
           const snaps = await Promise.all(fetches);
           const imgMap = {}, srcMap = {}, cnyMap = {};
           snaps.forEach(s=>{ if(s.exists()){ const d=s.data(); imgMap[s.id]=d.imageUrl||''; srcMap[s.id]=d.sourceUrl||''; if(d.supplierPriceCNY!=null) cnyMap[s.id]=d.supplierPriceCNY; } });
@@ -2850,10 +2923,12 @@ waitFB(()=>{
     // richieste continue a Firestore).
     if(!adminCatalogProducts.length && !_marginCatLoading && !_marginCatTried){
       _marginCatLoading = true; _marginCatTried = true;
-      loadAdminCatalog().then(()=>{ _marginCatLoading=false; if(adminCatalogProducts.length){ try{ renderAdminOrders(); }catch(_){} } }).catch(()=>{ _marginCatLoading=false; });
+      getAdminCatalog().then(()=>{ _marginCatLoading=false; if(adminCatalogProducts.length){ try{ renderAdminOrders(); }catch(_){} } }).catch(()=>{ _marginCatLoading=false; });
     }
     const filter = document.getElementById('orders-filter')?.value || 'all';
-    const filtered = filter==='all' ? adminOrders : adminOrders.filter(o=>o.status===filter);
+    const filtered = filter==='all' ? adminOrders
+      : filter==='expired' ? adminOrders.filter(o=>o.status==='expired'||o.status==='cancelled')
+      : adminOrders.filter(o=>o.status===filter);
     const pending = adminOrders.filter(o=>o.status==='pending').length;
     const badge = document.getElementById('admin-orders-count');
     if(badge){ badge.textContent = pending; badge.style.display = pending>0?'inline-flex':'none'; }
@@ -2883,6 +2958,7 @@ waitFB(()=>{
       list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:16px 0;">Nessun ordine trovato.</p>';
       return;
     }
+    window._lbReg = [];
     list.innerHTML = filtered.map(o=>{
       const isPending = o.status === 'pending';
       const isExpired = o.status === 'expired' || o.status === 'cancelled';
@@ -2902,7 +2978,7 @@ waitFB(()=>{
         const box = i.boxOption==='con_scatola'?' · 📦 Con Scatola':i.boxOption==='senza_scatola'?' · Senza Scatola':'';
         const qtyLabel = i.isDigital ? (i.qty>1?i.qty+' mesi':'1 mese') : ('x'+i.qty);
         const imgRaw = i.img || i.imageUrl || '';
-        const imgSrc = pImg(imgRaw);
+        const imgSrc = safeUrl(pImg(imgRaw), true);
         // Link fonte: preferisci l'album esatto (salvato all'import), altrimenti ricava lo store dall'immagine
         const src = i.sourceUrl
           ? { url:i.sourceUrl, label:'album', site:/weidian|geilicdn/i.test(i.sourceUrl)?'Weidian':/taobao|tmall|aliexpress/i.test(i.sourceUrl)?'Taobao':'Yupoo', exact:true }
@@ -2916,9 +2992,10 @@ waitFB(()=>{
           `<span style='color:#aaa'>Prezzo unit.</span> &nbsp;€${(i.price||0).toFixed(2)}`,
           `<span style='color:#aaa'>Totale</span> &nbsp;<strong style='color:#fff'>€${((i.price||0)*i.qty).toFixed(2)}</strong>`,
         ].filter(Boolean).join('<br>');
-        const lbName = (i.name||'').replace(/'/g,"\\'").replace(/"/g,"&quot;");
-        const lbDetailsSafe = lbDetails.replace(/'/g,"\\'");
-        const onclickAttr = imgSrc ? `onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"` : '';
+        // Lightbox: dati in un registro (niente stringhe dentro onclick → nessun
+        // problema con apostrofi/virgolette nei nomi e nessuna iniezione).
+        const lbIdx = imgSrc ? (window._lbReg.push({src:imgSrc, name:i.name||'', details:lbDetails})-1) : -1;
+        const onclickAttr = imgSrc ? `onclick="adminLightboxIdx(${lbIdx})"` : '';
         // Blocco "ordine fornitore" pronto da incollare nel form dell'agente d'acquisto
         const _specs=enSpecs(i);
         const _cny=(i.supplierPriceCNY!=null && i.supplierPriceCNY!=='')?String(i.supplierPriceCNY):'10 (to be confirmed)';
@@ -2933,12 +3010,12 @@ waitFB(()=>{
         ):'';
         return `<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:4px;transition:border-color .15s;" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
           <div ${onclickAttr} style="width:60px;height:60px;background:rgba(255,255,255,.08);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:3px;${imgSrc?'cursor:zoom-in;':''}">
-            ${imgSrc?`<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:'<span style="font-size:22px;">📦</span>'}
+            ${imgSrc?`<img src="${escH(imgSrc)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:'<span style="font-size:22px;">📦</span>'}
           </div>
-          <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${imgSrc?`onclick="adminLightbox('${imgSrc}','${lbName}','${lbDetailsSafe}')"`:''}>
+          <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${onclickAttr}>
             <p style="font-size:15px;font-weight:600;line-height:1.3;margin-bottom:3px;">${escH(i.name||'—')}</p>
             <p style="font-size:13px;color:rgba(255,255,255,.55);">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
-            ${src && src.url ? `<a href="${src.url}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:11px;color:var(--led);text-decoration:none;">🔗 Fonte: ${src.exact?'album esatto':escH(src.label)} (${src.site})</a>` : (src ? `<span style="display:inline-block;margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">🔗 Fonte: ${escH(src.label)}</span>` : '')}
+            ${src && safeUrl(src.url) ? `<a href="${escH(safeUrl(src.url))}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:11px;color:var(--led);text-decoration:none;">🔗 Fonte: ${src.exact?'album esatto':escH(src.label)} (${escH(src.site)})</a>` : (src ? `<span style="display:inline-block;margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">🔗 Fonte: ${escH(src.label)}</span>` : '')}
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <p style="font-size:16px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
@@ -2975,7 +3052,7 @@ waitFB(()=>{
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
           <div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap;">
-              <span class="bb" style="font-size:24px;">${o.orderId||'—'}</span>
+              <span class="bb" style="font-size:24px;">${escH(o.orderId||'—')}</span>
               ${statusBadge}
             </div>
             <p style="font-size:13px;color:var(--mid);">${ts}${age?' · '+age:''}</p>
@@ -2987,7 +3064,7 @@ waitFB(()=>{
               ${o.shipping!=null?'<br>Spedizione '+(Number(o.shipping)>0?'€'+Number(o.shipping).toFixed(2):'Gratis'):''}
               ${Number(o.discount)>0?'<br>Sconto −€'+Number(o.discount).toFixed(2):''}
             </p>`:''}
-            <p style="font-size:12px;color:var(--dim);margin-top:4px;">${payEmoji} ${o.payment||'—'}</p>
+            <p style="font-size:12px;color:var(--dim);margin-top:4px;">${payEmoji} ${escH(o.payment||'—')}</p>
             ${orderMarginHTML}
           </div>
         </div>
@@ -3025,7 +3102,7 @@ waitFB(()=>{
           <button onclick="printOrderReceipt('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">🧾 Ricevuta</button>
           <button onclick="openQCPhotos('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📸 Foto QC${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?' ('+o.qcPhotos.length+')':''}</button>
           ${((o.items||[]).some(i=>i.isDigital)||o.isDigitalOrder)?`<button onclick="openCredentials('${o._docId}')" class="btn-k" style="padding:11px 22px;font-size:13px;background:#2a2350;color:#c9b8ff;">🔑 Credenziali${o.credentialsDelivered?' ✓':''}</button>`:''}
-          <button onclick="sendTrackingFromOrder('${(o.email||'').replace(/'/g,"\\'")}','${(o.name||'').replace(/'/g,"\\'")}')" class="btn-k" style="padding:11px 22px;font-size:13px;">📦 Assegna Tracking</button>
+          <button data-email="${escH(o.email||'')}" data-name="${escH(o.name||'')}" onclick="sendTrackingFromOrder(this.dataset.email,this.dataset.name)" class="btn-k" style="padding:11px 22px;font-size:13px;">📦 Assegna Tracking</button>
         </div>
       </div>`;
     }).join('');
@@ -3085,7 +3162,7 @@ waitFB(()=>{
         status:'pending', reactivatedAt: fb.serverTimestamp()
       });
       const idx = adminOrders.findIndex(o=>o._docId===docId);
-      if(idx>=0) adminOrders[idx].status='pending';
+      if(idx>=0){ adminOrders[idx].status='pending'; adminOrders[idx].reactivatedAt={seconds:Math.floor(Date.now()/1000)}; }
       renderAdminOrders();
       showToast('↩️ Ordine riportato in attesa.');
     } catch(e){
@@ -3238,18 +3315,22 @@ waitFB(()=>{
       +'<button id="qc-save" style="width:100%;background:var(--led);color:#fff;border:none;padding:12px;border-radius:999px;font-weight:700;cursor:pointer;">Salva foto QC</button>'
       +'</div></div>';
     document.body.appendChild(box);
-    const uploaded=[];
+    const uploaded=[], pending=[];
     document.getElementById('qc-files').onchange=function(ev){
       [...ev.target.files].forEach(file=>{
-        const r=new FileReader();
-        r.onload=e=>{ uploaded.push(e.target.result); const im=document.createElement('img'); im.src=e.target.result; im.style.cssText='width:54px;height:54px;object-fit:cover;border-radius:6px;'; document.getElementById('qc-preview').appendChild(im); };
-        r.readAsDataURL(file);
+        const pv=document.getElementById('qc-preview');
+        const ph=document.createElement('span'); ph.textContent='⏳'; ph.style.cssText='width:54px;height:54px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #333;border-radius:6px;';
+        pv.appendChild(ph);
+        // Le foto QC vanno su ImgBB: in base64 dentro l'ordine superavano il limite di 1 MiB.
+        pending.push(uploadImageFile(file).then(url=>{ uploaded.push(url); const im=document.createElement('img'); im.src=url; im.style.cssText='width:54px;height:54px;object-fit:cover;border-radius:6px;'; ph.replaceWith(im); })
+          .catch(e=>{ ph.textContent='⚠️'; showToast('⚠️ Upload foto fallito'); }));
       });
     };
     document.getElementById('qc-save').onclick=async function(){
       const fb=window.__fb;
-      const urls=(document.getElementById('qc-urls').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
-      const all=urls.concat(uploaded);
+      if(pending.length){ this.textContent='⏳ Attendo il caricamento…'; await Promise.allSettled(pending); }
+      const urls=(document.getElementById('qc-urls').value||'').split('\n').map(s=>safeUrl(s.trim())).filter(Boolean);
+      const all=[...new Set(urls.concat(uploaded))];
       try{
         await fb.updateDoc(fb.doc(fb.db,'orders',docId),{qcPhotos:all});
         const idx=adminOrders.findIndex(x=>x._docId===docId); if(idx>=0) adminOrders[idx].qcPhotos=all;
@@ -3328,9 +3409,9 @@ waitFB(()=>{
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showToast('Inserisci una email valida'); return; }
     showToast('🔎 Cerco il cliente…');
     try{
-      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
+      const _u=await findUserByEmail(email);
       let uid=null,name='',existing=[];
-      snap.forEach(d=>{ const u=d.data(); if((u.email||'').toLowerCase()===email){ uid=d.id; name=u.name||''; existing=Array.isArray(u.subscriptions)?u.subscriptions:[]; } });
+      if(_u){ uid=_u.id; name=_u.name||_u.displayName||''; existing=Array.isArray(_u.subscriptions)?_u.subscriptions:[]; }
       if(!uid){ showToast('⚠️ Nessun cliente registrato con questa email.'); return; }
       openUserCreds(uid, email, name, existing);
     }catch(e){ console.error('userCreds find',e&&e.code); showToast('⚠️ Errore ricerca ('+((e&&e.code)||'')+')'); }
@@ -3411,18 +3492,41 @@ waitFB(()=>{
   let adminCatalogProducts = [];
   let editCurrentPid = null;
 
-  window.loadAdminCatalog = async function(){
+  // Catalogo condiviso: UNA lettura (≈1 lettura per prodotto) riusata da
+  // dashboard, ordini, costi, clienti e strumenti. Prima ogni sezione e ogni
+  // strumento rileggeva tutti i prodotti (2-4 volte a ogni apertura).
+  let _catPromise = null, _catLoadedAt = 0;
+  async function getAdminCatalog(force){
     const fb = window.__fb;
-    if(!fb) return;
-    const list = document.getElementById('admin-catalog-list');
-    if(!list) return;
-    list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
-    try{
+    if(!force && adminCatalogProducts.length && Date.now()-_catLoadedAt < 15*60*1000) return adminCatalogProducts;
+    if(_catPromise) return _catPromise;
+    _catPromise = (async()=>{
       // Senza orderBy: l'orderBy('createdAt') escluderebbe i prodotti privi del
       // campo. Ordino lato client per data (i più recenti prima).
       const snap=await fb.getDocs(fb.collection(fb.db,'products'));
       adminCatalogProducts=snap.docs.map(d=>({id:d.id,...d.data()}))
         .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      _catLoadedAt=Date.now();
+      try{ maybeAutoPublishSnapshot(adminCatalogProducts); }catch(_){}
+      return adminCatalogProducts;
+    })().finally(()=>{ _catPromise=null; });
+    return _catPromise;
+  }
+  window.getAdminCatalog = getAdminCatalog;
+  // Snapshot finto (stessa forma di getDocs) dal catalogo condiviso, per gli strumenti.
+  async function adminCatalogSnap(){
+    const list = await getAdminCatalog();
+    return { docs: list.map(p=>({ id:p.id, data:()=>{ const {id, ...rest}=p; return rest; } })) };
+  }
+
+  window.loadAdminCatalog = async function(force){
+    const fb = window.__fb;
+    if(!fb) return;
+    const list = document.getElementById('admin-catalog-list');
+    if(!list) return;
+    if(!adminCatalogProducts.length || force===true) list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;">Caricamento...</p>';
+    try{
+      await getAdminCatalog(force===true);
       renderAdminCatalog();
       // Deep-link: admin.html?edit=<id> (arrivo da ✏️ sul sito) → apri modifica
       try{ maybeOpenEditFromURL(); }catch(_){}
@@ -3464,12 +3568,10 @@ waitFB(()=>{
   };
 
   window.toggleSelectAll = function(checked){
-    const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
-    const filtered = adminCatalogProducts.filter(p=>
-      !q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q)
-    );
-    if(checked) filtered.forEach(p=>bulkSelected.add(p.id));
-    else bulkSelected.clear();
+    // Solo i prodotti visibili con i filtri attuali (ricerca + "senza link"):
+    // prima venivano selezionati anche prodotti nascosti dal filtro.
+    bulkSelected.clear();
+    if(checked) _catFiltered.forEach(p=>bulkSelected.add(p.id));
     updateBulkUI();
     renderAdminCatalog();
   };
@@ -3505,8 +3607,11 @@ waitFB(()=>{
       catch(e){ console.error('Errore eliminando',pid,e&&e.code,e&&e.message); }
     }
     showToast('Eliminat' + (deleted===1?'o':'i') + ' ' + deleted + ' prodott' + (deleted===1?'o':'i') + '.');
+    const _gone = new Set(ids);
+    adminCatalogProducts = adminCatalogProducts.filter(p=>!_gone.has(p.id));
+    if(btn){ btn.textContent = '🗑 ELIMINA'; btn.style.pointerEvents=''; }
     exitBulkMode();
-    loadAdminCatalog();
+    renderAdminCatalog();
   };
 
   // Badge costo/margine riutilizzabile (Prodotti + Ordini).
@@ -3542,8 +3647,8 @@ waitFB(()=>{
       : '<div style="width:60px;height:60px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>';
     const sizeStr = (p.sizes&&p.sizes.length) ? '· '+p.sizes.join(' ') : (p.size ? '· '+p.size : '');
     const actionsHtml = bulkMode ? '' : '<div style="display:flex;gap:8px;">'
-      + '<button onclick="openEditModal(\'' + p.id + '\')" style="background:var(--k);color:var(--w);border:none;padding:10px 18px;font-family:\'Manrope\',sans-serif;font-size:13px;letter-spacing:.5px;cursor:pointer;">✏️ MODIFICA</button>'
-      + '<button onclick="deleteProd(\'' + p.id + '\',\'' + (p.name||'').replace(/'/g,"\\'") + '\');loadAdminCatalog()" style="background:none;border:1.5px solid #ddd;padding:10px 12px;cursor:pointer;font-size:15px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor=\'#ff4757\';this.style.color=\'#ff4757\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#ccc\'">🗑</button>'
+      + '<button data-pid="' + escH(p.id) + '" onclick="openEditModal(this.dataset.pid)" style="background:var(--k);color:var(--w);border:none;padding:10px 18px;font-family:\'Manrope\',sans-serif;font-size:13px;letter-spacing:.5px;cursor:pointer;">✏️ MODIFICA</button>'
+      + '<button data-pid="' + escH(p.id) + '" data-name="' + escH(p.name||'') + '" onclick="deleteProd(this.dataset.pid,this.dataset.name)" style="background:none;border:1.5px solid #ddd;padding:10px 12px;cursor:pointer;font-size:15px;color:#ccc;transition:all .15s;" onmouseover="this.style.borderColor=\'#ff4757\';this.style.color=\'#ff4757\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#ccc\'">🗑</button>'
       + '</div>';
     const rowClick = bulkMode
       ? 'onclick="var cb=document.getElementById(\'chk-' + p.id + '\');cb.checked=!cb.checked;toggleBulkItem(\'' + p.id + '\',cb.checked);"'
@@ -3577,6 +3682,71 @@ waitFB(()=>{
     else list.insertAdjacentHTML('beforeend', html);
     _catShown += next.length;
   }
+  // ── Catalogo per lo shop (pubblicato su Cloudflare) ─────────────────
+  // Lo shop leggeva TUTTI i prodotti da Firestore a ogni visita (≈6.400
+  // letture → quota gratuita esaurita con ~8 visite al giorno). Ora l'admin
+  // pubblica il catalogo sul Worker (Cloudflare KV) e lo shop lo scarica da
+  // lì: 0 letture Firestore per visita.
+  let _snapBusy = false, _snapTimer = null;
+  async function publishCatalogSnapshot(list){
+    if(_snapBusy) return null; _snapBusy = true;
+    try{
+      // JSON "pulito" (i Timestamp diventano {seconds,nanoseconds})
+      const products = JSON.parse(JSON.stringify(list));
+      const r = await lfCallable('publishCatalog')({ products });
+      _snapDirty = false;
+      try{ localStorage.removeItem('lf_snap_dirty'); }catch(_){}
+      return r && r.data;
+    } finally { _snapBusy = false; }
+  }
+  // Pubblica in automatico quando il catalogo è stato modificato o è vecchio.
+  let _snapDirty = false;
+  try{ _snapDirty = localStorage.getItem('lf_snap_dirty')==='1'; }catch(_){}
+  async function maybeAutoPublishSnapshot(list){
+    let meta = null;
+    try{ const r = await fetch(window.LF_WORKER_BASE+'/catalog?meta=1',{cache:'no-store'}); if(r.ok) meta = await r.json(); }catch(_){}
+    const stale = !meta || meta.dirty === true || _snapDirty || (Date.now()-(meta.builtAtMs||0)) > 6*3600*1000 || meta.count !== list.length;
+    if(stale){ const r = await publishCatalogSnapshot(list); if(r) console.info('Catalogo pubblicato per lo shop:', r); }
+  }
+  function markCatalogDirty(){
+    _snapDirty = true;
+    try{ localStorage.setItem('lf_snap_dirty','1'); }catch(_){}
+    clearTimeout(_snapTimer);
+    // Raggruppa le modifiche: ripubblica 2 minuti dopo l'ultima.
+    _snapTimer = setTimeout(async ()=>{
+      try{ const list = await getAdminCatalog(true); await publishCatalogSnapshot(list); }catch(e){ console.warn('pubblicazione catalogo',e&&e.message); }
+    }, 120000);
+  }
+  window.publishCatalogNow = async function(btn){
+    if(btn){ btn.disabled=true; btn.textContent='⏳ Pubblicazione…'; }
+    try{
+      const list = await getAdminCatalog(true);
+      const r = await publishCatalogSnapshot(list);
+      showToast(r ? ('📤 Catalogo pubblicato per lo shop: '+r.count+' prodotti') : 'Pubblicazione già in corso…');
+    }catch(e){ showToast('⚠️ Pubblicazione fallita ('+((e&&e.code)||(e&&e.message)||'')+')'); }
+    if(btn){ btn.disabled=false; btn.textContent='📤 Pubblica catalogo'; }
+  };
+  // Ogni scrittura su products/* da questa pagina segna il catalogo da ripubblicare.
+  (function hookProductWrites(){
+    const fb = window.__fb;
+    if(!fb || fb.__snapHooked){ if(!fb) setTimeout(hookProductWrites, 200); return; }
+    fb.__snapHooked = true;
+    const isProd = ref => !!(ref && typeof ref.path==='string' && ref.path.startsWith('products/'));
+    for(const fn of ['setDoc','updateDoc','deleteDoc']){
+      const orig = fb[fn];
+      fb[fn] = function(ref, ...rest){ const p = orig.call(this, ref, ...rest); if(isProd(ref)) Promise.resolve(p).then(markCatalogDirty, ()=>{}); return p; };
+    }
+    const origAdd = fb.addDoc;
+    fb.addDoc = function(col, ...rest){ const p = origAdd.call(this, col, ...rest); if(col && col.path==='products') Promise.resolve(p).then(markCatalogDirty, ()=>{}); return p; };
+    const origBatch = fb.writeBatch;
+    fb.writeBatch = function(...a){
+      const b = origBatch.apply(this, a); let touched = false;
+      for(const m of ['set','update','delete']){ const o = b[m].bind(b); b[m] = (ref, ...r)=>{ if(isProd(ref)) touched = true; return o(ref, ...r); }; }
+      const oc = b.commit.bind(b); b.commit = ()=>oc().then(x=>{ if(touched) markCatalogDirty(); return x; });
+      return b;
+    };
+  })();
+
   // Esporta in CSV i prodotti senza link fornitore specifico (da completare a mano).
   window.exportNoLinkCSV = function(){
     if(!adminCatalogProducts.length){ showToast('Carica prima il catalogo (🔄 Aggiorna)'); return; }
@@ -3599,10 +3769,17 @@ waitFB(()=>{
     const onlyNoLink = document.getElementById('cat-link-filter')?.value === 'nolink';
     const _lf = document.getElementById('cat-link-filter');
     if(_lf && _lf.options[1]){ const n=adminCatalogProducts.filter(p=>!srcCheck(p.sourceUrl).ok).length; _lf.options[1].textContent='⚠️ Senza link fornitore ('+n+')'; }
+    // Cambiando filtri, la selezione in blocco resta solo sui prodotti visibili.
+    const _prevFiltered = _catFiltered;
     _catFiltered = adminCatalogProducts.filter(p=>
       (!q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q))
       && (!onlyNoLink || !srcCheck(p.sourceUrl).ok)
     );
+    if(bulkSelected.size && _prevFiltered !== _catFiltered){
+      const vis = new Set(_catFiltered.map(p=>p.id));
+      [...bulkSelected].forEach(id=>{ if(!vis.has(id)) bulkSelected.delete(id); });
+      try{ updateBulkUI(); }catch(_){}
+    }
     if(!_catFiltered.length){
       list.innerHTML = '<p style="font-size:10px;color:#aaa;letter-spacing:1px;padding:12px 0;">Nessun prodotto trovato.</p>';
       _catShown = 0; _catSentinel = null;
@@ -3644,6 +3821,8 @@ waitFB(()=>{
     // Sizes
     const allSizes = ['XS','S','M','L','XL','XXL','Unica'];
     const activeSizes = p.sizes||(p.size?p.size.split(',').map(s=>s.trim()):[]);
+    const _ex = document.getElementById('edit-sizes-extra');
+    if(_ex) _ex.value = activeSizes.filter(s=>!allSizes.includes(s)).join(', ');
     allSizes.forEach(s=>{
       const btn = document.getElementById('esz-'+s);
       if(!btn) return;
@@ -3696,6 +3875,10 @@ waitFB(()=>{
       const btn = document.getElementById('esz-'+s);
       return btn && btn.dataset.on === '1';
     });
+    // Taglie non standard (scarpe EU ecc.): prima venivano cancellate a ogni salvataggio.
+    (document.getElementById('edit-sizes-extra')?.value||'').split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean)
+      .forEach(x=>{ if(!sizes.includes(x)) sizes.push(x); });
+    if(!sizes.length) return showToast('⚠️ Seleziona almeno una taglia.');
     const btn = document.getElementById('edit-save-btn');
     btn.textContent = 'Salvando...'; btn.disabled = true;
     try{
@@ -3736,7 +3919,7 @@ waitFB(()=>{
     const btn = document.getElementById('gc-analyze-btn');
     btn.textContent = 'Analisi in corso...'; btn.disabled = true;
     try {
-      const snap = await fb.getDocs(fb.collection(fb.db, 'products')); // no orderBy: include i prodotti senza createdAt
+      const snap = await adminCatalogSnap(); // no orderBy: include i prodotti senza createdAt
       _gcData = snap.docs.map(d => {
         const p = { id: d.id, ...d.data() };
         return { id: p.id, name: p.name||'', brand: p.brand||'', category: p.category||'',
@@ -3922,7 +4105,7 @@ waitFB(()=>{
     const btn=document.getElementById('qc-analyze-btn');
     btn.textContent='Analisi in corso...'; btn.disabled=true;
     try{
-      const snap=await fb.getDocs(fb.collection(fb.db,'products')); // no orderBy: include i prodotti senza createdAt
+      const snap=await adminCatalogSnap(); // no orderBy: include i prodotti senza createdAt
       _qcData=snap.docs.map(d=>{
         const p={id:d.id,...d.data()};
         const canon=qcCanonBrand(p.brand);
@@ -4107,7 +4290,7 @@ waitFB(()=>{
     btn.disabled=true; btn.textContent='Scansione...';
     prog.style.display='block'; prog.innerHTML='⏳ Carico i prodotti...';
     try{
-      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'products')));
+      const snap=await adminCatalogSnap();
       const prods=snap.docs.map(d=>({id:d.id,...d.data()}));
       // Candidati: immagine Yupoo, senza sourceUrl, con hash e store estraibili
       const cands=prods.filter(p=>!p.sourceUrl && ypStore(p.imageUrl) && ypHash(p.imageUrl));
@@ -4675,7 +4858,9 @@ waitFB(()=>{
     }).join('') : '<tr><td colspan="6" style="padding:16px;color:var(--dim);font-size:10px;">Nessuna sessione ancora. Apri il sito in un\'altra scheda per generare i primi dati.</td></tr>';
   }
 
-  window.startAnalyticsAuto=function(){ stopAnalyticsAuto(); _anTimer=setInterval(()=>loadAnalytics(), 15000); };
+  // Ogni giro legge fino a 400 sessioni: prima ogni 15s anche a scheda in
+  // background (≈96.000 letture/ora). Ora ogni 60s e solo se la scheda è visibile.
+  window.startAnalyticsAuto=function(){ stopAnalyticsAuto(); _anTimer=setInterval(()=>{ if(document.visibilityState==='visible') loadAnalytics(); }, 60000); };
   window.stopAnalyticsAuto=function(){ if(_anTimer){ clearInterval(_anTimer); _anTimer=null; } };
 
   // ── Richieste prodotto ("non trovo prodotto") ──
@@ -4685,17 +4870,20 @@ waitFB(()=>{
     if(!fb||!list) return;
     list.innerHTML='<p style="font-size:13px;color:var(--dim);">Caricamento...</p>';
     try{
-      const q=fb.query(fb.collection(fb.db,'product_requests'),fb.orderBy('ts','desc'));
-      const snap=await fb.getDocs(q);
-      const reqs=snap.docs.map(d=>({id:d.id,...d.data()}));
+      // Senza orderBy('ts'): le richieste "squadra" hanno createdAt e venivano escluse.
+      const snap=await fb.getDocs(fb.collection(fb.db,'product_requests'));
+      const _rts=r=>((r.ts&&r.ts.seconds)||(r.createdAt&&r.createdAt.seconds)||0);
+      const reqs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>_rts(b)-_rts(a));
       const badge=document.getElementById('req-nav-badge');
       if(badge){ badge.textContent=reqs.length; badge.style.display=reqs.length?'flex':'none'; }
       if(!reqs.length){ list.innerHTML='<p style="font-size:14px;color:var(--dim);">Nessuna richiesta al momento.</p>'; return; }
       list.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">'+reqs.map(r=>{
-        const ts=r.ts?.seconds?new Date(r.ts.seconds*1000).toLocaleString('it-IT'):'—';
-        const email=escH(r.userEmail||'ospite');
-        const note=r.note?escH(r.note):'<span style="color:var(--dim);">(nessuna nota)</span>';
-        const img=r.image?`<img src="${r.image}" style="width:100%;height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px;cursor:zoom-in;" onclick="window.open('').document.write('<img src=\\''+this.src+'\\' style=max-width:100%>')">`:'<div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:12px;">Nessuna foto</div>';
+        const ts=_rts(r)?new Date(_rts(r)*1000).toLocaleString('it-IT'):'—';
+        const email=escH(r.userEmail||r.email||'ospite');
+        const teamTxt=r.type==='team_request'?['⚽ '+(r.sport||''),r.team,r.year,r.kit,r.category,r.personalization].filter(Boolean).join(' · '):'';
+        const note=(r.note||teamTxt)?escH(r.note||teamTxt):'<span style="color:var(--dim);">(nessuna nota)</span>';
+        const _img=safeUrl(r.image,true);
+        const img=_img?`<img src="${escH(_img)}" style="width:100%;height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px;cursor:zoom-in;" onclick="adminLightbox(this.src,'Richiesta','')">`:'<div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:12px;">Nessuna foto</div>';
         return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;">
           ${img}
           <p style="font-size:14px;color:#fff;line-height:1.5;margin-bottom:10px;">${note}</p>
@@ -4907,13 +5095,15 @@ waitFB(()=>{
         adminOrders=snap.docs.map(d=>({id:d.id,_docId:d.id,...d.data()}));
       }
       // Catalogo (costi) per calcolare il profitto per cliente.
-      if(!adminCatalogProducts.length){ try{ await loadAdminCatalog(); }catch(_){} }
+      if(!adminCatalogProducts.length){ try{ await getAdminCatalog(); }catch(_){} }
       const userMap={};
       adminOrders.forEach(o=>{
         const email=(o.email||'').toLowerCase();
         if(!email) return;
         if(!userMap[email]) userMap[email]={email,name:o.name||'',uid:'',subs:[],orders:0,total:0,profit:0,costOrders:0,lastTs:0,lastDate:'—'};
         userMap[email].orders++;
+        // Spesa e profitto: solo ordini confermati (pagati)
+        if(o.status!=='confirmed') { const ts0=o.createdAt?.seconds||0; if(ts0>userMap[email].lastTs){ userMap[email].lastTs=ts0; userMap[email].lastDate=ts0?new Date(ts0*1000).toLocaleDateString('it-IT'):'—'; } return; }
         userMap[email].total+=(o.total||0);
         // Profitto ordine: articoli fisici con costo salvato sul prodotto.
         let op=0, hasCost=false;
@@ -4928,11 +5118,11 @@ waitFB(()=>{
       // Unisci i profili registrati (collection users): aggiunge uid + credenziali
       // salvate e include anche i clienti che non hanno mai ordinato sul sito.
       try{
-        const usnap=await fb.getDocs(fb.query(fb.collection(fb.db,'users')));
-        usnap.forEach(d=>{
-          const u=d.data()||{}; const email=(u.email||'').toLowerCase(); if(!email) return;
+        const usnap=await getUsersCached(true);
+        usnap.forEach(u=>{
+          const email=(u.email||'').toLowerCase(); if(!email) return;
           if(!userMap[email]) userMap[email]={email,name:u.name||'',uid:'',subs:[],orders:0,total:0,profit:0,costOrders:0,lastTs:0,lastDate:'—'};
-          userMap[email].uid=d.id;
+          userMap[email].uid=u.id;
           if(!userMap[email].name) userMap[email].name=u.name||'';
           if(Array.isArray(u.subscriptions)) userMap[email].subs=u.subscriptions;
         });
@@ -4970,14 +5160,14 @@ waitFB(()=>{
       const badge=u.total>=200
         ?'<span class="user-badge vip">VIP</span>'
         :u.orders===1?'<span class="user-badge new">NUOVO</span>':'';
-      const safeEmail=u.email.replace(/'/g,"\\'");
+      const safeEmail=escH(u.email);
       const nSubs=Array.isArray(u.subs)?u.subs.length:0;
       const credLabel=nSubs?('🔑 Credenziali · '+nSubs):'🔑 Credenziali';
       const credStyle=nSubs
         ?'font-size:9px;padding:5px 10px;background:rgba(200,255,0,.14);border:1px solid rgba(200,255,0,.4);color:var(--led);cursor:pointer;font-family:\'Manrope\',sans-serif;letter-spacing:1px;white-space:nowrap;'
         :'font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:\'Manrope\',sans-serif;letter-spacing:1px;white-space:nowrap;';
       const credBtn=u.uid
-        ?`<button onclick="openUserCredsFromTable('${safeEmail}')" style="${credStyle}">${credLabel}</button>`
+        ?`<button data-email="${safeEmail}" onclick="openUserCredsFromTable(this.dataset.email)" style="${credStyle}">${credLabel}</button>`
         :`<button title="Il cliente non ha un profilo registrato: non è possibile salvare credenziali sul suo account." disabled style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.25);cursor:not-allowed;font-family:'Manrope',sans-serif;letter-spacing:1px;white-space:nowrap;">🔑 No profilo</button>`;
       return `<tr>
         <td>
@@ -4990,7 +5180,7 @@ waitFB(()=>{
         <td style="font-size:10px;color:var(--dim);">${u.lastDate}</td>
         <td>${badge}</td>
         <td style="white-space:nowrap;">
-          <button onclick="document.getElementById('tr-email').value='${safeEmail}';showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Manrope',sans-serif;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button>
+          <button data-email="${safeEmail}" onclick="document.getElementById('tr-email').value=this.dataset.email;showAdminPg('spedizioni')" style="font-size:9px;padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Manrope',sans-serif;letter-spacing:1px;white-space:nowrap;">📦 Tracking</button>
           ${credBtn}
         </td>
       </tr>`;
@@ -5005,6 +5195,8 @@ waitFB(()=>{
 // ══════════════════════════════════════════════════════════════════════
 // ADMIN LIGHTBOX
 // ══════════════════════════════════════════════════════════════════════
+  window._lbReg = window._lbReg || [];
+  window.adminLightboxIdx = function(i){ const r=(window._lbReg||[])[i]; if(r) adminLightbox(r.src, r.name, r.details); };
   window.adminLightbox = function(src, productName, details) {
     const lb = document.getElementById('admin-lb');
     document.getElementById('admin-lb-img').src = src;
@@ -5066,7 +5258,7 @@ window.svAdminLoad = async function(){
         <td>${t.visibility==='unlisted'?'<span style="color:#e0a24c;">Non elencato</span>':'Pubblico'}${t.featured?' · ★':''}</td>
         <td style="text-align:right;white-space:nowrap;">
           <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="svEdit('${svEsc(t.id)}')">Modifica</button>
-          <button class="btn-g" style="font-size:9px;padding:5px 10px;" onclick="svDelete('${svEsc(t.id)}','${svEsc(t.title)}')">Elimina</button>
+          <button class="btn-g" style="font-size:9px;padding:5px 10px;" data-id="${svEsc(t.id)}" data-title="${svEsc(t.title)}" onclick="svDelete(this.dataset.id,this.dataset.title)">Elimina</button>
         </td></tr>`).join('')}
       </tbody></table>`;
   }catch(e){
