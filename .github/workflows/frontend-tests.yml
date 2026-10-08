@@ -1,0 +1,52 @@
+# Test automatici su ogni PR e su main:
+#  · smoke test del sito (tests/smoke): errori JS, scroll orizzontale e
+#    contrasto WCAG AA in chiaro e dark, mobile e desktop — con dati finti,
+#    quindi niente letture Firestore
+#  · test unitari del Worker (cloudflare-worker/test)
+name: Test sito e Worker
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Dipendenze smoke test
+        working-directory: tests/smoke
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Smoke test del sito
+        working-directory: tests/smoke
+        run: npm test
+      - name: Screenshot delle viste fallite
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshots
+          path: tests/smoke/out/
+          if-no-files-found: ignore
+
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Test unitari del Worker
+        working-directory: cloudflare-worker
+        run: |
+          npm ci
+          npm test
+          for t in test/*.test.mjs; do echo "▶ $t"; node "$t"; done
