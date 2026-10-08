@@ -121,6 +121,11 @@ h2.bb{letter-spacing:-.02em!important;}
 .carousel-card{border-radius:16px!important;border-color:#2a2a26!important;}
 /* Cuore wishlist: il cerchio resta bianco anche in dark mode, quindi icona sempre scura */
 .wish-btn{color:#1d1d1a;}
+/* Avviso "catalogo in aggiornamento" (prodotti non raggiungibili) */
+.lf-cat-down{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:18px 20px;border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--k);}
+.lf-cat-down .ic{width:26px;height:26px;color:var(--led-text);}
+.lf-cat-down b{display:block;font-size:15px;}
+.lf-cat-down span{display:block;font-size:13px;color:var(--mid);margin-top:2px;}
 
 /* ── 5. BOTTONI / CTA ──────────────────────────────────────── */
 .btn-led{background:var(--led)!important;}

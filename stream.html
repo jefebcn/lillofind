@@ -374,6 +374,9 @@ async function saveProgress(){
   if(!_user || !_sp.titleId || !_sp.video) return;
   const v = _sp.video;
   if(!v.duration || !isFinite(v.duration)) return;
+  // In pausa non serve riscrivere la stessa posizione ogni 15s (scritture inutili)
+  if(v.paused && _sp._lastSavedAt === Math.floor(v.currentTime)) return;
+  _sp._lastSavedAt = Math.floor(v.currentTime);
   const id = itemKey(_sp.titleId, _sp.episodeId);
   const fb = window.__fb;
   const finished = v.currentTime / v.duration > 0.93;

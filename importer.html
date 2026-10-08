@@ -680,9 +680,8 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
 <script type="module">
 function waitFB(cb){ window.__imp ? cb() : setTimeout(()=>waitFB(cb),80); }
 
-// SICUREZZA: questa key è visibile nel sorgente — limitare i domini autorizzati
-// su imgbb.com (account settings) e valutare un proxy backend in produzione
-const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
+// Upload immagini: passa dal Worker (/uploadImage, solo admin) così la
+// chiave ImgBB non è più nel sorgente pubblico della pagina.
 const SIZES_ALL = ['XS','S','M','L','XL','XXL','Unica'];
 const _PROXY = 'https://europe-west1-lillofind-c455c.cloudfunctions.net/proxyImage';
 function pImg(url){
@@ -851,13 +850,14 @@ window.onCustomBrand=function(val){
 // IMGBB
 async function uploadToImgBB(b64){
   try{
-    const form=new FormData();
-    form.append('key',IMGBB_KEY);
-    form.append('image', b64.startsWith('data:') ? b64.split(',')[1] : b64);
-    const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
-    const json=await res.json();
-    return json.success ? json.data.url : null;
+    const res=await lfCallable('uploadImage')({imageBase64:b64});
+    return (res && res.data && res.data.url) || null;
   } catch(e){ return null; }
+}
+// Segnala all'admin che il catalogo pubblicato per lo shop va aggiornato
+// (le NOVITÀ lo shop le vede subito; modifiche a prodotti esistenti no).
+function markCatalogSnapshotDirty(){
+  try{ lfCallable('markCatalogDirty')({}).catch(()=>{}); }catch(_){}
 }
 
 // CREATE ROW
@@ -1058,12 +1058,14 @@ window.backfillGalleries = async function(){
   btn.disabled=false; btn.textContent='🖼 BACKFILL GALLERIE';
   if(stEl) stEl.textContent = `✅ Completato: ${updated} aggiornati, ${failed} errori su ${targets.length}.`;
   toast(`Backfill: ${updated} gallerie aggiunte`);
+  if(updated>0) markCatalogSnapshotDirty();
 };
 
 function getRowSizes(id){
   return [...document.querySelectorAll('#sz-'+id+' .sz-toggle.on')].map(t=>t.textContent.trim());
 }
 
+window.updateStats=function(){ return updateStats(); };
 function updateStats(){
   const n=document.querySelectorAll('.prod-row').length;
   document.getElementById('row-count-lbl').textContent=n?'— '+n:'';
@@ -1177,7 +1179,7 @@ window.saveAll=async function(){
   if(noLink) msg+=' ⚠️ '+noLink+' senza link fornitore NON salvati';
   if(errors)  msg+=' ⚠️ '+errors+' errori';
   toast(msg); status.textContent=msg;
-  if(saved>0) setTimeout(()=>{ addRow(); updateStats(); },600);
+  if(saved>0){ markCatalogSnapshotDirty(); setTimeout(()=>{ addRow(); updateStats(); },600); }
 };
 
 
