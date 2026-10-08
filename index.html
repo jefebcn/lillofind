@@ -2922,23 +2922,23 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         const c=await fb.createUserWithEmailAndPassword(fb.auth,email,pass);
         // La creazione del doc utente non deve bloccare il login: se fallisce
         // (es. regole), l'account è comunque creato e l'utente è autenticato.
-        try{
-          await fb.setDoc(fb.doc(fb.db,'users',c.user.uid),{
-            email,displayName:name,lfpoints:50,totalSpent:0,
-            preferredSize:'',preferredBrands:[],createdAt:fb.serverTimestamp()
-          });
-        }catch(dberr){ console.warn('setDoc utente fallito (non bloccante):',dberr?.code||dberr); }
+        // Non si aspetta Firestore: il profilo si salva in background.
+        const _newUd={email,displayName:name,lfpoints:50,totalSpent:0,preferredSize:'',preferredBrands:[]};
+        _udataSave(c.user.uid,_newUd); udata={...(udata||{}),..._newUd};
+        fb.setDoc(fb.doc(fb.db,'users',c.user.uid),{..._newUd,createdAt:fb.serverTimestamp()})
+          .catch(dberr=>console.warn('setDoc utente fallito (non bloccante):',dberr?.code||dberr));
         // Referral: registra l'invito se arrivato da un link ?ref=
         try{
           const ref=localStorage.getItem('lf_ref');
           if(ref && ref!==c.user.uid){
-            await fb.addDoc(fb.collection(fb.db,'referrals'),{referrer:ref,referred:c.user.uid,credited:false,createdAt:fb.serverTimestamp()});
-            localStorage.removeItem('lf_ref');
+            fb.addDoc(fb.collection(fb.db,'referrals'),{referrer:ref,referred:c.user.uid,credited:false,createdAt:fb.serverTimestamp()})
+              .then(()=>localStorage.removeItem('lf_ref')).catch(()=>{});
           }
         }catch(_){}
         try{ lfTrack('sign_up',{method:'email'}); }catch(_){}
         showToast('🎉 Benvenuto! 50 LFPOINTS accreditati.');
       }
+      try{ updateNav(fb.auth.currentUser,udata||{}); }catch(_){}
       showPg('home');
     } catch(e){
       console.error('doAuth error:',e&&e.code,e&&e.message);
@@ -2959,6 +2959,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 
   window.handleLogout=async function(){
     await window.__fb.signOut(window.__fb.auth);
+    try{ localStorage.removeItem('lf_ud'); }catch(_){}
     updateNav(null,null); updateHomeDisplay();
     showToast('Arrivederci. 👋'); showPg('home');
   };
@@ -5545,18 +5546,27 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   waitFB(()=>{ loadAllProducts(); });
 
   // ── Firebase auth ──────────────────────────────────────
+  // Cache minima del profilo (solo nome e punti, niente dati sensibili) per
+  // mostrare subito l'utente connesso al ricaricamento.
+  let _authRun=0;
+  function _udataCache(uid){ try{ const c=JSON.parse(localStorage.getItem('lf_ud')||'null'); return (c&&c.uid===uid)?{displayName:c.displayName||'',lfpoints:c.lfpoints||0,totalSpent:c.totalSpent||0}:null; }catch(_){ return null; } }
+  function _udataSave(uid,d){ try{ localStorage.setItem('lf_ud',JSON.stringify({uid,displayName:(d&&d.displayName)||'',lfpoints:(d&&d.lfpoints)||0,totalSpent:(d&&d.totalSpent)||0})); }catch(_){} }
   waitFB(()=>{
     const fb=window.__fb;
     fb.onAuthStateChanged(fb.auth,async u=>{
       user=u;
+      const run=++_authRun;
       if(u){
-        try{
-          const s=await fb.getDoc(fb.doc(fb.db,'users',u.uid));
-          udata=s.exists()?s.data():{};
-        } catch(err){
-          console.warn('onAuthStateChanged getDoc error:',err);
-          udata={};
-        }
+        // 1) Interfaccia da "connesso" SUBITO (prima l'header restava su "Accedi"
+        //    finché Firestore non rispondeva — con Firestore lento anche a lungo).
+        udata=_udataCache(u.uid)||{};
+        try{ updateNav(u,udata); updateHomeDisplay(); }catch(_){}
+        // 2) Profilo completo da Firestore, con un tetto di attesa: se arriva tardi
+        //    l'interfaccia si aggiorna comunque appena arriva.
+        const p=fb.getDoc(fb.doc(fb.db,'users',u.uid));
+        p.then(s=>{ if(run!==_authRun||!user||user.uid!==u.uid) return; udata=s.exists()?s.data():{}; _udataSave(u.uid,udata); try{ updateNav(u,udata); updateHomeDisplay(); }catch(_){} }).catch(err=>console.warn('profilo utente:',err&&err.code));
+        try{ await Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }catch(_){}
+        if(run!==_authRun) return;
       } else { udata=null; }
       // Admin inline: mostra i controlli modifica/elimina sulle card.
       // Gate SOLO su allowlist email (autorevole anche nelle regole Firestore):
@@ -6080,7 +6090,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }
     try{
       const result=await fb.signInWithPopup(fb.auth,fb._googleProvider);
-      await _saveGoogleUser(result.user);
+      _saveGoogleUser(result.user); // in background: non blocca l'accesso
+      try{ updateNav(result.user,udata||{}); }catch(_){}
       showToast('🎉 Benvenuto '+(result.user.displayName||result.user.email)+'!');
       showPg('home');
     } catch(e){
@@ -6101,7 +6112,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     try{
       const result=await fb.getRedirectResult(fb.auth);
       if(result&&result.user){
-        await _saveGoogleUser(result.user);
+        _saveGoogleUser(result.user); // in background
+        try{ updateNav(result.user,udata||{}); }catch(_){}
         showToast('🎉 Benvenuto '+(result.user.displayName||result.user.email)+'!');
         showPg('home');
       }
