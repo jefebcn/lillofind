@@ -25,6 +25,13 @@
   --border:#e6e1d6;
   --border-2:#d3ccbe;
   --ink-soft:#34342f;
+  /* Ruoli separati (in chiaro coincidono con --k/--w/--led; in scuro no):
+     --ink = superfici scure fisse (banner, chip, toast), --on-ink = testo su di esse,
+     --led-text = salvia usato come colore del testo (i fondi restano --led) */
+  --ink:#1d1d1a;
+  --on-ink:#f6f3ee;
+  --led-text:var(--led);
+  --danger:#c0392b;       /* azioni distruttive / errori (5.4:1 su bianco) */
   --dg1:var(--led2);      /* il banner Digital usa la palette brand, niente taupe */
   --dg2:var(--led);
   --tier-bronze:#b07a4a; --tier-silver:#8f99a5; --tier-gold:#c9a24d; --tier-plat:#7aa7b8;
@@ -32,6 +39,24 @@
   --ring:0 0 0 3px rgba(95,103,68,.22);
 }
 body{background:var(--w);}
+
+/* ── 1b. DARK MODE (Impostazioni → Aspetto; html[data-theme="dark"]) ── */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --w:#141412;            /* pagina */
+  --card:#1d1c19;         /* card e pannelli */
+  --k:#efece5;            /* testo principale */
+  --ink:#0c0c0b;          /* superfici scure: restano scure */
+  --on-ink:#f6f3ee;
+  --mid:#c4c1b7; --dim:#a7a49a; --ink-soft:#dcd9cf;
+  --border:#2d2c28; --border-2:#3e3c36;
+  --accent-soft:#252a1d;
+  --led-text:#b5bd8f;     /* salvia leggibile su fondo scuro (≥7:1) */
+  --danger:#ff8a7a;
+  --drop-soft:#3a2117;
+  --ring:0 0 0 3px rgba(181,189,143,.3);
+}
+:root[data-theme="dark"] img{filter:none;}
 :focus-visible{outline:none;box-shadow:var(--ring)!important;border-radius:8px;}
 
 /* ── 2. TIPOGRAFIA ─────────────────────────────────────────── */
@@ -46,11 +71,11 @@ h2.bb{letter-spacing:-.02em!important;}
 .lf-badge{display:inline-flex;align-items:center;gap:6px;border-radius:var(--badge-r);
   font-size:10px;font-weight:700;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;
   padding:5px 8px;white-space:nowrap;}
-.lf-badge--new{background:#fff;color:var(--k);box-shadow:0 1px 6px rgba(0,0,0,.08);}
+.lf-badge--new{background:var(--card);color:var(--k);box-shadow:0 1px 6px rgba(0,0,0,.08);}
 .lf-badge--new::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--led);}
 .lf-badge--drop{background:var(--drop);color:#fff;}
-.lf-badge--soldout{background:var(--k);color:#fff;}
-.lf-badge--style{background:var(--accent-soft);color:var(--led);}
+.lf-badge--soldout{background:var(--ink);color:#fff;}
+.lf-badge--style{background:var(--accent-soft);color:var(--led-text);}
 .lf-badge-pos{position:absolute;top:12px;left:12px;z-index:3;}
 .carousel-card .lf-badge-pos{top:8px;left:8px;}
 /* Eyebrow: etichetta sopra i titoli di sezione */
@@ -60,13 +85,13 @@ h2.bb{letter-spacing:-.02em!important;}
 .lf-section-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:-.02em;
   line-height:1.02;font-size:clamp(28px,5vw,48px);}
 /* Bottone secondario su fondo scuro */
-.btn-g.btn-g--on-dark{border-color:rgba(246,243,238,.4)!important;color:var(--w)!important;}
-.btn-g.btn-g--on-dark:hover{background:var(--w)!important;color:var(--k)!important;}
+.btn-g.btn-g--on-dark{border-color:rgba(246,243,238,.4)!important;color:var(--on-ink)!important;}
+.btn-g.btn-g--on-dark:hover{background:var(--on-ink)!important;color:var(--ink)!important;}
 .led-badge{
   border:1px solid rgba(95,103,68,.28)!important;background:var(--accent-soft)!important;
   box-shadow:none!important;border-radius:999px!important;
   font-size:10.5px!important;letter-spacing:.14em!important;font-weight:700;
-  color:var(--led)!important;padding:6px 12px!important;}
+  color:var(--led-text)!important;padding:6px 12px!important;}
 
 /* ── 4. CARD PRODOTTO ──────────────────────────────────────── */
 .pcard{border-color:var(--border)!important;border-radius:18px!important;}
@@ -82,13 +107,15 @@ h2.bb{letter-spacing:-.02em!important;}
   .pc-sizes-compact{display:block;}
 }
 .carousel-card{border-radius:16px!important;border-color:#2a2a26!important;}
+/* Cuore wishlist: il cerchio resta bianco anche in dark mode, quindi icona sempre scura */
+.wish-btn{color:#1d1d1a;}
 
 /* ── 5. BOTTONI / CTA ──────────────────────────────────────── */
 .btn-led{background:var(--led)!important;}
 .btn-led:hover{background:var(--led-hover)!important;}
 .btn-g{border:1.5px solid var(--k)!important;color:var(--k)!important;background:transparent!important;}
 .btn-g:hover{background:var(--k)!important;color:var(--w)!important;}
-.sport-banner-cta{background:var(--w)!important;color:var(--k)!important;}
+.sport-banner-cta{background:var(--on-ink)!important;color:var(--ink)!important;}
 .sport-banner:hover .sport-banner-cta{background:#fff!important;}
 
 /* ── 6. SEZIONI / BANNER ───────────────────────────────────── */
@@ -103,7 +130,7 @@ h2.bb{letter-spacing:-.02em!important;}
 
 /* ── 7. HUD: punti, livello, navigazione ───────────────────── */
 #m-badge{
-  background:var(--k)!important;color:#fff!important;font-weight:700;font-size:11.5px!important;
+  background:var(--ink)!important;color:#fff!important;font-weight:700;font-size:11.5px!important;
   padding:6px 11px 6px 8px!important;display:inline-flex;align-items:center;gap:6px;position:relative;
   box-shadow:0 2px 8px rgba(0,0,0,.12);}   /* display senza !important: lo style inline display:none lo nasconde */
 #m-pts{font-weight:800;}
@@ -123,22 +150,22 @@ h2.bb{letter-spacing:-.02em!important;}
 #m-badge::before{content:"";width:9px;height:9px;border-radius:50%;
   background:var(--tier-color,var(--tier-bronze));box-shadow:0 0 0 3px rgba(255,255,255,.14);}
 /* Saldo LFPoints in home: numero pieno, non outline */
-#home-pts{color:var(--w)!important;-webkit-text-stroke:0!important;letter-spacing:-.03em;}
+#home-pts{color:var(--on-ink)!important;-webkit-text-stroke:0!important;letter-spacing:-.03em;}
 .lf-hud{margin-top:18px;max-width:340px;}
 .lf-hud-bar{height:8px;border-radius:99px;background:rgba(246,243,238,.12);overflow:hidden;}
 .lf-hud-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--led2),#d6dcb4);
   transition:width 1s cubic-bezier(.2,.7,.2,1);}
 .lf-hud-txt{display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;color:rgba(246,243,238,.72);}
-.lf-hud-txt b{color:var(--w);}
+.lf-hud-txt b{color:var(--on-ink);}
 /* Bottom nav: indicatore attivo a pillola */
 .bnav-btn{color:var(--dim)!important;}   /* era #7d7b72 (4.2:1) → AA */
 .bnav-btn.active{color:var(--k)!important;font-weight:700;}
 .bnav-btn.active .bnav-icon{background:var(--accent-soft);border-radius:999px;width:54px;}
-.bnav-btn.active .bnav-icon svg{color:var(--led);}
+.bnav-btn.active .bnav-icon svg{color:var(--led-text);}
 /* Badge numerico su carrello/wishlist nella bottom nav */
 .bnav-btn .cart-badge,.bnav-btn #wish-badge{width:auto!important;min-width:18px;height:18px!important;padding:0 5px;
   border-radius:999px!important;font-size:10.5px!important;font-weight:700;font-variant-numeric:tabular-nums;
-  box-shadow:0 0 0 2px #fff;line-height:18px;}
+  box-shadow:0 0 0 2px var(--card);line-height:18px;}
 /* Torna su: più piccolo, rotondo, non copre il "+" delle card */
 #back-top{width:40px!important;height:40px!important;border-radius:50%!important;border-left:none!important;
   color:#fff!important;background:rgba(29,29,26,.82)!important;backdrop-filter:blur(6px);
