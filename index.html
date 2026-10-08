@@ -4540,6 +4540,8 @@ img{ -webkit-user-drag:none; user-select:none; }
     try{ loadProductReviews(p.id); }catch(_){}
     // modal was already opened before rAF, no need to add class again
     }); // end requestAnimationFrame
+    // Su mobile: barra "Aggiungi" fissa in basso
+    if(window.innerWidth<769) setTimeout(()=>showStickyATC(pid,p.name,p.price||0),200);
   };
 
   // ── Recensioni prodotto ────────────────────────────────
@@ -5318,6 +5320,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── Buy — shows size/color picker ─────────────────────
   let _buyPid=null,_buyPrice=0;
   window.buy=function(pid,price){
+    hideStickyATC(); // si apre la scelta taglia: via la barra "Aggiungi"
     // Guest: può aggiungere al carrello senza account; l'accesso (o ospite) avviene al checkout
     _buyPid=pid; _buyPrice=price;
     try{ lfTrack('add_to_cart',{value:price,currency:'EUR',item_id:pid}); }catch(_){}
@@ -5417,6 +5420,7 @@ img{ -webkit-user-drag:none; user-select:none; }
     else { note.style.display='none'; note.textContent=''; }
   };
   window.confirmAddToCart=function(){
+    hideStickyATC();
     const prod=products.find(p=>p.id===_buyPid)||{id:_buyPid,price:_buyPrice};
     const sizes=prod.sizes&&prod.sizes.length?prod.sizes:(prod.size?[prod.size]:[]);
     const colors=prod.colors&&prod.colors.length?prod.colors:[];
@@ -7186,7 +7190,9 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ── Page router hook (cart + checkout) ─────────────────────
   const _origShowPg=window.showPg;
   window.showPg=function(id){
+    hideStickyATC();
     _origShowPg(id);
+    const bnWish=document.getElementById('bn-wish'); if(bnWish) bnWish.classList.toggle('active',id==='wishlist');
     if(id==='cart'){setTimeout(()=>{renderCart();if(typeof showQCOption==='function')showQCOption();},80);}
     if(id==='group'){setTimeout(()=>{ if(typeof renderGroupPage==='function') renderGroupPage(); },60);}
     if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');initStripeElements();},50);}
@@ -7500,7 +7506,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   // ══════════════════════════════════════════════════════════════
   // FEATURE 9 — Sticky Add to Cart
   // ══════════════════════════════════════════════════════════════
-  let _stickyPid = null, _stickyPrice = 0;
+  var _stickyPid = null, _stickyPrice = 0; // var: usate da showPg/buy anche prima di questa riga
 
   window.stickBuy = function(){
     if(_stickyPid) buy(_stickyPid, _stickyPrice);
@@ -7531,28 +7537,11 @@ img{ -webkit-user-drag:none; user-select:none; }
     _stickyPid = null;
   }
 
-  // Patch openProduct to trigger sticky bar on mobile
-  const _origOpenProduct = window.openProduct;
-  window.openProduct = function(pid){
-    _origOpenProduct(pid);
-    if(window.innerWidth < 769){
-      const p = (typeof products !== 'undefined') ? products.find(x=>x.id===pid) : null;
-      if(p) setTimeout(()=>showStickyATC(pid, p.name, p.price||0), 200);
-    }
-  };
-
   // Hide sticky when prod-modal backdrop clicked or X pressed
   document.getElementById('prod-modal').addEventListener('click', function(e){
     if(e.target === this) hideStickyATC();
   });
   document.querySelector('#prod-modal button[onclick*="classList.remove"]')?.addEventListener('click', hideStickyATC);
-
-  // Hide sticky when size-picker opens (buy() call from card or sticky btn)
-  const _origBuy = window.buy;
-  window.buy = function(pid, price){
-    hideStickyATC();
-    _origBuy(pid, price);
-  };
 
   // Hide sticky when size-picker closes (confirm or backdrop)
   const pickerModal = document.getElementById('size-picker-modal');
@@ -7561,23 +7550,6 @@ img{ -webkit-user-drag:none; user-select:none; }
       if(e.target === this) hideStickyATC();
     });
   }
-
-  // Patch confirmAddToCart to also hide sticky after adding
-  const _origConfirm = window.confirmAddToCart;
-  window.confirmAddToCart = function(){
-    hideStickyATC();
-    _origConfirm();
-  };
-
-  // Hide sticky on any page change
-  const _origShowPg2 = window.showPg;
-  window.showPg = function(id){
-    hideStickyATC();
-    _origShowPg2(id);
-    // Keep wish bottom nav active state in sync
-    const bnWish = document.getElementById('bn-wish');
-    if(bnWish) bnWish.classList.toggle('active', id==='wishlist');
-  };
 
   // ══════════════════════════════════════════════════════════════
   // FEATURE 10 — Live Search with dropdown
