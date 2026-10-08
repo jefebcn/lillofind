@@ -35,10 +35,22 @@
   --dg1:var(--led2);      /* il banner Digital usa la palette brand, niente taupe */
   --dg2:var(--led);
   --tier-bronze:#b07a4a; --tier-silver:#8f99a5; --tier-gold:#c9a24d; --tier-plat:#7aa7b8;
+  /* Tipografia: titoli Archivo (semi-espanso), testo Geist, etichette/codici Geist Mono */
+  --font-display:'Archivo','Arial Narrow',system-ui,sans-serif;
+  --font-body:'Geist',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   --badge-r:6px;
   --ring:0 0 0 3px rgba(95,103,68,.22);
 }
-body{background:var(--w);}
+body{background:var(--w);font-family:var(--font-body);}
+/* Titoli e numeri grandi: un filo più stretti, l'Archivo semi-espanso è già largo */
+.bb,.lf-section-title,h1,h2{letter-spacing:-.015em;}
+/* Icone (set Phosphor in icons.svg): stessa altezza del testo, colore del testo */
+.ic{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.2em;fill:currentColor;flex-shrink:0;}
+.ic-tier{color:var(--tier-color,var(--led-text));}
+.ic-heart-on{color:#d64545;}
+.wish-btn .ic,#prod-wish-btn .ic{width:18px;height:18px;vertical-align:middle;}
+.hcc-emo .ic{width:1em;height:1em;}
 
 /* ── 1b. DARK MODE (Impostazioni → Aspetto; html[data-theme="dark"]) ── */
 :root[data-theme="dark"]{
@@ -82,7 +94,7 @@ h2.bb{letter-spacing:-.02em!important;}
 .lf-eyebrow{font-size:11px;letter-spacing:.16em;font-weight:700;text-transform:uppercase;color:var(--mid);}
 .lf-eyebrow--on-dark{color:var(--led2);}
 /* Titolo di sezione (h2) */
-.lf-section-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:-.02em;
+.lf-section-title{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em;
   line-height:1.02;font-size:clamp(28px,5vw,48px);}
 /* Bottone secondario su fondo scuro */
 .btn-g.btn-g--on-dark{border-color:rgba(246,243,238,.4)!important;color:var(--on-ink)!important;}
