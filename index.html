@@ -154,6 +154,9 @@
    taglie e id arrivano dai fornitori (scraper/import) e dagli utenti, e
    prima venivano inseriti grezzi (XSS). */
 window.lfEsc=function(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"&#39;"); };
+// localStorage puo' contenere JSON rotto (estensioni, versioni vecchie, quota
+// piena a meta' scrittura): un parse non protetto bloccava tutto lo script.
+window.lfLeggiLS=function(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); if(v==null) return def; if(Array.isArray(def)) return Array.isArray(v)?v:def; if(def&&typeof def==='object') return (typeof v==='object'&&!Array.isArray(v))?v:def; return v; }catch(_){ return def; } };
 /* Niente onclick con dentro i dati del prodotto: un " o un \ nel nome rompeva
    l'attributo (e un nome mancante bloccava la scheda sullo skeleton). I
    valori stanno in data-*, e qui un solo listener fa l'azione. Un
@@ -391,7 +394,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         <p class="lf-eyebrow" style="margin-bottom:4px;">Il tuo saldo</p>
         <p style="font-family:var(--font-display);font-size:32px;color:var(--led-text);"><span id="d-pts">0</span> PTS</p>
       </div>
-      <p style="font-size:10.5px;color:var(--ink-soft);letter-spacing:1px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b6c5c3c6c6d9c4c2f6dadfdadad9d0dfd8d298d5d9db">[email&#160;protected]</a></p>
+      <p style="font-size:10.5px;color:var(--ink-soft);letter-spacing:1px;"><a href="mailto:support@lillofind.com">support@lillofind.com</a></p>
     </div>
   </nav>
 </div>
@@ -1216,11 +1219,6 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     #cart-summary > div{border-radius:16px !important;box-shadow:0 12px 32px rgba(35,35,31,.07);}
     /* barra spedizione gratuita → pill */
     #free-ship-bar > div[style*="height:6px"],#free-ship-bar > div[style*="height:6px"] > div{border-radius:999px !important;}
-    /* box QC → arrotondato */
-    #qc-option{border-radius:12px;}
-    /* gruppo coupon: bordi arrotondati agli estremi */
-    #cart-coupon{border-radius:11px 0 0 11px !important;}
-    #cart-coupon + button{border-radius:0 11px 11px 0;}
     /* righe articolo: hover morbido */
     #cart-items > div[style*="border-bottom"]{transition:background .15s;padding-left:8px;padding-right:8px;border-radius:12px;}
     #cart-items > div[style*="border-bottom"]:hover{background:rgba(153,160,116,.05);}
@@ -1272,23 +1270,11 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
             <span class="bb" style="font-size:20px;" id="cart-total">€0.00</span>
           </div>
           <p id="cart-pts-preview" style="font-size:10.5px;color:var(--led-text);letter-spacing:1px;margin-bottom:20px;"></p>
-          <!-- Discount code -->
-          <div style="display:flex;gap:0;margin-bottom:16px;">
-            <input class="lf-in" id="cart-coupon" placeholder="Codice sconto / LFPOINTS" style="flex:1;border-right:none;font-size:11px;"/>
-            <button onclick="applyCoupon()" class="btn-k" style="padding:0 16px;font-size:10.5px;flex-shrink:0;">Applica</button>
-          </div>
-          <div id="cart-coupon-msg" style="font-size:10.5px;color:var(--led-text);margin-bottom:12px;display:none;"></div>
-          <!-- QC Service checkbox -->
-          <div id="qc-option" style="border:1.5px solid color-mix(in srgb,var(--led2) 48%,transparent);padding:14px 16px;background:color-mix(in srgb,var(--led2) 5%,transparent);margin-bottom:16px;display:none;">
-            <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;">
-              <input type="checkbox" id="qc-checkbox" style="width:18px;height:18px;margin-top:1px;accent-color:var(--led);flex-shrink:0;" onchange="updateQCOption()"/>
-              <div>
-                <p style="font-size:11px;font-weight:600;margin-bottom:3px;">Foto QC pre-spedizione</p>
-                <p style="font-size:10.5px;color:var(--mid);line-height:1.6;margin-bottom:3px;">Ricevi 3-4 foto reali del tuo ordine prima che venga spedito. Conferma la qualità in anticipo.</p>
-                <p id="qc-price-lbl" style="font-size:10.5px;color:var(--led-text);letter-spacing:1px;">Gratis per membri Silver+ · €2.90 per altri</p>
-              </div>
-            </label>
-          </div>
+          <!-- Codice sconto: tolto. Diceva «Sconto 10% applicato!» per LILLO10
+               ma nessuno sconto arrivava né al carrello né al Worker. Torna
+               quando c'è un sistema coupon lato server. -->
+          <!-- (Il QC a pagamento nel carrello è stato tolto: la casella chiamava
+               updateQCOption(), che non esiste più, e dava errore.) -->
           <button onclick="showPg('checkout')" class="btn-led" style="width:100%;font-size:12px;padding:16px;" data-i18n="cart.checkout">Procedi al Checkout →</button>
           <div style="margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:10.5px;color:var(--dim);letter-spacing:1px;"><svg class=ic aria-hidden=true><use href=icons.svg#lock></use></svg> SSL Sicuro</span>
@@ -2525,7 +2511,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       <button class="flink" onclick="openInfo('resi')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#arrow-u-up-left></use></svg></span>Resi &amp; Rimborsi</button>
       <button class="flink" onclick="document.getElementById('size-modal').classList.add('open')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#ruler></use></svg></span>Guida Taglie</button>
       <button class="flink" onclick="openInfo('traccia')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#map-pin></use></svg></span>Traccia Ordine</button>
-      <a href="/cdn-cgi/l/email-protection#22515752524d5056624e4b4e4e4d444b4c460c414d4f" class="flink" style="text-decoration:none;"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#envelope></use></svg></span>Email Supporto</a>
+      <a href="mailto:support@lillofind.com" class="flink" style="text-decoration:none;"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#envelope></use></svg></span>Email Supporto</a>
       <p style="font-size:12px;color:rgba(246,243,238,.72);margin-top:12px;line-height:1.8;"><svg class=ic aria-hidden=true><use href=icons.svg#alarm></use></svg> Lun–Ven 9:00–18:00<br/>Sab 10:00–14:00</p>
     </div>
 
@@ -2640,7 +2626,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   // ── State ──────────────────────────────────────────────
   let products=[], filters={model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,basket:false,priceMin:null,priceMax:null};
   let user=null, udata=null, authTab='li';
-  let wishlist=JSON.parse(localStorage.getItem('lf_wishlist')||'[]');
+  let wishlist=lfLeggiLS('lf_wishlist',[]).filter(x=>typeof x==='string');
 
   // ── REWARDS CONFIG ─────────────────────────────────────
   const REWARDS=[
@@ -2869,7 +2855,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   };
 
   function renderRecentlyViewed(){
-    const rv = JSON.parse(localStorage.getItem('lf_rv')||'[]');
+    const rv = lfLeggiLS('lf_rv',[]);
     const sec = document.getElementById('recently-viewed-section');
     const grid = document.getElementById('rv-grid');
     if(!sec||!grid||!rv.length||!products.length){if(sec)sec.style.display='none';return;}
@@ -3648,9 +3634,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }catch(_){}
     try{ lfTrack('view_item',{item_id:pid,item_name:p.name,value:p.price||0,currency:'EUR'}); }catch(_){}
     // Track recently viewed (max 8, no duplicates)
-    let rv = JSON.parse(localStorage.getItem('lf_rv')||'[]');
+    let rv = lfLeggiLS('lf_rv',[]);
     rv = [pid, ...rv.filter(x=>x!==pid)].slice(0,8);
-    localStorage.setItem('lf_rv', JSON.stringify(rv));
+    try{ localStorage.setItem('lf_rv', JSON.stringify(rv)); }catch(_){}
     const modal=document.getElementById('prod-modal');
     const body=document.getElementById('prod-modal-body');
     if(!modal||!body)return;
@@ -3734,9 +3720,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <div style="border:1.5px solid color-mix(in srgb,var(--led2) 48%,transparent);padding:12px 16px;background:color-mix(in srgb,var(--led2) 5%,transparent);">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--led)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <p style="font-size:10.5px;color:var(--led-text);letter-spacing:2px;text-transform:uppercase;font-weight:bold;">Servizio QC disponibile</p>
+              <p style="font-size:10.5px;color:var(--led-text);letter-spacing:2px;text-transform:uppercase;font-weight:bold;">Foto QC prima della spedizione</p>
             </div>
-            <p style="font-size:10.5px;color:var(--mid);line-height:1.7;">Aggiungi il QC nel carrello: riceverai 3-4 foto reali del tuo articolo prima della spedizione. Gratis per i membri Silver+.</p>
+            <p style="font-size:10.5px;color:var(--mid);line-height:1.7;">Prima della spedizione ti mandiamo 3-4 foto reali del tuo articolo: le trovi nel tuo ordine, nel profilo.</p>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
             ${p.soldOut===true
@@ -3886,6 +3872,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       if(btn){btn.classList.add('active');btn.innerHTML=wishIcon(true);}
       showToast('❤️ Aggiunto alla wishlist!');
     }
+    // Salvata a ogni modifica: prima si scriveva solo una volta al caricamento
+    // dei prodotti, e ricaricando la pagina le modifiche sparivano.
+    try{ localStorage.setItem('lf_wishlist', JSON.stringify(wishlist)); }catch(_){}
     updateWishBadge();
     // Refresh wishlist page if currently open
     if(document.getElementById('pg-wishlist')?.classList.contains('on')) renderWishlistPage();
@@ -4221,17 +4210,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     });
     pool.splice(16); // massimo 16 nella riga
     // Il banner resta SEMPRE visibile (promo motivazionale + link allo shop).
-    // Sfondo: immagine personalizzata assets/sport-banner.jpg se presente,
-    // altrimenti la foto del primo prodotto sport, altrimenti sfondo scuro.
+    // Sfondo: la foto del primo prodotto sport, altrimenti sfondo scuro.
+    // (Prima si provava assets/sport-banner.jpg, che non esiste: un 404 a
+    // ogni visita della home.)
     const bg=document.getElementById('home-sport-bg');
     if(bg){
       const hero=pool.find(p=>p.imageUrl);
-      const fallback=hero?"url('"+pImg(hero.imageUrl)+"')":'';
-      const CUSTOM='assets/sport-banner.jpg';
-      const probe=new Image();
-      probe.onload=()=>{ bg.style.backgroundImage="url('"+CUSTOM+"')"; };
-      probe.onerror=()=>{ if(fallback) bg.style.backgroundImage=fallback; };
-      probe.src=CUSTOM;
+      if(hero) bg.style.backgroundImage="url('"+pImg(hero.imageUrl)+"')";
     }
     // La riga prodotti si mostra solo se ci sono veri prodotti sport
     if(!track) return;
@@ -4446,9 +4431,20 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   }
 
   // ── Cart ───────────────────────────────────────────────
-  let cart=JSON.parse(localStorage.getItem('lf_cart')||'[]');
+  let cart=lfLeggiLS('lf_cart',[]).filter(i=>i&&typeof i==='object');
   
-  function saveCart(){localStorage.setItem('lf_cart',JSON.stringify(cart));}
+  function saveCart(){ try{ localStorage.setItem('lf_cart',JSON.stringify(cart)); }catch(_){} }
+  // Carrello aperto in due schede: senza questo ciascuna sovrascriveva
+  // l'altra al primo saveCart, e un articolo aggiunto spariva.
+  window.addEventListener('storage', e=>{
+    if(e.key==='lf_cart'){
+      cart=lfLeggiLS('lf_cart',[]).filter(i=>i&&typeof i==='object');
+      try{ updateCartBadge(); renderCart(); }catch(_){}
+    } else if(e.key==='lf_wishlist'){
+      wishlist=lfLeggiLS('lf_wishlist',[]).filter(x=>typeof x==='string');
+      try{ updateWishBadge(); }catch(_){}
+    }
+  });
   
   function updateCartBadge(){
     // Gli abbonamenti digitali contano come 1 (qty = mesi, non pezzi)
@@ -4726,14 +4722,6 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     let v=input.value.replace(/\D/g,'').substring(0,16);
     input.value=v.replace(/(.{4})/g,'$1 ').trim();
   };
-  window.applyCoupon=function(){
-    const code=document.getElementById('cart-coupon').value.trim().toUpperCase();
-    const msg=document.getElementById('cart-coupon-msg');
-    if(!msg)return;
-    if(!code){showToast('Inserisci un codice.');return;}
-    if(code==='LILLO10'){msg.style.display='block';msg.textContent='✅ Sconto 10% applicato!';showToast('✅ Codice valido!');}
-    else{msg.style.display='block';msg.style.color='var(--danger)';msg.textContent='⚠️ Codice non valido o scaduto.';}
-  };
   function renderCheckoutSummary(){
     const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
     const allDigital=cart.length>0&&cart.every(i=>i.isDigital);
@@ -4784,7 +4772,24 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     // (la causale vera, col numero d'ordine, la mostra la schermata di conferma)
   }
   // ── Stripe Payment Modal ───────────────────────────────
-  let _stripe=null, _stripeElements=null, _pendingOrderData=null;
+  let _stripe=null, _stripeElements=null, _pendingOrderData=null, _pendingPI=null;
+  // Ordine pagato in attesa di conferma: sopravvive a un redirect 3DS e a una
+  // pagina ricaricata (vedi _riprendiPagamento qui sotto).
+  const _PEND_KEY='lf_pending_order';
+  function _salvaPendente(pi,payload){ try{ localStorage.setItem(_PEND_KEY,JSON.stringify({pi,payload,ts:Date.now()})); }catch(_){} }
+  function _leggiPendente(){ try{ return JSON.parse(localStorage.getItem(_PEND_KEY)||'null'); }catch(_){ return null; } }
+  function _togliPendente(){ try{ localStorage.removeItem(_PEND_KEY); }catch(_){} }
+  // validateOrder dopo un pagamento: ritenta (la rete può cadere proprio lì).
+  // Se il webhook ha già creato l'ordine, il Worker restituisce quello.
+  async function _confermaOrdinePagato(payload,piId){
+    const {_items:_omit,...serverPayload}=payload||{};
+    let ultimo=null;
+    for(let i=0;i<3;i++){
+      try{ return await lfCallable('validateOrder')({...serverPayload,paymentMethod:'card',stripePaymentIntentId:piId}); }
+      catch(e){ ultimo=e; if(e&&(e.code==='permission-denied'||e.code==='invalid-argument')) break; await new Promise(r=>setTimeout(r,1500*(i+1))); }
+    }
+    throw ultimo;
+  }
 
   function initStripeElements(){
     if(!_stripe) _stripe=Stripe('pk_live_51TMliuRvWqYkPkeQYTXaeZIoMBhdZMxDWwVOUrgZCm25X3NzJaJK1qFO4ZsxaDqiX0Y8H2W8XA8tGJrKpGCqVoyf00jxrPsLXT');
@@ -4805,6 +4810,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!btn||!_stripeElements||!_pendingOrderData) return;
     btn.disabled=true; btn.textContent='🔄 Elaborazione...';
     if(errEl) errEl.style.display='none';
+    if(_pendingPI) _salvaPendente(_pendingPI,_pendingOrderData);
     const {error,paymentIntent}=await _stripe.confirmPayment({
       elements:_stripeElements,
       redirect:'if_required',
@@ -4819,15 +4825,48 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     closeStripeModal();
     const fb=window.__fb;
     try{
-      const validateOrder=lfCallable('validateOrder');
-      const {_items:_omit, ...serverPayload}=_pendingOrderData||{};
-      const result=await validateOrder({...serverPayload,stripePaymentIntentId:paymentIntent.id});
+      const result=await _confermaOrdinePagato(_pendingOrderData,paymentIntent.id);
+      _togliPendente();
       _handleOrderSuccess(result.data,_pendingOrderData);
     }catch(e){
-      showToast('⚠️ Pagamento completato ma errore nel salvataggio. Contatta il supporto.');
+      // Il pagamento c'è: l'ordine lo registra comunque il webhook Stripe dai
+      // dati salvati al momento del pagamento. Lo si dice, senza allarmi.
       console.error('validateOrder post-stripe:',e);
+      _mostraPagamentoInRegistrazione(paymentIntent.id);
     }
   };
+  function _mostraPagamentoInRegistrazione(piId){
+    cart=[];saveCart();updateCartBadge();
+    const el=document.getElementById('order-confirm-overlay');
+    if(!el){ showToast('✅ Pagamento ricevuto: stiamo registrando l\'ordine, ti arriva l\'email di conferma.'); return; }
+    el.innerHTML=`<div style="background:#0a0a0a;border:2px solid var(--led);padding:30px 24px;max-width:460px;width:90%;text-align:center;">
+      <p style="font-family:var(--font-display);font-size:26px;letter-spacing:3px;color:var(--led-text);margin-bottom:10px;">PAGAMENTO RICEVUTO</p>
+      <p style="font-size:12.5px;color:rgba(246,243,238,.8);line-height:1.6;margin-bottom:14px;">Il pagamento è andato a buon fine. Stiamo registrando l'ordine: ti arriva l'email di conferma e lo trovi nel profilo entro pochi minuti.</p>
+      <p style="font-size:11px;color:rgba(246,243,238,.6);margin-bottom:18px;">Codice pagamento: <span style="font-family:var(--font-mono);">${lfEsc(piId)}</span></p>
+      <button type="button" data-chiudi style="background:var(--led);color:#fff;border:none;cursor:pointer;font-family:var(--font-display);font-size:15px;letter-spacing:3px;padding:13px 28px;width:100%;">OK</button></div>`;
+    el.onclick=(e)=>{ if(e.target.closest('[data-chiudi]')){ el.style.display='none'; showPg('shop'); } };
+    el.style.display='flex';
+  }
+  // Ritorno da un pagamento con redirect (3DS, wallet…): Stripe rimanda a
+  // /?payment_intent=…&redirect_status=…, e prima nessuno lo gestiva: il
+  // pagamento c'era, l'ordine no. Si completa qui; se non riesce, ci pensa il webhook.
+  async function _riprendiPagamento(){
+    const q=new URLSearchParams(location.search);
+    const piId=q.get('payment_intent'); const stato=q.get('redirect_status');
+    if(!piId) return;
+    try{ history.replaceState(null,'',location.pathname+location.hash); }catch(_){}
+    if(stato!=='succeeded'){ showToast('⚠️ Il pagamento non è stato completato. Puoi riprovare dal carrello.'); return; }
+    const pend=_leggiPendente();
+    if(!pend||pend.pi!==piId){ _mostraPagamentoInRegistrazione(piId); return; }
+    // aspetta che Firebase ripristini la sessione (serve il token)
+    for(let i=0;i<40 && !(window.__fb&&window.__fb.auth&&window.__fb.auth.currentUser);i++) await new Promise(r=>setTimeout(r,250));
+    try{
+      const result=await _confermaOrdinePagato(pend.payload,piId);
+      _togliPendente();
+      _handleOrderSuccess(result.data,pend.payload);
+    }catch(e){ console.error('ripresa pagamento:',e); _mostraPagamentoInRegistrazione(piId); }
+  }
+  setTimeout(()=>{ _riprendiPagamento().catch(()=>{}); },600);
 
   const PAYPAL_EMAIL='contiale2001@gmail.com';
   const PAYPAL_ME='https://www.paypal.me/lilconti';
@@ -5052,14 +5091,21 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Apertura pagamento...';}
       try{
         const createPI=lfCallable('createPaymentIntent');
-        const piResult=await createPI({items:_orderItems.map(i=>({id:i.id,qty:i.qty,...(i.addons?{addons:i.addons}:{})}))});
-        const {clientSecret}=piResult.data;
-        // Calcola totale per display modale
-        const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
-        const phys=cart.filter(i=>!i.isDigital);
-        const totW=phys.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
-        const shipAmt=allDigital?0:getShippingCost(totW);
-        const grandTotal=+(sub+shipAmt).toFixed(2);
+        // L'ordine viaggia col pagamento: il Worker lo tiene "in attesa", e se
+        // dopo il pagamento qualcosa va storto lo completa il webhook Stripe.
+        const {_items:_om, ...orderForServer}=_orderPayload;
+        const piResult=await createPI({items:_orderItems.map(i=>({id:i.id,qty:i.qty,...(i.addons?{addons:i.addons}:{})})),order:orderForServer});
+        const {clientSecret,paymentIntentId,amount}=piResult.data;
+        // L'importo mostrato è quello che Stripe addebita davvero (col premio
+        // LFPoints già scontato): prima era subtotale + spedizione, senza sconto.
+        let grandTotal=Number(amount);
+        if(!isFinite(grandTotal)||grandTotal<=0){
+          const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
+          const phys=cart.filter(i=>!i.isDigital);
+          const totW=phys.reduce((s,i)=>s+getProductWeight(i)*i.qty,0);
+          grandTotal=+(sub+(allDigital?0:getShippingCost(totW))).toFixed(2);
+        }
+        _pendingPI=paymentIntentId||null;
         // Monta Payment Element
         _stripeElements=_stripe.elements({clientSecret,appearance:{theme:'stripe',variables:{fontFamily:'"Manrope",monospace',colorPrimary:'#0a0a0a'}}});
         const pe=_stripeElements.create('payment',{layout:'tabs'});
@@ -5608,12 +5654,18 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     // ── Newsletter ─────────────────────────────────────────
   window.subNL=async function(emailOverride){
     const e=emailOverride||(document.getElementById('nl-mail')?.value?.trim()||'');
-    if(!e||!e.includes('@'))return showToast('Email non valida.');
-    if(!emailOverride){ const el=document.getElementById('nl-mail'); if(el) el.value=''; }
-    showToast('Iscritto! Early access attivo.');
-    // Save to Firestore if available
+    if(!e||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return showToast('Email non valida.');
+    // Prima il «Iscritto!» compariva SUBITO e l'errore veniva ingoiato: le
+    // regole non avevano una regola per `newsletter`, quindi ogni iscrizione
+    // veniva rifiutata in silenzio. Ora il messaggio arriva solo a salvataggio fatto.
     const fb=window.__fb;
-    if(fb){ try{ await fb.addDoc(fb.collection(fb.db,'newsletter'),{email:e,ts:fb.serverTimestamp()}); }catch(err){} }
+    if(!fb) return showToast('Riprova tra poco.');
+    try{
+      const u=await window.lfAssicuraUtente();
+      await fb.addDoc(fb.collection(fb.db,'newsletter'),{email:e.toLowerCase().slice(0,200),uid:u.uid,ts:fb.serverTimestamp()});
+      if(!emailOverride){ const el=document.getElementById('nl-mail'); if(el) el.value=''; }
+      showToast('Iscritto! Early access attivo.');
+    }catch(err){ console.error('newsletter',err&&err.code); showToast('⚠️ Iscrizione non riuscita, riprova.'); }
   };
 
   // ── Product Request ────────────────────────────────────
@@ -6467,7 +6519,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     hideStickyATC();
     _origShowPg(id);
     const bnWish=document.getElementById('bn-wish'); if(bnWish) bnWish.classList.toggle('active',id==='wishlist');
-    if(id==='cart'){setTimeout(()=>{renderCart();if(typeof showQCOption==='function')showQCOption();},80);}
+    if(id==='cart'){setTimeout(()=>{renderCart();},80);}
     if(id==='group'){setTimeout(()=>{ if(typeof renderGroupPage==='function') renderGroupPage(); },60);}
     if(id==='checkout'){setTimeout(()=>{renderCheckoutSummary();selectPayment('card');initStripeElements();},50);}
     if(id==='profile'&&user&&window.__fb){
@@ -6731,7 +6783,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const fill=document.getElementById('free-ship-fill');
     const msg=document.getElementById('free-ship-msg');
     if(!bar||!fill||!msg) return;
-    const cartData=JSON.parse(localStorage.getItem('lf_cart')||'[]');
+    const cartData=lfLeggiLS('lf_cart',[]).filter(i=>i&&typeof i==='object');
     const physItems=cartData.filter(i=>!i.isDigital);
     if(!physItems.length){bar.style.display='none';return;}
     const totW=physItems.reduce((s,i)=>s+getProductWeight(i)*(i.qty||1),0);
