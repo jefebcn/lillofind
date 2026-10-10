@@ -609,6 +609,15 @@ app.post('/migratePrivateFields', callable(admin.migratePrivateFields, { auth: '
 // Checkout
 app.post('/createPaymentIntent', callable(checkout.createPaymentIntent, { auth: 'required' }));
 app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 'required' }));
+// Webhook Stripe: niente CORS né token Firebase, lo autentica la firma Stripe.
+app.post('/stripeWebhook', async (c) => {
+  const raw = await c.req.text();
+  const r = await checkout.stripeWebhook(raw, c.req.header('stripe-signature') || '', {
+    env: c.env, db: new Firestore(c.env),
+    waitUntil: (p) => { try { c.executionCtx.waitUntil(p); } catch (_) { return p; } },
+  });
+  return c.json(r.body, r.status);
+});
 // Email tracking al cliente (admin via allowlist email)
 app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
 app.post('/track17',             callable(checkout.track17,             { auth: 'required' }));

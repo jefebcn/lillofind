@@ -4,6 +4,7 @@
 
 FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"lillofind-c455c","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"...@lillofind-c455c.iam.gserviceaccount.com"}
 STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
 RESEND_API_KEY=re_xxx
 ANTHROPIC_API_KEY=sk-ant-xxx
 IMGBB_KEY=chiave_imgbb

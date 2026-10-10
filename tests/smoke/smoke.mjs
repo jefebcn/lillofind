@@ -89,7 +89,7 @@ fs.rmSync(OUT, { recursive: true, force: true });
 
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH, args: ['--no-sandbox'] } : {});
 
-async function run(pageFile, steps, { width, theme }) {
+async function run(pageFile, steps, { width, theme, cart = CART, extra = {} }) {
   const mobile = width < 600;
   const ctx = await browser.newContext({ viewport: { width, height: mobile ? 844 : 900 }, isMobile: mobile, hasTouch: mobile });
   await ctx.route('**/*', (route) => {
@@ -102,12 +102,13 @@ async function run(pageFile, steps, { width, theme }) {
     if (/chart(\.umd)?(\.min)?\.js/i.test(u)) return route.fulfill({ contentType: 'text/javascript', body: CHART_STUB });
     return route.abort(); // niente rete esterna: font, Firestore, Worker, analytics
   });
-  await ctx.addInitScript(([cart, theme]) => {
+  await ctx.addInitScript(([cart, theme, extra]) => {
     try {
       ['lf_cookie', 'lf_promo_group', 'lf_onboarded', 'lf_pwa_dismiss'].forEach(k => localStorage.setItem(k, '1'));
       localStorage.setItem('lf_cart', cart); localStorage.setItem('lf_theme', theme);
+      Object.entries(extra).forEach(([k, v]) => localStorage.setItem(k, v));
     } catch (_) {}
-  }, [CART, theme]);
+  }, [cart, theme, extra]);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -151,6 +152,13 @@ for (const width of [390, 1280]) {
   if (want('index.html')) for (const theme of ['light', 'dark']) await run('index.html', INDEX, { width, theme });
   for (const f of ['subscriptions.html', 'vault.html', 'stream.html']) if (want(f)) await run(f, [['pagina', null, null]], { width, theme: 'light' });
 }
+
+// localStorage rotto (JSON a meta', tipi sbagliati): prima un solo parse
+// fallito fermava tutto lo script e la home restava vuota.
+if (want('index.html')) await run('index.html', [
+  ['localStorage rotto', null, "document.querySelectorAll('#home-prods .pcard').length>0"],
+  ['carrello con localStorage rotto', "showPg('cart')", "document.querySelector('#pg-cart.on')!==null"],
+], { width: 390, theme: 'light', cart: '[{"id":', extra: { lf_wishlist: '{rotto', lf_rv: '"stringa"' } });
 
 await browser.close(); server.close();
 if (failures.length) { console.log(`\n${failures.length} viste con problemi (screenshot in tests/smoke/out/)`); process.exit(1); }

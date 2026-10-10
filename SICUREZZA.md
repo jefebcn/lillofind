@@ -57,6 +57,17 @@ repository non ha (e non deve avere).
    pubblici a `products_private`. Compare un messaggio col numero di prodotti
    spostati. Le pagine admin li mostrano come prima.
 
+6. **Webhook Stripe** (blocco B, punto 18). Se il cliente paga e chiude la
+   pagina prima della conferma, l'ordine ora lo crea Stripe chiamando il Worker.
+   - Stripe Dashboard → Developers → **Webhooks** → **Add endpoint**.
+   - URL: l'indirizzo del Worker seguito da `/stripeWebhook`.
+   - Evento: solo `payment_intent.succeeded`.
+   - Copia il **Signing secret** (comincia con `whsec_`) e mettilo come secret
+     del Worker, nome `STRIPE_WEBHOOK_SECRET`.
+   - Finché non lo configuri il sito funziona come prima: l'ordine lo conferma
+     la pagina. Se registri l'endpoint ma il secret manca, il Worker risponde
+     503 e Stripe riprova per circa tre giorni, quindi c'è tempo per metterlo.
+
 ## Cosa è cambiato, punto per punto
 
 | # | Problema | Stato |

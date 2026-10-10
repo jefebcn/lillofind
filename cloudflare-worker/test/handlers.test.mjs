@@ -1,6 +1,6 @@
 // Test dei handler checkout/loyalty con un Firestore finto in memoria.
 // Eseguibile con `node test/handlers.test.mjs` (niente rete: fetch è finto).
-import { validateOrder, sendOrderEmail, track17, rewardDiscount } from '../src/handlers/checkout.js';
+import { validateOrder, sendOrderEmail, track17, rewardDiscount, stripeWebhook } from '../src/handlers/checkout.js';
 import { claimReward, claimReferrals } from '../src/handlers/loyalty.js';
 import { DELETE_FIELD } from '../src/lib/firestore.js';
 
@@ -162,8 +162,35 @@ eq(rewardDiscount({ activeReward: { type: 'percentuale', val: 500 } }, 10, 5).di
   eq(r1.total * 100, pi.amount, 'primo ordine col PaymentIntent creato');
   eq(Object.values(db.D.orders).filter(o => o.stripePaymentIntentId === 'pi_1').length, 1, 'l\'ordine porta il PaymentIntent');
   eq(!!db.D.used_payment_intents.pi_1, true, 'il PaymentIntent e\' segnato come usato');
-  await throwsCode(() => validateOrder(ordine, { env: e8, db, auth: userAuth('u3', 'u3@x.it') }), 'already-exists', 'stesso PaymentIntent, secondo ordine rifiutato');
+  // lo stesso cliente che ritenta (o torna dopo il webhook) riceve lo stesso ordine, non un altro
+  const r2 = await validateOrder(ordine, { env: e8, db, auth: userAuth('u3', 'u3@x.it') });
+  eq([r2.alreadyCreated, r2.orderId, r2.lfpoints], [true, r1.orderId, 0], 'stesso PaymentIntent: si riottiene lo stesso ordine');
+  eq(Object.values(db.D.orders).filter(o => o.stripePaymentIntentId === 'pi_1').length, 1, 'e gli ordini restano uno');
   eq(db.D.users.u3.lfpoints, 40, 'LFPoints accreditati una volta sola');
+  // un altro utente con lo stesso PaymentIntent: rifiutato
+  await throwsCode(() => validateOrder(ordine, { env: e8, db, auth: userAuth('u4', 'u4@x.it') }), 'permission-denied', 'PaymentIntent di un altro: rifiutato');
+}
+// 9) webhook Stripe: un pagamento riuscito senza ordine viene completato
+{
+  const db = mockDb(seed); sent.length = 0;
+  const { getShippingCost, getProductWeight } = await import('../src/lib/shipping.js');
+  const amount = Math.round((20 + getShippingCost(getProductWeight({ weightKg: 0.4, category: '' }))) * 100);
+  const pi = { id: 'pi_9', status: 'succeeded', metadata: { uid: 'u9' }, amount };
+  const finto = { paymentIntents: { retrieve: async () => pi },
+    webhooks: { constructEventAsync: async (body, sig) => { if (sig !== 'firma-ok') throw new Error('firma'); return JSON.parse(body); } } };
+  const e9 = { ...env, STRIPE_WEBHOOK_SECRET: 'whsec_x', __stripeFinto: finto };
+  db.D.pending_orders = { pi_9: { uid: 'u9', order: JSON.stringify({ items: [{ id: 'p1', qty: 1 }], email: 'cliente9@x.it', name: 'Nove', shippingAddress: { street: 'Via 9' } }) } };
+  const evento = JSON.stringify({ type: 'payment_intent.succeeded', data: { object: pi } });
+  eq((await stripeWebhook(evento, 'firma-falsa', { env: e9, db })).status, 400, 'webhook con firma falsa: rifiutato');
+  const w1 = await stripeWebhook(evento, 'firma-ok', { env: e9, db });
+  eq([w1.status, !!w1.body.orderId], [200, true], 'webhook: ordine creato dal pagamento');
+  const o9 = Object.values(db.D.orders).find(o => o.stripePaymentIntentId === 'pi_9');
+  eq([o9 && o9.email, o9 && o9.paymentStatus], ['cliente9@x.it', 'paid'], 'ordine con i dati salvati al pagamento, pagato');
+  eq((await stripeWebhook(evento, 'firma-ok', { env: e9, db })).body.already, true, 'webhook ripetuto: niente doppione');
+  // il cliente torna dopo il redirect: riottiene l'ordine già creato
+  const back = await validateOrder({ items: [{ id: 'p1', qty: 1 }], paymentMethod: 'card', stripePaymentIntentId: 'pi_9', shippingAddress: { street: 'Via 9' } }, { env: e9, db, auth: userAuth('u9', 'c9@x.it') });
+  eq([back.alreadyCreated, back.orderId], [true, w1.body.orderId], 'ritorno dal redirect: stesso ordine del webhook');
+  eq(Object.values(db.D.orders).filter(o => o.stripePaymentIntentId === 'pi_9').length, 1, 'un solo ordine in tutto');
 }
 console.log(`\n${pass} passati, ${fail} falliti`);
 if (fail) process.exit(1);
