@@ -364,7 +364,14 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
   <div id="guard-denied" style="display:none;flex-direction:column;align-items:center;gap:12px;text-align:center;">
     <p style="color:#ff4444;">ACCESSO NEGATO</p>
     <small id="guard-denied-email" style="color:#888;"></small>
-    <small style="color:#555;letter-spacing:1px;">Il tuo account non ha i permessi admin.</small>
+    <small id="guard-denied-msg" style="color:#888;letter-spacing:1px;">Il tuo account non ha i permessi admin.</small>
+    <!-- Email admin giusta ma non verificata: la verifica si fa da qui -->
+    <div id="guard-verify" style="display:none;flex-direction:column;gap:8px;max-width:300px;">
+      <button id="guard-verify-send" onclick="adminSendVerify()" style="padding:11px 14px;background:var(--led);color:#000;border:none;cursor:pointer;font-size:12px;font-weight:700;">📧 Invia email di verifica</button>
+      <button onclick="adminRecheck()" style="padding:10px 14px;background:transparent;color:#ddd;border:1px solid #444;cursor:pointer;font-size:11px;">Ho cliccato il link, riprova</button>
+      <small style="color:#888;line-height:1.6;">Oppure entra con «Accedi con Google» usando la stessa email: Google la considera già verificata.</small>
+    </div>
+    <button onclick="window.__fb&&window.__fb.signOut(window.__fb.auth).then(()=>location.reload())" style="margin-top:4px;padding:8px 12px;background:transparent;color:#aaa;border:1px solid #333;cursor:pointer;font-size:10px;letter-spacing:1px;">Esci e cambia account</button>
     <a href="index.html" style="margin-top:8px;font-size:10px;color:var(--led);letter-spacing:2px;text-decoration:none;text-transform:uppercase;">← Torna al sito</a>
   </div>
 </div>
@@ -1302,6 +1309,29 @@ const ADMIN_EMAILS = [
 ];
 // ══════════════════════════════════════════════════════════════════════════
 
+// Verifica email dell'admin (schermata "accesso negato"): l'accesso admin
+// richiede l'email VERIFICATA, come le regole Firestore e il Worker.
+window.adminSendVerify = async function(){
+  const fb = window.__fb, u = fb && fb.auth.currentUser, b = document.getElementById('guard-verify-send');
+  if (!u) return;
+  b.disabled = true; b.textContent = '...';
+  try {
+    await fb.sendEmailVerification(u);
+    b.textContent = '✅ Inviata a ' + (u.email||'') + ' — controlla anche lo spam';
+  } catch (e) {
+    b.disabled = false;
+    b.textContent = e && e.code === 'auth/too-many-requests' ? 'Troppi tentativi, riprova tra qualche minuto' : '📧 Invia email di verifica';
+  }
+};
+window.adminRecheck = async function(){
+  const fb = window.__fb, u = fb && fb.auth.currentUser;
+  if (!u) return location.reload();
+  // reload() aggiorna emailVerified, getIdToken(true) porta email_verified
+  // anche nel token letto da regole e Worker.
+  try { await u.reload(); await u.getIdToken(true); } catch (_) {}
+  location.reload();
+};
+
 // ── waitFB helper ──────────────────────────────────────────────────────────
 function waitFB(cb, tries=0){
   if(window.__fb) cb();
@@ -1443,6 +1473,13 @@ waitFB(()=>{
       if (!grantedByEmail) {
         spinWrap.style.display = 'none';
         document.getElementById('guard-denied-email').textContent = user.email||'';
+        // Email della lista ma non verificata: non è un estraneo, è l'admin
+        // che entra con email+password mai confermata. Gli diamo il modo
+        // di verificarla invece di un muro.
+        if (allow.includes(emailNorm) && user.emailVerified !== true) {
+          document.getElementById('guard-denied-msg').textContent = 'Email admin non ancora verificata. Verificala per entrare.';
+          document.getElementById('guard-verify').style.display = 'flex';
+        }
         denied.style.display   = 'flex';
         return;
       }
