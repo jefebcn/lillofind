@@ -301,7 +301,8 @@ exports.yupooFetch = onCall({ timeoutSeconds: 120 }, async (request) => {
 
   // ── BRANCH TAOBAO / ALIEXPRESS ─────────────────────────────────
   if (isTaobao) {
-    const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
+    // La chiave sta nei secret (IMGBB_KEY), non nel codice: il repository e' pubblico.
+    const IMGBB_KEY = process.env.IMGBB_KEY || '';
     const UA_BAIDU = 'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)';
     const UA_DESK  = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
     const UA_MOB   = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
@@ -1369,6 +1370,13 @@ exports.createPaymentIntent = onCall({ secrets: [STRIPE_SECRET_KEY], cors: true 
 //   { orderId, subtotal, shipping, discount, total }
 // ══════════════════════════════════════════════════════════════════
 exports.validateOrder = onCall({ secrets: [STRIPE_SECRET_KEY, RESEND_API_KEY] }, async (request) => {
+  // SPENTA. Gli ordini li crea il Worker Cloudflare (/validateOrder), che
+  // segna ogni PaymentIntent come usato. Questa versione non lo faceva: lo
+  // stesso pagamento poteva creare piu' ordini pagati. Se e' ancora
+  // deployata va cancellata (firebase functions:delete validateOrder);
+  // intanto, se qualcuno la chiama, non crea niente.
+  throw new HttpsError('failed-precondition', 'Servizio spostato: aggiorna la pagina e riprova.');
+  // eslint-disable-next-line no-unreachable
   // Subscription catalog (server-side price list — single source of truth)
   const SUBSCRIPTION_CATALOG = {
     'sub-netflix':     { name: 'Netflix Premium UHD',       price: 3.90, isDigital: true },

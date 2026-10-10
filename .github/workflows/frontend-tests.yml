@@ -50,3 +50,22 @@ jobs:
           npm ci
           npm test
           for t in test/*.test.mjs; do echo "▶ $t"; node "$t"; done
+
+  # Le regole Firestore nell'emulatore (tests/rules): chi legge e scrive cosa.
+  regole:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Regole Firestore nell'emulatore
+        working-directory: tests/rules
+        run: |
+          npm ci
+          npm test

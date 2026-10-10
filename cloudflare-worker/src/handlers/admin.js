@@ -4,6 +4,8 @@
 // ════════════════════════════════════════════════════════════════
 
 import { HttpsError } from '../lib/errors.js';
+import { DELETE_FIELD } from '../lib/firestore.js';
+import { PRIVATE_FIELDS, splitPrivate, hasPrivate } from '../lib/product-private.js';
 
 // createdAt (timestamp Firestore → ISO string), come gli originali
 function isoCreatedAt(row) {
@@ -19,19 +21,22 @@ export async function saveProduct(p, { db }) {
   if (!['uomo', 'donna', 'unisex'].includes(gender)) {
     throw new HttpsError('invalid-argument', 'gender non valido');
   }
+  // Niente HTML nei testi del fornitore (lo shop li mostra escapati, ma
+  // meglio non salvarli proprio).
+  const txt = (v, n) => String(v || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').slice(0, n);
   const docData = {
-    name:        String(p.name).slice(0, 200),
+    name:        txt(p.name, 200),
     price:       p.price,
-    brand:       String(p.brand || '').slice(0, 100),
-    model:       String(p.model || '').slice(0, 100),
-    style:       String(p.model || '').slice(0, 100),
+    brand:       txt(p.brand, 100),
+    model:       txt(p.model, 100),
+    style:       txt(p.model, 100),
     category:    String(p.category || '').slice(0, 50),
     gender:      gender,
     sizes:       Array.isArray(p.sizes) ? p.sizes.slice(0, 50) : ['S', 'M', 'L', 'XL'],
     size:        String(p.size || '').slice(0, 200),
     colors:      Array.isArray(p.colors) ? p.colors.slice(0, 20) : [],
     imageUrl:    String(p.imageUrl || '').slice(0, 500),
-    description: String(p.description || '').slice(0, 2000),
+    description: txt(p.description, 2000),
     weightKg:    typeof p.weightKg === 'number' ? p.weightKg : 0,
     createdAt:   new Date(),
   };
@@ -131,9 +136,10 @@ export async function getAdminOrders(_data, { db }) {
 
 // ── getAdminProducts ────────────────────────────────────────────
 export async function getAdminProducts(_data, { db }) {
-  const products = await db.listAll('products');
+  const [products, priv] = await Promise.all([db.listAll('products'), db.listAll('products_private').catch(() => [])]);
+  const privById = Object.fromEntries(priv.map(({ id, ...rest }) => [id, rest]));
   products.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-  return products.map(p => ({ ...p, createdAt: isoCreatedAt(p) }));
+  return products.map(p => ({ ...p, ...(privById[p.id] || {}), createdAt: isoCreatedAt(p) }));
 }
 
 // ── deleteAdminProduct ──────────────────────────────────────────
@@ -141,6 +147,7 @@ export async function deleteAdminProduct(data, { db }) {
   const { id } = data || {};
   if (!id) throw new HttpsError('invalid-argument', 'ID mancante.');
   await db.deleteDoc('products', id);
+  await db.deleteDoc('products_private', id).catch(() => null);
   return { ok: true };
 }
 
@@ -148,7 +155,9 @@ export async function deleteAdminProduct(data, { db }) {
 export async function updateAdminProduct(data, { db }) {
   const { id, data: fields } = data || {};
   if (!id || !fields) throw new HttpsError('invalid-argument', 'Dati mancanti.');
-  await db.updateDoc('products', id, fields);
+  const { pub, priv } = splitPrivate(fields);
+  if (Object.keys(pub).length) await db.updateDoc('products', id, pub);
+  if (Object.keys(priv).length) await db.updateDoc('products_private', id, priv);
   return { ok: true };
 }
 
@@ -158,4 +167,23 @@ export async function updateAdminOrder(data, { db }) {
   if (!id || !status) throw new HttpsError('invalid-argument', 'Dati mancanti.');
   await db.updateDoc('orders', id, { status });
   return { ok: true };
+}
+
+// Sposta una volta sola i campi privati dai vecchi documenti `products` a
+// `products_private`. Si lancia dall'admin (pulsante «Sposta i costi
+// fornitore» o lfCallable('migratePrivateFields')()); rilanciarlo non fa
+// danni: tocca solo i prodotti che hanno ancora qualche campo privato.
+export async function migratePrivateFields(_data, { db }) {
+  const products = await db.listAll('products');
+  let moved = 0;
+  for (const p of products) {
+    if (!hasPrivate(p)) continue;
+    const { priv } = splitPrivate(p);
+    await db.updateDoc('products_private', p.id, priv);
+    const togli = {};
+    for (const f of PRIVATE_FIELDS) if (f in p) togli[f] = DELETE_FIELD;
+    await db.updateDoc('products', p.id, togli);
+    moved++;
+  }
+  return { moved, total: products.length };
 }
