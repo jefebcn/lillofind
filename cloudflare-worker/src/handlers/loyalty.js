@@ -38,29 +38,61 @@ export async function claimReward(data, { db, auth }) {
   return { lfpoints, activeReward };
 }
 
-// Accredita al referrer gli inviti non ancora accreditati. Un invitato conta
-// una sola volta e solo se è un account reale (non ospite anonimo).
+// Accredita al referrer gli inviti non ancora accreditati.
+//
+// Un invito vale SOLO se l'invitato:
+//   - ha un account reale (non ospite anonimo, con email sul profilo), e
+//   - ha almeno un ordine PAGATO (paymentStatus 'paid', scritto solo dal
+//     Worker per le carte e dall'admin per bonifico/PayPal).
+// Prima bastavano campi che l'utente scrive da sé: si creavano account
+// finti e si incassavano 50 punti l'uno. Con un ordine pagato di mezzo,
+// fabbricarsi inviti costa più di quanto rende.
+//
+// E l'accredito e' atomico: ogni invitato si "consuma" con
+// referral_credits/{uid dell'invitato} creato con la precondizione "non deve
+// esistere", e i punti si sommano con un incremento atomico. Due chiamate
+// parallele non accreditano due volte (prima si'), e un invitato conta una
+// volta sola anche se due persone dicono di averlo invitato.
+async function haOrdinePagato(db, uid) {
+  try {
+    const rows = await db.runQuery('orders', { where: [['uid', '==', uid], ['paymentStatus', '==', 'paid']], limit: 1 });
+    return rows.length > 0;
+  } catch (e) { console.error('referral: verifica ordini', e && e.message); return false; }
+}
+
 export async function claimReferrals(data, { db, auth }) {
   if (isAnonymous(auth)) return { gained: 0 };
   const refs = await db.runQuery('referrals', { where: [['referrer', '==', auth.uid]], limit: 200 });
   const pending = refs.filter(r => r.credited !== true && r.referred && r.referred !== auth.uid);
   if (!pending.length) return { gained: 0 };
-  const credited = await db.runQuery('referrals', { where: [['referrer', '==', auth.uid], ['credited', '==', true]], limit: 500 });
-  const already = new Set(credited.map(r => r.referred));
-  const referredDocs = await db.getMany('users', [...new Set(pending.map(r => r.referred))]);
-  const real = new Set(referredDocs.filter(s => s.exists && (s.data().email || '') && s.data().isGuest !== true).map(s => s.id));
+  const referredIds = [...new Set(pending.map(r => r.referred))];
+  const referredDocs = await db.getMany('users', referredIds);
+  const conAccount = new Set(referredDocs.filter(s => s.exists && (s.data().email || '') && s.data().isGuest !== true).map(s => s.id));
+  const pagati = new Set();
+  for (const id of conAccount) if (await haOrdinePagato(db, id)) pagati.add(id);
+
   let gained = 0;
   const seen = new Set();
   const writes = [];
   for (const r of pending) {
-    const ok = real.has(r.referred) && !already.has(r.referred) && !seen.has(r.referred);
+    if (seen.has(r.referred)) { writes.push({ collection: 'referrals', id: r.id, fields: { credited: true, rejected: true } }); continue; }
     seen.add(r.referred);
+    // Senza ordine pagato l'invito resta in attesa: si riprova al prossimo giro.
+    if (!conAccount.has(r.referred) || !pagati.has(r.referred)) continue;
+    let ok = false;
+    try {
+      await db.createAtomic([{ collection: 'referral_credits', id: r.referred, mustNotExist: true,
+        fields: { referrer: auth.uid, referralId: r.id, points: REFERRAL_POINTS, creditedAt: new Date() } }]);
+      ok = true;
+    } catch (e) {
+      if (!(e && e.code === 'already-exists')) throw e;
+    }
     writes.push({ collection: 'referrals', id: r.id, fields: { credited: true, ...(ok ? {} : { rejected: true }) } });
     if (ok) gained += REFERRAL_POINTS;
   }
-  const snap = await db.getDoc('users', auth.uid);
-  const pts = (snap.exists ? Number(snap.data().lfpoints) || 0 : 0) + gained;
   if (writes.length) await db.commitUpdates(writes);
-  if (gained) await db.updateDoc('users', auth.uid, { lfpoints: pts });
+  if (gained) await db.increment('users', auth.uid, 'lfpoints', gained);
+  const snap = await db.getDoc('users', auth.uid);
+  const pts = snap.exists ? Number(snap.data().lfpoints) || 0 : gained;
   return { gained, lfpoints: pts };
 }

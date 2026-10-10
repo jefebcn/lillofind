@@ -6,7 +6,12 @@
 
 import { HttpsError } from '../lib/errors.js';
 
-const IMGBB_KEY = '4e0f0e5bfe97cdcf39838aa5a82abb75';
+// La chiave imgbb sta nel secret del Worker IMGBB_KEY (wrangler secret put
+// IMGBB_KEY), non nel codice: il repository e' pubblico. Gli handler la
+// copiano qui all'ingresso, perche' alcune funzioni interne non ricevono env.
+// Senza secret il re-upload su imgbb si salta e resta l'immagine originale.
+let IMGBB_KEY = '';
+function usaChiaveImgbb(env) { if (env && env.IMGBB_KEY) IMGBB_KEY = env.IMGBB_KEY; }
 
 // ════════════════════════════════════════════════════════════════
 // Helper: autenticazione Yupoo password-protected
@@ -166,6 +171,7 @@ async function yupooPasswordAuth(baseUrl, password) {
 // Output: { url: string }
 // ════════════════════════════════════════════════════════════════
 export async function uploadImage(data, { env }) {
+  usaChiaveImgbb(env);
   let b64 = (data && data.imageBase64) || '';
   if (!b64) throw new HttpsError('invalid-argument', 'Immagine mancante.');
   // togli eventuale prefisso data:...;base64,
@@ -173,8 +179,9 @@ export async function uploadImage(data, { env }) {
   if (comma >= 0) b64 = b64.slice(comma + 7);
   if (b64.length > 40 * 1024 * 1024) throw new HttpsError('invalid-argument', 'Immagine troppo grande.');
 
+  if (!env.IMGBB_KEY) throw new HttpsError('failed-precondition', 'Upload immagini non configurato (manca il secret IMGBB_KEY del Worker).');
   const form = new URLSearchParams();
-  form.append('key', env.IMGBB_KEY || IMGBB_KEY);
+  form.append('key', env.IMGBB_KEY);
   form.append('image', b64);
   try {
     const res = await fetch('https://api.imgbb.com/1/upload', {
@@ -250,6 +257,7 @@ async function resolveShortLink(raw) {
 }
 
 export async function yupooFetch(data, _ctx) {
+  usaChiaveImgbb(_ctx && _ctx.env);
   const { url: inUrl, password } = data || {};
   if (!inUrl || typeof inUrl !== 'string') throw new HttpsError('invalid-argument', 'Parametro url mancante.');
   const rawUrl = await resolveShortLink(inUrl.trim());
@@ -431,7 +439,7 @@ export async function yupooFetch(data, _ctx) {
 
     let imgbbUrl = '';
     const firstImg = images[0] || '';
-    if (firstImg) {
+    if (firstImg && IMGBB_KEY) {
       try {
         const imgResp = await fetch(firstImg, { headers: { 'User-Agent': UA_DESK, 'Referer': 'https://www.taobao.com/', 'Accept': 'image/*' }, signal: AbortSignal.timeout(10000) });
         if (imgResp.ok) {
@@ -883,7 +891,7 @@ async function weidianFetch(url) {
   // ── Re-upload della cover su imgbb (le immagini geilicdn possono bloccare l'hotlink) ──
   let imgbbUrl = '';
   const firstImg = images[0] || '';
-  if (firstImg) {
+  if (firstImg && IMGBB_KEY) {
     try {
       const imgResp = await fetch(firstImg, { headers: { 'User-Agent': UA_DESK, 'Referer': 'https://weidian.com/', 'Accept': 'image/*' }, signal: AbortSignal.timeout(10000) });
       if (imgResp.ok) {
@@ -972,6 +980,7 @@ function parseFirstJson(text) {
 // yupooAnalyze — fetch immagine + analisi Claude Haiku
 // ════════════════════════════════════════════════════════════════
 export async function yupooAnalyze(data, { env }) {
+  usaChiaveImgbb(env);
   const { imageUrl, brandHint = '', modelHint = '' } = data || {};
   if (!imageUrl || typeof imageUrl !== 'string') throw new HttpsError('invalid-argument', 'imageUrl mancante.');
   if (!env.ANTHROPIC_API_KEY) {

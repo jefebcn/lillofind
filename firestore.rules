@@ -7,13 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Admin determinato dall'email autenticata (allowlist), NON da un campo del
-    // documento utente: quel campo è scrivibile dall'utente stesso e non deve
-    // conferire privilegi. Le email admin sono uniche in Firebase Auth
-    // (nessun altro può registrarle) → nessuna auto-promozione possibile.
+    // Admin: UN SOLO modello, il token (lo stesso del Worker, lib/auth.js).
+    //  - custom claim admin:true (scripts/set-admin-claim.mjs), oppure
+    //  - email dell'allowlist, ma solo se VERIFICATA. Prima bastava l'email:
+    //    la registrazione email/password non chiede la verifica, quindi chi
+    //    registrava per primo un indirizzo della lista non ancora usato
+    //    diventava admin.
     function isAdmin() {
-      return signedIn() &&
-        request.auth.token.email in ['yishionvt@gmail.com', 'admin@lillofind.com'];
+      return signedIn() && (
+        request.auth.token.get('admin', false) == true
+        || (request.auth.token.get('email_verified', false) == true
+            && request.auth.token.email in ['yishionvt@gmail.com', 'admin@lillofind.com'])
+      );
+    }
+    // Email del token utilizzabile per dare accesso a dati: solo se verificata.
+    function verifiedEmail() {
+      return signedIn() && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', null) != null;
     }
 
     // Impedisce all'utente di scriversi isAdmin:true sul proprio documento
@@ -43,18 +53,26 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Costi fornitore e link alla fonte (costEUR, supplierPriceCNY,
+    // sourceUrl…): stavano nei documenti pubblici di products. Solo admin.
+    match /products_private/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Orders — utente legge i propri (per uid O per email verificata, così vede
     // gli ordini anche se ha cambiato metodo di login mantenendo la stessa
     // email — es. passaggio a "Accedi con Google"); admin legge/scrive tutti.
     // L'email in Firebase Auth è unica per account, quindi il match è sicuro.
     match /orders/{id} {
+      // Ogni ramo per email richiede l'email VERIFICATA: prima bastava
+      // registrarsi con l'indirizzo di un cliente per leggerne gli ordini.
       allow read:   if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid)
-                    || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email)
+                    || (verifiedEmail() && resource.data.email == request.auth.token.email)
                     // …oppure se il proprietario dell'ordine (il suo uid) è un
                     // account con la mia stessa email verificata: copre il caso
                     // in cui il cliente ha un vecchio account (uid diverso) con
                     // la stessa email, anche se sull'ordine manca il campo email.
-                    || (signedIn() && request.auth.token.email != null
+                    || (verifiedEmail()
                         && exists(/databases/$(database)/documents/users/$(resource.data.uid))
                         && get(/databases/$(database)/documents/users/$(resource.data.uid)).data.get('email','') == request.auth.token.email);
       // Gli ordini li crea SOLO il Worker (/validateOrder), che ricalcola
@@ -69,7 +87,7 @@ service cloud.firestore {
     // all'uid. Email unica in Firebase Auth → lettura per email sicura.
     match /users/{uid} {
       allow read:  if request.auth.uid == uid || isAdmin()
-                   || (signedIn() && request.auth.token.email != null && resource.data.email == request.auth.token.email);
+                   || (verifiedEmail() && resource.data.email == request.auth.token.email);
       // Scrittura sul proprio doc; discountUsed è write-once (non azzerabile)
       // così non si può "resettare" lo sconto già usato. Admin bypassa.
       // Creazione: bonus di benvenuto max 50 punti, nessuno sconto/spesa.
@@ -86,10 +104,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Richieste prodotto ("non trovo prodotto") — chiunque può inviare, solo admin legge
+    // Richieste prodotto ("non trovo prodotto") — serve un utente (anche
+    // ospite anonimo, lo crea il sito: lfAssicuraUtente), solo admin legge.
+    // Prima chiunque, senza sessione, poteva caricare foto da 900KB a raffica.
     match /product_requests/{id} {
       // Forma e dimensioni limitate (foto max ~900KB, testi brevi).
-      allow create: if request.resource.data.keys().hasOnly(['note', 'image', 'userId', 'userEmail', 'ts',
+      allow create: if signedIn()
+        && request.resource.data.get('userId', request.resource.data.get('uid', '')) == request.auth.uid
+        && request.resource.data.keys().hasOnly(['note', 'image', 'userId', 'userEmail', 'ts',
             'type', 'sport', 'team', 'year', 'kit', 'category', 'personalization', 'email', 'uid', 'status', 'createdAt'])
         && (!('note' in request.resource.data) || str(request.resource.data.note, 2000))
         && (!('image' in request.resource.data) || request.resource.data.image == null || str(request.resource.data.image, 900000))
@@ -99,9 +121,12 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
-    // Avvisami quando disponibile — chiunque può iscriversi, solo admin legge
+    // Avvisami quando disponibile — serve un utente (anche ospite anonimo),
+    // solo admin legge.
     match /stock_alerts/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['productId', 'productName', 'email', 'notified', 'createdAt'])
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['productId', 'productName', 'email', 'uid', 'notified', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
         && str(request.resource.data.productId, 60)
         && str(request.resource.data.email, 200)
         && (!('productName' in request.resource.data) || str(request.resource.data.productName, 300))
@@ -114,15 +139,21 @@ service cloud.firestore {
     // validazione di forma/dimensione per limitare gli abusi.
     match /sessions/{id} {
       allow read, delete: if isAdmin();
+      // Ogni campo col suo TIPO, non solo la lunghezza: un array al posto di
+      // country passava (size() vale anche per le liste) e mandava in crash
+      // admin.html.
       allow create, update: if request.resource.data.lastSeen is timestamp
-        && request.resource.data.keys().size() <= 14
-        && (!('ua' in request.resource.data)      || request.resource.data.ua.size() <= 400)
-        && (!('email' in request.resource.data)   || request.resource.data.email.size() <= 200)
-        && (!('name' in request.resource.data)    || request.resource.data.name.size() <= 160)
-        && (!('page' in request.resource.data)    || request.resource.data.page.size() <= 300)
-        && (!('vid' in request.resource.data)     || request.resource.data.vid.size() <= 60)
-        && (!('country' in request.resource.data) || request.resource.data.country.size() <= 8)
-        && (!('city' in request.resource.data)    || request.resource.data.city.size() <= 60)
+        && request.resource.data.keys().hasOnly(['vid', 'sid', 'lastSeen', 'startedAt', 'uid', 'email', 'name', 'page', 'country', 'city', 'ua'])
+        && (!('ua' in request.resource.data)      || str(request.resource.data.ua, 400))
+        && (!('email' in request.resource.data)   || str(request.resource.data.email, 200))
+        && (!('name' in request.resource.data)    || str(request.resource.data.name, 160))
+        && (!('page' in request.resource.data)    || str(request.resource.data.page, 300))
+        && (!('vid' in request.resource.data)     || str(request.resource.data.vid, 60))
+        && (!('sid' in request.resource.data)     || str(request.resource.data.sid, 80))
+        && (!('uid' in request.resource.data)     || str(request.resource.data.uid, 128))
+        && (!('country' in request.resource.data) || str(request.resource.data.country, 8))
+        && (!('city' in request.resource.data)    || str(request.resource.data.city, 60))
+        && (!('startedAt' in request.resource.data) || request.resource.data.startedAt is timestamp)
         // una sessione esistente non può essere riassegnata a un altro visitatore
         && (resource == null || !('vid' in resource.data) || request.resource.data.get('vid', '') == resource.data.vid);
     }
@@ -141,49 +172,83 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Spedizione di gruppo — utenti loggati leggono i gruppi (bacheca pubblica
-    // + join via codice); l'host crea (con sé come host) ed è l'unico a cambiare
-    // i campi diversi da "members"; chiunque loggato può unirsi/uscire (modifica
-    // solo il campo members). Cap dimensioni per limitare abusi.
+    // Spedizione di gruppo.
+    //  - LISTA: solo i gruppi pubblici, o quelli di cui sei host/membro
+    //    (memberUids). Prima chiunque fosse loggato, anche anonimo, leggeva
+    //    tutti i gruppi privati con codice, membri e note.
+    //  - GET per id: chi lo conosce. I gruppi nuovi hanno id = codice (LFxxxxxx):
+    //    conoscere il codice e' esattamente il permesso di entrare.
+    //  - Tipi controllati: maxPeople intero 2..30, codice LF+6, visibilita' e
+    //    stato da un elenco. Prima maxPeople poteva essere HTML e finiva nella
+    //    bacheca degli altri (XSS).
+    function groupShapeOk(d) {
+      return d.keys().size() <= 18
+        && d.hostUid is string
+        && d.title is string && d.title.size() <= 120
+        && (!('area' in d) || str(d.area, 80))
+        && (!('note' in d) || str(d.note, 300))
+        && (!('deadline' in d) || (d.deadline is string && d.deadline.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$|^$')))
+        && (!('hostName' in d) || str(d.hostName, 80))
+        && d.code is string && d.code.matches('^LF[A-Z0-9]{6}$')
+        && d.maxPeople is int && d.maxPeople >= 2 && d.maxPeople <= 30
+        && d.visibility in ['public', 'private']
+        && d.status in ['open', 'closed']
+        && d.members is list && d.members.size() <= 30
+        && (!('memberUids' in d) || (d.memberUids is list && d.memberUids.size() <= 30));
+    }
     match /groupOrders/{id} {
-      allow read:   if signedIn();
-      allow create: if signedIn()
+      allow get: if signedIn();
+      allow list: if signedIn() && (
+        resource.data.visibility == 'public'
+        || resource.data.hostUid == request.auth.uid
+        || request.auth.uid in resource.data.get('memberUids', [])
+      );
+      allow create: if signedIn() && !isAnon()
         && request.resource.data.hostUid == request.auth.uid
-        && request.resource.data.keys().size() <= 16
-        && request.resource.data.title is string && request.resource.data.title.size() <= 120
-        && request.resource.data.members is list && request.resource.data.members.size() <= 30;
-      // L'host gestisce il gruppo; gli altri possono solo AGGIUNGERE o
-      // TOGLIERE se stessi dai membri (prima potevano riscrivere tutta la lista).
+        && request.resource.data.code == id
+        && groupShapeOk(request.resource.data);
+      // L'host gestisce il gruppo (ma il codice non cambia); gli altri possono
+      // solo AGGIUNGERE o TOGLIERE se stessi da members e memberUids.
       allow update: if signedIn()
-        && request.resource.data.members is list && request.resource.data.members.size() <= 30
+        && groupShapeOk(request.resource.data)
         && request.resource.data.hostUid == resource.data.hostUid
+        && request.resource.data.code == resource.data.code
         && (
              request.auth.uid == resource.data.hostUid
-             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberUids'])
                  && (
                       // entra: lista vecchia + 1 elemento che è se stesso
                       (request.resource.data.members.size() == resource.data.members.size() + 1
                         && request.resource.data.members.hasAll(resource.data.members)
-                        && request.resource.data.members[resource.data.members.size()].uid == request.auth.uid)
+                        && request.resource.data.members[resource.data.members.size()].uid == request.auth.uid
+                        && request.resource.data.get('memberUids', []).hasAll(resource.data.get('memberUids', []))
+                        && request.resource.data.get('memberUids', []).removeAll(resource.data.get('memberUids', [])).hasOnly([request.auth.uid]))
                       // esce: tolto esattamente un elemento, il proprio
                       || (request.resource.data.members.size() == resource.data.members.size() - 1
                         && resource.data.members.hasAll(request.resource.data.members)
                         && resource.data.members.removeAll(request.resource.data.members).size() == 1
-                        && resource.data.members.removeAll(request.resource.data.members)[0].uid == request.auth.uid)
+                        && resource.data.members.removeAll(request.resource.data.members)[0].uid == request.auth.uid
+                        && resource.data.get('memberUids', []).hasAll(request.resource.data.get('memberUids', []))
+                        && resource.data.get('memberUids', []).removeAll(request.resource.data.get('memberUids', [])).hasOnly([request.auth.uid]))
                     ))
            );
       allow delete: if isAdmin() || (signedIn() && resource.data.hostUid == request.auth.uid);
     }
 
-    // Recensioni prodotto — lettura pubblica; scrittura solo utenti loggati
-    // (una recensione per il proprio account); modifica/eliminazione admin.
+    // Recensioni prodotto — lettura pubblica; scrittura solo utenti loggati.
+    // UNA per utente e prodotto (id = uid_productId) e col nome del proprio
+    // account: prima se ne potevano postare quante si voleva, con qualsiasi
+    // nome. Modifica/eliminazione admin.
     match /reviews/{id} {
       allow read: if true;
       allow create: if signedIn() && !isAnon()
         && request.resource.data.keys().hasOnly(['productId', 'userId', 'userName', 'rating', 'text', 'photo', 'createdAt'])
         && request.resource.data.userId == request.auth.uid
         && str(request.resource.data.productId, 60)
-        && (!('userName' in request.resource.data) || str(request.resource.data.userName, 80))
+        && id == request.auth.uid + '_' + request.resource.data.productId
+        && (!('userName' in request.resource.data)
+            || request.resource.data.userName == request.auth.token.get('name', '')
+            || request.resource.data.userName == string(request.auth.token.get('email', '')).split('@')[0])
         && (!('text' in request.resource.data) || str(request.resource.data.text, 600))
         && (!('photo' in request.resource.data) || str(request.resource.data.photo, 400000))
         && request.resource.data.rating is int

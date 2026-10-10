@@ -77,13 +77,15 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare-worker
           command: deploy
-          # Service account Firestore per il Worker: lo stesso già usato dal
-          # deploy Firebase (secret GitHub GOOGLE_CREDENTIALS). Senza, il Worker
-          # non può leggere/scrivere Firestore (ordini, punti, email ordine).
+          # Service account per il Worker. Va usato quello DEDICATO
+          # (secret GitHub WORKER_SERVICE_ACCOUNT, solo i permessi che servono:
+          # vedi SICUREZZA.md). Finché non c'è, si usa ancora quello del deploy
+          # Firebase (GOOGLE_CREDENTIALS), che ha molti più permessi del
+          # necessario: se il Worker venisse compromesso, lo sarebbe anche il deploy.
           secrets: |
             FIREBASE_SERVICE_ACCOUNT
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_CREDENTIALS }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.WORKER_SERVICE_ACCOUNT || secrets.GOOGLE_CREDENTIALS }}
 
       - name: Attendi Workers Builds prima di riprovare
         if: steps.deploy1.outcome == 'failure'
@@ -97,10 +99,12 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare-worker
           command: deploy
-          # Service account Firestore per il Worker: lo stesso già usato dal
-          # deploy Firebase (secret GitHub GOOGLE_CREDENTIALS). Senza, il Worker
-          # non può leggere/scrivere Firestore (ordini, punti, email ordine).
+          # Service account per il Worker. Va usato quello DEDICATO
+          # (secret GitHub WORKER_SERVICE_ACCOUNT, solo i permessi che servono:
+          # vedi SICUREZZA.md). Finché non c'è, si usa ancora quello del deploy
+          # Firebase (GOOGLE_CREDENTIALS), che ha molti più permessi del
+          # necessario: se il Worker venisse compromesso, lo sarebbe anche il deploy.
           secrets: |
             FIREBASE_SERVICE_ACCOUNT
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_CREDENTIALS }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.WORKER_SERVICE_ACCOUNT || secrets.GOOGLE_CREDENTIALS }}

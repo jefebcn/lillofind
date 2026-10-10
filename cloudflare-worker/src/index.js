@@ -7,7 +7,7 @@
 
 import { Hono } from 'hono';
 import { Firestore } from './lib/firestore.js';
-import { verifyIdToken, bearerFrom } from './lib/auth.js';
+import { verifyIdToken, bearerFrom, isAdminToken } from './lib/auth.js';
 import { HttpsError } from './lib/errors.js';
 import * as admin from './handlers/admin.js';
 import * as checkout from './handlers/checkout.js';
@@ -21,16 +21,21 @@ import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 const app = new Hono();
 
 // ── CORS ────────────────────────────────────────────────────────
+// In produzione ALLOWED_ORIGINS elenca SOLO i domini del sito (niente
+// localhost: per lo sviluppo si mette in cloudflare-worker/.dev.vars).
+// Senza header Origin (curl, server, app) non si manda nessun
+// Access-Control-Allow-Origin: il CORS serve solo ai browser, e prima in
+// quel caso si rispondeva '*'. Lista vuota = nessuna origine ammessa.
 function corsHeaders(origin, env) {
   const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-  const ok = allowed.length === 0 || allowed.includes('*') || (origin && allowed.includes(origin));
-  if (origin && !ok) {
-    // Origine non autorizzata: nessun Access-Control-Allow-Origin → il
-    // browser blocca la lettura della risposta.
+  const ok = !!origin && (allowed.includes('*') || allowed.includes(origin));
+  if (!ok) {
+    // Origine assente o non autorizzata: nessun Access-Control-Allow-Origin
+    // → il browser blocca la lettura della risposta.
     return { 'Vary': 'Origin' };
   }
   return {
-    'Access-Control-Allow-Origin': origin && ok ? origin : '*',
+    'Access-Control-Allow-Origin': origin,
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
@@ -56,7 +61,7 @@ app.use('*', async (c, next) => {
 const HTTP_STATUS = {
   'ok': 200, 'invalid-argument': 400, 'unauthenticated': 401,
   'permission-denied': 403, 'not-found': 404, 'already-exists': 409,
-  'resource-exhausted': 429, 'internal': 500, 'unavailable': 503,
+  'failed-precondition': 400, 'resource-exhausted': 429, 'internal': 500, 'unavailable': 503,
 };
 
 // Wrapper che replica il protocollo Firebase callable.
@@ -70,6 +75,7 @@ function callable(handler, opts = {}) {
       const data = body && typeof body === 'object' && 'data' in body ? body.data : body;
 
       const ctx = { env, db: new Firestore(env), auth: null,
+        ip: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || '',
         waitUntil: (p) => { try { c.executionCtx.waitUntil(p); } catch (_) { return p; } } };
 
       if (opts.auth === 'required' || opts.auth === 'admin' || opts.auth === 'adminEmail') {
@@ -80,21 +86,16 @@ function callable(handler, opts = {}) {
         catch (e) { throw new HttpsError('unauthenticated', 'Token non valido.'); }
         ctx.auth = { uid: decoded.uid, email: decoded.email, token: decoded };
 
-        if (opts.auth === 'admin') {
-          const userSnap = await ctx.db.getDoc('users', decoded.uid);
-          if (userSnap.data()?.isAdmin !== true) {
-            throw new HttpsError('permission-denied', 'Solo admin.');
-          }
+        // 'admin' e 'adminEmail' ora sono la stessa cosa: decide il token
+        // (claim admin:true, o email dell'allowlist VERIFICATA). Il campo
+        // users.isAdmin non conta piu' niente. Vedi isAdminToken in lib/auth.js.
+        if ((opts.auth === 'admin' || opts.auth === 'adminEmail') && !isAdminToken(decoded, env)) {
+          throw new HttpsError('permission-denied', 'Solo admin.');
         }
 
-        // adminEmail: verifica admin tramite allowlist email (non usa Firestore,
-        // quindi funziona anche senza FIREBASE_SERVICE_ACCOUNT).
-        if (opts.auth === 'adminEmail') {
-          const admins = (env.ADMIN_EMAILS || 'yishionvt@gmail.com')
-            .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-          if (!admins.includes((decoded.email || '').toLowerCase())) {
-            throw new HttpsError('permission-denied', 'Solo admin.');
-          }
+        // Rifiuta gli account anonimi dove serve un utente vero (es. /streamPlay).
+        if (opts.noAnonymous && decoded.firebase && decoded.firebase.sign_in_provider === 'anonymous') {
+          throw new HttpsError('unauthenticated', 'Accedi con un account per continuare.');
         }
       }
 
@@ -242,8 +243,7 @@ app.get('/diag', async (c) => {
   // Solo admin: rivela quali secret sono configurati ed eventuali errori Firestore.
   try {
     const decoded = await verifyIdToken(bearerFrom(c.req.raw), env.FIREBASE_PROJECT_ID);
-    const admins = (env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-    if (!admins.includes(String(decoded.email || '').toLowerCase())) return c.json({ error: 'Solo admin' }, 403);
+    if (!isAdminToken(decoded, env)) return c.json({ error: 'Solo admin' }, 403);
   } catch (_) { return c.json({ error: 'Login admin richiesto' }, 401); }
   const out = {
     projectId: env.FIREBASE_PROJECT_ID || null,
@@ -605,6 +605,7 @@ app.post('/updateAdminProduct', callable(admin.updateAdminProduct, { auth: 'admi
 app.post('/deleteAdminProduct', callable(admin.deleteAdminProduct, { auth: 'admin' }));
 app.post('/updateAdminOrder',   callable(admin.updateAdminOrder,   { auth: 'admin' }));
 app.post('/batchSetGender',     callable(admin.batchSetGender,     { auth: 'admin' }));
+app.post('/migratePrivateFields', callable(admin.migratePrivateFields, { auth: 'admin' }));
 // Checkout
 app.post('/createPaymentIntent', callable(checkout.createPaymentIntent, { auth: 'required' }));
 app.post('/validateOrder',       callable(checkout.validateOrder,       { auth: 'required' }));
@@ -631,7 +632,7 @@ app.post('/parseQuotation', callable(scrapers.parseQuotation, { auth: 'adminEmai
 
 // Streaming: la riproduzione è l'unico punto da cui esce un URL
 // riproducibile, quindi è l'unica rotta del catalogo dietro login.
-app.post('/streamPlay',       callable(stream.play,       { auth: 'required' }));
+app.post('/streamPlay',       callable(stream.play,       { auth: 'required', noAnonymous: true }));
 
 app.post('/streamSaveTitle',   callable(stream.saveTitle,   { auth: 'adminEmail' }));
 app.post('/streamDeleteTitle', callable(stream.deleteTitle, { auth: 'adminEmail' }));

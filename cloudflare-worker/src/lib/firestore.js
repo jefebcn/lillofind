@@ -36,9 +36,13 @@ async function importPrivateKey(pem) {
 }
 
 // Ottiene (e cache-a) un access token OAuth2 per Firestore
-async function getAccessToken(env) {
+// scope: di base Firestore; lib/identity.js chiede quello di Firebase Auth.
+// Un token per scope, ognuno con la sua cache.
+const _tokenPerScope = {};
+export async function getAccessToken(env, scope = 'https://www.googleapis.com/auth/datastore') {
   const now = Math.floor(Date.now() / 1000);
-  if (_tokenCache.token && _tokenCache.exp > now + 60) return _tokenCache.token;
+  const cached = scope === 'https://www.googleapis.com/auth/datastore' ? _tokenCache : (_tokenPerScope[scope] || {});
+  if (cached.token && cached.exp > now + 60) return cached.token;
 
   if (!env.FIREBASE_SERVICE_ACCOUNT) {
     throw new Error('FIREBASE_SERVICE_ACCOUNT non configurato sul Worker (secret mancante).');
@@ -47,7 +51,7 @@ async function getAccessToken(env) {
   const header = { alg: 'RS256', typ: 'JWT' };
   const claim = {
     iss: sa.client_email,
-    scope: 'https://www.googleapis.com/auth/datastore',
+    scope,
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600,
@@ -64,8 +68,9 @@ async function getAccessToken(env) {
   });
   if (!resp.ok) throw new Error('OAuth token error: ' + (await resp.text()));
   const data = await resp.json();
-  _tokenCache = { token: data.access_token, exp: now + (data.expires_in || 3600) };
-  return _tokenCache.token;
+  const fresh = { token: data.access_token, exp: now + (data.expires_in || 3600) };
+  if (scope === 'https://www.googleapis.com/auth/datastore') _tokenCache = fresh; else _tokenPerScope[scope] = fresh;
+  return fresh.token;
 }
 
 // ── Conversione valori JS ↔ Firestore typed values ──────────────
@@ -326,6 +331,57 @@ export class Firestore {
       done += chunk.length;
     }
     return done;
+  }
+
+  // Crea più documenti con id noto in UN commit atomico: o entrano tutti o
+  // nessuno. Con mustNotExist:true il documento non deve esistere già, se no
+  // il commit intero fallisce e si lancia un errore con code 'already-exists'.
+  // Serve a rendere un evento "consumabile una volta sola" (es. un
+  // PaymentIntent Stripe che crea un ordine).
+  // docs = [{ collection, id, fields, mustNotExist }]
+  async createAtomic(docs) {
+    const body = {
+      writes: docs.map(d => ({
+        update: {
+          name: `projects/${this.projectId}/databases/(default)/documents/${d.collection}/${d.id}`,
+          fields: toFsFields(d.fields),
+        },
+        ...(d.mustNotExist ? { currentDocument: { exists: false } } : {}),
+      })),
+    };
+    const resp = await fetch(`https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents:commit`, {
+      method: 'POST',
+      headers: await this._headers(),
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      const err = new Error(`Firestore createAtomic: ${resp.status} ${txt}`);
+      if (resp.status === 409 || /ALREADY_EXISTS|FAILED_PRECONDITION/.test(txt)) err.code = 'already-exists';
+      throw err;
+    }
+    return true;
+  }
+
+  // Incremento atomico di un campo numerico (fieldTransform increment): due
+  // richieste parallele sommano entrambe, invece di sovrascriversi a vicenda
+  // come con leggi-somma-scrivi.
+  async increment(collection, id, field, by) {
+    const body = {
+      writes: [{
+        transform: {
+          document: `projects/${this.projectId}/databases/(default)/documents/${collection}/${id}`,
+          fieldTransforms: [{ fieldPath: field, increment: Number.isInteger(by) ? { integerValue: String(by) } : { doubleValue: by } }],
+        },
+      }],
+    };
+    const resp = await fetch(`https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents:commit`, {
+      method: 'POST',
+      headers: await this._headers(),
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) throw new Error(`Firestore increment: ${resp.status} ${await resp.text()}`);
+    return true;
   }
 
   // Batch GET di più documenti per id → array di { exists, id, data() }

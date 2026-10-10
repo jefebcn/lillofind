@@ -11,7 +11,9 @@ const KEY = 'catalog';
 const META = 'catalog:meta';
 const MAX_BYTES = 24 * 1024 * 1024;           // limite valore KV: 25 MiB
 // Dati interni che non devono finire nel catalogo pubblico.
-const PRIVATE_FIELDS = ['costEUR', 'costFx', 'costFxDate', 'costUpdatedAt', 'supplierPriceCNY', 'sourceUrl'];
+// Elenco unico in lib/product-private.js: ora quei campi stanno in
+// products_private, ma i documenti non ancora migrati li hanno ancora qui.
+import { PRIVATE_FIELDS } from '../lib/product-private.js';
 
 function cacheKey(reqUrl) { const u = new URL(reqUrl); return new Request(u.origin + '/catalog?__cache=1'); }
 

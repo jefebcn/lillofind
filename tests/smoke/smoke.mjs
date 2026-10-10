@@ -46,10 +46,14 @@ const PRODUCTS = [
   ['Lacoste', 'Felpa Half Zip Grigio', 'Felpe', 59, ['S', 'M', 'L'], 70],
   ['Stussy', 'Hoodie Basic Logo', 'Felpe', 69, ['S', 'M', 'L', 'XL'], 2],
   ['Adidas', 'Samba OG White Black', 'Sneakers', 79, ['39', '40', '41', '42'], 80],
+  // Nome e marchio come li scrive un fornitore malizioso (o maldestro):
+  // virgolette, backslash e HTML non devono rompere la pagina né eseguire niente.
+  ['Br"and <b>X</b>', 'Giacca "Pro" l\'ultima \\ <img src=x onerror="window.__xss=1">', 'Giacche', 59, ['M', '<i>L</i>'], 4],
 ].map(([brand, name, category, price, sizes, days], i) => ({
   id: 'p' + i, brand, name, category, price, sizes, imageUrl: img(COLORS[i % COLORS.length]),
   createdAt: { seconds: now - days * 86400 }, ...(i === 5 ? { soldOut: true } : {}), ...(i === 4 ? { stock: 2 } : {}),
   ...(i === 3 ? { style: 'Old Money' } : {}),
+  ...(i === 8 ? { description: '<script>window.__xss=2</script>Ottima <b>giacca</b><img src=x onerror="window.__xss=3">', model: 'M"1<i>' } : {}),
 }));
 const REVIEWS = [{ productId: 'p0', rating: 5, text: 'Giacca arrivata perfetta, taglia giusta.', userName: 'Marco', createdAt: { seconds: now - 5000 } }];
 const CART = JSON.stringify([{ id: 'p0', name: PRODUCTS[0].name, price: 129, qty: 1, size: 'M', brand: 'Barbour', img: PRODUCTS[0].imageUrl }]);
@@ -133,7 +137,11 @@ const INDEX = [
   ['home', null, "document.querySelectorAll('#home-prods .pcard').length>0"],
   ['shop', "showPg('shop')", "document.querySelectorAll('#pg-shop .pcard').length>0"],
   ['prodotto', "openProduct('p0')", "document.getElementById('prod-modal').classList.contains('open')"],
-  ['carrello', "closeProd();showPg('cart')", "document.querySelector('#pg-cart.on')!==null"],
+  // i click veri (data-* + un solo listener, niente onclick con dentro i dati)
+  ['click card', "closeProd();showPg('shop');document.querySelector('#pg-shop .pcard').click()", "document.getElementById('prod-modal').classList.contains('open')"],
+  ['prodotto ostile', "closeProd();openProduct('p8')", "document.getElementById('prod-modal').classList.contains('open') && !window.__xss && /Giacca/.test(document.getElementById('prod-modal').textContent)"],
+  ['condividi/guida taglie', "document.querySelector('#prod-modal [data-act=sizeguide]').click()", "!window.__xss"],
+  ['carrello', "document.getElementById('lf-sizeguide')?.remove();closeProd();showPg('cart')", "document.querySelector('#pg-cart.on')!==null && !window.__xss"],
   ['lfpoints', "showPg('lfpoints')", "document.querySelector('#pg-lfpoints.on')!==null"],
   ['profilo', "showPg('profile')", "document.querySelector('#pg-profile.on')!==null"],
 ];

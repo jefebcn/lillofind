@@ -1430,9 +1430,14 @@ waitFB(()=>{
     // Admin gate: SOLO allowlist email (autorevole anche nelle regole
     // Firestore). Il campo isAdmin del documento utente non conferisce più
     // privilegi (è scrivibile dall'utente), quindi non lo usiamo.
+    // Stesso criterio di firestore.rules e del Worker: claim admin:true,
+    // oppure email della lista ma VERIFICATA (prima bastava registrarsi con
+    // un indirizzo della lista non ancora usato).
     const emailNorm = (user.email || '').trim().toLowerCase();
     const allow = ADMIN_EMAILS.map(e => e.trim().toLowerCase());
-    const grantedByEmail = allow.includes(emailNorm);
+    let claimAdmin = false;
+    try { claimAdmin = (await user.getIdTokenResult()).claims.admin === true; } catch(_) {}
+    const grantedByEmail = claimAdmin || (user.emailVerified === true && allow.includes(emailNorm));
 
     try {
       if (!grantedByEmail) {
@@ -1446,6 +1451,18 @@ waitFB(()=>{
       if (emailEl) emailEl.textContent = user.email || '';
       if (guard)   guard.style.display = 'none';
       if (wrap)    wrap.style.display  = 'flex';
+
+      // Una volta sola: sposta costi fornitore e link alla fonte dai
+      // documenti pubblici `products` a `products_private` (vedi firebase.js).
+      try {
+        if (!localStorage.getItem('lf_priv_migrati')) {
+          lfCallable('migratePrivateFields')().then(r => {
+            try { localStorage.setItem('lf_priv_migrati', '1'); } catch(_) {}
+            const n = r && r.data && r.data.moved;
+            if (n) showToast('🔒 Costi fornitore spostati in area privata: ' + n + ' prodotti');
+          }).catch(e => console.warn('migratePrivateFields:', e && e.message));
+        }
+      } catch(_) {}
 
       // Auto-init admin panels
       setTimeout(() => {
@@ -1629,7 +1646,16 @@ waitFB(()=>{
     }catch(_){}
     // fallback: email salvata con maiuscole
     const all=await getUsersCached();
-    return all.find(u=>(u.email||'').toLowerCase()===e) || null;
+    const u=all.find(u=>(u.email||'').toLowerCase()===e);
+    if(u) return u;
+    // ultimo tentativo: gli ORDINI. Chi ha ordinato da ospite, o ha un
+    // profilo senza email salvata, non si trova fra gli utenti per email ma
+    // ha l'uid sull'ordine. Prima l'admin diceva «non trovato» a clienti veri.
+    try{
+      const qo=await fb.getDocs(fb.query(fb.collection(fb.db,'orders'),fb.where('email','==',e),fb.limit(1)));
+      if(!qo.empty){ const o=qo.docs[0].data()||{}; if(o.uid) return { id:o.uid, email:e, name:o.name||'', _daOrdine:true }; }
+    }catch(_){}
+    return null;
   }
   window.loadTrackingBoard=async function(){
     const fb=window.__fb; const list=document.getElementById('trb-list'); const st=document.getElementById('trb-status');
@@ -2105,13 +2131,20 @@ waitFB(()=>{
     const btn=document.getElementById('tr-btn');
     btn.textContent='...'; btn.disabled=true;
     try{
-      // Find user by email: query users collection
+      // Il cliente si cerca fra i profili e poi fra gli ordini (findUserByEmail):
+      // prima l'admin rispondeva «Utente non trovato» a clienti veri.
       const _u=await findUserByEmail(email);
       const targetUid=_u?_u.id:null;
-      if(!targetUid){showToast('⚠️ Utente non trovato con questa email.');btn.textContent='Assegna Tracking →';btn.disabled=false;return;}
       const trackData={trackingCode:code,trackingProduct:product||'—',trackingStatus:status,trackingNote:note,trackingUpdatedAt:fb.serverTimestamp()};
-      await fb.updateDoc(fb.doc(fb.db,'users',targetUid),trackData);
-      showToast('✅ Tracking salvato. Invio email...');
+      if(targetUid){
+        // setDoc con merge: funziona anche se il profilo non c'era ancora
+        await fb.setDoc(fb.doc(fb.db,'users',targetUid),{...trackData,email},{merge:true});
+        showToast('✅ Tracking salvato. Invio email...');
+      } else {
+        // Nessun account né ordine con questa email: l'email col tracking
+        // parte lo stesso (non serve un account per riceverla).
+        showToast('ℹ️ Nessun account con questa email: invio solo l\'email col tracking...');
+      }
       // Invia email al cliente col codice tracking (via Worker + Resend)
       try{
         await lfCallable('sendTrackingEmail')({email,code,product,status,note});

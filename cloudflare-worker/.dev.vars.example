@@ -6,3 +6,6 @@ FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"lillofind-c455c
 STRIPE_SECRET_KEY=sk_test_xxx
 RESEND_API_KEY=re_xxx
 ANTHROPIC_API_KEY=sk-ant-xxx
+IMGBB_KEY=chiave_imgbb
+# Solo in locale: in produzione le origini ammesse sono quelle di wrangler.toml.
+ALLOWED_ORIGINS=https://lillofind.shop,http://localhost:8000,http://localhost:5000

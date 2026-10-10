@@ -48,3 +48,23 @@ export function bearerFrom(request) {
   const m = h.match(/^Bearer\s+(.+)$/i);
   return m ? m[1] : '';
 }
+
+// ── Chi è admin: UN SOLO modello, il token ──────────────────────
+// Prima c'erano due criteri: l'allowlist di email (senza controllare che
+// l'email fosse verificata: chiunque poteva registrarsi con un indirizzo
+// della lista non ancora usato) e il campo users.isAdmin su Firestore.
+// Adesso decide solo il token Firebase:
+//   1. il custom claim admin:true (impostato con scripts/set-admin-claim.mjs),
+//   2. oppure un'email dell'allowlist ADMIN_EMAILS, ma SOLO se verificata.
+// Le stesse due condizioni stanno in firestore.rules (isAdmin()).
+export function adminEmails(env) {
+  return String((env && env.ADMIN_EMAILS) || '')
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
+export function isAdminToken(decoded, env) {
+  if (!decoded) return false;
+  if (decoded.admin === true) return true;
+  const email = String(decoded.email || '').toLowerCase();
+  return decoded.email_verified === true && !!email && adminEmails(env).includes(email);
+}

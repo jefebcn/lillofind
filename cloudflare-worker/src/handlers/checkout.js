@@ -5,6 +5,9 @@
 
 import Stripe from 'stripe';
 import { HttpsError } from '../lib/errors.js';
+import { isAdminToken } from '../lib/auth.js';
+import { limita } from '../lib/limiti.js';
+import { utenteAuth, linkImpostaPassword } from '../lib/identity.js';
 import { DELETE_FIELD } from '../lib/firestore.js';
 import { getProductWeight, getShippingCost } from '../lib/shipping.js';
 
@@ -110,6 +113,8 @@ ${emailPreheader(preheaderText || '')}
 }
 
 function stripeClient(env) {
+  // Solo per i test (test/handlers.test.mjs): un client finto al posto di Stripe.
+  if (env && env.__stripeFinto) return env.__stripeFinto;
   // httpClient fetch-based: lo SDK Stripe gira così su Workers
   return new Stripe(env.STRIPE_SECRET_KEY, {
     apiVersion: '2024-06-20',
@@ -278,8 +283,7 @@ export async function track17(data, { env, db, auth }) {
   const code = String((data && data.code) || '').trim().slice(0, 60);
   if (!code) throw new HttpsError('invalid-argument', 'Codice tracking mancante.');
   // Quota 17TRACK: solo l'admin o il cliente per il PROPRIO codice di spedizione.
-  const admins = (env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  const isAdminCaller = admins.includes(String(auth.email || '').toLowerCase());
+  const isAdminCaller = isAdminToken(auth.token, env);
   if (!isAdminCaller) {
     let own = '';
     try { const u = await db.getDoc('users', auth.uid); own = String((u.data() || {}).trackingCode || '').trim(); } catch (_) {}
@@ -338,9 +342,12 @@ export async function track17(data, { env, db, auth }) {
 // Le pagine vecchie lo chiamano col contenuto dell'ordine: ora il contenuto
 // viene IGNORATO e si rilegge l'ordine salvato (per orderId + uid del
 // chiamante), così non è sfruttabile per mandare email arbitrarie.
-export async function sendOrderEmail(data, { env, db, auth }) {
+export async function sendOrderEmail(data, { env, db, auth, ip }) {
   const orderId = String((data && data.orderId) || '').trim().slice(0, 40);
   if (!orderId) return { sent: false, reason: 'no_order' };
+  // Solo verso indirizzi verificati, e con un tetto: e' un "rimanda l'email".
+  if (!(auth && auth.token && auth.token.email_verified === true)) return { sent: false, reason: 'unverified_email' };
+  await limita(db, 'mail_uid_' + auth.uid, 5, 3600);
   let rows = null;
   try { rows = await db.runQuery('orders', { where: [['orderId', '==', orderId], ['uid', '==', auth.uid]], limit: 1 }); }
   catch (e) { rows = null; }
@@ -362,10 +369,12 @@ export async function sendOrderEmail(data, { env, db, auth }) {
 
 // Invia la conferma al cliente (email dell'ordine) + la notifica all'admin
 // con il blocco "ordine fornitore". `o` è l'ordine come salvato su Firestore.
-export async function sendOrderEmails(o, env) {
+// opts.soloAdmin: manda solo la notifica all'admin, niente email al cliente
+// (vedi validateOrder: indirizzo non verificato e ordine non pagato).
+export async function sendOrderEmails(o, env, opts = {}) {
   if (!env.RESEND_API_KEY) return { sent: false, reason: 'no_key' };
   const to = String(o.email || '').trim();
-  if (!to || !EMAIL_RE.test(to)) return { sent: false, reason: 'no_email' };
+  if (!opts.soloAdmin && (!to || !EMAIL_RE.test(to))) return { sent: false, reason: 'no_email' };
   const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
   const payLabel = { bonifico: 'Bonifico bancario', paypal: 'PayPal', card: 'Carta' }[o.payment] || o.payment || '—';
   const nextStep = {
@@ -447,7 +456,7 @@ export async function sendOrderEmails(o, env) {
 </body></html>`;
 
   try {
-    const cResp = await fetch('https://api.resend.com/emails', {
+    const cResp = opts.soloAdmin ? { ok: true } : await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from, to: [to], subject: `Conferma ordine ${o.orderId || ''} — LilloFind`, html }),
@@ -491,7 +500,7 @@ export async function sendOrderEmails(o, env) {
   } catch (e) {
     return { sent: false, reason: e.message };
   }
-  return { sent: true };
+  return opts.soloAdmin ? { sent: false, reason: 'unverified_email', adminNotified: true } : { sent: true };
 }
 
 // ── sendAccountEmail ────────────────────────────────────────────
@@ -499,26 +508,59 @@ export async function sendOrderEmails(o, env) {
 // password temporanea), creato automaticamente al primo ordine come ospite.
 // Auth: required — il destinatario è SEMPRE l'email autenticata del chiamante,
 // mai un indirizzo arbitrario, quindi non è sfruttabile per spam.
-export async function sendAccountEmail(data, { env, auth }) {
+// Email "il tuo account è pronto" dopo il checkout da ospite.
+//
+// Prima il browser mandava la password (e il nome) e il Worker li spediva
+// all'email dell'account: chiunque creava un account con l'indirizzo di un
+// altro poteva fargli arrivare email LilloFind con contenuti scelti da lui,
+// e la password viaggiava in chiaro. Ora:
+//  - niente password: nell'email c'è il link Firebase per IMPOSTARLA;
+//  - il nome viene dall'ordine salvato, non dal browser;
+//  - solo per account creati da meno di 30 minuti, UNA volta per account
+//    (account_emails/{uid}), e con un tetto per IP.
+// Se il service account non può usare Firebase Auth, risponde
+// { sent:false } e il sito ripiega sull'email di reset standard di Firebase.
+export async function sendAccountEmail(data, { env, db, auth, ip }) {
   if (!env.RESEND_API_KEY) return { sent: false, reason: 'no_key' };
-  const to = (auth && auth.email) ? auth.email : '';
-  const password = (data && data.password) ? String(data.password) : '';
-  if (!to || !password) return { sent: false, reason: 'missing' };
+  if (!auth || !auth.uid) return { sent: false, reason: 'missing' };
+  if (ip) await limita(db, 'acct_ip_' + ip, 3, 3600);
+  let u, link;
+  try {
+    u = await utenteAuth(env, auth.uid);
+    if (!u || !u.email || u.disabled) return { sent: false, reason: 'missing' };
+    if (Date.now() - u.createdAt > 30 * 60 * 1000) return { sent: false, reason: 'not_new' };
+    link = await linkImpostaPassword(env, u.email);
+    if (!link) return { sent: false, reason: 'no_link' };
+  } catch (e) {
+    console.error('sendAccountEmail identity:', e && e.message);
+    return { sent: false, reason: 'identity_unavailable' };
+  }
+  try {
+    await db.createAtomic([{ collection: 'account_emails', id: auth.uid, mustNotExist: true, fields: { sentAt: new Date(), email: u.email } }]);
+  } catch (e) {
+    if (e && e.code === 'already-exists') return { sent: false, reason: 'already_sent' };
+    throw e;
+  }
+  let name = '';
+  try {
+    const rows = await db.runQuery('orders', { where: [['uid', '==', auth.uid]], limit: 1 });
+    name = String((rows[0] && rows[0].name) || '').split(' ')[0].slice(0, 40);
+  } catch (_) {}
+  const to = u.email;
   const from = env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>';
-  const name = (((data && data.name) || '').split(' ')[0]) || '';
   const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f2ec;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;padding:24px 12px;font-family:'Helvetica Neue',Arial,sans-serif;"><tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border:1px solid #e7e2d8;border-radius:16px;overflow:hidden;">
   <tr><td style="background:#23231f;padding:26px 32px;text-align:center;"><div style="font-size:26px;font-weight:800;letter-spacing:4px;color:#f5f2ec;">LILLOFIND</div><div style="font-size:10px;letter-spacing:3px;color:#99a074;text-transform:uppercase;margin-top:4px;">Il tuo account</div></td></tr>
-  <tr><td style="padding:30px 32px 8px;"><h1 style="font-size:22px;color:#23231f;margin:0 0 6px;">Ciao ${escHtml(name)}! 👤</h1><p style="font-size:14px;color:#6b6b63;line-height:1.6;margin:0;">Abbiamo creato per te un account LilloFind così puoi seguire i tuoi ordini e ritrovare le tue credenziali e abbonamenti in qualsiasi momento. Ecco i dati d'accesso:</p></td></tr>
+  <tr><td style="padding:30px 32px 8px;"><h1 style="font-size:22px;color:#23231f;margin:0 0 6px;">Ciao ${escHtml(name)}! 👤</h1><p style="font-size:14px;color:#6b6b63;line-height:1.6;margin:0;">Abbiamo creato per te un account LilloFind così puoi seguire i tuoi ordini e ritrovare le tue credenziali e abbonamenti in qualsiasi momento. Scegli la tua password dal pulsante qui sotto:</p></td></tr>
   <tr><td style="padding:18px 32px 0;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f3;border:1px solid #e7e2d8;border-radius:12px;"><tr><td style="padding:16px 18px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         <tr><td style="padding:8px 0;font-size:12px;color:#8a8a80;">Email</td><td style="padding:8px 0;text-align:right;font-family:'Courier New',monospace;font-size:14px;color:#23231f;font-weight:600;word-break:break-all;">${escHtml(to)}</td></tr>
-        <tr><td style="padding:8px 0;font-size:12px;color:#8a8a80;">Password temporanea</td><td style="padding:8px 0;text-align:right;font-family:'Courier New',monospace;font-size:16px;color:#e5484d;font-weight:700;">${escHtml(password)}</td></tr>
       </table>
     </td></tr></table>
-    <div style="margin-top:12px;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:10px 12px;font-size:12px;color:#6b6b63;line-height:1.6;">🔒 Per sicurezza cambia la password dopo il primo accesso: dal sito vai su <b>Profilo → Impostazioni account</b>.</div>
+    <div style="margin-top:14px;text-align:center;"><a href="${escHtml(link)}" style="display:inline-block;background:#23231f;color:#f5f2ec;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:999px;">Imposta la password →</a></div>
+    <div style="margin-top:12px;background:#fffceb;border:1px solid #f4ecc9;border-radius:8px;padding:10px 12px;font-size:12px;color:#6b6b63;line-height:1.6;">🔒 Il link vale per poco tempo. Se scade, dal sito usa «Password dimenticata?» con questa email.</div>
   </td></tr>
   <tr><td style="padding:18px 32px 30px;"><a href="https://lillofind.shop/?auth=1" style="display:inline-block;background:#C8FF00;color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:999px;">Accedi al mio account →</a><p style="font-size:11px;color:#a8a89e;margin-top:16px;line-height:1.6;">Tieni riservate queste credenziali. Per assistenza, rispondi a questa email.</p></td></tr>
   <tr><td style="background:#23231f;padding:20px 32px;text-align:center;"><div style="font-size:15px;font-weight:800;letter-spacing:3px;color:#f5f2ec;">LILLOFIND</div><p style="margin:6px 0 0;font-size:11px;color:#66665e;">© 2026 LilloFind — lillofind.shop</p></td></tr>
@@ -694,7 +736,7 @@ export async function createPaymentIntent(data, { env, db, auth }) {
 }
 
 // ── validateOrder ───────────────────────────────────────────────
-export async function validateOrder(data, { env, db, auth, waitUntil }) {
+export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
   const SUBSCRIPTION_CATALOG = {
     'sub-netflix':     { name: 'Netflix Premium UHD',  price: 3.90, isDigital: true },
     'sub-youtube':     { name: 'YouTube Premium',      price: 2.50, isDigital: true },
@@ -730,15 +772,20 @@ export async function validateOrder(data, { env, db, auth, waitUntil }) {
     };
   });
 
-  let productDocs = [];
+  let productDocs = [], privDocs = [];
   if (prodItems.length > 0) {
     try { productDocs = await db.getMany('products', prodItems.map(i => i.id)); }
     catch (e) { throw new HttpsError('internal', 'Errore nel caricamento dei prodotti.'); }
+    // Costo fornitore e link alla fonte (per l'email all'admin): stanno in
+    // products_private. Se mancano l'ordine si fa lo stesso.
+    try { privDocs = db.getMany ? await db.getMany('products_private', prodItems.map(i => i.id)) : []; }
+    catch (e) { privDocs = []; }
   }
 
   const verifiedProds = productDocs.map((snap, idx) => {
     if (!snap.exists) throw new HttpsError('not-found', `Prodotto non trovato: ${prodItems[idx].id}`);
-    const prod = snap.data();
+    const priv = (privDocs[idx] && privDocs[idx].exists) ? (privDocs[idx].data() || {}) : {};
+    const prod = { ...snap.data(), ...priv };
     const qty = prodItems[idx].qty;
     const addonPrice = addonPriceOf(prodItems[idx].addons);
     const addonSummary = addonSummaryOf(prodItems[idx].addons);
@@ -782,6 +829,13 @@ export async function validateOrder(data, { env, db, auth, waitUntil }) {
 
   const total = Math.max(0, Math.round((subtotal + shipping - discountAmount) * 100) / 100);
 
+  // Ordini NON pagati (bonifico/PayPal): tetto per utente e per IP. Prima
+  // erano illimitati anche da ospite anonimo, ognuno con un'email.
+  if (paymentMethod !== 'card') {
+    await limita(db, 'ord_uid_' + uid, 5, 3600, 'Hai già creato diversi ordini da pagare: completa quelli o riprova tra un\'ora.');
+    if (ip) await limita(db, 'ord_ip_' + ip, 10, 3600, 'Troppi ordini da questa connessione: riprova tra un\'ora.');
+  }
+
   // Verifica PaymentIntent Stripe per pagamenti con carta
   if (paymentMethod === 'card') {
     const { stripePaymentIntentId } = data;
@@ -793,6 +847,12 @@ export async function validateOrder(data, { env, db, auth, waitUntil }) {
     if (pi.status !== 'succeeded') throw new HttpsError('failed-precondition', 'Il pagamento non è stato completato.');
     if (pi.metadata?.uid !== uid) throw new HttpsError('permission-denied', 'PaymentIntent non appartiene a questo utente.');
     if (Math.abs(pi.amount - Math.round(total * 100)) > 1) throw new HttpsError('failed-precondition', 'Importo del pagamento non corrisponde al totale ordine.');
+    // Un PaymentIntent paga UN ordine. Prima bastava che fosse "succeeded":
+    // lo stesso pagamento poteva creare N ordini pagati e accreditare N volte
+    // i LFPoints. Il controllo vero e' atomico, piu' sotto (createAtomic con
+    // used_payment_intents/{piId}); questo evita il lavoro inutile.
+    const gia = await db.getDoc('used_payment_intents', pi.id);
+    if (gia.exists) throw new HttpsError('already-exists', 'Questo pagamento è già stato usato per un ordine.');
   }
 
   const orderId = 'LILLO-' + Date.now().toString(36).toUpperCase().slice(-6);
@@ -817,12 +877,29 @@ export async function validateOrder(data, { env, db, auth, waitUntil }) {
     deliveryType: allDigital ? 'digital' : 'physical',
     status: 'pending',
     paymentStatus: paymentMethod === 'card' ? 'paid' : 'unpaid',
+    ...(paymentMethod === 'card' ? { stripePaymentIntentId: String(data.stripePaymentIntentId) } : {}),
     createdAt: new Date(),
   };
 
   let orderDocId = '';
-  try { orderDocId = await db.addDoc('orders', orderData); }
-  catch (e) { throw new HttpsError('internal', 'Errore nel salvataggio dell\'ordine. Riprova.'); }
+  if (paymentMethod === 'card') {
+    // Ordine e "pagamento usato" nello stesso commit: due richieste parallele
+    // con lo stesso PaymentIntent non possono passare entrambe.
+    orderDocId = crypto.randomUUID().replace(/-/g, '').slice(0, 20);
+    try {
+      await db.createAtomic([
+        { collection: 'used_payment_intents', id: orderData.stripePaymentIntentId, mustNotExist: true,
+          fields: { orderId, orderDocId, uid, amount: Math.round(total * 100), usedAt: new Date() } },
+        { collection: 'orders', id: orderDocId, mustNotExist: true, fields: orderData },
+      ]);
+    } catch (e) {
+      if (e && e.code === 'already-exists') throw new HttpsError('already-exists', 'Questo pagamento è già stato usato per un ordine.');
+      throw new HttpsError('internal', 'Errore nel salvataggio dell\'ordine. Riprova.');
+    }
+  } else {
+    try { orderDocId = await db.addDoc('orders', orderData); }
+    catch (e) { throw new HttpsError('internal', 'Errore nel salvataggio dell\'ordine. Riprova.'); }
+  }
 
   const paymentVerified = paymentMethod === 'card';
   try {
@@ -852,8 +929,14 @@ export async function validateOrder(data, { env, db, auth, waitUntil }) {
     await db.updateDoc('users', uid, userUpdate);
   } catch (e) { console.error('Errore aggiornamento utente (non critico):', e.message); }
 
-  // Email conferma al cliente + notifica admin (in background, dati dall'ordine salvato)
-  const mailJob = sendOrderEmails(orderData, env)
+  // Email conferma al cliente + notifica admin (in background, dati dall'ordine salvato).
+  // Al cliente SOLO se l'indirizzo e' verificato (quello dell'account) o se
+  // ha pagato con carta: un ordine non pagato con un indirizzo digitato a mano
+  // non deve poter far arrivare email LilloFind a chiunque. L'admin riceve
+  // sempre la notifica; il cliente vede numero d'ordine e istruzioni a schermo.
+  const emailVerificata = !!(auth.token && auth.token.email_verified === true) && !!tokenEmail && orderEmail === tokenEmail;
+  const alCliente = paymentMethod === 'card' || emailVerificata;
+  const mailJob = sendOrderEmails(orderData, env, { soloAdmin: !alCliente })
     .then(r => (r && r.sent && orderDocId) ? db.updateDoc('orders', orderDocId, { customerEmailSent: true }) : null)
     .catch(e => console.error('email ordine:', e && e.message));
   if (typeof waitUntil === 'function') waitUntil(mailJob); else await mailJob;

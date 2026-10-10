@@ -149,6 +149,29 @@
 
 <!-- Firebase -->
 <script type="module" src="firebase.js"></script>
+<script>
+/* Escape unico per OGNI valore che finisce in HTML: nomi, descrizioni, brand,
+   taglie e id arrivano dai fornitori (scraper/import) e dagli utenti, e
+   prima venivano inseriti grezzi (XSS). */
+window.lfEsc=function(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"&#39;"); };
+/* Niente onclick con dentro i dati del prodotto: un " o un \ nel nome rompeva
+   l'attributo (e un nome mancante bloccava la scheda sullo skeleton). I
+   valori stanno in data-*, e qui un solo listener fa l'azione. Un
+   [data-act] dentro una card vince sull'apertura della card. */
+document.addEventListener('click',function(e){
+  var el=e.target.closest&&e.target.closest('[data-act],[data-open-pid]'); if(!el) return;
+  var d=el.dataset, a=d.act;
+  if(!a){ if(typeof window.openProduct==='function') window.openProduct(d.openPid); return; }
+  e.stopPropagation();
+  if(a==='wish') return window.toggleWish&&window.toggleWish(d.pid,el);
+  if(a==='admin-edit') return window.adminEditProduct&&window.adminEditProduct(d.pid);
+  if(a==='admin-del') return window.adminDeleteProduct&&window.adminDeleteProduct(d.pid);
+  if(a==='notify') return window.notifyWhenAvailable&&window.notifyWhenAvailable(d.pid);
+  if(a==='buy'){ window.buy&&window.buy(d.pid,Number(d.price)||0); if(window.closeProd) window.closeProd(); return; }
+  if(a==='share') return window.shareProduct&&window.shareProduct(d.name||'',Number(d.price)||0,d.pid);
+  if(a==='sizeguide') return window.openSizeGuide&&window.openSizeGuide(d.model||'');
+});
+</script>
 
 <link rel="stylesheet" href="index.css"/>
 <link rel="stylesheet" href="theme-v3.css"/>
@@ -2856,12 +2879,12 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     requestAnimationFrame(()=>{
       grid.textContent='';
       grid.insertAdjacentHTML('afterbegin', items.map(p=>`
-        <div onclick="openProduct('${p.id}')" style="cursor:pointer;border:1.5px solid var(--border);background:var(--card);transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='var(--k)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
+        <div data-open-pid="${lfEsc(p.id)}" style="cursor:pointer;border:1.5px solid var(--border);background:var(--card);transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='var(--k)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
           <div style="aspect-ratio:3/4;background:#f5f5f5;overflow:hidden;position:relative;">
-            ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:''}
+            ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${lfEsc(p.name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:''}
           </div>
           <div style="padding:8px 8px 10px;">
-            ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:1px;">${p.brand}</p>`:''}
+            ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:1px;">${lfEsc(p.brand)}</p>`:''}
             <p style="font-size:10.5px;font-family:var(--font-body);line-height:1.3;margin-bottom:4px;">${cleanTitle(p.name,24)}</p>
             <p class="bb" style="font-size:14px;">€${(p.price||0).toFixed(0)}</p>
           </div>
@@ -3498,27 +3521,27 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       ?'' /* overlay centrale "ESAURITO" sull'immagine → niente badge ridondante */
       :isNew?`<span class="lf-badge lf-badge--new lf-badge-pos">Novità</span>`
       :isLowStock?`<span class="lf-badge lf-badge--drop lf-badge-pos">Solo ${stockNum} rimasti</span>`
-      :(p.style?`<span class="lf-badge lf-badge--style lf-badge-pos">${p.style}</span>`:'');
-    return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.75':''}" onclick="openProduct('${p.id}')">
+      :(p.style?`<span class="lf-badge lf-badge--style lf-badge-pos">${lfEsc(p.style)}</span>`:'');
+    return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.75':''}" data-open-pid="${lfEsc(p.id)}">
       <div style="aspect-ratio:1/1;background:#efece4;overflow:hidden;position:relative;">
-        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" data-pid="${p.id}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;${isSoldOut?'filter:grayscale(.6);':''}" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10.5px;color:#c3bfb4;letter-spacing:2px;">NO IMG</div>`}
+        ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" data-pid="${lfEsc(p.id)}" alt="${lfEsc(p.name)}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;${isSoldOut?'filter:grayscale(.6);':''}" loading="lazy" decoding="async" onload="this.style.opacity='1'" onerror="_imgErr(this)">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10.5px;color:#c3bfb4;letter-spacing:2px;">NO IMG</div>`}
         ${isSoldOut?`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;"><span class="lf-badge lf-badge--soldout" style="padding:8px 14px;box-shadow:0 6px 18px rgba(0,0,0,.35);">Esaurito</span></div>`:''}
         ${stockBadge}
         ${delBtn}
-        <button class="wish-btn ${inWish?'active':''}" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Wishlist" style="position:absolute;top:10px;right:10px;width:36px;height:36px;background:rgba(255,255,255,.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:50%;box-shadow:var(--shadow-sm);">${wishIcon(inWish)}</button>
+        <button class="wish-btn ${inWish?'active':''}" data-pid="${lfEsc(p.id)}" data-act="wish" title="Wishlist" style="position:absolute;top:10px;right:10px;width:36px;height:36px;background:rgba(255,255,255,.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:50%;box-shadow:var(--shadow-sm);">${wishIcon(inWish)}</button>
         ${window._isAdmin?`<div style="position:absolute;bottom:8px;left:8px;display:flex;gap:6px;z-index:4;">
-          <button onclick="event.stopPropagation();adminEditProduct('${p.id}')" title="Modifica" style="width:36px;height:36px;border:none;border-radius:10px;background:rgba(35,35,31,.88);color:#fff;cursor:pointer;font-size:15px;box-shadow:var(--shadow-sm);"><svg class=ic aria-hidden=true><use href=icons.svg#pencil-simple></use></svg></button>
-          <button onclick="event.stopPropagation();adminDeleteProduct('${p.id}')" title="Elimina" style="width:36px;height:36px;border:none;border-radius:10px;background:rgba(201,80,63,.92);color:#fff;cursor:pointer;font-size:15px;box-shadow:var(--shadow-sm);"><svg class=ic aria-hidden=true><use href=icons.svg#trash></use></svg></button>
+          <button data-act="admin-edit" data-pid="${lfEsc(p.id)}" title="Modifica" style="width:36px;height:36px;border:none;border-radius:10px;background:rgba(35,35,31,.88);color:#fff;cursor:pointer;font-size:15px;box-shadow:var(--shadow-sm);"><svg class=ic aria-hidden=true><use href=icons.svg#pencil-simple></use></svg></button>
+          <button data-act="admin-del" data-pid="${lfEsc(p.id)}" title="Elimina" style="width:36px;height:36px;border:none;border-radius:10px;background:rgba(201,80,63,.92);color:#fff;cursor:pointer;font-size:15px;box-shadow:var(--shadow-sm);"><svg class=ic aria-hidden=true><use href=icons.svg#trash></use></svg></button>
         </div>`:''}
       </div>
       <div style="padding:16px 15px 15px;">
-        ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:600;">${p.brand}</p>`:''}
+        ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:600;">${lfEsc(p.brand)}</p>`:''}
         <h4 style="font-size:14px;font-weight:600;line-height:1.3;margin-bottom:8px;color:var(--k);" title="${(p.name||'').replace(/"/g,'&quot;')}">${cleanTitle(p.name)}</h4>
-        ${(p.sizes&&p.sizes.length)?`<div class="pc-sizes">${p.sizes.slice(0,6).map(s=>`<span>${s}</span>`).join('')}</div><p class="pc-sizes-compact">${p.sizes.length>1?'Taglie':'Taglia'} ${sizeRange(p.sizes)}</p>`:p.size?`<p style="font-size:11px;color:var(--dim);margin-bottom:10px;">Taglia ${p.size}</p>`:'<div style="margin-bottom:10px;"></div>'}
+        ${(p.sizes&&p.sizes.length)?`<div class="pc-sizes">${p.sizes.slice(0,6).map(s=>`<span>${lfEsc(s)}</span>`).join('')}</div><p class="pc-sizes-compact">${p.sizes.length>1?'Taglie':'Taglia'} ${sizeRange(p.sizes)}</p>`:p.size?`<p style="font-size:11px;color:var(--dim);margin-bottom:10px;">Taglia ${p.size}</p>`:'<div style="margin-bottom:10px;"></div>'}
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div>
             <span class="bb" style="font-size:22px;color:var(--k);">€${(p.price||0).toFixed(2)}</span>
-            <span style="display:block;font-size:11px;color:var(--led-text);font-weight:600;"><span class="pc-rating" data-pid="${p.id}">${ratingBadge(p.id)}</span>+${Math.floor(p.price||0)} LFPTS</span>
+            <span style="display:block;font-size:11px;color:var(--led-text);font-weight:600;"><span class="pc-rating" data-pid="${lfEsc(p.id)}">${ratingBadge(p.id)}</span>+${Math.floor(p.price||0)} LFPTS</span>
           </div>
           ${isSoldOut?`<span style="font-size:11px;letter-spacing:.3px;color:var(--dim);padding:8px 12px;border:1px solid var(--border-2);border-radius:999px;">Esaurito</span>`:`<button class="btn-led" style="padding:9px 16px;font-size:12px;min-height:0;" onclick="event.stopPropagation();buy('${p.id}',${p.price||0})">＋</button>`}
         </div>
@@ -3585,8 +3608,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!email){ email=(prompt('Lascia la tua email: ti avvisiamo appena il prodotto torna disponibile.')||'').trim(); }
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ if(email!=='') showToast('⚠️ Email non valida.'); return; }
     try{
+      const u=await window.lfAssicuraUtente();
       await fb.addDoc(fb.collection(fb.db,'stock_alerts'),{
-        productId:pid, productName:p?p.name||'':'', email:email.toLowerCase(),
+        productId:pid, productName:p?p.name||'':'', email:email.toLowerCase(), uid:u.uid,
         notified:false, createdAt:fb.serverTimestamp()
       });
       showToast('🔔 Perfetto! Ti avviseremo via email.');
@@ -3617,7 +3641,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const p=products.find(x=>x.id===pid);
     if(!p)return;
     try{
-      document.title=`${cleanTitle(p.name)}${p.brand?' · '+p.brand:''} — €${(p.price||0).toFixed(0)} | LilloFind`;
+      document.title=`${cleanTitleTxt(p.name)}${p.brand?' · '+p.brand:''} — €${(p.price||0).toFixed(0)} | LilloFind`;
       const ogt=document.querySelector('meta[property="og:title"]'); if(ogt) ogt.setAttribute('content',p.name+' — LilloFind');
       const ogi=document.querySelector('meta[property="og:image"]'); if(ogi&&p.imageUrl) ogi.setAttribute('content',pImg(p.imageUrl));
       history.replaceState(null,'',location.pathname+'?p='+encodeURIComponent(pid));
@@ -3662,7 +3686,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       <div style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);" id="prod-modal-grid">
         <div style="background:#f0f0f0;position:relative;display:flex;flex-direction:column;">
           <div style="flex:1;position:relative;min-height:420px;display:flex;" ontouchstart="_pgTS(event)" ontouchend="_pgTE(event)">
-            ${_gmain?`<img id="prod-gallery-main" src="${_gmain}" alt="${p.name}" decoding="async" fetchpriority="high" style="width:100%;height:100%;object-fit:cover;display:block;min-height:420px;cursor:zoom-in;flex:1;" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;min-height:420px;width:100%;font-size:10.5px;color:var(--dim);letter-spacing:2px;">NO IMG</div>`}
+            ${_gmain?`<img id="prod-gallery-main" src="${_gmain}" alt="${lfEsc(p.name)}" decoding="async" fetchpriority="high" style="width:100%;height:100%;object-fit:cover;display:block;min-height:420px;cursor:zoom-in;flex:1;" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`:`<div style="display:flex;align-items:center;justify-content:center;min-height:420px;width:100%;font-size:10.5px;color:var(--dim);letter-spacing:2px;">NO IMG</div>`}
             ${_gimgs.length>1?`
               <button aria-label="Precedente" onclick="event.stopPropagation();prodGNav(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">‹</button>
               <button aria-label="Successiva" onclick="event.stopPropagation();prodGNav(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">›</button>
@@ -3676,10 +3700,10 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         </div>
         <div style="padding:28px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;max-height:85vh;">
           <div>
-            ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">${p.brand}</p>`:''}
+            ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">${lfEsc(p.brand)}</p>`:''}
             <h2 style="font-family:var(--font-display);font-size:clamp(22px,3vw,34px);line-height:1.1;margin-bottom:8px;">${cleanTitle(p.name,90)}</h2>
-            ${p.model?`<p style="font-size:11px;color:var(--mid);letter-spacing:1px;">Modello: ${p.model}</p>`:''}
-            ${p.description?`<p style="font-size:12px;color:var(--mid);line-height:1.8;margin-top:8px;">${p.description}</p>`:''}
+            ${p.model?`<p style="font-size:11px;color:var(--mid);letter-spacing:1px;">Modello: ${lfEsc(p.model)}</p>`:''}
+            ${p.description?`<p style="font-size:12px;color:var(--mid);line-height:1.8;margin-top:8px;white-space:pre-line;">${lfEsc(String(p.description).replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]*>/g,''))}</p>`:''}
           </div>
           <!-- Quality details -->
           <div style="border:1px solid #e8e8e8;padding:14px 16px;background:var(--w);">
@@ -3691,8 +3715,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
             </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${s}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${p.size}</span>`:''}
-            ${((p.sizes&&p.sizes.length)||p.size)?`<button onclick="openSizeGuide('${(p.model||'').replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--led-text);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;"><svg class=ic aria-hidden=true><use href=icons.svg#ruler></use></svg> Guida taglie</button>`:''}
+            ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${lfEsc(s)}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${lfEsc(p.size)}</span>`:''}
+            ${((p.sizes&&p.sizes.length)||p.size)?`<button data-act="sizeguide" data-model="${lfEsc(p.model||'')}" style="background:none;border:none;color:var(--led-text);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;"><svg class=ic aria-hidden=true><use href=icons.svg#ruler></use></svg> Guida taglie</button>`:''}
           </div>
           <p style="font-size:12.5px;color:var(--mid);margin:-4px 0 0;"><b style="color:var(--k);font-weight:600;">Colore:</b> ${(p.colors&&p.colors.length)?p.colors.map(c=>String(c).replace(/[<>&"]/g,'')).join(' · '):'come in foto'}</p>
           <div style="border-top:1px solid var(--border);padding-top:16px;">
@@ -3716,10 +3740,10 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;">
             ${p.soldOut===true
-              ? `<button style="flex:1;background:var(--ink);color:#fff;border:none;padding:14px 20px;font-family:var(--font-body);font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;" onclick="notifyWhenAvailable('${p.id}')"><svg class=ic aria-hidden=true><use href=icons.svg#bell></use></svg> Avvisami quando disponibile</button>`
-              : `<button style="flex:1;background:var(--led);color:#fff;border:none;padding:14px 20px;font-family:var(--font-body);font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:none;" onclick="buy('${p.id}',${p.price||0});closeProd();">${(window.LF_LANG==='en')?'Add to Cart →':'Aggiungi al Carrello →'}</button>`}
-            <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:var(--font-body);font-size:18px;border-radius:0;" onclick="toggleWish('${p.id}',this)">${wishIcon(inWish)}</button>
-            <button style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-body);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--k);" onclick="shareProduct('${p.name.replace(/'/g,"\\'")}',${p.price||0},'${p.id}')" title="Condividi questo prodotto">
+              ? `<button style="flex:1;background:var(--ink);color:#fff;border:none;padding:14px 20px;font-family:var(--font-body);font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;" data-act="notify" data-pid="${lfEsc(p.id)}"><svg class=ic aria-hidden=true><use href=icons.svg#bell></use></svg> Avvisami quando disponibile</button>`
+              : `<button style="flex:1;background:var(--led);color:#fff;border:none;padding:14px 20px;font-family:var(--font-body);font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:none;" data-act="buy" data-pid="${lfEsc(p.id)}" data-price="${Number(p.price)||0}">${(window.LF_LANG==='en')?'Add to Cart →':'Aggiungi al Carrello →'}</button>`}
+            <button id="prod-wish-btn" style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;font-family:var(--font-body);font-size:18px;border-radius:0;" data-act="wish" data-pid="${lfEsc(p.id)}">${wishIcon(inWish)}</button>
+            <button style="border:1.5px solid var(--k);background:none;padding:12px 16px;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-body);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--k);" data-act="share" data-name="${lfEsc(p.name||'')}" data-price="${Number(p.price)||0}" data-pid="${lfEsc(p.id)}" title="Condividi questo prodotto">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               Condividi
             </button>
@@ -3830,13 +3854,21 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!_reviewRating){ showToast('⚠️ Seleziona un voto (stelle).'); return; }
     const text=(document.getElementById('rev-text')?.value||'').trim().slice(0,600);
     try{
+      // Il nome è quello dell'account (le regole lo controllano): il nome del
+      // token, o la parte dell'email prima della @. Una recensione per
+      // prodotto: l'id è uid_prodotto.
+      let nomeToken='';
+      try{ nomeToken=(await cu.getIdTokenResult()).claims.name||''; }catch(_){}
       const data={
         productId:pid, userId:cu.uid,
-        userName:(cu.displayName||cu.email||'Cliente').split('@')[0],
+        userName:(nomeToken||(cu.email||'').split('@')[0]||'').slice(0,80),
         rating:_reviewRating, text, createdAt:fb.serverTimestamp()
       };
+      if(!data.userName) delete data.userName;
       if(_reviewPhoto) data.photo=_reviewPhoto;
-      await fb.addDoc(fb.collection(fb.db,'reviews'),data);
+      const rref=fb.doc(fb.db,'reviews',cu.uid+'_'+pid);
+      try{ if((await fb.getDoc(rref)).exists()){ showToast('Hai già recensito questo prodotto.'); return; } }catch(_){}
+      await fb.setDoc(rref,data);
       _reviewPhoto='';
       showToast('🌟 Grazie per la recensione!');
       loadProductReviews(pid);
@@ -3889,16 +3921,16 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         const isSoldOut = p.soldOut===true;
         const stockNum = realStock(p);
         const isLow = !isSoldOut && stockNum!==null && stockNum<=3;
-        return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" onclick="openProduct('${p.id}')">
+        return `<div class="pcard" style="cursor:pointer;${isSoldOut?'opacity:.7':''}" data-open-pid="${lfEsc(p.id)}">
           <div style="aspect-ratio:3/4;background:#efefef;overflow:hidden;position:relative;">
-            ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10.5px;color:var(--dim);letter-spacing:2px;">NO IMG</div>'}
+            ${p.imageUrl?`<img src="${pImg(p.imageUrl)}" alt="${lfEsc(p.name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10.5px;color:var(--dim);letter-spacing:2px;">NO IMG</div>'}
             ${isSoldOut?'<span class="lf-badge lf-badge--soldout lf-badge-pos">Esaurito</span>':''}
             ${isLow&&!isSoldOut?`<span class="lf-badge lf-badge--drop lf-badge-pos">Solo ${stockNum} rimasti</span>`:''}
-            <button class="wish-btn active" data-pid="${p.id}" onclick="event.stopPropagation();toggleWish('${p.id}',this)" title="Rimuovi" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;"><svg class=ic aria-hidden=true><use href=icons.svg#heart-fill></use></svg></button>
+            <button class="wish-btn active" data-pid="${lfEsc(p.id)}" data-act="wish" title="Rimuovi" style="position:absolute;bottom:8px;right:8px;width:32px;height:32px;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;"><svg class=ic aria-hidden=true><use href=icons.svg#heart-fill></use></svg></button>
             <div style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.7);color:var(--led2);font-size:10.5px;letter-spacing:1.5px;padding:2px 7px;text-transform:uppercase;">1:1 Quality</div>
           </div>
           <div style="padding:12px 10px;">
-            ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
+            ${p.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${lfEsc(p.brand)}</p>`:''}
             <h4 style="font-size:12px;margin-bottom:2px;font-family:var(--font-body);">${cleanTitle(p.name)}</h4>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
               <span class="bb" style="font-size:18px;">€${(p.price||0).toFixed(2)}</span>
@@ -3949,12 +3981,12 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     products.forEach(p=>{ if(!pred(p)) return; const team=(canonBrand(p.brand)||'').trim(); if(team) counts[team]=(counts[team]||0)+1; });
     const teams=Object.keys(counts).sort((a,b)=>a.localeCompare(b));
     const total=Object.values(counts).reduce((s,n)=>s+n,0);
-    const chip=(label,val,n,active)=>`<span onclick="setSportTeam('${val.replace(/'/g,"\\'")}')" style="cursor:pointer;white-space:nowrap;padding:8px 14px;border-radius:999px;font-size:12px;letter-spacing:.5px;border:1.5px solid ${active?'var(--led)':'var(--border-2)'};background:${active?'var(--led)':'transparent'};color:${active?'var(--k)':'var(--mid)'};font-weight:${active?'700':'500'};">${label}${n!=null?` <span style="opacity:.6;">${n}</span>`:''}</span>`;
+    const chip=(label,val,n,active)=>`<span onclick="setSportTeam(${lfEsc(JSON.stringify(String(val)))})" style="cursor:pointer;white-space:nowrap;padding:8px 14px;border-radius:999px;font-size:12px;letter-spacing:.5px;border:1.5px solid ${active?'var(--led)':'var(--border-2)'};background:${active?'var(--led)':'transparent'};color:${active?'var(--k)':'var(--mid)'};font-weight:${active?'700':'500'};">${lfEsc(label)}${n!=null?` <span style="opacity:.6;">${n}</span>`:''}</span>`;
     const chipsHtml = teams.length
       ? `<div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:10px;" class="hide-scrollbar">${chip('Tutte','',total,!filters.brand)}${teams.map(t=>chip(t,t,counts[t],filters.brand===t)).join('')}</div>`
       : '';
     // Banner "richiedi squadra" — sempre presente nella sezione sport
-    const reqBanner=`<div onclick="openTeamRequest('${sport}')" style="cursor:pointer;display:flex;align-items:center;gap:12px;border:1.5px dashed var(--led);background:color-mix(in srgb,var(--led2) 10%,transparent);border-radius:12px;padding:12px 15px;">
+    const reqBanner=`<div onclick="openTeamRequest(${lfEsc(JSON.stringify(String(sport)))})" style="cursor:pointer;display:flex;align-items:center;gap:12px;border:1.5px dashed var(--led);background:color-mix(in srgb,var(--led2) 10%,transparent);border-radius:12px;padding:12px 15px;">
         <span style="font-size:20px;flex-shrink:0;"><svg class=ic aria-hidden=true><use href=icons.svg#magnifying-glass></use></svg></span>
         <div style="flex:1;min-width:0;">
           <p style="font-size:13px;font-weight:700;color:var(--k);">Non trovi la tua squadra?</p>
@@ -3993,7 +4025,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         <input id="tr-perso" class="lf-in" placeholder="es. Nome + numero (YILDIZ 10), patch…" maxlength="80"/>
         <label class="glbl">La tua email *</label>
         <input id="tr-email" class="lf-in" placeholder="dove ti avvisiamo" value="${emailPre.replace(/"/g,'&quot;')}"/>
-        <button class="btn-led" style="width:100%;margin-top:14px;" onclick="submitTeamRequest('${sport}')">Invia richiesta →</button>
+        <button class="btn-led" style="width:100%;margin-top:14px;" onclick="submitTeamRequest(${lfEsc(JSON.stringify(String(sport)))})">Invia richiesta →</button>
       </div>
     </div>`;
     document.body.appendChild(box);
@@ -4005,9 +4037,10 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!team){ showToast('Inserisci il nome della squadra.'); return; }
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showToast('Inserisci una email valida.'); return; }
     const fb=window.__fb; if(!fb){ showToast('Riprova tra poco.'); return; }
-    const payload={ type:'team_request', sport, team, year:g('tr-year'), kit:g('tr-kit'), category:g('tr-cat'),
-      personalization:g('tr-perso'), email, uid:(user&&user.uid)||'', status:'new', createdAt:fb.serverTimestamp() };
     try{
+      const u=await window.lfAssicuraUtente();
+      const payload={ type:'team_request', sport, team, year:g('tr-year'), kit:g('tr-kit'), category:g('tr-cat'),
+        personalization:g('tr-perso'), email, uid:u.uid, status:'new', createdAt:fb.serverTimestamp() };
       await fb.addDoc(fb.collection(fb.db,'product_requests'), payload);
       document.getElementById('team-req-modal')?.remove();
       showToast('✅ Richiesta inviata! Ti avvisiamo appena disponibile.');
@@ -4207,15 +4240,15 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(rowWrap) rowWrap.style.display='';
     const cards=pool.map(p=>{
       const isSoldOut=p.soldOut===true;
-      return `<div class="carousel-card" onclick="openProduct('${p.id}')">
+      return `<div class="carousel-card" data-open-pid="${lfEsc(p.id)}">
         <div style="aspect-ratio:3/4;background:var(--ink);overflow:hidden;position:relative;">
           ${p.imageUrl
-            ? `<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`
+            ? `<img src="${pImg(p.imageUrl)}" alt="${lfEsc(p.name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`
             : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:rgba(246,243,238,.72);letter-spacing:2px;">NO IMG</div>`
           }
           ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span class="lf-badge lf-badge--soldout">Esaurito</span></div>':''}
           <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
-            ${p.brand?`<p style="font-size:10.5px;color:var(--led2);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
+            ${p.brand?`<p style="font-size:10.5px;color:var(--led2);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${lfEsc(p.brand)}</p>`:''}
             <p style="font-size:10.5px;color:#fff;line-height:1.2;font-family:var(--font-body);">${cleanTitle(p.name,24)}</p>
             <p style="font-family:var(--font-display);font-size:16px;color:#fff;margin-top:3px;">€${(p.price||0).toFixed(0)}</p>
           </div>
@@ -4242,17 +4275,17 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         const isSoldOut = p.soldOut===true;
         const stockNum=realStock(p);
         const isLow=!isSoldOut&&stockNum!==null&&stockNum<=3;
-        return `<div class="carousel-card" onclick="openProduct('${p.id}')">
+        return `<div class="carousel-card" data-open-pid="${lfEsc(p.id)}">
           <div style="aspect-ratio:3/4;background:var(--ink);overflow:hidden;position:relative;">
             ${p.imageUrl
-              ? `<img src="${pImg(p.imageUrl)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`
+              ? `<img src="${pImg(p.imageUrl)}" alt="${lfEsc(p.name)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async" onerror="this.style.display='none'">`
               : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:rgba(246,243,238,.72);letter-spacing:2px;">NO IMG</div>`
             }
             ${isSoldOut?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><span class="lf-badge lf-badge--soldout">Esaurito</span></div>':''}
             ${isLow&&!isSoldOut?`<span class="lf-badge lf-badge--drop lf-badge-pos">Solo ${stockNum} rimasti</span>`:''}
-            ${window._isAdmin?`<button onclick="event.stopPropagation();adminDeleteProduct('${p.id}')" title="Elimina prodotto" style="position:absolute;top:6px;right:6px;z-index:5;width:30px;height:30px;border:none;border-radius:8px;background:rgba(201,80,63,.95);color:#fff;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.3);"><svg class=ic aria-hidden=true><use href=icons.svg#trash></use></svg></button>`:''}
+            ${window._isAdmin?`<button data-act="admin-del" data-pid="${lfEsc(p.id)}" title="Elimina prodotto" style="position:absolute;top:6px;right:6px;z-index:5;width:30px;height:30px;border:none;border-radius:8px;background:rgba(201,80,63,.95);color:#fff;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.3);"><svg class=ic aria-hidden=true><use href=icons.svg#trash></use></svg></button>`:''}
             <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);padding:10px 8px 8px;">
-              ${p.brand?`<p style="font-size:10.5px;color:var(--led2);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${p.brand}</p>`:''}
+              ${p.brand?`<p style="font-size:10.5px;color:var(--led2);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">${lfEsc(p.brand)}</p>`:''}
               <p style="font-size:10.5px;color:#fff;line-height:1.2;font-family:var(--font-body);">${cleanTitle(p.name,24)}</p>
               <p style="font-family:var(--font-display);font-size:16px;color:#fff;margin-top:3px;">€${(p.price||0).toFixed(0)}</p>
             </div>
@@ -4322,7 +4355,10 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     /\b100% ?(authentic|genuine|original|quality)( guaranteed)?\b/gi,/\b(authentic|genuine|official)\b/gi,/\b(high|top|best)[- ]quality\b/gi,
     /\bquality guaranteed\b/gi,/\bfree shipping\b/gi,/\bhot sale\b/gi,/\bnew arrivals?\b/gi,/\bin stock\b/gi,
     /\bfor (both )?(men and women|men & women|women and men)\b/gi,/\bmen'?s and women'?s\b/gi];
-  function cleanTitle(name, max){
+  // cleanTitle → per l'HTML (escapato); cleanTitleTxt → per testo puro
+  // (document.title, textContent), dove l'escape si vedrebbe.
+  function cleanTitle(name, max){ return lfEsc(cleanTitleTxt(name, max)); }
+  function cleanTitleTxt(name, max){
     const raw=String(name||''); max=max||60;
     let t=raw.replace(/[【\[][^】\]]*[】\]]/g,' ')                         // [promo] 【促销】
              .replace(/[　-〿㐀-鿿豈-﫿＀-￯]+/g,' '); // cinese + punteggiatura full-width
@@ -4338,7 +4374,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(t && t[0]!==t[0].toUpperCase()) t=t[0].toUpperCase()+t.slice(1);
     return t || raw;
   }
-  window.cleanTitle=cleanTitle;
+  window.cleanTitle=cleanTitle; window.cleanTitleTxt=cleanTitleTxt;
   // Taglie in una riga sola ("XS–XXL", "39–45"): su mobile al posto delle chip.
   const _SZ_ORDER=['XXS','XS','S','M','L','XL','XXL','XXXL','3XL','4XL'];
   function sizeRange(sizes){
@@ -4352,7 +4388,12 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   }
   function pImg(url){
     if(!url) return '';
-    const u=url.startsWith('//')?'https:'+url:url;
+    // L'URL arriva dal fornitore: solo http(s) (o data:image), e i caratteri che chiudono un
+    // attributo o una stringa (" ' < > \ ` spazi) diventano %xx, che in un
+    // URL vero non cambiano niente. Così è sicuro in src="…", url('…') e JS.
+    let u=String(url).trim(); u=u.startsWith('//')?'https:'+u:u;
+    if(!/^(https?:\/\/|data:image\/)/i.test(u)) return '';
+    u=u.replace(/["'<>\\`\s]/g, c=>encodeURIComponent(c));
     // Estrai l'URL originale se già passato attraverso un proxy
     const inner=u.includes('?url=') ? decodeURIComponent(u.split('?url=')[1].split('&')[0]) : u;
     if(inner.includes('yupoo.com')||inner.includes('yunjifen.com'))
@@ -4455,7 +4496,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         <button onclick="setBoxOption(${idx},'senza_scatola')" style="font-size:10.5px;padding:3px 9px;border:1.5px solid var(--k);cursor:pointer;letter-spacing:1px;${_box==='senza_scatola'?'background:var(--ink);color:var(--on-ink);':'background:none;color:var(--k);'}">Senza Scatola</button>
       </div>`:'';
       return `<div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
-        <div style="width:76px;height:76px;background:${item.isDigital?'var(--accent-soft)':'var(--border)'};flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:12px;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`onclick="openProduct('${item.id}')"`:''}>
+        <div style="width:76px;height:76px;background:${item.isDigital?'var(--accent-soft)':'var(--border)'};flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:12px;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`data-open-pid="${lfEsc(item.id)}"`:''}>
           ${item.img?`<img src="${pImg(item.img)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:''}
           ${item.isDigital&&!item.img?`<span style="font-size:28px;">${item.icon||'<svg class=ic aria-hidden=true><use href=icons.svg#device-mobile></use></svg>'}</span>`:''}
           ${!item.isDigital&&!item.img?'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:var(--dim);">IMG</div>':''}
@@ -4464,13 +4505,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
             <div style="min-width:0;flex:1;">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                ${item.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">${item.brand}</p>`:''}
+                ${item.brand?`<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;">${lfEsc(item.brand)}</p>`:''}
                 ${item.isDigital?`<span class="digital-badge">✦ Digitale</span>`:''}
               </div>
-              <p style="font-size:14px;font-weight:600;line-height:1.3;margin:2px 0;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`onclick="openProduct('${item.id}')"`:''}>
+              <p style="font-size:14px;font-weight:600;line-height:1.3;margin:2px 0;${!item.isDigital?'cursor:pointer;':''}" ${!item.isDigital?`data-open-pid="${lfEsc(item.id)}"`:''}>
                 ${cleanTitle(item.name)}
               </p>
-              <p style="font-size:11px;color:var(--dim);">${item.isDigital?`€${item.price.toFixed(2)}/mese · <strong style="color:var(--k);">${_mLbl}</strong>`:`${item.size?`SZ ${item.size} · `:''}${_wkg} kg`}</p>
+              <p style="font-size:11px;color:var(--dim);">${item.isDigital?`€${item.price.toFixed(2)}/mese · <strong style="color:var(--k);">${_mLbl}</strong>`:`${item.size?`SZ ${lfEsc(item.size)} · `:''}${_wkg} kg`}</p>
             </div>
             <div style="text-align:right;flex-shrink:0;">
               <p class="bb" style="font-size:20px;">€${(item.price*item.qty).toFixed(2)}</p>
@@ -4551,7 +4592,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     body.innerHTML=`
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         ${prod.imageUrl?`<img src="${pImg(prod.imageUrl)}" style="width:60px;height:60px;object-fit:cover;border:1px solid var(--border);" onerror="this.style.display='none'">`:''}
-        <div><p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;">${prod.brand||''}</p><p style="font-family:var(--font-display);font-size:22px;">${prod.name?cleanTitle(prod.name):'Prodotto'}</p><p style="font-family:var(--font-display);font-size:18px;color:var(--led-text);">€${price.toFixed(2)}</p></div>
+        <div><p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;">${lfEsc(prod.brand||'')}</p><p style="font-family:var(--font-display);font-size:22px;">${prod.name?cleanTitle(prod.name):'Prodotto'}</p><p style="font-family:var(--font-display);font-size:18px;color:var(--led-text);">€${price.toFixed(2)}</p></div>
       </div>
       ${sizes.length?`<div style="margin-bottom:18px;">
         <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Seleziona Taglia *</p>
@@ -4709,11 +4750,11 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const items=document.getElementById('ck-order-items');
     if(items) items.innerHTML=cart.map(i=>`
       <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;">
-        <div style="width:38px;height:38px;background:${i.isDigital?'linear-gradient(135deg,#f5f0eb,#ede6de)':'#f2f2f2'};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden;${!i.isDigital?'cursor:pointer;':''}" ${!i.isDigital?`onclick="openProduct('${i.id}')"`:''}>
+        <div style="width:38px;height:38px;background:${i.isDigital?'linear-gradient(135deg,#f5f0eb,#ede6de)':'#f2f2f2'};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden;${!i.isDigital?'cursor:pointer;':''}" ${!i.isDigital?`data-open-pid="${lfEsc(i.id)}"`:''}>
           ${i.img?`<img src="${pImg(i.img)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:i.isDigital?(i.icon||'<svg class=ic aria-hidden=true><use href=icons.svg#device-mobile></use></svg>'):''}
         </div>
         <div style="flex:1;min-width:0;">
-          <p style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${!i.isDigital?'cursor:pointer;text-decoration:underline;text-underline-offset:2px;':''}" ${!i.isDigital?`onclick="openProduct('${i.id}')"`:''}>
+          <p style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${!i.isDigital?'cursor:pointer;text-decoration:underline;text-underline-offset:2px;':''}" ${!i.isDigital?`data-open-pid="${lfEsc(i.id)}"`:''}>
             ${cleanTitle(i.name)}
           </p>
           <p style="font-size:10.5px;color:var(--mid);margin-top:1px;">${i.isDigital?('<svg class=ic aria-hidden=true><use href=icons.svg#envelope></use></svg> Abbonamento · '+(i.qty>1?i.qty+' mesi':'1 mese')):([i.size?'SZ '+i.size:'',i.color||'',i.boxOption==='con_scatola'?'<svg class=ic aria-hidden=true><use href=icons.svg#package></use></svg> Con Scatola':i.boxOption==='senza_scatola'?'Senza Scatola':'',i.qty>1?'x'+i.qty:''].filter(Boolean).join(' · ')||'&nbsp;')}</p>
@@ -4740,10 +4781,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }
     set('ck-total','€'+finalTotal2.toFixed(2));
     set('ck-pts-preview','+'+pts+' LFPOINTS al completamento');
-    // Update bonifico causale with a random order ID
-    const causale='LILLO-'+Date.now().toString(36).toUpperCase().slice(-6);
-    const bc=document.getElementById('bonifico-causale');
-    if(bc&&bc.textContent==='LILLO-ORDER') bc.textContent=causale;
+    // (la causale vera, col numero d'ordine, la mostra la schermata di conferma)
   }
   // ── Stripe Payment Modal ───────────────────────────────
   let _stripe=null, _stripeElements=null, _pendingOrderData=null;
@@ -4811,11 +4849,17 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     cart=[];saveCart();updateCartBadge();
 
     // Se in questo checkout è stato creato un nuovo account (ospite → account
-    // reale), invia al cliente email + password temporanea. Fire-and-forget.
+    // reale), il Worker manda al cliente il link per IMPOSTARE la password
+    // (la password non viaggia più dal browser). Se il Worker non può, si
+    // ripiega sull'email di reset standard di Firebase. Fire-and-forget.
     if(window.__newAccountPass){
-      const _p=window.__newAccountPass; window.__newAccountPass=null;
-      try{ lfCallable('sendAccountEmail')({password:_p,name:orderData?.name||''}); }catch(_){}
-      setTimeout(()=>showToast('📧 Ti abbiamo inviato email e password per accedere al tuo account.'),1800);
+      window.__newAccountPass=null;
+      const _em=(user&&user.email)||'';
+      lfCallable('sendAccountEmail')({}).then(r=>{
+        const d=r&&r.data;
+        if(!(d&&d.sent) && d && d.reason==='identity_unavailable' && _em){ try{ window.__fb.sendPasswordResetEmail(window.__fb.auth,_em); }catch(_){} }
+      }).catch(()=>{ if(_em){ try{ window.__fb.sendPasswordResetEmail(window.__fb.auth,_em); }catch(_){} } });
+      setTimeout(()=>showToast('📧 Ti abbiamo mandato un\'email per impostare la password del tuo account.'),1800);
     }
 
     if(method==='card'){
@@ -4849,8 +4893,42 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         setTimeout(()=>showPg('shop'),2000);
       }
     } else if(method==='bonifico'){
+      // Schermata di conferma come per PayPal: numero ordine, IBAN e causale
+      // da copiare. Prima c'era solo un toast e dopo 1,5s si tornava allo
+      // shop, mentre le istruzioni chiedevano di mettere il numero d'ordine
+      // nella causale: il cliente non lo vedeva mai.
       showToast('✅ Ordine registrato! Confermeremo alla ricezione del bonifico.');
-      setTimeout(()=>showPg('shop'),1500);
+      const confirmEl=document.getElementById('order-confirm-overlay');
+      const tel=(orderData&&orderData.phone)||'';
+      const causale=orderId+(tel?' '+tel:'');
+      const riga=(lbl,val)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);padding:9px 0;">
+          <span style="font-size:11px;color:rgba(246,243,238,.6);">${lbl}</span>
+          <span style="display:flex;align-items:center;gap:8px;"><strong style="font-family:var(--font-mono);font-size:13px;color:#f6f3ee;">${lfEsc(val)}</strong>
+          <button type="button" data-copia="${lfEsc(val)}" style="background:none;border:1px solid var(--led);color:var(--led-text);border-radius:999px;font-size:10.5px;padding:4px 10px;cursor:pointer;">Copia</button></span></div>`;
+      if(confirmEl){
+        confirmEl.innerHTML=`
+          <div style="background:#0a0a0a;border:2px solid var(--led);padding:30px 24px;max-width:480px;width:90%;text-align:center;">
+            <p style="font-family:var(--font-display);font-size:28px;letter-spacing:3px;color:var(--led-text);margin-bottom:6px;">ORDINE REGISTRATO</p>
+            <p style="font-size:12px;color:rgba(246,243,238,.72);margin-bottom:18px;">Numero ordine: <strong style="font-family:var(--font-mono);color:#f6f3ee;">${lfEsc(orderId)}</strong></p>
+            <div style="text-align:left;background:#111;border:1px solid rgba(255,255,255,.1);padding:6px 16px;margin-bottom:16px;">
+              ${riga('Importo','€'+total.toFixed(2))}
+              ${riga('Intestatario','ALEX CONTI')}
+              ${riga('IBAN','IE06 SUMU 9903 6511 9972 84')}
+              ${riga('BIC/SWIFT','SUMUIE22XXX')}
+              ${riga('Causale',causale)}
+            </div>
+            <p style="font-size:11px;color:rgba(246,243,238,.72);line-height:1.6;margin-bottom:18px;">Usa <strong style="color:var(--led-text);">esattamente questa causale</strong>: così riconosciamo il tuo pagamento. L'ordine parte entro 24h dalla ricezione del bonifico.</p>
+            <button type="button" data-chiudi-conferma style="background:var(--led);color:#fff;border:none;cursor:pointer;font-family:var(--font-display);font-size:16px;letter-spacing:3px;padding:14px 32px;width:100%;">HO CAPITO — VAI ALLO SHOP</button>
+          </div>`;
+        confirmEl.onclick=(e)=>{
+          const c=e.target.closest('[data-copia]');
+          if(c){ lfCopy(c.dataset.copia); return; }
+          if(e.target.closest('[data-chiudi-conferma]')){ confirmEl.style.display='none'; showPg('shop'); }
+        };
+        confirmEl.style.display='flex';
+      } else {
+        setTimeout(()=>showPg('shop'),1500);
+      }
     } else {
       showToast('✅ Ordine registrato!');
       setTimeout(()=>showPg('shop'),1200);
@@ -5151,7 +5229,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         const o=d.data();
         const date=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
         const st=o.status||'pending';
-        const itemSummary=(o.items||[]).slice(0,2).map(i=>i.name).join(', ')+(o.items?.length>2?` +${o.items.length-2}`:'');
+        const itemSummary=(o.items||[]).slice(0,2).map(i=>lfEsc(i.name)).join(', ')+(o.items?.length>2?` +${o.items.length-2}`:'');
         return `<div style="padding:12px 0;border-bottom:1px solid #f0f0f0;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
             <div>
@@ -5166,7 +5244,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           ${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?`<div style="margin-top:10px;">
             <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led-text);margin-bottom:6px;font-weight:700;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg> Foto QC del tuo articolo</p>
             <div style="display:flex;gap:6px;overflow-x:auto;">
-              ${o.qcPhotos.map(u=>`<img src="${pImg(u)}" onclick="openLightbox('${pImg(u)}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:zoom-in;flex-shrink:0;" onerror="this.style.display='none'">`).join('')}
+              ${o.qcPhotos.map(u=>`<img src="${pImg(u)}" onclick="openLightbox(${lfEsc(JSON.stringify(pImg(u)))})" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:zoom-in;flex-shrink:0;" onerror="this.style.display='none'">`).join('')}
             </div></div>`:''}
         </div>`;
       }).join('');
@@ -5288,24 +5366,29 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   let _groupVis='public';
   window.setGroupVis=function(v){ _groupVis=v; document.getElementById('g-vis-public')?.classList.toggle('on',v==='public'); document.getElementById('g-vis-private')?.classList.toggle('on',v==='private'); };
   function _gCode(){ let s=''; const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; for(let i=0;i<6;i++) s+=A[Math.floor(Math.random()*A.length)]; return 'LF'+s; }
-  function _esc(s){ return String(s==null?'':s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // Escape completo (anche & e virgolette): i dati dei gruppi li scrivono gli utenti.
+  function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function _isMember(g){ return user && Array.isArray(g.members) && g.members.some(m=>m.uid===user.uid); }
   function groupCardHTML(g, ctx){
     const deadline=g.deadline?new Date(g.deadline+'T00:00:00'):null;
     const dl=deadline?deadline.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
     const expired=deadline?deadline < new Date(new Date().toDateString()):false;
-    const n=(g.members||[]).length, max=g.maxPeople||30;
+    const n=(g.members||[]).length, max=Math.max(2,Math.min(30,parseInt(g.maxPeople,10)||30));
     const full=n>=max;
     const isHost=user&&g.hostUid===user.uid;
     const mem=_isMember(g);
     const closed=g.status==='closed'||expired;
     const membersList=(g.members||[]).map(m=>_esc(m.name||'Utente')).join(', ');
     let action='';
-    if(isHost) action=`<button class="btn-g" style="padding:8px 14px;font-size:10.5px;" onclick="closeGroup('${g.id}')">${g.status==='closed'?'Riapri':'Chiudi gruppo'}</button>`;
-    else if(mem) action=`<button class="btn-g" style="padding:8px 14px;font-size:10.5px;color:var(--danger);border-color:#e6c3bd;" onclick="leaveGroup('${g.id}')">Esci</button>`;
+    // Niente onclick con dati dentro: l'id va in data-*, il click lo prende
+    // un listener (vedi renderGroupPage). Un id o un codice con le virgolette
+    // non può più chiudere l'attributo e iniettare codice.
+    const gid=_esc(g.id);
+    if(isHost) action=`<button class="btn-g" style="padding:8px 14px;font-size:10.5px;" data-gaction="close" data-gid="${gid}">${g.status==='closed'?'Riapri':'Chiudi gruppo'}</button>`;
+    else if(mem) action=`<button class="btn-g" style="padding:8px 14px;font-size:10.5px;color:var(--danger);border-color:#e6c3bd;" data-gaction="leave" data-gid="${gid}">Esci</button>`;
     else if(closed) action=`<span style="font-size:10.5px;color:var(--dim);">Chiuso</span>`;
     else if(full) action=`<span style="font-size:10.5px;color:var(--dim);">Al completo</span>`;
-    else action=`<button class="btn-led" style="padding:8px 16px;font-size:10.5px;" onclick="joinGroup('${g.id}')">Unisciti</button>`;
+    else action=`<button class="btn-led" style="padding:8px 16px;font-size:10.5px;" data-gaction="join" data-gid="${gid}">Unisciti</button>`;
     return `<div style="border:1px solid #e8e8e8;border-radius:12px;padding:14px 15px;margin-bottom:10px;background:var(--card);${closed?'opacity:.7;':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div style="min-width:0;">
@@ -5313,7 +5396,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <p style="font-size:11px;color:var(--mid);margin-top:3px;"><svg class=ic aria-hidden=true><use href=icons.svg#map-pin></use></svg> ${_esc(g.area||'—')} · <svg class=ic aria-hidden=true><use href=icons.svg#users></use></svg> ${n}/${max} · <svg class=ic aria-hidden=true><use href=icons.svg#hourglass></use></svg> entro ${dl}</p>
           ${g.note?`<p style="font-size:11px;color:var(--dim);margin-top:5px;line-height:1.5;">${_esc(g.note)}</p>`:''}
           ${(isHost||mem)?`<p style="font-size:10.5px;color:var(--dim);margin-top:6px;">Host: <strong>${_esc(g.hostName||'—')}</strong>${membersList?' · Membri: '+membersList:''}</p>`:''}
-          ${(isHost||mem)?`<p style="font-size:11px;color:var(--k);margin-top:6px;">Codice: <strong style="letter-spacing:1px;font-family:var(--font-mono);">${_esc(g.code||'')}</strong> <button onclick="lfCopy('${(g.code||'').replace(/'/g,"")}')" style="border:none;background:none;cursor:pointer;color:var(--led2);font-size:10.5px;text-decoration:underline;">copia</button></p>`:''}
+          ${(isHost||mem)?`<p style="font-size:11px;color:var(--k);margin-top:6px;">Codice: <strong style="letter-spacing:1px;font-family:var(--font-mono);">${_esc(g.code||'')}</strong> <button data-gaction="copy" data-gcode="${_esc(g.code||'')}" style="border:none;background:none;cursor:pointer;color:var(--led2);font-size:10.5px;text-decoration:underline;">copia</button></p>`:''}
         </div>
         <div style="flex-shrink:0;text-align:right;">${action}</div>
       </div>
@@ -5327,9 +5410,30 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!document.getElementById('g-deadline').value){ const d=new Date(); d.setDate(d.getDate()+7); document.getElementById('g-deadline').value=d.toISOString().slice(0,10); }
     const fb=window.__fb; if(!fb) return;
     const mine=document.getElementById('group-mine'), board=document.getElementById('group-board');
+    if(!app._gListener){
+      app._gListener=true;
+      app.addEventListener('click',(e)=>{
+        const b=e.target.closest('[data-gaction]'); if(!b) return;
+        const a=b.dataset.gaction;
+        if(a==='copy') return lfCopy(b.dataset.gcode||'');
+        if(a==='join') return joinGroup(b.dataset.gid);
+        if(a==='leave') return leaveGroup(b.dataset.gid);
+        if(a==='close') return closeGroup(b.dataset.gid);
+      });
+    }
     try{
-      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'groupOrders'),fb.orderBy('createdAt','desc'),fb.limit(60)));
-      const groups=snap.docs.map(d=>({id:d.id,...d.data()}));
+      // Le regole ora fanno elencare solo i gruppi pubblici e i propri:
+      // tre query mirate invece di «tutti i gruppi» (che includeva i privati
+      // degli altri). Ordinati qui, così non serve un indice composto.
+      const C=fb.collection(fb.db,'groupOrders');
+      const [pub,host,memb]=await Promise.all([
+        fb.getDocs(fb.query(C,fb.where('visibility','==','public'),fb.limit(60))),
+        fb.getDocs(fb.query(C,fb.where('hostUid','==',user.uid),fb.limit(30))),
+        fb.getDocs(fb.query(C,fb.where('memberUids','array-contains',user.uid),fb.limit(30))).catch(()=>({docs:[]})),
+      ]);
+      const byId={}; [...pub.docs,...host.docs,...memb.docs].forEach(d=>{ byId[d.id]={id:d.id,...d.data()}; });
+      const groups=Object.values(byId).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      _migraGruppi(groups.filter(g=>g.hostUid===user.uid));
       const myG=groups.filter(g=>g.hostUid===user.uid||_isMember(g));
       const boardG=groups.filter(g=>g.visibility==='public'&&g.status!=='closed'&&!(g.hostUid===user.uid||_isMember(g)));
       mine.innerHTML=myG.length?myG.map(g=>groupCardHTML(g,'mine')).join(''):'<p style="font-size:12px;color:var(--dim);">Non fai ancora parte di nessun gruppo. Creane uno o unisciti con un codice.</p>';
@@ -5337,6 +5441,27 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }catch(e){ console.warn('group',e&&e.code); mine.innerHTML='<p style="font-size:12px;color:var(--danger);">Errore nel caricamento.</p>'; }
   }
   window.renderGroupPage=renderGroupPage;
+  // Gruppi creati prima delle nuove regole: l'host li sistema da solo.
+  //  - memberUids mancante → si ricava da members (serve a "I miei gruppi")
+  //  - gruppo PRIVATO con id diverso dal codice → si ricrea con id = codice,
+  //    perché ora entrare col codice è una lettura per id.
+  let _gMigrati=false;
+  async function _migraGruppi(miei){
+    if(_gMigrati) return; _gMigrati=true;
+    const fb=window.__fb;
+    for(const g of miei){
+      try{
+        const uids=(g.members||[]).map(m=>m&&m.uid).filter(Boolean);
+        if(g.visibility==='private' && g.id!==g.code && /^LF[A-Z0-9]{6}$/.test(g.code||'')){
+          const {id,...dati}=g; dati.memberUids=uids;
+          await fb.setDoc(fb.doc(fb.db,'groupOrders',g.code),dati);
+          await fb.deleteDoc(fb.doc(fb.db,'groupOrders',id));
+        } else if(!Array.isArray(g.memberUids)){
+          await fb.updateDoc(fb.doc(fb.db,'groupOrders',g.id),{memberUids:uids});
+        }
+      }catch(e){ console.warn('migra gruppo',g.id,e&&e.code); }
+    }
+  }
   window.createGroup=async function(){
     if(!user){ showPg('auth'); return; }
     const fb=window.__fb; if(!fb) return;
@@ -5349,11 +5474,15 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!area){ showToast('Indica una zona/città.'); return; }
     const hostName=(udata&&udata.name)||user.displayName||(user.email||'').split('@')[0]||'Host';
     try{
-      await fb.addDoc(fb.collection(fb.db,'groupOrders'),{
-        code:_gCode(), title, area, deadline, note:noteTxt, maxPeople,
-        visibility:_groupVis, status:'open',
-        hostUid:user.uid, hostName,
+      // id del documento = codice: chi ha il codice può aprire il gruppo
+      // (anche privato) con una lettura per id, senza poter elencare gli altri.
+      const code=_gCode();
+      await fb.setDoc(fb.doc(fb.db,'groupOrders',code),{
+        code, title:title.slice(0,120), area:area.slice(0,80), deadline, note:noteTxt, maxPeople,
+        visibility:_groupVis==='private'?'private':'public', status:'open',
+        hostUid:user.uid, hostName:String(hostName).slice(0,80),
         members:[{uid:user.uid,name:hostName,joinedAt:Date.now()}],
+        memberUids:[user.uid],
         createdAt:fb.serverTimestamp()
       });
       ['g-title','g-area','g-note'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
@@ -5368,7 +5497,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if((g.members||[]).length>=(g.maxPeople||30)){ showToast('Gruppo al completo.'); return; }
     const hostName=(udata&&udata.name)||user.displayName||(user.email||'').split('@')[0]||'Utente';
     const members=[...(g.members||[]),{uid:user.uid,name:hostName,joinedAt:Date.now()}];
-    await fb.updateDoc(fb.doc(fb.db,'groupOrders',g.id),{members});
+    const memberUids=[...new Set([...(Array.isArray(g.memberUids)?g.memberUids:[]),user.uid])];
+    await fb.updateDoc(fb.doc(fb.db,'groupOrders',g.id),{members,memberUids});
     showToast('✅ Ti sei unito al gruppo!'); renderGroupPage();
   }
   window.joinGroup=async function(id){
@@ -5383,9 +5513,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const code=(document.getElementById('g-code').value||'').trim().toUpperCase();
     if(!code){ showToast('Inserisci un codice.'); return; }
     try{
-      const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'groupOrders'),fb.where('code','==',code),fb.limit(1)));
-      if(snap.empty){ showToast('Nessun gruppo con questo codice.'); return; }
-      const d=snap.docs[0]; await _joinGroupDoc({id:d.id,...d.data()});
+      // Il codice è l'id del documento (gruppi nuovi e privati migrati); per
+      // i vecchi gruppi pubblici resta la ricerca per codice.
+      let g=null;
+      if(/^LF[A-Z0-9]{6}$/.test(code)){ const s=await fb.getDoc(fb.doc(fb.db,'groupOrders',code)); if(s.exists()) g={id:s.id,...s.data()}; }
+      if(!g){ const snap=await fb.getDocs(fb.query(fb.collection(fb.db,'groupOrders'),fb.where('code','==',code),fb.where('visibility','==','public'),fb.limit(1))); if(!snap.empty) g={id:snap.docs[0].id,...snap.docs[0].data()}; }
+      if(!g){ showToast('Nessun gruppo con questo codice.'); return; }
+      await _joinGroupDoc(g);
       document.getElementById('g-code').value='';
     }catch(e){ console.error('joinCode',e&&e.code); showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')'); }
   };
@@ -5396,7 +5530,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       const g=s.data();
       if(g.hostUid===user.uid){ showToast('Sei l\'host: usa "Chiudi gruppo".'); return; }
       const members=(g.members||[]).filter(m=>m.uid!==user.uid);
-      await fb.updateDoc(fb.doc(fb.db,'groupOrders',id),{members});
+      const memberUids=(Array.isArray(g.memberUids)?g.memberUids:[]).filter(u=>u!==user.uid);
+      await fb.updateDoc(fb.doc(fb.db,'groupOrders',id),{members,memberUids});
       showToast('Sei uscito dal gruppo.'); renderGroupPage();
     }catch(e){ console.error('leave',e&&e.code); showToast('⚠️ Errore'); }
   };
@@ -5515,9 +5650,15 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const note=(document.getElementById('pr-note')?.value||'').trim();
     const img=window._prImageData||null;
     if(!img&&!note) return showToast('Aggiungi una foto o descrivi il prodotto.');
-    showToast('✅ Richiesta inviata! Ti risponderemo entro 48 ore.');
     const fb=window.__fb;
-    if(fb){try{await fb.addDoc(fb.collection(fb.db,'product_requests'),{note,image:img,userId:user?.uid||null,userEmail:user?.email||null,ts:fb.serverTimestamp()});}catch(_){}}
+    if(!fb) return showToast('Riprova tra poco.');
+    // Il «richiesta inviata» arriva solo se la richiesta è salvata davvero:
+    // prima compariva subito, e un errore veniva ingoiato in silenzio.
+    try{
+      const u=await window.lfAssicuraUtente();
+      await fb.addDoc(fb.collection(fb.db,'product_requests'),{note:note.slice(0,2000),image:img,userId:u.uid,userEmail:(u.email||null),ts:fb.serverTimestamp()});
+      showToast('✅ Richiesta inviata! Ti risponderemo entro 48 ore.');
+    }catch(e){ console.error('productRequest',e&&e.code); showToast('⚠️ Richiesta non inviata ('+((e&&e.code)||'riprova')+'). Se la foto è molto grande, prova con una più piccola.'); return; }
     prRemoveFile();
     const noteEl=document.getElementById('pr-note'); if(noteEl) noteEl.value='';
   };
@@ -5638,17 +5779,17 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       const bits=[]; if(_liveTrack.event) bits.push(_liveTrack.event); if(_liveTrack.location) bits.push('· '+_liveTrack.location);
       const evLine=bits.join(' ');
       liveHTML=`<div style="margin-bottom:20px;background:rgba(111,117,82,.08);border:1px solid var(--led);border-radius:10px;padding:14px 16px;">
-        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led-text);margin-bottom:6px;"><svg class=ic aria-hidden=true><use href=icons.svg#broadcast></use></svg> Stato in tempo reale${_liveTrack.carrier?' · '+_liveTrack.carrier:''}</p>
-        ${evLine?`<p style="font-size:12px;color:var(--k);line-height:1.5;">${evLine}</p>`:'<p style="font-size:12px;color:var(--mid);">Il corriere non ha ancora registrato eventi. Riprova più tardi.</p>'}
-        ${_liveTrack.est?`<p style="font-size:10.5px;color:var(--mid);margin-top:4px;"><svg class=ic aria-hidden=true><use href=icons.svg#calendar></use></svg> Consegna stimata: ${String(_liveTrack.est).slice(0,10)}</p>`:''}
+        <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led-text);margin-bottom:6px;"><svg class=ic aria-hidden=true><use href=icons.svg#broadcast></use></svg> Stato in tempo reale${_liveTrack.carrier?' · '+lfEsc(_liveTrack.carrier):''}</p>
+        ${evLine?`<p style="font-size:12px;color:var(--k);line-height:1.5;">${lfEsc(evLine)}</p>`:'<p style="font-size:12px;color:var(--mid);">Il corriere non ha ancora registrato eventi. Riprova più tardi.</p>'}
+        ${_liveTrack.est?`<p style="font-size:10.5px;color:var(--mid);margin-top:4px;"><svg class=ic aria-hidden=true><use href=icons.svg#calendar></use></svg> Consegna stimata: ${lfEsc(String(_liveTrack.est).slice(0,10))}</p>`:''}
       </div>`;
     }
     wrap.innerHTML=`
       <div style="margin-bottom:20px;background:#f8f8f8;border-left:3px solid var(--led);padding:16px 18px;">
         <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Codice Tracking</p>
-        <p style="font-family:var(--font-display);font-size:28px;letter-spacing:3px;color:var(--k);">${code}</p>
-        ${udata.trackingProduct&&udata.trackingProduct!=='—'?`<p style="font-size:10.5px;color:var(--mid);margin-top:4px;letter-spacing:1px;"><svg class=ic aria-hidden=true><use href=icons.svg#package></use></svg> ${udata.trackingProduct}</p>`:''}
-        ${udata.trackingNote?`<p style="font-size:10.5px;color:var(--mid);margin-top:4px;font-style:italic;"><svg class=ic aria-hidden=true><use href=icons.svg#chat-circle></use></svg> ${udata.trackingNote}</p>`:''}
+        <p style="font-family:var(--font-display);font-size:28px;letter-spacing:3px;color:var(--k);">${lfEsc(code)}</p>
+        ${udata.trackingProduct&&udata.trackingProduct!=='—'?`<p style="font-size:10.5px;color:var(--mid);margin-top:4px;letter-spacing:1px;"><svg class=ic aria-hidden=true><use href=icons.svg#package></use></svg> ${lfEsc(udata.trackingProduct)}</p>`:''}
+        ${udata.trackingNote?`<p style="font-size:10.5px;color:var(--mid);margin-top:4px;font-style:italic;"><svg class=ic aria-hidden=true><use href=icons.svg#chat-circle></use></svg> ${lfEsc(udata.trackingNote)}</p>`:''}
       </div>
       ${liveHTML}
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
@@ -6409,7 +6550,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   // Popola i mega-menu della nav (Shop=categorie, Sneakers/Marchi=brand)
   window.buildNavMenus = function(){
     if(typeof products==='undefined' || !products.length) return;
-    const esc=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    // Argomento JS dentro un attributo: JSON.stringify per il JS, lfEsc per
+    // l'HTML. Prima si scappava solo l'apice: un \ o un < nel marchio rompeva.
+    const js=s=>lfEsc(JSON.stringify(String(s)));
     const brands=[...new Set(products.map(p=>canonBrand(p.brand)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
     const shop=document.getElementById('dd-shop');
@@ -6417,13 +6560,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       const groups={};
       MODEL_FILTERS.forEach(mf=>{ if(!products.some(p=>matchesModelFilter(p,mf.label))) return; (groups[mf.group]=groups[mf.group]||[]).push(mf.label); });
       shop.innerHTML='<button class="nav-dd-item" style="font-weight:700;" onclick="showPg(\'shop\');resetFilters()">Tutti i prodotti</button>'+
-        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${g}</div>`+labels.map(l=>`<button class="nav-dd-item" onclick="setFilters2('${esc(l)}','')">${l}</button>`).join('')).join('');
+        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${lfEsc(g)}</div>`+labels.map(l=>`<button class="nav-dd-item" onclick="setFilters2(${js(l)},'')">${lfEsc(l)}</button>`).join('')).join('');
     }
 
     const bm=document.getElementById('dd-brands');
     if(bm){
       bm.innerHTML=brands.length
-        ? brands.map(b=>`<button class="nav-dd-item" onclick="setFilters2('','${esc(b)}')">${b}</button>`).join('')
+        ? brands.map(b=>`<button class="nav-dd-item" onclick="setFilters2('',${js(b)})">${lfEsc(b)}</button>`).join('')
         : '<div class="nav-dd-grp">Nessun marchio</div>';
     }
 
@@ -6431,7 +6574,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const sn=document.getElementById('dd-sneakers');
     if(sn){
       sn.innerHTML='<button class="nav-dd-item" style="font-weight:700;" onclick="setFilters2(\'Sneakers\',\'\')">Tutte le sneakers</button>'+
-        snBrands.map(b=>`<button class="nav-dd-item" onclick="setFilters2('Sneakers','${esc(b)}')">${b}</button>`).join('');
+        snBrands.map(b=>`<button class="nav-dd-item" onclick="setFilters2('Sneakers',${js(b)})">${lfEsc(b)}</button>`).join('');
     }
 
     // ── Versioni MOBILE (drawer accordion) ──
@@ -6440,17 +6583,17 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       const groups={};
       MODEL_FILTERS.forEach(mf=>{ if(!products.some(p=>matchesModelFilter(p,mf.label))) return; (groups[mf.group]=groups[mf.group]||[]).push(mf.label); });
       shopM.innerHTML='<button style="font-weight:700;color:var(--k);" onclick="setFilters2(\'\',\'\');closeDrawer()">Tutti i prodotti</button>'+
-        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${g}</div>`+labels.map(l=>`<button onclick="setFilters2('${esc(l)}','');closeDrawer()">${l}</button>`).join('')).join('');
+        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${lfEsc(g)}</div>`+labels.map(l=>`<button onclick="setFilters2(${js(l)},'');closeDrawer()">${lfEsc(l)}</button>`).join('')).join('');
     }
     const snM=document.getElementById('dd-sneakers-m');
     if(snM){
       snM.innerHTML='<button style="font-weight:700;color:var(--k);" onclick="setFilters2(\'Sneakers\',\'\');closeDrawer()">Tutte le sneakers</button>'+
-        snBrands.map(b=>`<button onclick="setFilters2('Sneakers','${esc(b)}');closeDrawer()">${b}</button>`).join('');
+        snBrands.map(b=>`<button onclick="setFilters2('Sneakers',${js(b)});closeDrawer()">${lfEsc(b)}</button>`).join('');
     }
     const bmM=document.getElementById('dd-brands-m');
     if(bmM){
       bmM.innerHTML=brands.length
-        ? brands.map(b=>`<button onclick="setFilters2('','${esc(b)}');closeDrawer()">${b}</button>`).join('')
+        ? brands.map(b=>`<button onclick="setFilters2('',${js(b)});closeDrawer()">${lfEsc(b)}</button>`).join('')
         : '<div class="nav-dd-grp">Nessun marchio</div>';
     }
   };
@@ -6656,7 +6799,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     _stickyPrice = price;
     const bar = document.getElementById('sticky-atc');
     if(!bar) return;
-    document.getElementById('sticky-atc-name').textContent  = cleanTitle(name);
+    document.getElementById('sticky-atc-name').textContent  = cleanTitleTxt(name);
     document.getElementById('sticky-atc-price').textContent = '€' + price.toFixed(2);
     bar.style.display = 'flex';
     requestAnimationFrame(()=>requestAnimationFrame(()=>bar.classList.add('visible')));
@@ -6723,14 +6866,14 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           document.getElementById('search-dropdown').classList.remove('open');
           document.getElementById('shop-search').value='';
           searchShop('');
-          openProduct('${p.id}');
+          openProduct(${lfEsc(JSON.stringify(String(p.id)))});
         ">
           ${p.imageUrl
             ? `<img src="${pImg(p.imageUrl)}" class="search-drop-thumb" onerror="this.style.display='none'">`
             : `<div class="search-drop-thumb" style="display:flex;align-items:center;justify-content:center;font-size:18px;"><svg class=ic aria-hidden=true><use href=icons.svg#package></use></svg></div>`}
           <div class="search-drop-info">
             <div class="search-drop-name">${p.name?cleanTitle(p.name):'—'}</div>
-            <div class="search-drop-brand">${p.brand||''}</div>
+            <div class="search-drop-brand">${lfEsc(p.brand||'')}</div>
           </div>
           <div class="search-drop-price">€${(p.price||0).toFixed(0)}</div>
         </div>`).join('');
