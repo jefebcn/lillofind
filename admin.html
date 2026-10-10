@@ -1629,7 +1629,16 @@ waitFB(()=>{
     }catch(_){}
     // fallback: email salvata con maiuscole
     const all=await getUsersCached();
-    return all.find(u=>(u.email||'').toLowerCase()===e) || null;
+    const u=all.find(u=>(u.email||'').toLowerCase()===e);
+    if(u) return u;
+    // ultimo tentativo: gli ORDINI. Chi ha ordinato da ospite, o ha un
+    // profilo senza email salvata, non si trova fra gli utenti per email ma
+    // ha l'uid sull'ordine. Prima l'admin diceva «non trovato» a clienti veri.
+    try{
+      const qo=await fb.getDocs(fb.query(fb.collection(fb.db,'orders'),fb.where('email','==',e),fb.limit(1)));
+      if(!qo.empty){ const o=qo.docs[0].data()||{}; if(o.uid) return { id:o.uid, email:e, name:o.name||'', _daOrdine:true }; }
+    }catch(_){}
+    return null;
   }
   window.loadTrackingBoard=async function(){
     const fb=window.__fb; const list=document.getElementById('trb-list'); const st=document.getElementById('trb-status');
@@ -2105,13 +2114,20 @@ waitFB(()=>{
     const btn=document.getElementById('tr-btn');
     btn.textContent='...'; btn.disabled=true;
     try{
-      // Find user by email: query users collection
+      // Il cliente si cerca fra i profili e poi fra gli ordini (findUserByEmail):
+      // prima l'admin rispondeva «Utente non trovato» a clienti veri.
       const _u=await findUserByEmail(email);
       const targetUid=_u?_u.id:null;
-      if(!targetUid){showToast('⚠️ Utente non trovato con questa email.');btn.textContent='Assegna Tracking →';btn.disabled=false;return;}
       const trackData={trackingCode:code,trackingProduct:product||'—',trackingStatus:status,trackingNote:note,trackingUpdatedAt:fb.serverTimestamp()};
-      await fb.updateDoc(fb.doc(fb.db,'users',targetUid),trackData);
-      showToast('✅ Tracking salvato. Invio email...');
+      if(targetUid){
+        // setDoc con merge: funziona anche se il profilo non c'era ancora
+        await fb.setDoc(fb.doc(fb.db,'users',targetUid),{...trackData,email},{merge:true});
+        showToast('✅ Tracking salvato. Invio email...');
+      } else {
+        // Nessun account né ordine con questa email: l'email col tracking
+        // parte lo stesso (non serve un account per riceverla).
+        showToast('ℹ️ Nessun account con questa email: invio solo l\'email col tracking...');
+      }
       // Invia email al cliente col codice tracking (via Worker + Resend)
       try{
         await lfCallable('sendTrackingEmail')({email,code,product,status,note});
