@@ -662,7 +662,7 @@ export async function sendTestEmail(data, { env }) {
 
 // ── createPaymentIntent ─────────────────────────────────────────
 export async function createPaymentIntent(data, { env, db, auth }) {
-  const { items } = data || {};
+  const { items, order } = data || {};
   if (!Array.isArray(items) || items.length === 0) throw new HttpsError('invalid-argument', 'Carrello vuoto.');
 
   for (const item of items) {
@@ -728,7 +728,17 @@ export async function createPaymentIntent(data, { env, db, auth }) {
       automatic_payment_methods: { enabled: true },
       metadata: { uid: auth.uid, subtotal: String(subtotal), shipping: String(shipping) },
     });
-    return { clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id };
+    // L'ordine "in attesa" si salva qui, legato al PaymentIntent: se dopo il
+    // pagamento il browser non torna (redirect 3DS, scheda chiusa, rete giù)
+    // o validateOrder fallisce, il webhook Stripe lo completa da solo.
+    // Prima un pagamento riuscito poteva restare senza ordine.
+    if (order && typeof order === 'object') {
+      try { await db.setDoc('pending_orders', paymentIntent.id, { uid: auth.uid, order: JSON.stringify(order).slice(0, 20000), createdAt: new Date() }); }
+      catch (e) { console.error('pending_orders:', e && e.message); }
+    }
+    // amount: l'importo vero che Stripe addebita (sconto LFPoints compreso):
+    // il modale lo mostra al posto del suo calcolo locale.
+    return { clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id, amount: amountCents / 100 };
   } catch (e) {
     console.error('Stripe createPaymentIntent error:', e.message);
     throw new HttpsError('internal', 'Errore Stripe: ' + e.message);
@@ -852,7 +862,18 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
     // i LFPoints. Il controllo vero e' atomico, piu' sotto (createAtomic con
     // used_payment_intents/{piId}); questo evita il lavoro inutile.
     const gia = await db.getDoc('used_payment_intents', pi.id);
-    if (gia.exists) throw new HttpsError('already-exists', 'Questo pagamento è già stato usato per un ordine.');
+    if (gia.exists) {
+      // Lo stesso cliente che torna sul sito dopo che il webhook ha già
+      // creato l'ordine (o che ritenta): gli si restituisce quell'ordine,
+      // senza crearne un altro né riaccreditare punti.
+      const g = gia.data() || {};
+      if (g.uid === uid && g.orderDocId) {
+        const o = await db.getDoc('orders', g.orderDocId).catch(() => null);
+        const od = o && o.exists ? o.data() : null;
+        if (od) return { orderId: od.orderId, subtotal: od.subtotal, shipping: od.shipping, discount: od.discount, total: od.total, lfpoints: 0, paymentMethod: 'card', alreadyCreated: true };
+      }
+      throw new HttpsError('already-exists', 'Questo pagamento è già stato usato per un ordine.');
+    }
   }
 
   const orderId = 'LILLO-' + Date.now().toString(36).toUpperCase().slice(-6);
@@ -942,4 +963,54 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
   if (typeof waitUntil === 'function') waitUntil(mailJob); else await mailJob;
 
   return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints: paymentVerified ? lfpoints : 0, paymentMethod };
+}
+
+// ── Webhook Stripe ──────────────────────────────────────────────
+// payment_intent.succeeded: se per quel pagamento non c'è ancora un ordine,
+// lo crea dai dati salvati in pending_orders al momento del pagamento.
+// Così un pagamento riuscito non resta mai senza ordine (redirect 3DS mai
+// tornato, scheda chiusa, errore dopo il pagamento). Idempotente: se
+// l'ordine c'è già, non fa niente.
+// Richiede il secret STRIPE_WEBHOOK_SECRET (Stripe → Developers → Webhooks).
+export async function stripeWebhook(rawBody, signature, { env, db, waitUntil }) {
+  if (!env.STRIPE_WEBHOOK_SECRET) return { status: 503, body: { error: 'webhook non configurato' } };
+  const stripe = stripeClient(env);
+  let event;
+  try {
+    event = await stripe.webhooks.constructEventAsync(rawBody, signature, env.STRIPE_WEBHOOK_SECRET, undefined, Stripe.createSubtleCryptoProvider());
+  } catch (e) { return { status: 400, body: { error: 'firma non valida' } }; }
+  if (event.type !== 'payment_intent.succeeded') return { status: 200, body: { ignored: event.type } };
+  const pi = event.data.object;
+  const gia = await db.getDoc('used_payment_intents', pi.id);
+  if (gia.exists) return { status: 200, body: { ok: true, already: true } };
+  const pend = await db.getDoc('pending_orders', pi.id);
+  if (!pend.exists) {
+    // Pagamento senza dati d'ordine: lo si segnala all'admin, che lo vede su Stripe.
+    console.error('stripeWebhook: pagamento senza ordine in attesa', pi.id);
+    if (env.RESEND_API_KEY) {
+      const job = fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: env.RESEND_FROM || 'LilloFind <onboarding@resend.dev>', to: [NOTIFY_EMAIL],
+          subject: `⚠️ Pagamento senza ordine ${pi.id} — €${((pi.amount || 0) / 100).toFixed(2)}`,
+          html: `<p>Stripe ha incassato <b>€${((pi.amount || 0) / 100).toFixed(2)}</b> (PaymentIntent <code>${escHtml(pi.id)}</code>, utente ${escHtml((pi.metadata || {}).uid || '?')}) ma non c'è un ordine collegato. Controlla su Stripe e contatta il cliente.</p>` }),
+      }).catch(() => null);
+      if (typeof waitUntil === 'function') waitUntil(job); else await job;
+    }
+    return { status: 200, body: { ok: false, reason: 'no_pending' } };
+  }
+  const p = pend.data() || {};
+  let order = {};
+  try { order = JSON.parse(p.order || '{}'); } catch (_) { order = {}; }
+  try {
+    const r = await validateOrder({ ...order, paymentMethod: 'card', stripePaymentIntentId: pi.id },
+      { env, db, waitUntil, auth: { uid: p.uid, email: '', token: {} } });
+    await db.updateDoc('pending_orders', pi.id, { completedBy: 'webhook', orderId: r.orderId, completedAt: new Date() }).catch(() => null);
+    return { status: 200, body: { ok: true, orderId: r.orderId } };
+  } catch (e) {
+    if (e && e.code === 'already-exists') return { status: 200, body: { ok: true, already: true } };
+    console.error('stripeWebhook validateOrder:', e && e.message);
+    // 500: Stripe ritenta da solo per giorni
+    return { status: 500, body: { error: (e && e.message) || 'errore' } };
+  }
 }

@@ -1,7 +1,12 @@
 /* LilloFind — Service Worker
    Strategia prudente per evitare contenuti obsoleti:
    - HTML/navigazioni: NETWORK-FIRST e sempre riconvalidate col server
-   - Asset statici same-origin: CACHE-FIRST con aggiornamento in background
+   - CSS/JS/SVG/JSON same-origin: NETWORK-FIRST come l'HTML. Erano
+     cache-first: dopo un deploy l'HTML nuovo girava con index.css e
+     firebase.js vecchi fino alla visita successiva, e i due non combaciavano.
+   - Immagini e font same-origin: CACHE-FIRST con aggiornamento in background
+   - In cache va solo una risposta 200: un 404 o un 500 non sostituisce mai
+     la copia buona.
    - Richieste cross-origin (Firestore, Worker, Stripe, Yupoo): mai toccate
 
    Il sito è servito da GitHub Pages, che manda l'HTML con
@@ -11,7 +16,7 @@
    Con cache:'no-cache' il browser chiede sempre al server se la pagina è
    cambiata (risposta 304 leggera se è uguale).
 */
-const CACHE = 'lillofind-v7';
+const CACHE = 'lillofind-v8';
 const STATIC = ['/', '/index.html', '/stream.html', '/manifest.json', '/style.css', '/index.css',
   '/theme-v3.css', '/icons.svg', '/firebase.js', '/icon-192.png', '/icon-512.png', '/assets/og-image.jpg'];
 
@@ -59,15 +64,32 @@ self.addEventListener('fetch', (e) => {
     // Network-first riconvalidato: la pagina è sempre l'ultima; cache solo offline
     e.respondWith(
       fetchFresh(req).then((r) => {
-        const cp = r.clone();
-        caches.open(CACHE).then((c) => c.put(req, cp)).catch(() => {});
+        if (r && r.ok) {
+          const cp = r.clone();
+          caches.open(CACHE).then((c) => c.put(req, cp)).catch(() => {});
+        }
         return r;
       }).catch(() => caches.match(req).then((r) => r || caches.match('/index.html')))
     );
     return;
   }
 
-  // Asset statici: cache-first, aggiorna in background
+  // Codice e stili: network-first riconvalidato, la cache solo offline
+  if (/\.(css|js|mjs|svg|json)$/i.test(url.pathname)) {
+    e.respondWith(
+      fetchFresh(req).then((r) => {
+        if (r && r.ok) {
+          const cp = r.clone();
+          caches.open(CACHE).then((c) => c.put(req, cp)).catch(() => {});
+          return r;
+        }
+        return caches.match(req).then((c) => c || r);
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Immagini e font: cache-first, aggiorna in background
   e.respondWith(
     caches.match(req).then((cached) => {
       const net = fetchFresh(req).then((r) => {

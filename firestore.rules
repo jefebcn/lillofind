@@ -134,6 +134,18 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Newsletter — serve un utente (anche ospite anonimo), solo admin legge.
+    // Prima mancava del tutto questa regola: ogni iscrizione era rifiutata
+    // e il sito diceva comunque «Iscritto!».
+    match /newsletter/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['email', 'uid', 'ts'])
+        && request.resource.data.uid == request.auth.uid
+        && str(request.resource.data.email, 200)
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+      allow read, update, delete: if isAdmin();
+    }
+
     // Analytics presenza — ogni visitatore scrive la propria sessione (heartbeat),
     // solo l'admin legge. Create/update pubblici (anche non loggati) ma con
     // validazione di forma/dimensione per limitare gli abusi.

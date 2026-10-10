@@ -83,6 +83,16 @@ await prova('unirsi aggiungendo solo se stessi: ok', () => assertSucceeds(update
 await prova('aggiungere un altro al posto proprio: negato', () => assertFails(updateDoc(doc(db('u8', verificata('u8@x.it')), 'groupOrders', 'LFPUBB01'),
   { members: [{ uid: 'host', name: 'H' }, { uid: 'u9', name: 'U' }, { uid: 'u7', name: 'X' }], memberUids: ['host', 'u9', 'u7'] })));
 
+console.log('== 21. newsletter ==');
+const nl = (uid, email, extra = {}) => ({ email, uid, ts: serverTimestamp(), ...extra });
+await prova('iscrizione col proprio uid (anche anonimo): ok', () => assertSucceeds(addDoc(collection(db('anon1', anonimo), 'newsletter'), nl('anon1', 'a@b.it'))));
+await prova('iscrizione senza login: negata', () => assertFails(addDoc(collection(db(null), 'newsletter'), nl('x', 'a@b.it'))));
+await prova('iscrizione con l\'uid di un altro: negata', () => assertFails(addDoc(collection(db('anon1', anonimo), 'newsletter'), nl('altro', 'a@b.it'))));
+await prova('email non valida: negata', () => assertFails(addDoc(collection(db('anon1', anonimo), 'newsletter'), nl('anon1', '<script>'))));
+await prova('campi in piu\': negati', () => assertFails(addDoc(collection(db('anon1', anonimo), 'newsletter'), nl('anon1', 'a@b.it', { admin: true }))));
+await prova('leggere la lista iscritti da utente: negato', () => assertFails(getDocs(collection(db('anon1', anonimo), 'newsletter'))));
+await prova('l\'admin legge la lista iscritti', () => assertSucceeds(getDocs(collection(db('y', verificata('yishionvt@gmail.com')), 'newsletter'))));
+
 await env.cleanup();
 console.log(`\n${pass} passati, ${fail} falliti`);
 process.exit(fail ? 1 : 0);
