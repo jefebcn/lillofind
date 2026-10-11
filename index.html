@@ -3143,6 +3143,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     {label:'Pantaloni',      group:'<svg class=ic aria-hidden=true><use href=icons.svg#pants></use></svg> Bottom',     aliases:['pantaloni','pants','trousers']},
     {label:'Pantaloncini',   group:'<svg class=ic aria-hidden=true><use href=icons.svg#pants></use></svg> Bottom',     aliases:['pantaloncini','shorts']},
     {label:'Jogger',         group:'<svg class=ic aria-hidden=true><use href=icons.svg#pants></use></svg> Bottom',     aliases:['jogger','joggers']},
+    {label:'Ciclismo',       group:'<svg class=ic aria-hidden=true><use href=icons.svg#bicycle></use></svg> Sport',      aliases:['ciclismo','cycling','bici']},
     {label:'Cappello',       group:'<svg class=ic aria-hidden=true><use href=icons.svg#baseball-cap></use></svg> Accessori',  aliases:['cappello','cap','hat','beanie']},
     {label:'Calzini',        group:'<svg class=ic aria-hidden=true><use href=icons.svg#sock></use></svg> Accessori',  aliases:['calzini','socks']},
     {label:'Sciarpa',        group:'<svg class=ic aria-hidden=true><use href=icons.svg#baseball-cap></use></svg> Accessori',  aliases:['sciarpa','scarf']},
@@ -3183,8 +3184,20 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     ['T-Shirt',             ['t-shirt','tshirt','t shirt','tee','maglietta']],
     ['Camicia',             ['camicia','camicie','flanella','flannel','button up','button-up','button down','overshirt','shirt']],
   ];
+  // Ciclismo: tag dall'importer (style) o parole chiave; prima degli altri
+  // capi perché maglie e salopette da bici sono "jersey"/"shorts".
+  const CYCLING_KW=/cycling|ciclismo|ciclista|\bbici\b|bicicletta|\bbike\b|\bmtb\b|\bgravel\b|maillot|\bbib\b|salopette|skinsuit|cuissard/i;
+  function isCycling(p){
+    if(!p) return false;
+    const st=(typeof p.style==='string')?p.style.toLowerCase():'';
+    if(st==='ciclismo') return true;
+    if(st==='calcio'||st==='basket') return false;
+    return CYCLING_KW.test((p.name||'')+' '+(p.model||''));
+  }
+  window.isCycling=isCycling;
   function classifyModel(p){
     if(!p) return '';
+    if(isCycling(p)) return 'Ciclismo';
     const t=((p.model||'')+' '+(p.name||'')+' '+(p.category||'')).toLowerCase();
     for(const [label, kws] of _CLASSIFY_RULES){
       if(kws.some(k=>t.includes(k))) return label;
@@ -3257,6 +3270,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const st=(typeof p.style==='string')?p.style.toLowerCase():'';
     if(st==='basket') return false;   // il basket ha priorità
     if(st==='calcio') return true;
+    if(isCycling(p)) return false;
     if(window.isBasketball(p)) return false;
     if(window.detectTeam(p)) return true;
     return FOOTBALL_KW.test(((p.name||'')+' '+(p.model||'')));
@@ -3285,6 +3299,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   window.isBasketball=function(p){
     if(!p) return false;
     if(typeof p.style==='string' && p.style.toLowerCase()==='basket') return true;
+    if(isCycling(p)) return false;
     if(window.detectBasketTeam(p)) return true;
     return BASKET_KW.test(((p.name||'')+' '+(p.model||'')));
   };
@@ -4057,7 +4072,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const q=(document.getElementById('shop-search')?.value||'').toLowerCase().trim();
     // In una vista sportiva (Calcio/Basket/Sport) i kit devono comparire; altrove
     // NO — restano "solo su sport". La ricerca li trova comunque.
-    const inSportView=!!(filters.football||filters.basket||filters.style==='Sport');
+    const inSportView=!!(filters.football||filters.basket||filters.style==='Sport'||filters.model==='Ciclismo');
     _shopFiltered=products.filter(p=>
       (inSportView||q||!isSportOnly(p))&&
       (!filters.model||matchesModelFilter(p,filters.model))&&
@@ -4100,6 +4115,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const CATS=[
       {label:'Calcio',   model:'__calcio',  emoji:'<svg class=ic aria-hidden=true><use href=icons.svg#soccer-ball></use></svg>'},
       {label:'Basket',   model:'__basket',  emoji:'<svg class=ic aria-hidden=true><use href=icons.svg#basketball></use></svg>'},
+      {label:'Ciclismo', model:'Ciclismo',  emoji:'<svg class=ic aria-hidden=true><use href=icons.svg#bicycle></use></svg>'},
       {label:'Sneakers', model:'Sneakers',  emoji:'<svg class=ic aria-hidden=true><use href=icons.svg#sneaker></use></svg>'},
       {label:'T-Shirt',  model:'T-Shirt',   emoji:'<svg class=ic aria-hidden=true><use href=icons.svg#t-shirt></use></svg>'},
       {label:'Felpe',    model:'Felpa',      emoji:'<svg class=ic aria-hidden=true><use href=icons.svg#hoodie></use></svg>'},
@@ -4124,8 +4140,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         });
       });
     }
-    // Nascondi i cerchietti Calcio/Basket se non ci sono articoli in catalogo
-    const cats=CATS.filter(c=>(c.model!=='__calcio'||cntMap['__calcio'])&&(c.model!=='__basket'||cntMap['__basket']));
+    // Nascondi i cerchietti Calcio/Basket/Ciclismo se non ci sono articoli in catalogo
+    const cats=CATS.filter(c=>(c.model!=='__calcio'||cntMap['__calcio'])&&(c.model!=='__basket'||cntMap['__basket'])&&(c.model!=='Ciclismo'||cntMap['Ciclismo']));
     // Immagine casuale per categoria → ruota a ogni visita (sembra sempre aggiornato)
     const pickImg=arr=>(arr&&arr.length)?arr[Math.floor(Math.random()*arr.length)]:'';
     el.innerHTML=cats.map(c=>{
@@ -4199,8 +4215,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   function isSportOnly(p){
     if(!p) return false;
     const st=(typeof p.style==='string')?p.style.toLowerCase():'';
-    if(st==='calcio'||st==='basket'||st==='sport') return true;
-    return isFootballKit(p)||isBasketball(p);
+    if(st==='calcio'||st==='basket'||st==='sport'||st==='ciclismo') return true;
+    return isCycling(p)||isFootballKit(p)||isBasketball(p);
   }
 
   function renderHomeSport(){

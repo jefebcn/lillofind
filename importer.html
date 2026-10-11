@@ -1123,15 +1123,16 @@ window.saveAll=async function(){
       // "…Juventus…" → Juventus), altrimenti normalizza quello rilevato dall'AI.
       const detected = QC ? QC.detectBrand(name) : '';
       const brand = detected || (QC ? QC.canonBrand(rowBrand) : rowBrand);
-      // Sport: tagga style='basket' (canotte NBA) o 'calcio' (maglie) dal brand
+      // Sport: tagga style='ciclismo' (negozio/album da bici), 'basket' (canotte NBA) o 'calcio' (maglie) dal brand
       // squadra o da parole chiave, così finiscono nelle categorie Basket/Calcio
       // e nelle barre Squadre (raggruppate per brand). Il basket ha priorità
       // (una "jersey" NBA non deve finire nel calcio).
       const _txt = (name||'')+' '+(rowModel||'');
       const _basketKw = /canott|basket|\bnba\b|tank\s?top/i;
-      const isBasket = !!(QC && QC.isBasketTeam(detected)) || _basketKw.test(_txt);
+      const isCycling = row.dataset.sport === 'ciclismo' || _CYCLING_RE.test(_txt);
+      const isBasket = !isCycling && (!!(QC && QC.isBasketTeam(detected)) || _basketKw.test(_txt));
       const _kitKw = /\bjersey\b|\bkit\b|player version|fan version|nazionale|camiseta|maglia da calcio|football\s*(shirt|kit|jersey)|soccer/i;
-      const isKit = !isBasket && (!!(QC && QC.isFootballTeam(detected)) || _kitKw.test(_txt));
+      const isKit = !isCycling && !isBasket && (!!(QC && QC.isFootballTeam(detected)) || _kitKw.test(_txt));
       let category = rowCategory || (QC ? QC.inferCategory({name,model:rowModel}) : '') || '';
       // Taglia unica per articoli one-size: bigiotteria, accessori, cappelli,
       // borse e occhiali. Forza "Unica" a prescindere dai toggle taglia mostrati
@@ -1155,7 +1156,7 @@ window.saveAll=async function(){
         category,
         sizes:sizes.length?sizes:['Unica'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description,weightKg,
-        ...(isBasket?{style:'basket'}:isKit?{style:'calcio'}:{}),
+        ...(isCycling?{style:'ciclismo'}:isBasket?{style:'basket'}:isKit?{style:'calcio'}:{}),
         ...(images.length>1?{images}:{}),
         sourceUrl,
         ...(supplierCNY>0?{supplierPriceCNY:supplierCNY}:{}),
@@ -1909,6 +1910,11 @@ window.analyzeAndAddRows = async function(){
 
     if(detailRes.status === 'fulfilled' && detailRes.value?.data?.albumInfo){
       d.albumInfo = detailRes.value.data.albumInfo;
+      // Se la copertina è una delle foto promo tolte (QR/contatti), usa la prima foto prodotto
+      const _rm = d.albumInfo.removedPhotos || [];
+      const _pidOf = u => ((String(u||'').match(/yupoo\.com\/[^/]+\/([0-9a-f]{6,})\//i)||[])[1]) || '';
+      if(_rm.length && d.cover && _rm.some(u => _pidOf(u) && _pidOf(u) === _pidOf(d.cover)) && (d.albumInfo.photos||[]).length) d.cover = d.albumInfo.photos[0];
+      if(_rm.length) console.log('[import] album '+id+': escluse '+_rm.length+' foto con QR/contatti');
     }
 
     // Override brand/modello con l'hint dell'utente ("Forza sui non riconosciuti").
@@ -2008,6 +2014,7 @@ function pickImporterModel(d, fullName){
   return CAT[ai.category] || '';
 }
 
+const _CYCLING_RE = /cycling|ciclismo|ciclista|\bbici\b|bicicletta|\bbike\b|\bmtb\b|\bgravel\b|maillot|\bbib\b|salopette|skinsuit|cuissard/i;
 function addAnalyzedRow(d){
   const id = rowId++;
   const container = document.getElementById('rows-container');
@@ -2030,6 +2037,9 @@ function addAnalyzedRow(d){
     }
     div.dataset.images = JSON.stringify(_gallery);
   } catch(_){ div.dataset.images = '[]'; }
+  // Ciclismo: lo dice il negozio o l'album (es. team-cycling.x.yupoo.com,
+  // "Geeklion-Cycling"), anche quando il titolo è solo "… Jersey".
+  div.dataset.sport = _CYCLING_RE.test([d.sourceUrl, d.albumInfo?.pageTitle, d.albumInfo?.name, d.analysis?.name].filter(Boolean).join(' ')) ? 'ciclismo' : '';
   div.dataset.brand    = d.analysis.brand    || '';
   div.dataset.category = d.analysis.category || '';
   div.dataset.desc     = d.analysis.description || '';
