@@ -1474,7 +1474,7 @@ waitFB(()=>{
     const emailNorm = (user.email || '').trim().toLowerCase();
     const allow = ADMIN_EMAILS.map(e => e.trim().toLowerCase());
     let claimAdmin = false;
-    try { claimAdmin = (await user.getIdTokenResult()).claims.admin === true; } catch(_) {}
+    try { claimAdmin = (await user.getIdTokenResult(true)).claims.admin === true; } catch(_) {}
     const grantedByEmail = claimAdmin || (user.emailVerified === true && allow.includes(emailNorm));
 
     try {

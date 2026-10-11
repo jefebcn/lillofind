@@ -1,0 +1,43 @@
+# Permesso admin permanente (custom claim) per l'account di Alex.
+# Parte da solo quando questo file cambia su main; si può rilanciare a mano:
+# GitHub → Actions → "Accesso admin" → Run workflow.
+name: Accesso admin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/admin-access.yml'
+      - 'scripts/admin-access.mjs'
+  workflow_dispatch:
+    inputs:
+      emails:
+        description: 'Email da rendere admin (separate da spazio)'
+        required: false
+        default: 'yishionvt@gmail.com'
+
+permissions:
+  contents: read
+
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Credenziali Google (service account Firebase)
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: printf '%s' "$GOOGLE_CREDENTIALS" > "$RUNNER_TEMP/gcloud-key.json"
+      - name: Imposta il permesso admin
+        working-directory: scripts
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
+          EMAILS: ${{ github.event.inputs.emails || 'yishionvt@gmail.com' }}
+        run: |
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund firebase-admin@12 >/dev/null
+          node admin-access.mjs $EMAILS
