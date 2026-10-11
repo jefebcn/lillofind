@@ -4649,7 +4649,12 @@ waitFB(()=>{
     });
     // Sconto della ricevuta diviso in proporzione a quanto ha ordinato ciascuno
     const disc$=(_costSummary&&_costSummary.discountUsd)||0;
-    order.forEach(k=>{ const g=groups[k]; g.disc= (disc$>0&&all$>0) ? disc$*(g.price+g.ship)/all$ : 0; });
+    // Rimborso di un ordine precedente: a una persona sola se scelta, altrimenti diviso come lo sconto
+    const ref$=(_costSummary&&_costSummary.refundUsd)||0;
+    const refTo=((_costSummary&&_costSummary.refundTo)||'').toLowerCase();
+    const refOne=ref$>0&&refTo&&groups[refTo]&&refTo!=='—';
+    order.forEach(k=>{ const g=groups[k]; const sh=all$>0?(g.price+g.ship)/all$:0;
+      g.disc=(disc$>0?disc$*sh:0)+(ref$>0?(refOne?(k===refTo?ref$:0):ref$*sh):0); });
     const dl=document.getElementById('cost-people');
     if(dl){ const names=[...new Set(_costRows.map(r=>(r.person||'').trim()).filter(Boolean))]; dl.innerHTML=names.map(n=>'<option value="'+escH(n)+'">').join(''); }
     const assigned=order.filter(k=>k!=='—');
@@ -4664,7 +4669,7 @@ waitFB(()=>{
     order.forEach(k=>{ const g=groups[k]; const t$=g.price+g.ship-g.disc, tE=t$*fx;
       html+='<div style="border:1px solid '+(g.un?'#333':'rgba(200,255,0,.28)')+';border-radius:9px;padding:11px 13px;background:'+(g.un?'transparent':'rgba(200,255,0,.04)')+';">'
         +'<div style="font-weight:700;font-size:13px;color:'+(g.un?'#888':'#fff')+';">'+escH(g.name)+' <span style="font-size:10px;color:#888;font-weight:400;">· '+g.n+' art.</span></div>'
-        +'<div style="font-size:11px;color:#aaa;margin-top:4px;">merce $'+g.price.toFixed(2)+' + sped $'+g.ship.toFixed(2)+(g.disc?(' − sconto $'+g.disc.toFixed(2)):'')+'</div>'
+        +'<div style="font-size:11px;color:#aaa;margin-top:4px;">merce $'+g.price.toFixed(2)+' + sped $'+g.ship.toFixed(2)+(g.disc?(' − '+(ref$?'sconto/rimborso':'sconto')+' $'+g.disc.toFixed(2)):'')+'</div>'
         +'<div style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:22px;color:var(--led);margin-top:3px;line-height:1;">$'+t$.toFixed(2)+' <span style="font-size:13px;color:#ccc;">= €'+tE.toFixed(2)+'</span></div>'
         +'</div>';
       // Solo persone assegnate nel testo WhatsApp (i "Non assegnati" non si mandano).
@@ -4672,13 +4677,21 @@ waitFB(()=>{
         waLines.push('👤 '+g.name+' ('+g.n+' art.)');
         waLines.push('   Merce: €'+(g.price*fx).toFixed(2));
         waLines.push('   Spedizione: €'+(g.ship*fx).toFixed(2));
-        if(g.disc) waLines.push('   Sconto: −€'+(g.disc*fx).toFixed(2));
+        if(g.disc) waLines.push('   '+(ref$?'Sconto/rimborso':'Sconto')+': −€'+(g.disc*fx).toFixed(2));
         waLines.push('   👉 Da pagare: €'+tE.toFixed(2));
         waLines.push('');
         grpTotE+=tE; nPeople++;
       }
     });
     html+='</div>';
+    if(ref$>0){
+      const names=order.filter(k=>k!=='—');
+      html+='<div style="margin-top:10px;font-size:11px;color:#aaa;">↩️ Rimborso ordine precedente <b style="color:#fff;">$'+ref$.toFixed(2)+'</b> → '
+        +'<select onchange="setCostRefundTo(this.value)" style="background:#111;color:#fff;border:1px solid #333;border-radius:6px;padding:3px 6px;font-size:11px;">'
+        +'<option value="">diviso tra tutti (in proporzione)</option>'
+        +names.map(k=>'<option value="'+escH(k)+'"'+(refOne&&k===refTo?' selected':'')+'>tutto a '+escH(groups[k].name)+'</option>').join('')
+        +'</select></div>';
+    }
     waLines.push('━━━━━━━━━━━');
     waLines.push('Totale gruppo: €'+grpTotE.toFixed(2));
     window._peopleWaText = nPeople ? waLines.join('\n') : '';
@@ -4690,6 +4703,7 @@ waitFB(()=>{
     }
     el.innerHTML=html;
   }
+  window.setCostRefundTo=function(v){ if(!_costSummary) return; _costSummary.refundTo=v||''; updatePeopleTotals(); };
   // Copia negli appunti la lista pagamenti per persona (formato WhatsApp).
   window.copyPeopleList=function(){
     const t=window._peopleWaText||'';
@@ -4701,13 +4715,13 @@ waitFB(()=>{
   function updateCostTotals(){
     const fx=costFx(); let tP=0,tS=0,tC=0,tQ=0;
     _costRows.forEach(r=>{ const q=rowQty(r), u=rowUnitUsd(r); tP+=u.p*q; tS+=u.s*q; tC+=rowCostEUR(r,fx)*q; tQ+=q; });
-    const disc0=(_costSummary&&_costSummary.discountUsd)||0;
+    const disc0=(_costSummary&&_costSummary.discountUsd)||0, ref0=(_costSummary&&_costSummary.refundUsd)||0;
     const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
     set('cost-tot-price','$'+tP.toFixed(2));
     set('cost-tot-ship','$'+tS.toFixed(2));
     set('cost-tot-qty', String(tQ));
     set('cost-tot-cost','€'+tC.toFixed(2));
-    set('cost-tot-summary','🧾 Calcolato dalle righe ('+tQ+' pezzi): merce $'+tP.toFixed(2)+' + spedizione $'+tS.toFixed(2)+' = $'+(tP+tS).toFixed(2)+(disc0?(' − sconto $'+disc0.toFixed(2)+' = $'+(tP+tS-disc0).toFixed(2)):'')+'  →  €'+(tC-disc0*fx).toFixed(2)+' (tasso '+fx.toFixed(4)+')');
+    set('cost-tot-summary','🧾 Calcolato dalle righe ('+tQ+' pezzi): merce $'+tP.toFixed(2)+' + spedizione $'+tS.toFixed(2)+' = $'+(tP+tS).toFixed(2)+(disc0?(' − sconto $'+disc0.toFixed(2)):'')+(ref0?(' − rimborso ordine precedente $'+ref0.toFixed(2)):'')+((disc0||ref0)?(' = $'+(tP+tS-disc0-ref0).toFixed(2)):'')+'  →  €'+(tC-(disc0+ref0)*fx).toFixed(2)+' (tasso '+fx.toFixed(4)+')');
     // Confronto col totale scritto sulla ricevuta.
     const cmpEl=document.getElementById('cost-compare'); if(!cmpEl) return;
     const s=_costSummary;
@@ -4718,12 +4732,12 @@ waitFB(()=>{
       const diff=comp-rec, ok=Math.abs(diff)<=1.0, col=ok?'#2ecc71':'#e0952f';
       return '<div>'+label+': calcolato <b style="color:#fff;">$'+comp.toFixed(2)+'</b> · ricevuta <b style="color:#fff;">$'+rec.toFixed(2)+'</b> <span style="color:'+col+';font-weight:700;">'+(ok?'✓':'⚠️ diff $'+diff.toFixed(2))+'</span></div>';
     };
-    const disc=s.discountUsd||0;
-    const net=tP+tS-disc;
+    const disc=s.discountUsd||0, ref=s.refundUsd||0;
+    const net=tP+tS-disc-ref;
     let html='<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">🔎 Confronto col totale sulla ricevuta</p>';
     html+=line('Merce', tP, s.goodsUsd);
     html+=line('Spedizione', tS, s.estFreightUsd);
-    if(disc) html+='<div style="color:#aaa;">Sconto ricevuta: −$'+disc.toFixed(2)+' → totale calcolato al netto $'+net.toFixed(2)+'</div>';
+    if(disc||ref) html+='<div style="color:#aaa;">'+[disc?'Sconto −$'+disc.toFixed(2):'',ref?'Rimborso ordine precedente −$'+ref.toFixed(2):''].filter(Boolean).join(' · ')+' → totale calcolato al netto $'+net.toFixed(2)+'</div>';
     html+=line('TOTALE', net, s.totalUsd);
     const money=v=>(v<0?'−$'+Math.abs(v).toFixed(2):'$'+v.toFixed(2));
     if(s.receivedUsd!=null||s.balanceUsd!=null) html+='<div style="color:#888;margin-top:4px;">'+(s.receivedUsd!=null?('Pagato: '+money(s.receivedUsd)):'')+(s.balanceUsd!=null?('  ·  Saldo: '+money(s.balanceUsd)):'')+'</div>';

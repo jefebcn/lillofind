@@ -1076,7 +1076,7 @@ export async function parseQuotation(data, { env }) {
 
   const prompt = `Sei un assistente che legge le "QUOTATION SHEET" degli agenti di acquisto cinesi (Weidian/Taobao/1688/Yupoo).
 Estrai le righe prodotto numerate della tabella E il riepilogo dei totali in fondo. Rispondi ESCLUSIVAMENTE con JSON valido (nessun markdown, nessun testo prima o dopo):
-{"rows":[{"line":1,"link":"https://...","itemId":"742989298","remarks":"no box","size":"42 eu","quantity":"1","rmb":280,"freightRmb":12,"totalRmb":292,"gw":2,"unitPriceUsd":49.01,"unitFreightUsd":21.22}],"summary":{"goodsUsd":265.5,"estFreightUsd":139.0,"discountUsd":8.6,"totalUsd":396.0,"receivedUsd":473.0,"balanceUsd":-77.0,"totalRmb":1582.0},"currency":"USD"}
+{"rows":[{"line":1,"link":"https://...","itemId":"742989298","remarks":"no box","size":"42 eu","quantity":"1","rmb":280,"freightRmb":12,"totalRmb":292,"gw":2,"unitPriceUsd":49.01,"unitFreightUsd":21.22}],"summary":{"goodsUsd":265.5,"estFreightUsd":139.0,"discountUsd":8.6,"refundUsd":0,"totalUsd":396.0,"receivedUsd":473.0,"balanceUsd":-77.0,"totalRmb":1582.0},"currency":"USD"}
 Regole IMPORTANTI:
 - "rows": una riga per ogni prodotto numerato (1,2,3...). NON includere righe di totale/subtotale/spedizione stimata/pagamenti tra le rows.
 - "unitPriceUsd" = colonna "UNIT PRICE" (valori in $). "unitFreightUsd" = colonna "UNIT FREIGHT" (in $). Solo numeri, senza simboli. Se "$0.00" o vuoto → 0.
@@ -1087,6 +1087,7 @@ Regole IMPORTANTI:
 - "summary" = il riquadro dei totali in basso (di solito a destra/sotto). Leggi i valori in USD ($):
   · "goodsUsd" = subtotale merce in USD (spesso la riga "USD" vicino a "RMB"/"TOTAL");
   · "estFreightUsd" = "ESTIMATED FREIGHT"; "discountUsd" = "DISCOUNT" (valore assoluto, sempre positivo);
+  · "refundUsd" = rimborso di un ordine precedente ("LAST ORDER REFUND", "REFUND", "退款"), valore assoluto, sempre positivo. NON sommarlo al DISCOUNT: sono due campi separati;
   · "totalUsd" = "TOTAL" finale in $; "receivedUsd" = "RECEIVED PAYMENT"; "balanceUsd" = "BALANCE PAYMENT" (può essere negativo);
   · "totalRmb" = "TOTAL" in RMB. Metti null i campi non presenti/illeggibili.
 - Numeri con punto decimale. Non inventare dati non presenti.`;
@@ -1134,6 +1135,7 @@ Regole IMPORTANTI:
       goodsUsd: num(s.goodsUsd),
       estFreightUsd: num(s.estFreightUsd),
       discountUsd: s.discountUsd == null ? null : Math.abs(num(s.discountUsd) || 0),
+      refundUsd: s.refundUsd == null ? null : Math.abs(num(s.refundUsd) || 0),
       totalUsd: num(s.totalUsd),
       receivedUsd: num(s.receivedUsd),
       balanceUsd: num(s.balanceUsd),
