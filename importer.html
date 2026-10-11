@@ -1795,6 +1795,25 @@ window.fetchYupooAlbums = async function(){
     renderYupooGrid();
     document.getElementById('yupoo-grid').style.display = 'block';
     status.textContent = `✅ ${albumIds.length} album trovati — seleziona quelli da importare, poi clicca "Analizza con AI"`;
+    // Album già in catalogo (stesso id nel sourceUrl): deselezionati, così
+    // reimportare una pagina non crea doppioni.
+    try {
+      const imp = window.__imp;
+      if (imp && imp.getDocs) {
+        const have = new Set();
+        (await imp.getDocs(imp.collection(imp.db,'products'))).forEach(ds => {
+          const m = String((ds.data()||{}).sourceUrl||'').match(/yupoo\.com\/albums\/(\d+)/i); if (m) have.add(m[1]);
+        });
+        let dup = 0;
+        albumIds.forEach(id => {
+          if (!have.has(String(id))) return;
+          dup++;
+          const card = document.getElementById('alb-'+id); if (card) card.classList.remove('on');
+          const st = document.getElementById('alb-st-'+id); if (st) { st.textContent = '✓ già in catalogo'; st.style.color = '#8fbf8f'; }
+        });
+        if (dup) { updateYupooSelCount(); status.textContent += ` · ${dup} già in catalogo (deselezionati)`; }
+      }
+    } catch (e) { console.warn('controllo doppioni saltato:', e.message); }
   } catch(e) {
     status.textContent = '⚠️ Errore: ' + (e.message || 'Impossibile caricare. Riprova.');
     console.error('fetchYupooAlbums:', e);
