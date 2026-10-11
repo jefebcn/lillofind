@@ -50,6 +50,8 @@
   }
 
   function fee(o) {
+    // commissione vera comunicata da PayPal all'incasso (PayPal automatico)
+    if (typeof o.paymentFee === 'number' && o.paymentFee >= 0) return o.paymentFee;
     const s = st.settings, t = +o.total || 0;
     if (!t) return 0;
     const pm = o.payment || o.paymentMethod || 'card';
