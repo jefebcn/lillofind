@@ -25,7 +25,7 @@ window.__fb={db:getFirestore(app),auth:_auth,functions:_functions,httpsCallable,
    (cloudflare-worker/src/lib/product-private.js).
    ══════════════════════════════════════════════ */
 (function(fb){
-  const PRIV=['costEUR','costFx','costFxDate','costUpdatedAt','supplierPriceCNY','sourceUrl'];
+  const PRIV=['costEUR','costUsd','costUnitPriceUsd','costUnitFreightUsd','costFx','costFxDate','costUpdatedAt','supplierPriceCNY','sourceUrl'];
   const isProdRef=(r)=>!!(r&&r.parent&&r.parent.id==='products'&&r.id);
   // Testi del fornitore ripuliti PRIMA di salvarli (importer, scraper,
   // admin): niente tag HTML in nome, marchio, modello, stile, descrizione.

@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import admin from 'firebase-admin';
 
-const PRIVATE_FIELDS = ['costEUR', 'costFx', 'costFxDate', 'costUpdatedAt', 'supplierPriceCNY', 'sourceUrl'];
+const PRIVATE_FIELDS = ['costEUR', 'costUsd', 'costUnitPriceUsd', 'costUnitFreightUsd', 'costFx', 'costFxDate', 'costUpdatedAt', 'supplierPriceCNY', 'sourceUrl'];
 const cred = JSON.parse(fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf8'));
 admin.initializeApp({ credential: admin.credential.cert(cred), projectId: cred.project_id });
 
