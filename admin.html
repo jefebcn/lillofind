@@ -887,6 +887,7 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn-k" id="trb-reload" onclick="loadTrackingBoard()" title="Ricarica l'elenco dei codici dal database">↻ Ricarica</button>
+            <button class="btn-k" id="trb-auto" onclick="trackingSyncNow()" title="Il controllo automatico gira da solo ogni 4 ore: questo lo lancia subito">🤖 Aggiorna stati ora</button>
             <button class="btn-led" id="trb-all" onclick="trackingBoardVerifyAll()" title="Interroga 17TRACK per ogni codice in elenco">📡 Verifica tutte</button>
           </div>
         </div>
@@ -1701,6 +1702,20 @@ waitFB(()=>{
     }catch(_){}
     return null;
   }
+  // Tracking automatico (Worker, ogni 4 ore): qui lo si lancia a mano.
+  window.trackingSyncNow=async function(){
+    const b=document.getElementById('trb-auto'); if(b){ b.disabled=true; b.textContent='⏳ Controllo…'; }
+    try{
+      const r=(await lfCallable('trackingSync')({})).data||{};
+      if(!r.ok){ showToast('⚠️ '+(r.reason||'Tracking automatico non attivo')); }
+      else{
+        const up=r.updated||[];
+        showToast(up.length?('✅ '+up.length+' spedizioni aggiornate · '+r.emailed+' email inviate'):('✓ '+r.checked+' spedizioni controllate, nessuna novità'));
+        if(up.length) loadTrackingBoard();
+      }
+    }catch(e){ showToast('⚠️ '+((e&&e.message)||'Errore')); }
+    if(b){ b.disabled=false; b.textContent='🤖 Aggiorna stati ora'; }
+  };
   window.loadTrackingBoard=async function(){
     const fb=window.__fb; const list=document.getElementById('trb-list'); const st=document.getElementById('trb-status');
     if(!list) return;
@@ -2702,8 +2717,10 @@ waitFB(()=>{
 
   // Un ordine è "non pagato" se è ancora in attesa e il metodo è manuale
   // (PayPal.me / bonifico): il pagamento va verificato a mano dall'admin.
+  // Da pagare = in attesa e non ancora incassato. Carta e PayPal automatico
+  // arrivano già con paymentStatus 'paid' (verificato dal Worker).
   function isUnpaidOrder(o){
-    return o.status === 'pending' && o.payment !== 'card';
+    return o.status === 'pending' && o.paymentStatus !== 'paid' && o.payment !== 'card';
   }
   function orderAgeHours(o){
     const ref = (o.reactivatedAt && o.reactivatedAt.seconds) ? o.reactivatedAt.seconds : (o.createdAt && o.createdAt.seconds);

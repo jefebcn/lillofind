@@ -4873,6 +4873,45 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   const PAYPAL_EMAIL='contiale2001@gmail.com';
   const PAYPAL_ME='https://www.paypal.me/lilconti';
 
+  // ── PayPal automatico: configurazione e ritorno da PayPal ───────────
+  window._ppAuto=false;
+  waitFB(()=>{
+    lfCallable('paypalConfig')({}).then(r=>{
+      window._ppAuto=!!(r&&r.data&&r.data.enabled);
+      if(window._ppAuto){
+        const sub=document.querySelector('#pay-radio-paypal')?.parentElement?.querySelector('p:nth-of-type(2)');
+        if(sub) sub.textContent='Paghi su PayPal e torni qui: l\'ordine si conferma da solo.';
+        const f=document.getElementById('pay-paypal-fields');
+        if(f) f.innerHTML='<p style="font-size:11px;color:#003087;line-height:1.7;">Clicca "Conferma Ordine": vai su <strong>PayPal</strong> per pagare in sicurezza e torni qui. L\'ordine viene <strong>confermato in automatico</strong> e i <strong>LFPOINTS</strong> accreditati subito.</p>';
+      }
+    }).catch(()=>{});
+  });
+  (function(){
+    const q=new URLSearchParams(location.search), st=q.get('paypal');
+    if(!st) return;
+    const id=q.get('token');
+    try{ history.replaceState(null,'',location.pathname+location.hash); }catch(_){}
+    if(st==='cancel'){ setTimeout(()=>{ showToast('Pagamento PayPal annullato: non ti è stato addebitato nulla.'); try{showPg('checkout');}catch(_){} },700); return; }
+    if(st!=='return'||!id) return;
+    waitFB(()=>{
+      const fb=window.__fb; let done=false;
+      const un=fb.onAuthStateChanged(fb.auth, async u=>{
+        if(done) return; done=true; setTimeout(()=>{ try{un&&un();}catch(_){} },0);
+        if(!u){ showToast('Accedi con lo stesso account per completare il pagamento PayPal.'); try{showPg('auth');}catch(_){} return; }
+        showToast('🔄 Confermo il pagamento PayPal…');
+        let saved={}; try{ saved=JSON.parse(sessionStorage.getItem('lf_pp_pending')||'{}'); }catch(_){}
+        try{
+          const r=await lfCallable('capturePaypalOrder')({paypalOrderId:id});
+          try{ sessionStorage.removeItem('lf_pp_pending'); }catch(_){}
+          _handleOrderSuccess(r.data, saved.payload||{paymentMethod:'paypal'});
+        }catch(e){
+          showToast('⚠️ '+(e.message||'Pagamento PayPal non completato.'));
+          try{showPg('checkout');}catch(_){}
+        }
+      });
+    });
+  })();
+
   function _handleOrderSuccess(data, orderData){
     const {orderId,subtotal,shipping,discount,total,lfpoints:pts,paymentMethod:pm}=data;
     const method=pm||orderData.paymentMethod||'card';
@@ -4903,8 +4942,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       setTimeout(()=>showToast('📧 Ti abbiamo mandato un\'email per impostare la password del tuo account.'),1800);
     }
 
-    if(method==='card'){
-      showToast(`✅ Ordine confermato! +${pts} LFPOINTS accreditati!`);
+    if(method==='card' || data.paid){
+      showToast(`✅ Pagamento ricevuto, ordine confermato!${pts?` +${pts} LFPOINTS accreditati!`:''}`);
       if(newReward) setTimeout(()=>showToast(`🎁 Premio sbloccato: ${newReward.label}!`),1500);
       setTimeout(()=>showPg('shop'),1200);
     } else if(method==='paypal'){
@@ -5125,6 +5164,25 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
       }
       return;
+    }
+
+    // ── PayPal automatico: il Worker crea il pagamento col totale verificato,
+    //    il cliente approva su PayPal e torna qui (?paypal=return): l'ordine
+    //    si conferma da solo. Senza chiavi PayPal sul Worker resta il link manuale.
+    if(selectedPayment==='paypal' && window._ppAuto){
+      if(placeBtn){placeBtn.disabled=true;placeBtn.textContent='🔄 Apertura PayPal...';}
+      try{
+        const {_items:_om, ...orderForServer}=_orderPayload;
+        const r=await lfCallable('createPaypalOrder')({items:_orderItems.map(i=>({id:i.id,qty:i.qty,...(i.addons?{addons:i.addons}:{})})),order:orderForServer,returnUrl:location.origin+location.pathname});
+        if(!r.data||!r.data.approveUrl) throw new Error('PayPal non disponibile, riprova.');
+        try{ sessionStorage.setItem('lf_pp_pending',JSON.stringify({id:r.data.id,payload:{...orderForServer,paymentMethod:'paypal'}})); }catch(_){}
+        location.href=r.data.approveUrl;
+        return;
+      }catch(e){
+        showToast('⚠️ '+(e.message||'PayPal non disponibile, riprova.'));
+        if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
+        return;
+      }
     }
 
     // ── Bonifico / PayPal: registra ordine, poi mostra istruzioni pagamento ──

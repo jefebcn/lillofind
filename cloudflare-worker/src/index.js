@@ -16,6 +16,7 @@ import * as stream from './handlers/stream.js';
 import * as loyalty from './handlers/loyalty.js';
 import * as catalog from './handlers/catalog.js';
 import * as telemetry from './handlers/telemetry.js';
+import * as tracking from './handlers/tracking.js';
 import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
@@ -619,6 +620,12 @@ app.post('/stripeWebhook', async (c) => {
   return c.json(r.body, r.status);
 });
 // Email tracking al cliente (admin via allowlist email)
+// PayPal automatico (Checkout Orders v2): crea → reindirizza → incassa al ritorno
+app.post('/paypalConfig',        callable(checkout.paypalConfig,        { auth: 'none' }));
+app.post('/createPaypalOrder',   callable(checkout.createPaypalOrder,   { auth: 'required' }));
+app.post('/capturePaypalOrder',  callable(checkout.capturePaypalOrder,  { auth: 'required' }));
+// Tracking automatico: giro manuale dall'admin (quello automatico è il cron)
+app.post('/trackingSync',        callable(tracking.trackingSyncNow,     { auth: 'admin' }));
 app.post('/sendTrackingEmail',   callable(checkout.sendTrackingEmail,   { auth: 'adminEmail' }));
 app.post('/track17',             callable(checkout.track17,             { auth: 'required' }));
 // Email conferma ordine al cliente (utente autenticato)
@@ -650,6 +657,13 @@ app.post('/streamAdminTitle',  callable(stream.adminTitle,  { auth: 'adminEmail'
 app.post('/streamSaveHome',    callable(stream.saveHome,    { auth: 'adminEmail' }));
 app.post('/streamImportMeta',  callable(stream.importMeta,  { auth: 'adminEmail' }));
 
-export default app;
+// fetch = API HTTP (Hono); scheduled = cron di wrangler.toml [triggers]
+// (ogni 4 ore: tracking automatico delle spedizioni).
+export default {
+  fetch: (req, env, ctx) => app.fetch(req, env, ctx),
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(tracking.syncTracking(env, new Firestore(env)).catch((e) => console.error('cron tracking:', e && e.stack || e)));
+  },
+};
 
 // deploy trigger: attiva email conferma ordine + tracking (build)

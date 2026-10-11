@@ -4,6 +4,7 @@
 // ════════════════════════════════════════════════════════════════
 
 import Stripe from 'stripe';
+import { paypalEnabled, ppCreateOrder, ppGetOrder, ppCapture, ppSummary } from '../lib/paypal.js';
 import { HttpsError } from '../lib/errors.js';
 import { isAdminToken } from '../lib/auth.js';
 import { limita } from '../lib/limiti.js';
@@ -273,7 +274,7 @@ export async function sendTrackingEmail(data, { env }) {
 // Stato pacco in tempo reale via 17TRACK (multi-corriere). Registra il
 // numero (idempotente) e restituisce l'ultimo stato, mappato sugli stati
 // LilloFind. Auth: adminEmail. Richiede il secret TRACK17_TOKEN.
-const TRACK17_MAP = {
+export const TRACK17_MAP = {
   InfoReceived: 'spedito', InTransit: 'in_transito', OutForDelivery: 'in_consegna',
   AvailableForPickup: 'in_consegna', PickUp: 'in_consegna', Delivered: 'consegnato',
   DeliveryFailure: 'in_transito', Undelivered: 'in_transito', Exception: 'in_transito', Expired: 'in_transito',
@@ -661,10 +662,10 @@ export async function sendTestEmail(data, { env }) {
 }
 
 // ── createPaymentIntent ─────────────────────────────────────────
-export async function createPaymentIntent(data, { env, db, auth }) {
-  const { items, order } = data || {};
+// Totale verificato del carrello (prezzi dal catalogo, spedizione, premio
+// LFPoints): lo stesso calcolo per carta (PaymentIntent) e PayPal.
+export async function quoteCart(items, { db, auth }) {
   if (!Array.isArray(items) || items.length === 0) throw new HttpsError('invalid-argument', 'Carrello vuoto.');
-
   for (const item of items) {
     if (!item.id || typeof item.id !== 'string') throw new HttpsError('invalid-argument', 'ID prodotto non valido.');
     const qty = parseInt(item.qty, 10);
@@ -717,6 +718,12 @@ export async function createPaymentIntent(data, { env, db, auth }) {
   } catch (e) { /* non bloccante */ }
 
   const total = Math.max(0, Math.round((subtotal + shipping - discountAmount) * 100) / 100);
+  return { subtotal, shipping, discount: discountAmount, total };
+}
+
+export async function createPaymentIntent(data, { env, db, auth }) {
+  const { items, order } = data || {};
+  const { subtotal, shipping, total } = await quoteCart(items, { db, auth });
   const amountCents = Math.round(total * 100);
   if (amountCents < 50) throw new HttpsError('invalid-argument', 'Importo minimo €0.50 non raggiunto.');
 
@@ -841,7 +848,9 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
 
   // Ordini NON pagati (bonifico/PayPal): tetto per utente e per IP. Prima
   // erano illimitati anche da ospite anonimo, ognuno con un'email.
-  if (paymentMethod !== 'card') {
+  // PayPal automatico: ordine già pagato (incasso verificato qui sotto).
+  const paypalOrderId = paymentMethod === 'paypal' && data && typeof data.paypalOrderId === 'string' ? data.paypalOrderId.slice(0, 64) : '';
+  if (paymentMethod !== 'card' && !paypalOrderId) {
     await limita(db, 'ord_uid_' + uid, 5, 3600, 'Hai già creato diversi ordini da pagare: completa quelli o riprova tra un\'ora.');
     if (ip) await limita(db, 'ord_ip_' + ip, 10, 3600, 'Troppi ordini da questa connessione: riprova tra un\'ora.');
   }
@@ -870,10 +879,37 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
       if (g.uid === uid && g.orderDocId) {
         const o = await db.getDoc('orders', g.orderDocId).catch(() => null);
         const od = o && o.exists ? o.data() : null;
-        if (od) return { orderId: od.orderId, subtotal: od.subtotal, shipping: od.shipping, discount: od.discount, total: od.total, lfpoints: 0, paymentMethod: 'card', alreadyCreated: true };
+        if (od) return { orderId: od.orderId, subtotal: od.subtotal, shipping: od.shipping, discount: od.discount, total: od.total, lfpoints: 0, paymentMethod: 'card', paid: true, alreadyCreated: true };
       }
       throw new HttpsError('already-exists', 'Questo pagamento è già stato usato per un ordine.');
     }
+  }
+
+  // Verifica e incasso PayPal: l'ordine PayPal (creato da createPaypalOrder
+  // con lo stesso totale) dev'essere di questo utente e dello stesso importo;
+  // solo allora si incassa. Un ordine PayPal paga UN ordine (used_payment_intents/pp_<id>).
+  let pp = null;
+  if (paypalOrderId) {
+    if (!paypalEnabled(env)) throw new HttpsError('failed-precondition', 'Pagamento PayPal automatico non attivo.');
+    const gia = await db.getDoc('used_payment_intents', 'pp_' + paypalOrderId);
+    if (gia.exists) {
+      const g = gia.data() || {};
+      if (g.uid === uid && g.orderDocId) {
+        const o = await db.getDoc('orders', g.orderDocId).catch(() => null);
+        const od = o && o.exists ? o.data() : null;
+        if (od) return { orderId: od.orderId, subtotal: od.subtotal, shipping: od.shipping, discount: od.discount, total: od.total, lfpoints: 0, paymentMethod: 'paypal', paid: true, alreadyCreated: true };
+      }
+      throw new HttpsError('already-exists', 'Questo pagamento è già stato usato per un ordine.');
+    }
+    let info;
+    try { info = ppSummary(await ppGetOrder(env, paypalOrderId)); }
+    catch (e) { throw new HttpsError('invalid-argument', 'Pagamento PayPal non trovato.'); }
+    if (info.uid !== uid) throw new HttpsError('permission-denied', 'Questo pagamento PayPal non appartiene al tuo account.');
+    if (info.currency !== 'EUR' || Math.abs(info.value - total) > 0.01) throw new HttpsError('failed-precondition', 'L\'importo PayPal non corrisponde al totale dell\'ordine (prezzi cambiati?). Riprova: non ti è stato addebitato nulla.');
+    if (info.status !== 'APPROVED' && info.status !== 'COMPLETED') throw new HttpsError('failed-precondition', 'Il pagamento PayPal non è stato approvato.');
+    try { pp = ppSummary(await ppCapture(env, paypalOrderId)); }
+    catch (e) { console.error('PayPal capture:', e && e.message); throw new HttpsError('failed-precondition', 'PayPal non ha completato il pagamento. Non ti è stato addebitato nulla: riprova.'); }
+    if (pp.captureStatus !== 'COMPLETED' && pp.captureStatus !== 'PENDING') throw new HttpsError('failed-precondition', 'PayPal non ha completato il pagamento (' + (pp.captureStatus || pp.status) + ').');
   }
 
   const orderId = 'LILLO-' + Date.now().toString(36).toUpperCase().slice(-6);
@@ -900,13 +936,28 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
     isDigitalOrder: allDigital,
     deliveryType: allDigital ? 'digital' : 'physical',
     status: 'pending',
-    paymentStatus: paymentMethod === 'card' ? 'paid' : 'unpaid',
+    paymentStatus: paymentMethod === 'card' || (pp && pp.captureStatus === 'COMPLETED') ? 'paid' : 'unpaid',
     ...(paymentMethod === 'card' ? { stripePaymentIntentId: String(data.stripePaymentIntentId) } : {}),
+    ...(pp ? { paypalOrderId, paypalCaptureId: pp.captureId, paypalStatus: pp.captureStatus, ...(pp.payer ? { paypalPayer: pp.payer } : {}), ...(pp.fee != null ? { paymentFee: pp.fee } : {}) } : {}),
     createdAt: new Date(),
   };
 
   let orderDocId = '';
-  if (paymentMethod === 'card') {
+  if (pp) {
+    orderDocId = crypto.randomUUID().replace(/-/g, '').slice(0, 20);
+    try {
+      await db.createAtomic([
+        { collection: 'used_payment_intents', id: 'pp_' + paypalOrderId, mustNotExist: true,
+          fields: { orderId, orderDocId, uid, amount: Math.round(total * 100), provider: 'paypal', usedAt: new Date() } },
+        { collection: 'orders', id: orderDocId, mustNotExist: true, fields: orderData },
+      ]);
+    } catch (e) {
+      if (e && e.code === 'already-exists') throw new HttpsError('already-exists', 'Questo pagamento è già stato usato per un ordine.');
+      // Soldi incassati ma ordine non salvato: resta traccia per l'admin.
+      try { await db.setDoc('pending_orders', 'pp_' + paypalOrderId, { uid, captured: true, captureId: pp.captureId, total, order: JSON.stringify({ ...orderData, items: verifiedItems }).slice(0, 20000), error: String(e && e.message || e).slice(0, 300), createdAt: new Date() }); } catch (_) {}
+      throw new HttpsError('internal', 'Pagamento PayPal ricevuto ma ordine non registrato: ti contattiamo noi entro 24 ore. Non ripetere il pagamento.');
+    }
+  } else if (paymentMethod === 'card') {
     // Ordine e "pagamento usato" nello stesso commit: due richieste parallele
     // con lo stesso PaymentIntent non possono passare entrambe.
     orderDocId = crypto.randomUUID().replace(/-/g, '').slice(0, 20);
@@ -925,7 +976,7 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
     catch (e) { throw new HttpsError('internal', 'Errore nel salvataggio dell\'ordine. Riprova.'); }
   }
 
-  const paymentVerified = paymentMethod === 'card';
+  const paymentVerified = paymentMethod === 'card' || orderData.paymentStatus === 'paid';
   try {
     const userSnap2 = await db.getDoc('users', uid);
     const currentData = userSnap2.exists ? userSnap2.data() : {};
@@ -959,13 +1010,71 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
   // non deve poter far arrivare email LilloFind a chiunque. L'admin riceve
   // sempre la notifica; il cliente vede numero d'ordine e istruzioni a schermo.
   const emailVerificata = !!(auth.token && auth.token.email_verified === true) && !!tokenEmail && orderEmail === tokenEmail;
-  const alCliente = paymentMethod === 'card' || emailVerificata;
+  const alCliente = paymentVerified || emailVerificata;
   const mailJob = sendOrderEmails({ ...orderData, items: verifiedItems }, env, { soloAdmin: !alCliente })
     .then(r => (r && r.sent && orderDocId) ? db.updateDoc('orders', orderDocId, { customerEmailSent: true }) : null)
     .catch(e => console.error('email ordine:', e && e.message));
   if (typeof waitUntil === 'function') waitUntil(mailJob); else await mailJob;
 
-  return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints: paymentVerified ? lfpoints : 0, paymentMethod };
+  return { orderId, subtotal, shipping, discount: discountAmount, total, lfpoints: paymentVerified ? lfpoints : 0, paymentMethod, paid: paymentVerified };
+}
+
+// ── PayPal automatico ───────────────────────────────────────────
+// 1) createPaypalOrder: totale verificato (quoteCart) → ordine PayPal, l'ordine
+//    del sito resta "in attesa" in pending_orders/pp_<id>; il browser va su PayPal.
+// 2) PayPal riporta il cliente su ?paypal=return&token=<id> → capturePaypalOrder
+//    rilegge l'ordine salvato e lo passa a validateOrder, che verifica importo
+//    e utente, incassa e crea l'ordine già PAGATO (punti ed email inclusi).
+// Se il cliente non torna, PayPal non incassa nulla (l'approvazione scade).
+export function paypalConfig(_data, { env }) {
+  return { enabled: paypalEnabled(env), clientId: paypalEnabled(env) ? env.PAYPAL_CLIENT_ID : '', env: env.PAYPAL_ENV === 'sandbox' ? 'sandbox' : 'live' };
+}
+
+function returnBase(env, wanted) {
+  const allowed = String(env.ALLOWED_ORIGINS || 'https://lillofind.shop').split(',').map((x) => x.trim()).filter(Boolean);
+  try {
+    const u = new URL(String(wanted || ''));
+    if (allowed.includes(u.origin)) return u.origin + u.pathname;
+  } catch (_) {}
+  return (allowed[0] || 'https://lillofind.shop') + '/';
+}
+
+export async function createPaypalOrder(data, { env, db, auth }) {
+  if (!paypalEnabled(env)) throw new HttpsError('failed-precondition', 'Pagamento PayPal automatico non attivo.');
+  const { items, order } = data || {};
+  if (!order || typeof order !== 'object') throw new HttpsError('invalid-argument', 'Dati ordine mancanti.');
+  const { total } = await quoteCart(items, { db, auth });
+  if (total < 0.5) throw new HttpsError('invalid-argument', 'Importo minimo €0.50 non raggiunto.');
+  const back = returnBase(env, data.returnUrl);
+  let created;
+  try {
+    created = await ppCreateOrder(env, { total, uid: auth.uid, ref: 'lillofind-' + auth.uid.slice(0, 12),
+      returnUrl: back + '?paypal=return', cancelUrl: back + '?paypal=cancel' });
+  } catch (e) {
+    console.error('PayPal createOrder:', e && e.message);
+    throw new HttpsError('unavailable', 'PayPal non risponde, riprova tra poco o scegli un altro metodo.');
+  }
+  await db.setDoc('pending_orders', 'pp_' + created.id, { uid: auth.uid, provider: 'paypal', total,
+    order: JSON.stringify({ ...order, paymentMethod: 'paypal' }).slice(0, 20000), createdAt: new Date() });
+  return { id: created.id, approveUrl: created.approveUrl, amount: total };
+}
+
+export async function capturePaypalOrder(data, ctx) {
+  const id = String((data && data.paypalOrderId) || '').slice(0, 64);
+  if (!id) throw new HttpsError('invalid-argument', 'Pagamento PayPal mancante.');
+  const snap = await ctx.db.getDoc('pending_orders', 'pp_' + id);
+  if (!snap.exists) {
+    // già completato prima (ritorno ripetuto): validateOrder restituisce l'ordine esistente
+    const gia = await ctx.db.getDoc('used_payment_intents', 'pp_' + id);
+    if (!gia.exists) throw new HttpsError('not-found', 'Ordine PayPal non trovato: riprova il checkout.');
+  }
+  const p = snap.exists ? (snap.data() || {}) : {};
+  if (snap.exists && p.uid !== ctx.auth.uid) throw new HttpsError('permission-denied', 'Questo pagamento appartiene a un altro account.');
+  let order = {};
+  try { order = JSON.parse(p.order || '{}'); } catch (_) { order = {}; }
+  const res = await validateOrder({ ...order, paymentMethod: 'paypal', paypalOrderId: id }, ctx);
+  if (snap.exists && !p.captured) { try { await ctx.db.setDoc('pending_orders', 'pp_' + id, { ...p, done: true, orderId: res.orderId, doneAt: new Date() }); } catch (_) {} }
+  return res;
 }
 
 // ── Webhook Stripe ──────────────────────────────────────────────

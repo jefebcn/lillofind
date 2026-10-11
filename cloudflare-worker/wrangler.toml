@@ -5,6 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 
 # Log del Worker conservati in dashboard (Workers → lillofind → Logs):
 # qui finiscono anche gli errori JavaScript del sito (/clientError).
+# Cron: tracking automatico delle spedizioni (17TRACK) ogni 4 ore, al minuto 23.
+[triggers]
+crons = ["23 */4 * * *"]
+
 [observability]
 enabled = true
 
@@ -27,6 +31,8 @@ WORKER_PUBLIC_BASE = "https://lillofind.conti9708.workers.dev"
 #   RESEND_API_KEY           → chiave Resend per email ordini
 #   ANTHROPIC_API_KEY        → chiave Anthropic per yupooAnalyze
 #   FIREBASE_SERVICE_ACCOUNT → JSON completo del service account (una riga)
+#   TRACK17_TOKEN            → chiave API 17TRACK (tracking automatico, api.17track.net)
+#   PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET → app REST PayPal Business (pagamento automatico)
 #   TMDB_API_KEY             → API key v3 di TMDB per la sezione "Cosa guardare"
 #                              (gratis: themoviedb.org → Settings → API → API Key v3)
 # ───────────────────────────────────────────────────────────────
