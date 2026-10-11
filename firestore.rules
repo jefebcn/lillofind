@@ -59,6 +59,15 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Carrello legato all'account (computer ↔ telefono): solo il proprietario.
+    match /carts/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['items', 'updatedAt'])
+        && request.resource.data.items is list && request.resource.data.items.size() <= 60
+        && request.resource.data.updatedAt is number;
+    }
+
     // Conto economico dell'admin: impostazioni (commissioni, tasse) e
     // movimenti manuali (spese, entrate fuori sito). Solo admin.
     match /finance/{id} {
