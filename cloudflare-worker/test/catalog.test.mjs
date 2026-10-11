@@ -10,12 +10,13 @@ const ctx = (url, env) => ({ env, req: { url, query: k => new URL(url).searchPar
 const env = { CATALOG: kv };
 let r = await getCatalog(ctx('https://w.dev/catalog', env));
 eq(r.status, 404, 'non pubblicato → 404');
-const meta = await publishCatalog({ products: [{ id: 'p1', name: 'A', price: 10, costEUR: 4, sourceUrl: 'https://x/albums/1', supplierPriceCNY: 30 }, { id: 'p2', name: 'B' }, { nope: 1 }] }, { env });
+const meta = await publishCatalog({ products: [{ id: 'p1', name: 'A', price: 10, costEUR: 4, costUsd: 4.5, costUnitPriceUsd: 3, costUnitFreightUsd: 1.5, sourceUrl: 'https://x/albums/1', supplierPriceCNY: 30 }, { id: 'p2', name: 'B' }, { nope: 1 }] }, { env });
 eq(meta.count, 2, 'conta solo prodotti validi');
 r = await getCatalog(ctx('https://w.dev/catalog', env));
 const j = await r.json();
 eq(j.products.map(p => p.id), ['p1', 'p2'], 'prodotti serviti');
 eq('costEUR' in j.products[0] || 'sourceUrl' in j.products[0] || 'supplierPriceCNY' in j.products[0], false, 'dati interni rimossi');
+eq(['costUsd', 'costUnitPriceUsd', 'costUnitFreightUsd'].some((k) => k in j.products[0]), false, 'costi in dollari rimossi dal catalogo pubblico');
 eq(r.headers.get('Cache-Control'), 'public, max-age=120', 'cache 2 min');
 r = await getCatalog(ctx('https://w.dev/catalog?meta=1', env));
 eq((await r.json()).dirty, false, 'meta pulita');

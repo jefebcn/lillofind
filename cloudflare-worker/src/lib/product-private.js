@@ -8,7 +8,7 @@
 // Lo stesso elenco lo usano firebase.js (pagine admin) e la pubblicazione
 // del catalogo: e' l'unico posto dove si decide cosa e' privato.
 // ════════════════════════════════════════════════════════════════
-export const PRIVATE_FIELDS = ['costEUR', 'costFx', 'costFxDate', 'costUpdatedAt', 'supplierPriceCNY', 'sourceUrl'];
+export const PRIVATE_FIELDS = ['costEUR', 'costUsd', 'costUnitPriceUsd', 'costUnitFreightUsd', 'costFx', 'costFxDate', 'costUpdatedAt', 'supplierPriceCNY', 'sourceUrl'];
 
 // Divide un oggetto prodotto in parte pubblica e parte privata.
 export function splitPrivate(obj) {

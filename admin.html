@@ -4526,6 +4526,16 @@ waitFB(()=>{
     if(r.rmb && _fxRates.cnyEur) return ((+r.rmb||0)+(+r.freightRmb||0))*_fxRates.cnyEur;
     return 0;
   }
+  // Pezzi della riga (colonna QUANTITY della ricevuta): i prezzi sono unitari,
+  // i totali vanno moltiplicati. Prima la quantità era ignorata.
+  function rowQty(r){ const q=parseInt(String(r.quantity==null?'':r.quantity).replace(/[^\d]/g,''),10); return (q>0&&q<1000)?q:1; }
+  // Prezzo e spedizione UNITARI in $; se la riga ha solo gli RMB li converte,
+  // così totali in $, totali in € e quote per persona usano gli stessi numeri.
+  function rowUnitUsd(r){
+    let p=+r.unitPriceUsd||0, s=+r.unitFreightUsd||0;
+    if(p+s<=0 && r.rmb && _fxRates.usdCny){ p=(+r.rmb||0)/_fxRates.usdCny; s=(+r.freightRmb||0)/_fxRates.usdCny; }
+    return {p,s};
+  }
   // Chiave di abbinamento: cifre itemID/id dal link, o ultimo numero (album Yupoo)
   function costItemKey(url){
     if(!url) return '';
@@ -4585,7 +4595,8 @@ waitFB(()=>{
         ${r.matched?'<div style="font-size:9px;color:#2ecc71;margin-top:3px;">✓ abbinato via link</div>':(idHint?('<div style="font-size:9px;color:#c90;margin-top:3px;">nessun match auto (id '+escH(idHint)+')</div>'):'<div style="font-size:9px;color:#777;margin-top:3px;">link non letto — scegli a mano</div>')}</td>
       <td style="vertical-align:top;"><input type="number" step="0.01" value="${(+r.unitPriceUsd||0)}" oninput="costEdit(${i},'unitPriceUsd',this.value)" style="width:72px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"/></td>
       <td style="vertical-align:top;"><input type="number" step="0.01" value="${(+r.unitFreightUsd||0)}" oninput="costEdit(${i},'unitFreightUsd',this.value)" style="width:72px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"/></td>
-      <td style="font-weight:700;color:#fff;vertical-align:top;padding-top:12px;">€${cost.toFixed(2)}</td>
+      <td style="vertical-align:top;"><input type="number" min="1" step="1" value="${rowQty(r)}" oninput="costEdit(${i},'quantity',this.value)" title="Pezzi in questa riga" style="width:52px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"/></td>
+      <td style="font-weight:700;color:#fff;vertical-align:top;padding-top:12px;">€${cost.toFixed(2)}<div class="cost-rowtot" style="font-size:10px;color:#888;font-weight:400;">${rowQty(r)>1?('×'+rowQty(r)+' = €'+(cost*rowQty(r)).toFixed(2)):'al pezzo'}</div></td>
       <td style="color:#ccc;vertical-align:top;padding-top:12px;">${sell!=null?('€'+sell.toFixed(2)):'—'}</td>
       <td style="font-weight:700;color:${mColor};vertical-align:top;padding-top:12px;">${margin==null?'—':('€'+margin.toFixed(2)+(pct!=null?(' · '+pct+'%'):''))}</td>
       <td style="vertical-align:top;"><button onclick="saveCostRow(${i})" ${r.pid?'':'disabled'} title="Salva costo sul prodotto" style="font-size:12px;padding:7px 11px;background:${r.pid?'var(--led)':'#333'};color:${r.pid?'#000':'#777'};border:none;border-radius:6px;cursor:${r.pid?'pointer':'not-allowed'};">💾</button></td>
@@ -4602,13 +4613,14 @@ waitFB(()=>{
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:840px;">
         <thead><tr style="text-align:left;color:#888;font-size:9px;letter-spacing:1px;text-transform:uppercase;">
-          <th style="padding:8px 6px;">#</th><th>Prodotto</th><th>Prezzo $</th><th>Sped. $</th><th>Costo €</th><th>Vendita €</th><th>Margine</th><th></th>
+          <th style="padding:8px 6px;">#</th><th>Prodotto</th><th>Prezzo $ (pz)</th><th>Sped. $ (pz)</th><th>Pezzi</th><th>Costo €</th><th>Vendita €</th><th>Margine (pz)</th><th></th>
         </tr></thead>
         <tbody>${_costRows.map((r,i)=>costRowHTML(r,i,fx)).join('')}</tbody>
         <tfoot><tr style="border-top:2px solid rgba(255,255,255,.18);font-weight:700;">
           <td colspan="2" style="padding:12px 6px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);">Totale ricevuta</td>
           <td id="cost-tot-price" style="padding-top:12px;">$0.00</td>
           <td id="cost-tot-ship" style="padding-top:12px;">$0.00</td>
+          <td id="cost-tot-qty" style="padding-top:12px;">0</td>
           <td id="cost-tot-cost" style="padding-top:12px;color:var(--led);font-size:15px;">€0.00</td>
           <td colspan="3"></td>
         </tr></tfoot>
@@ -4617,7 +4629,7 @@ waitFB(()=>{
       <p id="cost-tot-summary" style="font-size:12px;color:#ccc;margin-top:14px;font-weight:600;"></p>
       <div id="cost-compare" style="margin-top:12px;font-size:12px;line-height:1.9;"></div>
       <div id="cost-people-tot" style="margin-top:16px;font-size:12px;"></div>
-      <p style="font-size:10px;color:#666;margin-top:8px;">Costo € = (Prezzo $ + Spedizione $) × tasso ${fx}. Il margine usa il prezzo di vendita del prodotto abbinato. Assegna una <b>persona</b> alle righe per calcolare quanto deve pagare ciascuno (utile per gli ordini di gruppo).</p>
+      <p style="font-size:10px;color:#666;margin-top:8px;">Prezzi e spedizione della ricevuta sono <b>al pezzo</b>: i totali li moltiplicano per i <b>pezzi</b>. Costo € al pezzo = (Prezzo $ + Spedizione $) × tasso ${fx} (righe solo in RMB: cambio RMB reale). Lo sconto della ricevuta viene diviso tra le persone in proporzione. Il margine è al pezzo, sul prezzo di vendita del prodotto abbinato. Assegna una <b>persona</b> alle righe per calcolare quanto deve pagare ciascuno (utile per gli ordini di gruppo).</p>
     </div>`;
     updateCostTotals();
     updatePeopleTotals();
@@ -4628,26 +4640,31 @@ waitFB(()=>{
     const el=document.getElementById('cost-people-tot'); if(!el) return;
     const fx=costFx();
     const groups={}, order=[];
+    let all$=0;
     _costRows.forEach(r=>{
       const name=(r.person||'').trim(); const key=name.toLowerCase()||'—';
       if(!groups[key]){ groups[key]={name:name||'Non assegnati', price:0, ship:0, n:0, un:!name}; order.push(key); }
-      groups[key].price+=(+r.unitPriceUsd||0); groups[key].ship+=(+r.unitFreightUsd||0); groups[key].n++;
+      const q=rowQty(r), u=rowUnitUsd(r);
+      groups[key].price+=u.p*q; groups[key].ship+=u.s*q; groups[key].n+=q; all$+=(u.p+u.s)*q;
     });
+    // Sconto della ricevuta diviso in proporzione a quanto ha ordinato ciascuno
+    const disc$=(_costSummary&&_costSummary.discountUsd)||0;
+    order.forEach(k=>{ const g=groups[k]; g.disc= (disc$>0&&all$>0) ? disc$*(g.price+g.ship)/all$ : 0; });
     const dl=document.getElementById('cost-people');
     if(dl){ const names=[...new Set(_costRows.map(r=>(r.person||'').trim()).filter(Boolean))]; dl.innerHTML=names.map(n=>'<option value="'+escH(n)+'">').join(''); }
     const assigned=order.filter(k=>k!=='—');
     if(!assigned.length){ el.innerHTML='<span style="color:#888;">👥 Assegna una <b>persona</b> alle righe (campo 👤 sotto il numero) per vedere quanto deve pagare ciascuno.</span>'; return; }
     // Ordina: persone assegnate prima (per totale desc), "Non assegnati" in fondo.
-    order.sort((a,b)=>{ if(a==='—')return 1; if(b==='—')return -1; return (groups[b].price+groups[b].ship)-(groups[a].price+groups[a].ship); });
+    order.sort((a,b)=>{ if(a==='—')return 1; if(b==='—')return -1; return (groups[b].price+groups[b].ship-groups[b].disc)-(groups[a].price+groups[a].ship-groups[a].disc); });
     let html='<p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">👥 Totale per persona (quanto deve pagare)</p>'
       +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;">';
     // Testo pronto per WhatsApp: lista in colonna, in € (quanto incassi da ciascuno).
     const waLines=['💰 LILLOFIND — Riepilogo pagamenti',''];
     let grpTotE=0, nPeople=0;
-    order.forEach(k=>{ const g=groups[k]; const t$=g.price+g.ship, tE=t$*fx;
+    order.forEach(k=>{ const g=groups[k]; const t$=g.price+g.ship-g.disc, tE=t$*fx;
       html+='<div style="border:1px solid '+(g.un?'#333':'rgba(200,255,0,.28)')+';border-radius:9px;padding:11px 13px;background:'+(g.un?'transparent':'rgba(200,255,0,.04)')+';">'
         +'<div style="font-weight:700;font-size:13px;color:'+(g.un?'#888':'#fff')+';">'+escH(g.name)+' <span style="font-size:10px;color:#888;font-weight:400;">· '+g.n+' art.</span></div>'
-        +'<div style="font-size:11px;color:#aaa;margin-top:4px;">merce $'+g.price.toFixed(2)+' + sped $'+g.ship.toFixed(2)+'</div>'
+        +'<div style="font-size:11px;color:#aaa;margin-top:4px;">merce $'+g.price.toFixed(2)+' + sped $'+g.ship.toFixed(2)+(g.disc?(' − sconto $'+g.disc.toFixed(2)):'')+'</div>'
         +'<div style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:22px;color:var(--led);margin-top:3px;line-height:1;">$'+t$.toFixed(2)+' <span style="font-size:13px;color:#ccc;">= €'+tE.toFixed(2)+'</span></div>'
         +'</div>';
       // Solo persone assegnate nel testo WhatsApp (i "Non assegnati" non si mandano).
@@ -4655,6 +4672,7 @@ waitFB(()=>{
         waLines.push('👤 '+g.name+' ('+g.n+' art.)');
         waLines.push('   Merce: €'+(g.price*fx).toFixed(2));
         waLines.push('   Spedizione: €'+(g.ship*fx).toFixed(2));
+        if(g.disc) waLines.push('   Sconto: −€'+(g.disc*fx).toFixed(2));
         waLines.push('   👉 Da pagare: €'+tE.toFixed(2));
         waLines.push('');
         grpTotE+=tE; nPeople++;
@@ -4681,13 +4699,15 @@ waitFB(()=>{
   };
   // Somma le colonne (come mostrate) per verificare col totale della ricevuta.
   function updateCostTotals(){
-    const fx=costFx(); let tP=0,tS=0,tC=0;
-    _costRows.forEach(r=>{ tP+=(+r.unitPriceUsd||0); tS+=(+r.unitFreightUsd||0); tC+=rowCostEUR(r,fx); });
+    const fx=costFx(); let tP=0,tS=0,tC=0,tQ=0;
+    _costRows.forEach(r=>{ const q=rowQty(r), u=rowUnitUsd(r); tP+=u.p*q; tS+=u.s*q; tC+=rowCostEUR(r,fx)*q; tQ+=q; });
+    const disc0=(_costSummary&&_costSummary.discountUsd)||0;
     const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
     set('cost-tot-price','$'+tP.toFixed(2));
     set('cost-tot-ship','$'+tS.toFixed(2));
+    set('cost-tot-qty', String(tQ));
     set('cost-tot-cost','€'+tC.toFixed(2));
-    set('cost-tot-summary','🧾 Calcolato dalle righe: merce $'+tP.toFixed(2)+' + spedizione $'+tS.toFixed(2)+' = $'+(tP+tS).toFixed(2)+'  →  €'+tC.toFixed(2)+' (tasso '+fx.toFixed(4)+')');
+    set('cost-tot-summary','🧾 Calcolato dalle righe ('+tQ+' pezzi): merce $'+tP.toFixed(2)+' + spedizione $'+tS.toFixed(2)+' = $'+(tP+tS).toFixed(2)+(disc0?(' − sconto $'+disc0.toFixed(2)+' = $'+(tP+tS-disc0).toFixed(2)):'')+'  →  €'+(tC-disc0*fx).toFixed(2)+' (tasso '+fx.toFixed(4)+')');
     // Confronto col totale scritto sulla ricevuta.
     const cmpEl=document.getElementById('cost-compare'); if(!cmpEl) return;
     const s=_costSummary;
@@ -4717,12 +4737,12 @@ waitFB(()=>{
     const sell=prod?(parseFloat(prod.price)||null):null;
     const margin=sell!=null?sell-cost:null;
     const pct=(sell&&sell>0)?Math.round(margin/sell*100):null;
-    const tds=tr.querySelectorAll('td');
-    if(tds[4]) tds[4].textContent='€'+cost.toFixed(2);
-    if(tds[5]) tds[5].textContent=sell!=null?'€'+sell.toFixed(2):'—';
-    if(tds[6]){ tds[6].textContent=margin==null?'—':('€'+margin.toFixed(2)+(pct!=null?(' · '+pct+'%'):'')); tds[6].style.color=margin==null?'#888':(margin>=0?'#2ecc71':'#ff5555'); }
+    const tds=tr.querySelectorAll('td'), q=rowQty(r);
+    if(tds[5]) tds[5].innerHTML='€'+cost.toFixed(2)+'<div class="cost-rowtot" style="font-size:10px;color:#888;font-weight:400;">'+(q>1?('×'+q+' = €'+(cost*q).toFixed(2)):'al pezzo')+'</div>';
+    if(tds[6]) tds[6].textContent=sell!=null?'€'+sell.toFixed(2):'—';
+    if(tds[7]){ tds[7].textContent=margin==null?'—':('€'+margin.toFixed(2)+(pct!=null?(' · '+pct+'%'):'')); tds[7].style.color=margin==null?'#888':(margin>=0?'#2ecc71':'#ff5555'); }
   }
-  window.costEdit=function(i,field,val){ const r=_costRows[i]; if(!r) return; r[field]=parseFloat(val)||0; updateRowComputed(i); updateCostTotals(); updatePeopleTotals(); };
+  window.costEdit=function(i,field,val){ const r=_costRows[i]; if(!r) return; r[field]= field==='quantity' ? String(Math.max(1,parseInt(val,10)||1)) : (parseFloat(val)||0); updateRowComputed(i); updateCostTotals(); updatePeopleTotals(); };
   window.recalcCosts=function(){ _costRows.forEach((_,i)=>updateRowComputed(i)); updateCostTotals(); updatePeopleTotals(); };
   window.costSetPid=function(i,pid){
     const r=_costRows[i]; if(!r) return; r.pid=pid;
