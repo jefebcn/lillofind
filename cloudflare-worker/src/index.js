@@ -17,6 +17,7 @@ import * as loyalty from './handlers/loyalty.js';
 import * as catalog from './handlers/catalog.js';
 import * as telemetry from './handlers/telemetry.js';
 import * as tracking from './handlers/tracking.js';
+import * as reminders from './handlers/reminders.js';
 import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
@@ -636,6 +637,15 @@ app.post('/claimReferrals',      callable(loyalty.claimReferrals,       { auth: 
 // Catalogo shop su Cloudflare KV (pubblicato dall'admin)
 app.post('/publishCatalog',      callable(catalog.publishCatalog,       { auth: 'adminEmail' }));
 app.post('/markCatalogDirty',    callable(catalog.markCatalogDirty,     { auth: 'adminEmail' }));
+app.post('/catalogMergeNew',     callable(catalog.catalogMergeNew,      { auth: 'adminEmail' }));
+app.post('/remindersRun',        callable((_d, { env, db }) => reminders.runReminders(env, db), { auth: 'adminEmail' }));
+// Link "non voglio più promemoria" delle email carrello (firmato, niente login)
+app.get('/unsubscribe', async (c) => {
+  let ok = false;
+  try { ok = await reminders.unsubscribe(c.env, new Firestore(c.env), c.req.query('u'), c.req.query('k')); } catch (_) {}
+  const msg = ok ? 'Fatto: non riceverai più promemoria sul carrello.' : 'Link non valido o scaduto.';
+  return c.html(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LilloFind</title><body style="font-family:Arial,sans-serif;background:#f5f2ec;color:#23231f;display:flex;min-height:90vh;align-items:center;justify-content:center;padding:16px;"><div style="background:#fff;border:1px solid #e7e2d8;border-radius:16px;padding:28px;max-width:420px;text-align:center;"><h1 style="font-size:20px;">LilloFind</h1><p>${msg}</p><a href="https://lillofind.shop/" style="color:#6f7552;">Torna allo shop</a></div></body>`, ok ? 200 : 400);
+});
 app.post('/sendAccountEmail',    callable(checkout.sendAccountEmail,    { auth: 'required' }));
 app.post('/sendCredentialsEmail', callable(checkout.sendCredentialsEmail, { auth: 'adminEmail' }));
 // Diagnostica invio email (admin via allowlist email)
@@ -658,11 +668,15 @@ app.post('/streamSaveHome',    callable(stream.saveHome,    { auth: 'adminEmail'
 app.post('/streamImportMeta',  callable(stream.importMeta,  { auth: 'adminEmail' }));
 
 // fetch = API HTTP (Hono); scheduled = cron di wrangler.toml [triggers]
-// (ogni 4 ore: tracking automatico delle spedizioni).
+// (ogni 4 ore: tracking delle spedizioni, novità nel catalogo pubblicato,
+// promemoria carrello e ordini non pagati).
 export default {
   fetch: (req, env, ctx) => app.fetch(req, env, ctx),
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(tracking.syncTracking(env, new Firestore(env)).catch((e) => console.error('cron tracking:', e && e.stack || e)));
+    const db = new Firestore(env);
+    ctx.waitUntil(tracking.syncTracking(env, db).catch((e) => console.error('cron tracking:', e && e.stack || e)));
+    ctx.waitUntil(catalog.mergeNewProducts(env, db).then((r) => { if (r && r.added) console.log('cron catalogo: +' + r.added + ' novità'); }).catch((e) => console.error('cron catalogo:', e && e.stack || e)));
+    ctx.waitUntil(reminders.runReminders(env, db).then((r) => console.log('cron promemoria:', JSON.stringify(r))).catch((e) => console.error('cron promemoria:', e && e.stack || e)));
   },
 };
 
