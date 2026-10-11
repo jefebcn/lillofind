@@ -1710,7 +1710,8 @@ waitFB(()=>{
       if(!r.ok){ showToast('⚠️ '+(r.reason||'Tracking automatico non attivo')); }
       else{
         const up=r.updated||[];
-        showToast(up.length?('✅ '+up.length+' spedizioni aggiornate · '+r.emailed+' email inviate'):('✓ '+r.checked+' spedizioni controllate, nessuna novità'));
+        const unk=(r.unknown||[]).length, src=(r.sources||[]).join(' + ');
+        showToast((up.length?('✅ '+up.length+' spedizioni aggiornate · '+r.emailed+' email inviate'):('✓ '+r.checked+' spedizioni controllate, nessuna novità'))+(unk?(' · '+unk+' codici non riconosciuti'):'')+(src?(' · fonti: '+src):''));
         if(up.length) loadTrackingBoard();
       }
     }catch(e){ showToast('⚠️ '+((e&&e.message)||'Errore')); }

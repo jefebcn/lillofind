@@ -31,7 +31,9 @@ WORKER_PUBLIC_BASE = "https://lillofind.conti9708.workers.dev"
 #   RESEND_API_KEY           → chiave Resend per email ordini
 #   ANTHROPIC_API_KEY        → chiave Anthropic per yupooAnalyze
 #   FIREBASE_SERVICE_ACCOUNT → JSON completo del service account (una riga)
-#   TRACK17_TOKEN            → chiave API 17TRACK (tracking automatico, api.17track.net)
+#   DHL_API_KEY              → chiave GRATUITA developer.dhl.com (Shipment Tracking - Unified):
+#                              tracking automatico DHL / Deutsche Post (250 controlli al giorno)
+#   TRACK17_TOKEN            → chiave API 17TRACK (facoltativa, a pagamento)
 #   PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET → app REST PayPal Business (pagamento automatico)
 #   TMDB_API_KEY             → API key v3 di TMDB per la sezione "Cosa guardare"
 #                              (gratis: themoviedb.org → Settings → API → API Key v3)
