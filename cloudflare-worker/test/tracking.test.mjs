@@ -26,6 +26,19 @@ globalThis.fetch = async (url, opts = {}) => {
     if (/gettrackinfo/.test(url)) return json({ data: { accepted: body.filter((n) => STATO[n.number]).map((n) => ({ number: n.number, track_info: { latest_status: { status: STATO[n.number] }, latest_event: { description: 'Evento ' + n.number, location: 'Milano' } } })) } });
     return json({ data: {} });
   }
+  if (/api-eu\.dhl\.com/.test(url)) {
+    if (globalThis.DHL_429) return { ok: false, status: 429, json: async () => ({}) };
+    const code = decodeURIComponent(url.match(/trackingNumber=([^&]+)/)[1]);
+    const D = { CE065735142DE: { statusCode: 'transit', status: 'In transito', description: 'La spedizione è arrivata nel centro di smistamento', location: { address: { addressLocality: 'Leipzig' } } },
+                AA1: { statusCode: 'transit', status: 'Out for delivery', description: 'Out for delivery' } };
+    return D[code] ? json({ shipments: [{ id: code, status: D[code] }] }) : { ok: false, status: 404, json: async () => ({}) };
+  }
+  if (/cainiao/.test(url)) {
+    const code = decodeURIComponent(url.match(/mailNos=([^&]+)/)[1]);
+    const C = { LP001CN: [{ desc: 'Pacco consegnato', actionCode: 'SIGNED', standerdDesc: 'Consegnato' }],
+                LP002CN: [{ desc: 'Departed from sorting center', actionCode: 'SC_OUTBOUND' }] };
+    return json({ success: true, module: [{ mailNo: code, detailList: C[code] || [] }] });
+  }
   if (/resend/.test(url)) { mails.push(JSON.parse(opts.body)); return json({ id: 'm' }); }
   return json({});
 };
@@ -42,7 +55,7 @@ const seed = { users: {
 
 {
   const db = mockDb(seed); mails.length = 0;
-  const r = await syncTracking(env, db);
+  const r = await syncTracking(env, db, { pauseMs: 0 });
   eq(r.ok, true, 'giro completato');
   eq(r.checked, 3, 'controllati solo i codici attivi (no consegnati, no automatico spento, no senza codice)');
   eq(r.updated.map((x) => x.code + ':' + x.from + '>' + x.to), ['AA1:in_transito>in_consegna'], 'aggiornato solo chi è andato avanti');
@@ -55,13 +68,43 @@ const seed = { users: {
   eq(db.D.users.u5.trackingStatus, 'spedito', 'automatico spento: invariato');
   // secondo giro: niente di nuovo → nessuna email
   mails.length = 0;
-  const r2 = await syncTracking(env, db);
+  const r2 = await syncTracking(env, db, { pauseMs: 0 });
   eq(r2.updated.length, 0, 'secondo giro: nessun aggiornamento');
   eq(mails.length, 0, 'secondo giro: nessuna email');
 }
+// Fonti gratuite: DHL (con chiave) e Cainiao (senza chiave), niente 17TRACK
 {
-  const r = await syncTracking({ ...env, TRACK17_TOKEN: '' }, mockDb(seed));
-  eq(r.ok, false, 'senza TRACK17_TOKEN: spento');
+  const free = { RESEND_API_KEY: 'k', RESEND_FROM: 'x <a@b.c>', DHL_API_KEY: 'd' };
+  const db = mockDb({ users: {
+    d1: { email: 'd1@x.it', trackingCode: 'CE065735142DE', trackingStatus: 'spedito' },   // DHL: in transito
+    c1: { email: 'c1@x.it', trackingCode: 'LP001CN', trackingStatus: 'in_transito' },     // Cainiao: consegnato
+    c2: { email: 'c2@x.it', trackingCode: 'LP002CN', trackingStatus: 'in_transito' },     // Cainiao: ancora in transito
+    x1: { email: 'x1@x.it', trackingCode: 'ZZ999', trackingStatus: 'spedito' },           // nessuno lo conosce
+  } });
+  mails.length = 0;
+  const r = await syncTracking(free, db, { pauseMs: 0 });
+  eq(r.sources, ['dhl', 'cainiao'], 'fonti gratuite attive');
+  eq(db.D.users.d1.trackingStatus, 'in_transito', 'DHL: codice Deutsche Post aggiornato');
+  eq(db.D.users.d1.trackingSource, 'dhl', 'fonte DHL salvata');
+  eq(db.D.users.d1.trackingLastEvent.includes('Leipzig'), true, 'ultimo evento DHL con luogo');
+  eq(db.D.users.c1.trackingStatus, 'consegnato', 'Cainiao: consegnato');
+  eq(db.D.users.c2.trackingStatus, 'in_transito', 'Cainiao: stesso stato, invariato');
+  eq(r.unknown, ['ZZ999'], 'codice sconosciuto segnalato');
+  eq(mails.length, 2, 'email solo per i due passi avanti');
+}
+// DHL oltre il limite giornaliero: si passa a Cainiao senza bloccarsi
+{
+  globalThis.DHL_429 = true;
+  const db = mockDb({ users: { c1: { email: 'c1@x.it', trackingCode: 'LP001CN', trackingStatus: 'in_transito' } } });
+  const r = await syncTracking({ RESEND_API_KEY: 'k', RESEND_FROM: 'x <a@b.c>', DHL_API_KEY: 'd' }, db, { pauseMs: 0 });
+  eq(db.D.users.c1.trackingStatus, 'consegnato', 'limite DHL: Cainiao fa il resto');
+  eq(r.errors.some((e) => /limite/.test(e)), true, 'limite DHL segnalato');
+  globalThis.DHL_429 = false;
+}
+// Senza nessuna chiave: resta Cainiao
+{
+  const r = await syncTracking({ RESEND_API_KEY: 'k' }, mockDb({ users: {} }), { pauseMs: 0 });
+  eq(r.sources, ['cainiao'], 'senza chiavi: solo Cainiao (gratis)');
 }
 
 console.log(`\n${pass} passati, ${fail} falliti`);
