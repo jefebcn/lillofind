@@ -5,9 +5,12 @@ compatibility_flags = ["nodejs_compat"]
 
 # Log del Worker conservati in dashboard (Workers → lillofind → Logs):
 # qui finiscono anche gli errori JavaScript del sito (/clientError).
-# Cron: tracking automatico delle spedizioni (17TRACK) ogni 4 ore, al minuto 23.
+# Cron (orari UTC; devono coincidere con CRON_* in src/index.js):
+#   ogni 4 ore al minuto 23 → tracking, novità catalogo, promemoria carrello/ordini
+#   ogni 15 minuti          → controllo foto rotte (un gruppo di prodotti per volta)
+#   05:41 ogni giorno       → promemoria abbonamenti + riepilogo del mattino (07:41 in Italia d'estate)
 [triggers]
-crons = ["23 */4 * * *"]
+crons = ["23 */4 * * *", "*/15 * * * *", "41 5 * * *"]
 
 [observability]
 enabled = true

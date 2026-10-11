@@ -18,6 +18,7 @@ import * as catalog from './handlers/catalog.js';
 import * as telemetry from './handlers/telemetry.js';
 import * as tracking from './handlers/tracking.js';
 import * as reminders from './handlers/reminders.js';
+import * as daily from './handlers/daily.js';
 import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
@@ -639,6 +640,8 @@ app.post('/publishCatalog',      callable(catalog.publishCatalog,       { auth: 
 app.post('/markCatalogDirty',    callable(catalog.markCatalogDirty,     { auth: 'adminEmail' }));
 app.post('/catalogMergeNew',     callable(catalog.catalogMergeNew,      { auth: 'adminEmail' }));
 app.post('/remindersRun',        callable((_d, { env, db }) => reminders.runReminders(env, db), { auth: 'adminEmail' }));
+app.post('/photoScanStep',       callable((_d, { env, db }) => daily.photoScanStep(env, db), { auth: 'adminEmail' }));
+app.post('/morningRun',          callable((_d, { env, db }) => daily.runMorning(env, db), { auth: 'adminEmail' }));
 // Link "non voglio più promemoria" delle email carrello (firmato, niente login)
 app.get('/unsubscribe', async (c) => {
   let ok = false;
@@ -667,13 +670,24 @@ app.post('/streamAdminTitle',  callable(stream.adminTitle,  { auth: 'adminEmail'
 app.post('/streamSaveHome',    callable(stream.saveHome,    { auth: 'adminEmail' }));
 app.post('/streamImportMeta',  callable(stream.importMeta,  { auth: 'adminEmail' }));
 
-// fetch = API HTTP (Hono); scheduled = cron di wrangler.toml [triggers]
-// (ogni 4 ore: tracking delle spedizioni, novità nel catalogo pubblicato,
-// promemoria carrello e ordini non pagati).
+// fetch = API HTTP (Hono); scheduled = cron di wrangler.toml [triggers]:
+//   ogni 4 ore   tracking spedizioni, novità nel catalogo pubblicato,
+//                promemoria carrello e ordini non pagati
+//   CRON_SCAN    un gruppo di prodotti al controllo foto rotte
+//   CRON_MORNING promemoria abbonamenti + riepilogo del mattino all'admin
+const CRON_SCAN = '*/15 * * * *', CRON_MORNING = '41 5 * * *';
 export default {
   fetch: (req, env, ctx) => app.fetch(req, env, ctx),
   async scheduled(event, env, ctx) {
     const db = new Firestore(env);
+    if (event && event.cron === CRON_SCAN) {
+      ctx.waitUntil(daily.photoScanStep(env, db).then((r) => { if (r && (r.hidden || r.done)) console.log('cron foto:', JSON.stringify(r)); }).catch((e) => console.error('cron foto:', e && e.stack || e)));
+      return;
+    }
+    if (event && event.cron === CRON_MORNING) {
+      ctx.waitUntil(daily.runMorning(env, db).then((r) => console.log('cron mattino:', JSON.stringify(r))).catch((e) => console.error('cron mattino:', e && e.stack || e)));
+      return;
+    }
     ctx.waitUntil(tracking.syncTracking(env, db).catch((e) => console.error('cron tracking:', e && e.stack || e)));
     ctx.waitUntil(catalog.mergeNewProducts(env, db).then((r) => { if (r && r.added) console.log('cron catalogo: +' + r.added + ' novità'); }).catch((e) => console.error('cron catalogo:', e && e.stack || e)));
     ctx.waitUntil(reminders.runReminders(env, db).then((r) => console.log('cron promemoria:', JSON.stringify(r))).catch((e) => console.error('cron promemoria:', e && e.stack || e)));
