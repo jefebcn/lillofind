@@ -890,7 +890,10 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
       country: String(shippingAddress?.country || 'Italia').slice(0, 60),
     },
     notes: String(notes || '').slice(0, 500),
-    items: verifiedItems,
+    // Senza prezzo fornitore e link alla fonte: l'ordine lo legge anche il
+    // cliente (firestore.rules). L'admin li ritrova dal prodotto (pannello
+    // fornitore) e li riceve nell'email dell'ordine (vedi sendOrderEmails sotto).
+    items: verifiedItems.map(({ sourceUrl, supplierPriceCNY, ...pub }) => pub),
     subtotal, shipping, discount: discountAmount, total,
     payment: ['card', 'paypal', 'bonifico'].includes(paymentMethod) ? paymentMethod : 'card',
     lfpoints,
@@ -957,7 +960,7 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
   // sempre la notifica; il cliente vede numero d'ordine e istruzioni a schermo.
   const emailVerificata = !!(auth.token && auth.token.email_verified === true) && !!tokenEmail && orderEmail === tokenEmail;
   const alCliente = paymentMethod === 'card' || emailVerificata;
-  const mailJob = sendOrderEmails(orderData, env, { soloAdmin: !alCliente })
+  const mailJob = sendOrderEmails({ ...orderData, items: verifiedItems }, env, { soloAdmin: !alCliente })
     .then(r => (r && r.sent && orderDocId) ? db.updateDoc('orders', orderDocId, { customerEmailSent: true }) : null)
     .catch(e => console.error('email ordine:', e && e.message));
   if (typeof waitUntil === 'function') waitUntil(mailJob); else await mailJob;

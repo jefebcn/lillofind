@@ -36,6 +36,7 @@
 
 <!-- Firebase -->
 <script type="module" src="firebase.js"></script>
+<script src="admin-finance.js" defer></script>
 
 <style>
 /* ── ADMIN BASE ───────────────────────────────── */
@@ -502,8 +503,8 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
       <!-- HUD: i numeri che contano, ognuno porta alla sezione giusta -->
       <div class="hud-grid">
         <button class="hud-tile" id="hud-pending" onclick="goPendingOrders()"><span class="hud-go">→</span><div class="hud-k">⏳ Da gestire</div><div class="hud-v" id="hud-pending-v">—</div><div class="hud-s" id="hud-pending-s"></div></button>
-        <button class="hud-tile good" onclick="showAdminPg('ordini')"><span class="hud-go">→</span><div class="hud-k">💶 Incasso mese</div><div class="hud-v" id="hud-month-v">—</div><div class="hud-s" id="hud-month-s"></div></button>
-        <button class="hud-tile" id="hud-profit" onclick="showAdminPg('costi')"><span class="hud-go">→</span><div class="hud-k">📈 Profitto mese</div><div class="hud-v" id="hud-profit-v">—</div><div class="hud-s" id="hud-profit-s"></div></button>
+        <button class="hud-tile good" onclick="showAdminPg('ordini')"><span class="hud-go">→</span><div class="hud-k">💶 Lordo mese</div><div class="hud-v" id="hud-month-v">—</div><div class="hud-s" id="hud-month-s"></div></button>
+        <button class="hud-tile" id="hud-profit" onclick="document.getElementById('fin-card')?.scrollIntoView({behavior:'smooth',block:'start'})"><span class="hud-go">→</span><div class="hud-k">✅ Netto mese</div><div class="hud-v" id="hud-profit-v">—</div><div class="hud-s" id="hud-profit-s"></div></button>
         <button class="hud-tile" onclick="showAdminPg('clienti')"><span class="hud-go">→</span><div class="hud-k">👥 Nuovi clienti</div><div class="hud-v" id="hud-users-v">—</div><div class="hud-s" id="hud-users-s"></div></button>
       </div>
 
@@ -517,6 +518,12 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         <button class="qa-btn" onclick="quickBrokenPhotos()">🧹 Foto rotte</button>
         <button class="qa-btn" onclick="window.open('index.html','_blank')">🛍 Apri shop</button>
         <button class="qa-btn" onclick="openCmdk()">🔍 Cerca<span class="kbd">Ctrl K</span></button>
+      </div>
+
+      <!-- Conto economico: lordo → commissioni → costo merce → spese → netto (admin-finance.js) -->
+      <div class="admin-card" id="fin-card">
+        <p class="bb" style="font-size:20px;letter-spacing:1px;margin-bottom:14px;">Conto economico</p>
+        <div id="fin-box"><p style="font-size:12px;color:var(--dim);">Calcolo il conto economico…</p></div>
       </div>
 
       <div class="admin-card">
@@ -2377,6 +2384,11 @@ waitFB(()=>{
         getAdminCatalog(),
       ]);
       const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Conto economico (admin-finance.js): stessi dati, nessuna lettura in più
+      try{ window.lfFinance && window.lfFinance.feed({ orders, catalog }); }catch(_){}
+      // Pagato = confermato, oppure carta già incassata (resta "pending" finché
+      // non lo confermi). Stessa definizione del conto economico.
+      const isPaid = o => o.status!=='cancelled' && o.status!=='expired' && (o.status==='confirmed' || o.paymentStatus==='paid');
       // Mappa costi per calcolare il profitto (costo salvato sul prodotto).
       const costMap = {};
       catalog.forEach(p => { if (typeof p.costEUR === 'number') costMap[p.id] = p.costEUR; });
@@ -2405,15 +2417,15 @@ waitFB(()=>{
         if(o.status==='pending')pendingOrders++; else if(o.status==='confirmed')confirmedOrders++;
         const cMs=o.createdAt?.seconds?o.createdAt.seconds*1000:0;
         if(o.uid) usersWithOrders.add(o.uid);
-        // Incassi e venduto: solo ordini CONFERMATI (pagati). Prima contavano
-        // anche ordini non pagati, scaduti e annullati.
-        if(o.status==='confirmed'){
+        // Incassi e venduto: solo ordini PAGATI. Prima contavano anche ordini
+        // non pagati, scaduti e annullati (e poi escludevano le carte già incassate).
+        if(isPaid(o)){
           const rev=o.total||0; totalRevenue+=rev; totalShipping+=o.shipping||0;
           if(cMs&&cMs>=startOfMonth) monthlyRevenue+=rev;
           (o.items||[]).forEach(i=>{ const qty=i.qty||1; itemsSold+=qty; const k=i.name||'Unknown'; productSales[k]=(productSales[k]||0)+qty; });
         }
-        // Profitto: solo ordini confermati, articoli fisici con costo salvato.
-        if(o.status==='confirmed'){
+        // Profitto: solo ordini pagati, articoli fisici con costo salvato.
+        if(isPaid(o)){
           let op=0;
           (o.items||[]).forEach(i=>{ if(i.isDigital) return; const qty=i.qty||1; totalPhysItems+=qty; const c=costMap[i.id]; if(c!=null){ costedPhysItems+=qty; op+=((i.price||0)-c)*qty; } });
           profitTotal+=op;
@@ -5009,11 +5021,13 @@ waitFB(()=>{
     set('hud-pending-v', k.pending);
     set('hud-pending-s', k.total+' ordini totali · '+k.confirmed+' confermati');
     document.getElementById('hud-pending')?.classList.toggle('alert', k.pending>0);
-    set('hud-month-v', _eur(k.monthly));
-    set('hud-month-s', 'Totale '+_eur(k.revenue));
-    set('hud-profit-v', _eur(k.profitMonth));
-    set('hud-profit-s', 'Totale stimato '+_eur(k.profitTotal));
-    const hp=document.getElementById('hud-profit'); if(hp){ hp.classList.toggle('good', k.profitMonth>0); }
+    // Lordo e netto del mese dal conto economico (admin-finance.js) appena pronto
+    const f=window._finKpi;
+    set('hud-month-v', _eur(f?f.lordo:k.monthly));
+    set('hud-month-s', f?(f.ordini+' ordini pagati · totale '+_eur(k.revenue)):('Totale '+_eur(k.revenue)));
+    set('hud-profit-v', _eur(f?f.netto:k.profitMonth));
+    set('hud-profit-s', f?('margine '+f.margine.toFixed(1)+'%'+(f.miss?' · '+f.miss+' art. senza costo':'')):'Calcolo commissioni e costi…');
+    const hp=document.getElementById('hud-profit'); if(hp){ hp.classList.toggle('good', (f?f.netto:k.profitMonth)>0); }
     set('hud-users-v', k.new30d);
     set('hud-users-s', 'ultimi 30 giorni · '+k.users+' totali');
     window._dashUpdatedAt=Date.now();
