@@ -2969,8 +2969,12 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   };
 
   window.handleLogout=async function(){
+    clearTimeout(_cartPushT);
     await window.__fb.signOut(window.__fb.auth);
     try{ localStorage.removeItem('lf_ud'); }catch(_){}
+    // Il carrello resta salvato nell'account: su questo dispositivo si svuota,
+    // così chi usa lo stesso computer dopo non vede (e non eredita) il tuo.
+    _cartApply([]); try{ localStorage.removeItem('lf_cart_ts'); }catch(_){}
     updateNav(null,null); updateHomeDisplay();
     showToast('Arrivederci. 👋'); showPg('home');
   };
@@ -4435,7 +4439,60 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   // ── Cart ───────────────────────────────────────────────
   let cart=lfLeggiLS('lf_cart',[]).filter(i=>i&&typeof i==='object');
   
-  function saveCart(){ try{ localStorage.setItem('lf_cart',JSON.stringify(cart)); }catch(_){} }
+  function saveCart(){ try{ localStorage.setItem('lf_cart',JSON.stringify(cart)); localStorage.setItem('lf_cart_ts',String(Date.now())); }catch(_){} _cartPushSoon(); }
+
+  // ── Carrello legato all'account (computer ↔ telefono) ──
+  // Prima il carrello viveva solo nel browser: chi riempiva il carrello dal
+  // computer non lo ritrovava dal telefono con lo stesso account. Ora, per
+  // gli account veri (non gli ospiti), si salva anche in carts/{uid}
+  // (leggibile solo dal proprietario, vedi firestore.rules):
+  //  - all'accesso si UNISCE il carrello del dispositivo con quello salvato;
+  //  - tornando sulla pagina si prende quello salvato se è più recente;
+  //  - ogni modifica si salva (con un piccolo ritardo, una scrittura sola).
+  function _cartKey(i){ return [i.id,i.size||'',i.color||'',i.addonKey||'',i.boxOption||''].join('|'); }
+  function _cartLocalTs(){ try{ return +localStorage.getItem('lf_cart_ts')||0; }catch(_){ return 0; } }
+  function _cartAccount(){ return !!(typeof user!=='undefined' && user && !user.isAnonymous && window.__fb); }
+  var _cartPushT=null, _cartPulling=false, _cartPullAt=0;
+  function _cartPushSoon(){
+    if(!_cartAccount()) return;
+    clearTimeout(_cartPushT);
+    _cartPushT=setTimeout(()=>{
+      if(!_cartAccount()) return;
+      const fb=window.__fb, items=cart.slice(0,60).map(i=>{ const o={}; for(const k in i){ if(i[k]!==undefined&&typeof i[k]!=='function') o[k]=i[k]; } return o; });
+      fb.setDoc(fb.doc(fb.db,'carts',user.uid),{items,updatedAt:_cartLocalTs()||Date.now()}).catch(e=>console.warn('carrello account:',e&&e.code));
+    },1200);
+  }
+  function _cartApply(items){
+    cart=(items||[]).filter(i=>i&&typeof i==='object'&&i.id);
+    try{ localStorage.setItem('lf_cart',JSON.stringify(cart)); }catch(_){}
+    try{ updateCartBadge(); renderCart(); }catch(_){}
+  }
+  // merge=true all'accesso: unione dei due carrelli (stessa riga → quantità maggiore).
+  async function lfCartSync(merge){
+    if(!_cartAccount()||_cartPulling) return;
+    _cartPulling=true; _cartPullAt=Date.now();
+    try{
+      const fb=window.__fb, uid=user.uid;
+      const snap=await fb.getDoc(fb.doc(fb.db,'carts',uid));
+      if(!user||user.uid!==uid) return;
+      const remote=snap.exists()?(snap.data()||{}):{}, rItems=Array.isArray(remote.items)?remote.items:[], rTs=+remote.updatedAt||0;
+      if(merge){
+        const map=new Map();
+        rItems.concat(cart).forEach(i=>{ if(!i||!i.id) return; const k=_cartKey(i), cur=map.get(k); if(!cur) map.set(k,{...i}); else cur.qty=Math.max(+cur.qty||1,+i.qty||1); });
+        const merged=[...map.values()];
+        const changed=JSON.stringify(merged)!==JSON.stringify(cart);
+        if(changed) _cartApply(merged);
+        if(changed||merged.length!==rItems.length){ try{ localStorage.setItem('lf_cart_ts',String(Date.now())); }catch(_){} _cartPushSoon(); }
+      } else if(rTs>_cartLocalTs()){
+        _cartApply(rItems);
+        try{ localStorage.setItem('lf_cart_ts',String(rTs)); }catch(_){}
+      }
+    }catch(e){ console.warn('carrello account:',e&&e.code); }
+    finally{ _cartPulling=false; }
+  }
+  window.lfCartSync=lfCartSync;
+  // Tornando sulla scheda (es. dopo aver usato il telefono) riprende il carrello aggiornato.
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && Date.now()-_cartPullAt>20000) lfCartSync(false); });
   // Carrello aperto in due schede: senza questo ciascuna sovrascriveva
   // l'altra al primo saveCart, e un articolo aggiunto spariva.
   window.addEventListener('storage', e=>{
@@ -5831,6 +5888,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       if(window._isAdmin!==wasAdmin){ try{renderShop();}catch(_){} try{renderHomeProds();}catch(_){} try{renderCarousel();}catch(_){} }
       updateNav(u,udata); updateHomeDisplay();
       if(u){ try{ claimReferralRewards(); }catch(_){} try{ const cke=document.getElementById('ck-email'); if(cke && !cke.value && u.email) cke.value=u.email; }catch(_){} }
+      // Carrello dell'account: unisce quello del dispositivo con quello salvato
+      if(u && !u.isAnonymous){ try{ lfCartSync(true); }catch(_){} }
       // Re-render profile if it's already open (covers race condition on load)
       if(u && document.getElementById('pg-profile')?.classList.contains('on')){
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();

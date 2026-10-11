@@ -56,6 +56,13 @@ await prova('un cliente NON legge finance_entries', () => assertFails(getDoc(doc
 await prova('l\'admin scrive finance/settings', () => assertSucceeds(setDoc(doc(db('y', verificata('yishionvt@gmail.com')), 'finance', 'settings'), { paypalPct: 2.99 })));
 await prova('l\'admin aggiunge un movimento', () => assertSucceeds(addDoc(collection(db('y', verificata('yishionvt@gmail.com')), 'finance_entries'), { type: 'uscita', amount: 20, category: 'Pubblicità' })));
 
+console.log('== 7c. carrello dell\'account ==');
+await prova('il proprietario salva il suo carrello', () => assertSucceeds(setDoc(doc(db('cliente', verificata('cliente@x.it')), 'carts', 'cliente'), { items: [{ id: 'p1', qty: 1 }], updatedAt: 1 })));
+await prova('il proprietario legge il suo carrello', () => assertSucceeds(getDoc(doc(db('cliente', verificata('cliente@x.it')), 'carts', 'cliente'))));
+await prova('un altro utente NON legge il carrello', () => assertFails(getDoc(doc(db('altro', verificata('altro@x.it')), 'carts', 'cliente'))));
+await prova('un altro utente NON scrive il carrello', () => assertFails(setDoc(doc(db('altro', verificata('altro@x.it')), 'carts', 'cliente'), { items: [], updatedAt: 2 })));
+await prova('carrello con campi extra: negato', () => assertFails(setDoc(doc(db('cliente', verificata('cliente@x.it')), 'carts', 'cliente'), { items: [], updatedAt: 3, lfpoints: 999 })));
+
 console.log('== 12. collezioni pubbliche ==');
 await prova('stock_alerts senza utente: negato', () => assertFails(addDoc(collection(db(null), 'stock_alerts'), { productId: 'p1', email: 'a@b.it', notified: false })));
 await prova('stock_alerts da ospite anonimo col proprio uid: ok', () => assertSucceeds(addDoc(collection(db('anon1', anonimo), 'stock_alerts'), { productId: 'p1', email: 'a@b.it', uid: 'anon1', notified: false })));
