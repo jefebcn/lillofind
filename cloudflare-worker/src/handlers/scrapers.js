@@ -1061,6 +1061,39 @@ ${brandHint || modelHint ? `\nL'utente indica che questo prodotto è probabilmen
 // L'admin carica lo screenshot; l'AI restituisce dati che l'admin
 // conferma/corregge prima di salvarli come costo sul prodotto.
 // ════════════════════════════════════════════════════════════════
+// Numero da testo letto dall'AI: "$33.8", "-33,8", "1,234.50", "1.234,50".
+// Una virgola senza gruppi di 3 cifre è il decimale (non va tolta: "33,8" ≠ 338).
+export function quoteNum(v) {
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  let t = String(v == null ? '' : v).replace(/[^0-9.,\-]/g, '');
+  const lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+  if (lc >= 0 && ld >= 0) t = lc > ld ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  else if (lc >= 0) t = /^-?\d{1,3}(,\d{3})+$/.test(t) ? t.replace(/,/g, '') : t.replace(/,/g, '.');
+  const n = parseFloat(t);
+  return isNaN(n) ? null : n;
+}
+
+// Il riquadro totali deve tornare: merce + spedizione − sconto − rimborso = TOTALE.
+// Se lo sconto o il rimborso letto non torna per una virgola persa (es. "$33.8"
+// letto 338), si sposta la virgola finché torna, e lo si segnala.
+export function fixQuotationSummary(sum) {
+  const s = { ...sum };
+  const { goodsUsd: g, estFreightUsd: f, totalUsd: t } = s;
+  if (g == null || f == null || t == null) return s;
+  const fits = (d, r) => Math.abs(g + f - d - r - t) <= 1;
+  if (fits(s.discountUsd || 0, s.refundUsd || 0)) return s;
+  for (const k of ['refundUsd', 'discountUsd']) {
+    const v = s[k];
+    if (!(v > 0)) continue;
+    for (const div of [10, 100]) {
+      const w = Math.round((v / div) * 100) / 100;
+      const d = k === 'discountUsd' ? w : (s.discountUsd || 0), r = k === 'refundUsd' ? w : (s.refundUsd || 0);
+      if (fits(d, r)) { s[k] = w; s[k.replace('Usd', 'Read')] = v; s[k.replace('Usd', 'Fixed')] = true; return s; }
+    }
+  }
+  return s;
+}
+
 export async function parseQuotation(data, { env }) {
   const { imageBase64, mediaType } = data || {};
   if (!imageBase64 || typeof imageBase64 !== 'string') {
@@ -1090,7 +1123,7 @@ Regole IMPORTANTI:
   · "refundUsd" = rimborso di un ordine precedente ("LAST ORDER REFUND", "REFUND", "退款"), valore assoluto, sempre positivo. NON sommarlo al DISCOUNT: sono due campi separati;
   · "totalUsd" = "TOTAL" finale in $; "receivedUsd" = "RECEIVED PAYMENT"; "balanceUsd" = "BALANCE PAYMENT" (può essere negativo);
   · "totalRmb" = "TOTAL" in RMB. Metti null i campi non presenti/illeggibili.
-- Numeri con punto decimale. Non inventare dati non presenti.`;
+- Numeri con punto decimale, copiando ESATTAMENTE le cifre e la posizione del punto (es. "-$33.8" → 33.8, NON 338). Non inventare dati non presenti.`;
 
   try {
     const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1115,7 +1148,7 @@ Regole IMPORTANTI:
     const parsed = parseFirstJson(text);
     const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
     // Normalizza i numeri lato server (difesa: l'AI a volte restituisce stringhe).
-    const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? null : n; };
+    const num = quoteNum;
     const clean = rows.map((r, i) => ({
       line: r.line ?? (i + 1),
       link: String(r.link || '').slice(0, 300),
@@ -1131,7 +1164,7 @@ Regole IMPORTANTI:
       unitFreightUsd: num(r.unitFreightUsd) || 0,
     }));
     const s = parsed.summary || {};
-    const summary = {
+    const summary = fixQuotationSummary({
       goodsUsd: num(s.goodsUsd),
       estFreightUsd: num(s.estFreightUsd),
       discountUsd: s.discountUsd == null ? null : Math.abs(num(s.discountUsd) || 0),
@@ -1140,7 +1173,7 @@ Regole IMPORTANTI:
       receivedUsd: num(s.receivedUsd),
       balanceUsd: num(s.balanceUsd),
       totalRmb: num(s.totalRmb),
-    };
+    });
     return { rows: clean, summary, currency: 'USD' };
   } catch (e) {
     console.error('parseQuotation AI error:', e.message);
