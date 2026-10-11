@@ -52,8 +52,10 @@ const seed = {
   eq(o.subtotal, 40, 'subtotale ricalcolato dal catalogo');
   eq(o.email, 'guest@mail.it', 'email ospite dal checkout');
   eq(o.status + '/' + o.paymentStatus, 'pending/unpaid', 'paypal → pending/unpaid');
-  eq(o.items[0].sourceUrl, 'https://s.x.yupoo.com/albums/1', 'link fornitore sull\'ordine');
-  eq(o.items[0].supplierPriceCNY, 80, 'prezzo CNY sull\'ordine');
+  // l'ordine lo legge anche il cliente: niente link alla fonte né prezzo fornitore
+  eq('sourceUrl' in o.items[0], false, 'link fornitore NON sull\'ordine');
+  eq('supplierPriceCNY' in o.items[0], false, 'prezzo CNY NON sull\'ordine');
+  eq(o.items[0].name, 'Polo', 'il resto dell\'articolo resta sull\'ordine');
   eq(db.D.users.anon1.isGuest, true, 'profilo ospite creato');
   eq(db.D.users.anon1.email, 'guest@mail.it', 'email profilo ospite');
   // ospite anonimo, ordine NON pagato, email digitata (non verificata):
@@ -61,6 +63,8 @@ const seed = {
   // solo la notifica all'admin
   eq(sent.filter(s => /resend/.test(s.url)).length, 1, 'solo la notifica admin');
   eq(sent[0].body.to.includes('guest@mail.it'), false, 'niente email all\'indirizzo non verificato');
+  eq(JSON.stringify(sent[0].body).includes('albums/1'), true, 'l\'email all\'admin ha ancora il link fornitore');
+  eq(JSON.stringify(sent[0].body).includes('80'), true, 'l\'email all\'admin ha ancora il prezzo CNY');
   eq(r.lfpoints, 0, 'nessun punto prima del pagamento');
   eq(o.customerEmailSent, undefined, 'flag email non impostato');
 }

@@ -59,6 +59,15 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Conto economico dell'admin: impostazioni (commissioni, tasse) e
+    // movimenti manuali (spese, entrate fuori sito). Solo admin.
+    match /finance/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /finance_entries/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Orders — utente legge i propri (per uid O per email verificata, così vede
     // gli ordini anche se ha cambiato metodo di login mantenendo la stessa
     // email — es. passaggio a "Accedi con Google"); admin legge/scrive tutti.

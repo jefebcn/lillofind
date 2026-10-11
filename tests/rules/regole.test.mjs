@@ -49,6 +49,13 @@ await prova('un visitatore NON legge products_private', () => assertFails(getDoc
 await prova('un cliente NON legge products_private', () => assertFails(getDoc(doc(db('cliente', verificata('cliente@x.it')), 'products_private', 'p1'))));
 await prova('l\'admin legge products_private', () => assertSucceeds(getDoc(doc(db('y', verificata('yishionvt@gmail.com')), 'products_private', 'p1'))));
 
+console.log('== 7b. conto economico: solo admin ==');
+await prova('un visitatore NON legge finance/settings', () => assertFails(getDoc(doc(db(null), 'finance', 'settings'))));
+await prova('un cliente NON scrive finance_entries', () => assertFails(addDoc(collection(db('cliente', verificata('cliente@x.it')), 'finance_entries'), { type: 'entrata', amount: 999 })));
+await prova('un cliente NON legge finance_entries', () => assertFails(getDoc(doc(db('cliente', verificata('cliente@x.it')), 'finance_entries', 'x'))));
+await prova('l\'admin scrive finance/settings', () => assertSucceeds(setDoc(doc(db('y', verificata('yishionvt@gmail.com')), 'finance', 'settings'), { paypalPct: 2.99 })));
+await prova('l\'admin aggiunge un movimento', () => assertSucceeds(addDoc(collection(db('y', verificata('yishionvt@gmail.com')), 'finance_entries'), { type: 'uscita', amount: 20, category: 'Pubblicità' })));
+
 console.log('== 12. collezioni pubbliche ==');
 await prova('stock_alerts senza utente: negato', () => assertFails(addDoc(collection(db(null), 'stock_alerts'), { productId: 'p1', email: 'a@b.it', notified: false })));
 await prova('stock_alerts da ospite anonimo col proprio uid: ok', () => assertSucceeds(addDoc(collection(db('anon1', anonimo), 'stock_alerts'), { productId: 'p1', email: 'a@b.it', uid: 'anon1', notified: false })));
