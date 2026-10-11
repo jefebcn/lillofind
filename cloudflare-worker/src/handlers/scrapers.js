@@ -256,6 +256,63 @@ async function resolveShortLink(raw) {
   return cur;
 }
 
+// ── Foto promo negli album (QR code, contatti, profili social) ──────────
+// Gli album dei fornitori mischiano alle foto prodotto le immagini con il QR
+// di WhatsApp/WeChat/Instagram o il biglietto da visita. Si mandano le
+// miniature (small, ~500px) a Claude Haiku in una sola richiesta e si tolgono
+// quelle che non sono foto del prodotto. Se qualcosa va storto si tengono
+// tutte: meglio un QR in più che una galleria vuota.
+const PROMO_PROMPT = `Queste sono le foto di un album di un fornitore di abbigliamento, numerate da 0.
+Indica quali NON sono foto del prodotto e vanno scartate: QR code di qualsiasi tipo, biglietti/schede contatto (WhatsApp, WeChat, Instagram, Telegram, Line), nomi utente social, loghi del negozio o banner pubblicitari con solo testo.
+Tieni SEMPRE: foto del capo (davanti, retro, dettagli, indossato), etichette, cartellini, tabelle taglie, confezione.
+Rispondi SOLO con JSON: {"remove":[numeri]}. Se sono tutte foto prodotto: {"remove":[]}.`;
+
+export function applyPromoFilter(photos, remove) {
+  const rm = new Set((Array.isArray(remove) ? remove : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < photos.length));
+  if (!rm.size || rm.size >= photos.length) return { photos, removed: [] }; // mai svuotare la galleria
+  return { photos: photos.filter((_, i) => !rm.has(i)), removed: photos.filter((_, i) => rm.has(i)) };
+}
+
+export async function filterPromoPhotos(env, photos, referer) {
+  const keep = { photos, removed: [] };
+  if (!env || !env.ANTHROPIC_API_KEY || !Array.isArray(photos) || photos.length < 2) return keep;
+  try {
+    const small = (u) => u.replace(/\/[^/]+\.(jpe?g|png|webp)(\?.*)?$/i, '/small.$1');
+    let ref = 'https://yupoo.com/';
+    try { ref = new URL(referer).origin + '/'; } catch (_) {}
+    const imgs = await Promise.all(photos.map(async (u) => {
+      try {
+        const r = await fetch(small(u), { headers: { Referer: ref, 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(10000) });
+        const mt = (r.headers.get('content-type') || '').split(';')[0].trim();
+        if (!r.ok || !/^image\/(jpeg|png|gif|webp)$/.test(mt)) return null;
+        const buf = await r.arrayBuffer();
+        if (!buf.byteLength || buf.byteLength > 3 * 1024 * 1024) return null;
+        return { mt, data: Buffer.from(buf).toString('base64') };
+      } catch (_) { return null; }
+    }));
+    const content = [];
+    imgs.forEach((im, i) => { if (im) content.push({ type: 'text', text: 'Foto ' + i + ':' }, { type: 'image', source: { type: 'base64', media_type: im.mt, data: im.data } }); });
+    if (content.length < 4) return keep; // meno di 2 miniature lette
+    content.push({ type: 'text', text: PROMO_PROMPT });
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 200, messages: [{ role: 'user', content }] }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!r.ok) return keep;
+    const j = await r.json();
+    const parsed = parseFirstJson(String((j.content && j.content[0] && j.content[0].text) || '{}'));
+    // l'AI vede solo le miniature lette: gli indici restano quelli dell'album
+    const res = applyPromoFilter(photos, (parsed.remove || []).filter((i) => imgs[i]));
+    if (res.removed.length) console.log('[yupoo promo] tolte', res.removed.length, 'foto su', photos.length);
+    return res;
+  } catch (e) {
+    console.warn('[yupoo promo] filtro saltato:', e.message);
+    return keep;
+  }
+}
+
 export async function yupooFetch(data, _ctx) {
   usaChiaveImgbb(_ctx && _ctx.env);
   const { url: inUrl, password } = data || {};
@@ -760,7 +817,10 @@ export async function yupooFetch(data, _ctx) {
       // vicino a marcatori di valuta, per capire il formato se il parse fallisce.
       const priceCtx = (bodyText.match(/.{0,14}\d{1,5}\s*(?:元|CNY|cny|RMB|rmb|[¥￥]|价格?|售价)/gi) || [])
         .concat(bodyText.match(/(?:¥|￥|价格?|售价)\s*\d{1,5}/g) || []).slice(0, 6);
-      albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos, priceCtx, priceFromWeidian };
+      // Via le foto "promo" del fornitore (QR WhatsApp/WeChat/Instagram,
+      // biglietti contatto): non sono foto prodotto e non vanno in galleria.
+      const promo = await filterPromoPhotos(_ctx && _ctx.env, photos, url);
+      albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos: promo.photos, removedPhotos: promo.removed, priceCtx, priceFromWeidian };
     }
 
     return { html, status: resp.status, albumCovers, albumPrices, albumInfo, albumUid, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
