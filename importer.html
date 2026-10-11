@@ -859,6 +859,15 @@ async function uploadToImgBB(b64){
 function markCatalogSnapshotDirty(){
   try{ lfCallable('markCatalogDirty')({}).catch(()=>{}); }catch(_){}
 }
+// Prodotti NUOVI: il server li aggiunge subito al catalogo pubblicato, così
+// lo shop non deve rileggerli da Firestore a ogni visita.
+function pushNewProductsToShop(){
+  try{
+    lfCallable('catalogMergeNew')({})
+      .then(r=>{ const d=r&&r.data; if(d&&d.added) toast('📤 '+d.added+' novità pubblicate nello shop'); })
+      .catch(e=>console.warn('catalogo novità:', e&&e.message));
+  }catch(_){}
+}
 
 // CREATE ROW
 window.addRow=function(){ createRow('',''); updateStats(); };
@@ -1180,7 +1189,7 @@ window.saveAll=async function(){
   if(noLink) msg+=' ⚠️ '+noLink+' senza link fornitore NON salvati';
   if(errors)  msg+=' ⚠️ '+errors+' errori';
   toast(msg); status.textContent=msg;
-  if(saved>0){ markCatalogSnapshotDirty(); setTimeout(()=>{ addRow(); updateStats(); },600); }
+  if(saved>0){ pushNewProductsToShop(); setTimeout(()=>{ addRow(); updateStats(); },600); }
 };
 
 
@@ -1546,6 +1555,7 @@ window.saveCSV = async function(){
   if(errors) msg += ' ⚠️ ' + errors + ' errori';
   toast(msg);
   document.getElementById('csv-count-lbl').textContent = saved + ' prodotti importati con successo';
+  if(saved>0) pushNewProductsToShop();
 };
 
 // ══════════════════════════════════════════════════════════════════

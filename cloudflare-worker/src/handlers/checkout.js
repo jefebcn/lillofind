@@ -12,7 +12,7 @@ import { utenteAuth, linkImpostaPassword } from '../lib/identity.js';
 import { DELETE_FIELD } from '../lib/firestore.js';
 import { getProductWeight, getShippingCost } from '../lib/shipping.js';
 
-const NOTIFY_EMAIL = 'yishionvt@gmail.com';
+export const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
 // Add-on personalizzazione maglie calcio — prezzi calcolati SEMPRE lato server
 // (mai fidarsi del prezzo del client). Deve restare allineato a index.html.
@@ -58,7 +58,7 @@ export function rewardDiscount(udata, subtotal, shipping) {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-function escHtml(s) {
+export function escHtml(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -98,7 +98,7 @@ function emailPreheader(text) {
 }
 
 // Guscio completo: <html> + tabella centrata + header + footer.
-function emailShell(innerHtml, preheaderText, tagline) {
+export function emailShell(innerHtml, preheaderText, tagline) {
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f2ec;">
 ${emailPreheader(preheaderText || '')}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;padding:24px 12px;font-family:'Helvetica Neue',Arial,sans-serif;">

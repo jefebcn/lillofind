@@ -60,6 +60,62 @@ export async function publishCatalog(data, { env }) {
   return meta;
 }
 
+// ── Novità aggiunte dal server ──────────────────────────────────────
+// I prodotti creati dopo l'ultima pubblicazione li leggeva ogni visitatore
+// da Firestore (vedi _loadCatalogSnapshot in index.html): dopo un import da
+// centinaia di album ogni visita costava centinaia di letture e la quota
+// gratuita finiva in poche visite. Qui il server legge SOLO i prodotti nuovi
+// (non tutto il catalogo) e li aggiunge allo snapshot. Le modifiche ai
+// prodotti già pubblicati restano all'admin (ripubblica completa).
+
+// Timestamp letti dal Worker ({seconds,_ts}) nella stessa forma che pubblica
+// l'admin ({seconds,nanoseconds}), così lo shop li ordina allo stesso modo.
+function plainTs(v) {
+  if (Array.isArray(v)) return v.map(plainTs);
+  if (v && typeof v === 'object') {
+    if (typeof v.seconds === 'number' && typeof v._ts === 'string') return { seconds: v.seconds, nanoseconds: 0 };
+    const o = {};
+    for (const k of Object.keys(v)) o[k] = plainTs(v[k]);
+    return o;
+  }
+  return v;
+}
+
+export async function mergeNewProducts(env, db, { max = 3000 } = {}) {
+  const kv = env.CATALOG;
+  if (!kv) return { ok: false, reason: 'kv' };
+  const body = await kv.get(KEY);
+  if (!body) return { ok: false, reason: 'not-published' };
+  const cat = JSON.parse(body);
+  if (!cat || !Array.isArray(cat.products) || !cat.builtAtMs) return { ok: false, reason: 'snapshot' };
+  // builtAtMs = inizio di questa lettura: un prodotto creato nel frattempo lo
+  // vede comunque lo shop (createdAt > builtAtMs) e il giro dopo lo aggiunge.
+  const startedAt = Date.now();
+  const rows = await db.runQuery('products', { where: [['createdAt', '>', new Date(cat.builtAtMs)]], limit: max });
+  if (!rows.length) return { ok: true, added: 0 };
+  const have = new Set(cat.products.map((p) => p.id));
+  const fresh = rows
+    .filter((p) => p && p.id && !have.has(p.id))
+    .map((p) => { const o = plainTs(p); for (const f of PRIVATE_FIELDS) delete o[f]; return o; })
+    .sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
+  const products = [...fresh, ...cat.products];
+  const out = JSON.stringify({ version: startedAt, builtAtMs: startedAt, count: products.length, products });
+  const bytes = new TextEncoder().encode(out).length;
+  if (bytes > MAX_BYTES) return { ok: false, reason: 'too-big' };
+  let meta = {};
+  try { meta = JSON.parse((await kv.get(META)) || '{}') || {}; } catch (_) {}
+  await kv.put(KEY, out);
+  // "dirty" resta com'era: le modifiche ai prodotti esistenti le ripubblica l'admin
+  await kv.put(META, JSON.stringify({ ...meta, version: startedAt, builtAtMs: startedAt, count: products.length, bytes, mergedAt: startedAt, merged: fresh.length }));
+  try { await caches.default.delete(new Request('https://lillofind.conti9708.workers.dev/catalog?__cache=1')); } catch (_) {}
+  return { ok: true, added: fresh.length, count: products.length };
+}
+
+// POST /catalogMergeNew (solo admin): l'importer lo chiama a fine salvataggio.
+export async function catalogMergeNew(_data, { env, db }) {
+  return await mergeNewProducts(env, db);
+}
+
 // POST /markCatalogDirty (solo admin) — l'importer segnala modifiche: alla
 // prossima apertura l'admin ripubblica il catalogo.
 export async function markCatalogDirty(data, { env }) {
