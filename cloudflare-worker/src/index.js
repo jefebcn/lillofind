@@ -639,6 +639,7 @@ app.post('/claimReferrals',      callable(loyalty.claimReferrals,       { auth: 
 app.post('/publishCatalog',      callable(catalog.publishCatalog,       { auth: 'adminEmail' }));
 app.post('/markCatalogDirty',    callable(catalog.markCatalogDirty,     { auth: 'adminEmail' }));
 app.post('/catalogMergeNew',     callable(catalog.catalogMergeNew,      { auth: 'adminEmail' }));
+app.post('/catalogAlbums',       callable(catalog.catalogAlbums,        { auth: 'adminEmail' }));
 app.post('/remindersRun',        callable((_d, { env, db }) => reminders.runReminders(env, db), { auth: 'adminEmail' }));
 app.post('/photoScanStep',       callable((_d, { env, db }) => daily.photoScanStep(env, db), { auth: 'adminEmail' }));
 app.post('/morningRun',          callable((_d, { env, db }) => daily.runMorning(env, db), { auth: 'adminEmail' }));

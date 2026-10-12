@@ -18,6 +18,10 @@ const plain = (v) => {
 };
 
 const snap = await admin.firestore().collection('products').get();
+// Id degli album Yupoo già importati (dal sourceUrl, che non va nel catalogo
+// pubblico): l'importer li usa per non creare doppioni (KV catalog:albums).
+const albums = [...new Set(snap.docs.map(d => (String(d.data().sourceUrl || '').match(/yupoo\.com\/albums\/(\d+)/i) || [])[1]).filter(Boolean))];
+fs.writeFileSync('catalog-albums.json', JSON.stringify(albums));
 const products = snap.docs.map(d => {
   const o = plain(d.data()); o.id = d.id;
   for (const f of PRIVATE_FIELDS) delete o[f];
