@@ -1,6 +1,6 @@
 // Automazioni: novità nel catalogo pubblicato, carrello abbandonato, ordini non pagati.
 import { cartNeedsReminder, unpaidAction, cartReminders, unpaidOrders, unsubscribeUrl, unsubscribe } from '../src/handlers/reminders.js';
-import { mergeNewProducts } from '../src/handlers/catalog.js';
+import { mergeNewProducts, catalogAlbums, publishCatalog } from '../src/handlers/catalog.js';
 
 let pass = 0, fail = 0;
 const eq = (a, e, l) => { const A = JSON.stringify(a), E = JSON.stringify(e); if (A === E) pass++; else { fail++; console.error('❌ ' + l + '\n   atteso ' + E + '\n   ottenuto ' + A); } };
@@ -113,6 +113,11 @@ eq(unpaidAction(ord(50, { status: 'confirmed' }), NOW), null, 'confermato: mai')
   eq(cat.products[0].createdAt, { seconds: (NOW - H) / 1000, nanoseconds: 0 }, 'data nella forma dell\'admin');
   eq(cat.builtAtMs > built, true, 'data di pubblicazione avanzata');
   eq(JSON.parse(store['catalog:meta']).dirty, true, 'segnale "da ripubblicare" dell\'admin invariato');
+  eq(JSON.parse(store['catalog:albums']), ['1'], 'album della novità nell\'indice per l\'importer');
+  eq((await catalogAlbums({}, { env: { CATALOG: kv } })).ids, ['1'], 'l\'importer legge l\'indice album');
+  await publishCatalog({ products: [{ id: 'a', sourceUrl: 'https://s.x.yupoo.com/albums/77?uid=1' }, { id: 'b' }] }, { env: { CATALOG: kv } });
+  eq(JSON.parse(store['catalog:albums']).sort(), ['1', '77'], 'la pubblicazione admin aggiunge i suoi album');
+  eq('sourceUrl' in JSON.parse(store.catalog).products[0], false, 'sourceUrl resta fuori dal catalogo pubblico');
   const r2 = await mergeNewProducts({ CATALOG: kv }, db);
   eq(r2.added, 0, 'secondo giro: niente da aggiungere');
 }

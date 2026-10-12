@@ -1809,13 +1809,12 @@ window.fetchYupooAlbums = async function(){
     status.textContent = `✅ ${albumIds.length} album trovati — seleziona quelli da importare, poi clicca "Analizza con AI"`;
     // Album già in catalogo (stesso id nel sourceUrl): deselezionati, così
     // reimportare una pagina non crea doppioni.
+    // L'elenco degli album importati sta su Cloudflare (0 letture Firestore):
+    // rileggere tutti i prodotti costava ~6.500 letture a pagina e finiva la quota.
     try {
-      const imp = window.__imp;
-      if (imp && imp.getDocs) {
-        const have = new Set();
-        (await imp.getDocs(imp.collection(imp.db,'products'))).forEach(ds => {
-          const m = String((ds.data()||{}).sourceUrl||'').match(/yupoo\.com\/albums\/(\d+)/i); if (m) have.add(m[1]);
-        });
+      {
+        const r = await lfCallable('catalogAlbums')({});
+        const have = new Set(((r && r.data && r.data.ids) || []).map(String));
         let dup = 0;
         albumIds.forEach(id => {
           if (!have.has(String(id))) return;

@@ -9,6 +9,18 @@ import { HttpsError } from '../lib/errors.js';
 
 const KEY = 'catalog';
 const META = 'catalog:meta';
+// Id degli album Yupoo già importati (dal sourceUrl, che nel catalogo
+// pubblico non c'è): l'importer li usa per non creare doppioni senza
+// rileggere tutti i prodotti da Firestore (≈6.500 letture a pagina).
+const ALBUMS = 'catalog:albums';
+export const albumIdOf = (u) => { const m = String(u || '').match(/yupoo\.com\/albums\/(\d+)/i); return m ? m[1] : ''; };
+async function addAlbums(kv, ids) {
+  ids = ids.filter(Boolean);
+  if (!ids.length) return;
+  let cur = [];
+  try { cur = JSON.parse((await kv.get(ALBUMS)) || '[]') || []; } catch (_) {}
+  await kv.put(ALBUMS, JSON.stringify([...new Set([...cur, ...ids])]));
+}
 const MAX_BYTES = 24 * 1024 * 1024;           // limite valore KV: 25 MiB
 // Dati interni che non devono finire nel catalogo pubblico.
 // Elenco unico in lib/product-private.js: ora quei campi stanno in
@@ -44,7 +56,11 @@ export async function publishCatalog(data, { env }) {
   if (!kv) throw new HttpsError('unavailable', 'Spazio catalogo (KV) non configurato sul Worker.');
   const list = data && Array.isArray(data.products) ? data.products : null;
   if (!list || !list.length) throw new HttpsError('invalid-argument', 'Catalogo vuoto.');
-  const products = list.filter(p => p && typeof p === 'object' && typeof p.id === 'string').map(p => {
+  const valid = list.filter(p => p && typeof p === 'object' && typeof p.id === 'string');
+  // l'admin manda il catalogo completo con sourceUrl: si aggiungono i suoi album
+  // all'indice (quelli già noti restano: i prodotti migrati hanno sourceUrl in products_private)
+  try { await addAlbums(kv, valid.map((p) => albumIdOf(p.sourceUrl))); } catch (_) {}
+  const products = valid.map(p => {
     const o = { ...p };
     for (const f of PRIVATE_FIELDS) delete o[f];
     return o;
@@ -94,6 +110,7 @@ export async function mergeNewProducts(env, db, { max = 3000 } = {}) {
   const rows = await db.runQuery('products', { where: [['createdAt', '>', new Date(cat.builtAtMs)]], limit: max });
   if (!rows.length) return { ok: true, added: 0 };
   const have = new Set(cat.products.map((p) => p.id));
+  try { await addAlbums(kv, rows.map((p) => albumIdOf(p.sourceUrl))); } catch (_) {}
   const fresh = rows
     .filter((p) => p && p.id && !have.has(p.id))
     .map((p) => { const o = plainTs(p); for (const f of PRIVATE_FIELDS) delete o[f]; return o; })
@@ -114,6 +131,15 @@ export async function mergeNewProducts(env, db, { max = 3000 } = {}) {
 // POST /catalogMergeNew (solo admin): l'importer lo chiama a fine salvataggio.
 export async function catalogMergeNew(_data, { env, db }) {
   return await mergeNewProducts(env, db);
+}
+
+// POST /catalogAlbums (solo admin) → { ids: [...] } album Yupoo già in catalogo
+export async function catalogAlbums(_data, { env }) {
+  const kv = env.CATALOG;
+  if (!kv) return { ids: [] };
+  let ids = [];
+  try { ids = JSON.parse((await kv.get(ALBUMS)) || '[]') || []; } catch (_) {}
+  return { ids };
 }
 
 // POST /markCatalogDirty (solo admin) — l'importer segnala modifiche: alla
