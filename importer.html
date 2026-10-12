@@ -1139,6 +1139,8 @@ window.saveAll=async function(){
       const _txt = (name||'')+' '+(rowModel||'');
       const _basketKw = /canott|basket|\bnba\b|tank\s?top/i;
       const isCycling = row.dataset.sport === 'ciclismo' || _CYCLING_RE.test(_txt);
+      // Ciclismo: squadra o marchio vero dal titolo (i fornitori li scrivono male)
+      const brandOut = (isCycling && QC && QC.cyclingBrand && QC.cyclingBrand(name, rowBrand)) || brand;
       const isBasket = !isCycling && (!!(QC && QC.isBasketTeam(detected)) || _basketKw.test(_txt));
       const _kitKw = /\bjersey\b|\bkit\b|player version|fan version|nazionale|camiseta|maglia da calcio|football\s*(shirt|kit|jersey)|soccer/i;
       const isKit = !isCycling && !isBasket && (!!(QC && QC.isFootballTeam(detected)) || _kitKw.test(_txt));
@@ -1152,7 +1154,7 @@ window.saveAll=async function(){
       else if(_oneSize){ sizes=['Unica']; }
       else if(!sizes.length){ sizes = QC ? QC.defaultSizes(category) : ['S','M','L','XL']; }
       const aiDesc = (row.dataset.desc||'').trim();
-      const description = aiDesc || (QC ? QC.genDescription({name,brand,model:rowModel,colors,category}) : '');
+      const description = aiDesc || (QC ? QC.genDescription({name,brand:brandOut,model:rowModel,colors,category}) : '');
       const weightKg = QC ? QC.defaultWeight(category) : 0;
       // Scrittura diretta su Firestore (regole: solo admin). Evita il Worker,
       // che richiederebbe un service account non configurato.
@@ -1161,7 +1163,7 @@ window.saveAll=async function(){
       let images=[]; try{ images=JSON.parse(row.dataset.images||'[]'); }catch(_){}
       images=[...new Set([imgUrl, ...images].filter(Boolean))].slice(0,15);
       await imp.addDoc(imp.collection(imp.db,'products'),{
-        name,price,brand,model:rowModel,
+        name,price,brand:brandOut,model:rowModel,
         category,
         sizes:sizes.length?sizes:['Unica'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description,weightKg,

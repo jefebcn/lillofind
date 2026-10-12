@@ -28,10 +28,17 @@
     brunellocucinelli:'Brunello Cucinelli'
   };
   function brandKey(b) { return (b || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  // Grafia ufficiale di squadre e marchi ciclismo (vedi cyclingBrand). A parte
+  // da BRAND_CANON perché detectBrand cerca quelle chiavi DENTRO i titoli:
+  // "lecol" comparirebbe in "Pile Colorato".
+  var CYCLING_CANON = {
+    efeducationeasypost:'EF Education-EasyPost', uaeteamemirates:'UAE Team Emirates', vismaleaseabike:'Visma-Lease a Bike', ineosgrenadiers:'INEOS Grenadiers', soudalquickstep:'Soudal Quick-Step', redbullborahansgrohe:'Red Bull-Bora-Hansgrohe', alpecindeceuninck:'Alpecin-Deceuninck', groupamafdj:'Groupama-FDJ', totalenergies:'TotalEnergies', lidltrek:'Lidl-Trek', jaycoalula:'Jayco AlUla', decathlonag2r:'Decathlon AG2R', intermarchwanty:'Intermarché-Wanty', israelpremiertech:'Israel Premier Tech', picnicpostnl:'Picnic PostNL', unox:'Uno-X', q365:'Q36.5', unibetroserockets:'Unibet Rose Rockets', uciworldchampion:'UCI World Champion', pasnormalstudios:'Pas Normal Studios', lecol:'Le Col', poc:'POC', cervlo:'Cervélo', '7mesh':'7mesh'
+  };
   function canonBrand(b) {
     if (!b) return '';
     var k = brandKey(b);
     if (BRAND_CANON[k]) return BRAND_CANON[k];
+    if (CYCLING_CANON[k]) return CYCLING_CANON[k];
     // Fallback: Title Case per parola (gestisce lettere accentate senza spezzarle)
     return String(b).trim().replace(/\s+/g, ' ').toLowerCase()
       .split(' ').map(function (w) { return w ? w[0].toUpperCase() + w.slice(1) : w; }).join(' ');
@@ -75,6 +82,71 @@
     for (var k in BRAND_CANON) { if (k.length >= 4 && compact.indexOf(k) >= 0) return BRAND_CANON[k]; }
     return '';
   }
+  // ── Ciclismo: squadra o marchio dal titolo ─────────────────────
+  // I fornitori di kit da bici scrivono squadre e marchi in mille modi
+  // ("Education", "Ef Education-easypost", "Naap", "Maappr"…) e il
+  // riconoscimento calcio scambiava "Giro d'Italia" per la squadra Italy.
+  // Prima la SQUADRA (come per i kit da calcio), poi il marchio del capo.
+  var CYCLING_TEAMS = [
+    ['EF Education-EasyPost', /\bef\b|education|easypost|nippo/i],
+    ['UAE Team Emirates', /\buae\b|emirates/i],
+    ['Visma-Lease a Bike', /visma|jumbo/i],
+    ['INEOS Grenadiers', /ineos/i],
+    ['Soudal Quick-Step', /soudal|quick ?-?step/i],
+    ['Red Bull-Bora-Hansgrohe', /red ?bull|\bbora\b|hansgrohe/i],
+    ['Movistar', /movistar/i],
+    ['Alpecin-Deceuninck', /alpecin|deceuninck/i],
+    ['Groupama-FDJ', /\bfdj\b|groupama/i],
+    ['TotalEnergies', /total ?energies/i],
+    ['Lidl-Trek', /lidl/i],
+    ['Bahrain Victorious', /bahrain/i],
+    ['Astana', /astana/i],
+    ['Jayco AlUla', /jayco/i],
+    ['Cofidis', /cofidis/i],
+    ['Decathlon AG2R', /ag2r/i],
+    ['Intermarché-Wanty', /intermarch/i],
+    ['Israel Premier Tech', /israel/i],
+    ['Picnic PostNL', /picnic|postnl/i],
+    ['Uno-X', /uno-?x/i],
+    ['Tudor', /tudor/i],
+    ['Androni Giocattoli', /androni/i],
+    ['Q36.5', /q36\.?5/i],
+    ['Unibet Rose Rockets', /unibet|rose rockets/i],
+    ['UCI World Champion', /\buci\b|world champion/i]
+  ];
+  var CYCLING_BRANDS = {
+    maap:'Maap', rapha:'Rapha', rcc:'Rapha', santini:'Santini', assos:'Assos', gobik:'Gobik', '7mesh':'7mesh',
+    castelli:'Castelli', jakroo:'Jakroo', pissei:'Pissei', pasnormal:'Pas Normal Studios', lecol:'Le Col',
+    sportful:'Sportful', bioracer:'Bioracer', kalas:'Kalas', poc:'POC', campagnolo:'Campagnolo', cube:'Cube',
+    cervelo:'Cervélo', cannondale:'Cannondale', pinarello:'Pinarello', specialized:'Specialized', wahoo:'Wahoo',
+    attaquer:'Attaquer', alecycling:'Alé', nalini:'Nalini', vermarc:'Vermarc'
+  };
+  function lev1(a, b) { // distanza di modifica <= 1
+    if (Math.abs(a.length - b.length) > 1) return false;
+    var i = 0, j = 0, d = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++d > 1) return false;
+      if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+    }
+    return d + (a.length - i) + (b.length - j) <= 1;
+  }
+  function cyclingBrand(name, brand) {
+    var t = (name || '') + ' ' + (brand || '');
+    for (var i = 0; i < CYCLING_TEAMS.length; i++) { if (CYCLING_TEAMS[i][1].test(t)) return CYCLING_TEAMS[i][0]; }
+    var words = t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9]+/).filter(Boolean);
+    var compact = words.join('');
+    for (var k in CYCLING_BRANDS) {
+      if (words.indexOf(k) >= 0 || (k.length >= 5 && compact.indexOf(k) >= 0)) return CYCLING_BRANDS[k];
+    }
+    // refusi sul marchio scritto dal fornitore: "Naap", "Maappr" → Maap
+    var bk = brandKey(brand);
+    if (bk.length >= 3) for (var k2 in CYCLING_BRANDS) {
+      if (k2.length >= 4 && (lev1(bk, k2) || bk.indexOf(k2) === 0)) return CYCLING_BRANDS[k2];
+    }
+    return '';
+  }
+
   // True se il valore è il nome di una squadra di calcio (per taggare i kit).
   function isFootballTeam(brandName) {
     if (!brandName) return false;
@@ -159,6 +231,7 @@
   window.LFCatalog = {
     canonBrand: canonBrand,
     detectBrand: detectBrand,
+    cyclingBrand: cyclingBrand,
     isFootballTeam: isFootballTeam,
     isBasketTeam: isBasketTeam,
     inferCategory: inferCategory,
