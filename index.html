@@ -259,9 +259,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       +'<p style="font-weight:800;letter-spacing:8px;font-size:16px;margin-bottom:8px;">LILLOFIND</p>'
       +'<p style="font-family:var(--font-display);font-size:26px;line-height:1.1;">Benvenuto nei drop.</p></div>'
       +'<div style="padding:20px 24px 8px;display:flex;flex-direction:column;gap:14px;">'
-      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;">⬡</span><div><strong style="font-size:14px;">50 LFPoints gratis</strong><p style="font-size:12px;color:#6b6b63;">Subito all\'iscrizione = €5 sul primo ordine.</p></div></div>'
-      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg></span><div><strong style="font-size:14px;">Foto QC prima di spedire</strong><p style="font-size:12px;color:#6b6b63;">Vedi il tuo articolo reale prima della spedizione.</p></div></div>'
-      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;"><svg class=ic aria-hidden=true><use href=icons.svg#truck></use></svg></span><div><strong style="font-size:14px;">Spedizione tracciata</strong><p style="font-size:12px;color:#6b6b63;">DHL, 10–15 gg lavorativi, zero rischi doganali.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#coins></use></svg></span><div><strong style="font-size:14px;">50 LFPoints gratis</strong><p style="font-size:12px;color:#6b6b63;">Subito all\'iscrizione = €5 sul primo ordine.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg></span><div><strong style="font-size:14px;">Foto QC prima di spedire</strong><p style="font-size:12px;color:#6b6b63;">Vedi il tuo articolo reale prima della spedizione.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#truck></use></svg></span><div><strong style="font-size:14px;">Spedizione tracciata</strong><p style="font-size:12px;color:#6b6b63;">DHL, 10–15 gg lavorativi, zero rischi doganali.</p></div></div>'
       +'</div>'
       +'<div style="padding:8px 24px 26px;display:flex;flex-direction:column;gap:10px;">'
       +'<button onclick="lfOnboardCTA()" style="background:#6f7552;color:#fff;border:none;padding:15px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;">Crea account — 50 punti gratis</button>'
@@ -581,7 +581,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         <p class="hero-features" style="font-size:13px;color:var(--mid);letter-spacing:.2px;line-height:1.8;margin-bottom:24px;" data-i18n="hero.features">Nike · Jordan · Bape · Supreme · e molto altro<br/>Qualità 1:1 · Spedizione DHL · Reso 30gg gratis</p>
         <div class="hero-cta-row">
           <button class="btn-led" onclick="showPg('shop')" style="min-width:160px;font-size:13px;padding:16px 22px;" data-i18n="hero.cta">Scopri il drop →</button>
-          <button class="btn-g" onclick="showPg('lfpoints')" style="min-width:140px;padding:16px 22px;">⦡ LFPoints</button>
+          <button class="btn-g" onclick="showPg('lfpoints')" style="min-width:140px;padding:16px 22px;display:inline-flex;align-items:center;justify-content:center;gap:8px;"><svg class=ic aria-hidden=true><use href=icons.svg#coins></use></svg> LFPoints</button>
         </div>
         <button type="button" class="hero-photo-search" onclick="openVisualSearch()"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg> Hai una foto? Cercala nello shop</button>
       </div>
@@ -633,23 +633,25 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 
     <!-- Barra trust -->
     <div class="hero-trust" id="hero-trust">
-      <div class="ht-item"><span class="ht-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span><div><b data-i18n="trust.ship">Spedizione tracciata DHL</b><span data-i18n="trust.ship2">10–15 giorni lavorativi</span></div></div>
-      <div class="ht-item"><span class="ht-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><div><b data-i18n="trust.ret">Reso gratuito</b><span data-i18n="trust.ret2">entro 30 giorni</span></div></div>
-      <div class="ht-item"><span class="ht-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7"/><path d="M9 12h6"/></svg></span><div><b>1€ = 1 LFPoint</b><span data-i18n="trust.pts2">sconti fino al 30%</span></div></div>
-      <div class="ht-item"><span class="ht-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><div><b data-i18n="trust.pay">Pagamenti sicuri</b><span data-i18n="trust.pay2">checkout cifrato SSL</span></div></div>
+      <div class="ht-item"><span class="ht-ic"><svg class=ic aria-hidden=true><use href=icons.svg#truck></use></svg></span><div><b data-i18n="trust.ship">Spedizione tracciata DHL</b><span data-i18n="trust.ship2">10–15 giorni lavorativi</span></div></div>
+      <div class="ht-item"><span class="ht-ic"><svg class=ic aria-hidden=true><use href=icons.svg#arrow-counter-clockwise></use></svg></span><div><b data-i18n="trust.ret">Reso gratuito</b><span data-i18n="trust.ret2">entro 30 giorni</span></div></div>
+      <div class="ht-item"><span class="ht-ic"><svg class=ic aria-hidden=true><use href=icons.svg#coins></use></svg></span><div><b>1€ = 1 LFPoint</b><span data-i18n="trust.pts2">sconti fino al 30%</span></div></div>
+      <div class="ht-item"><span class="ht-ic"><svg class=ic aria-hidden=true><use href=icons.svg#shield-check></use></svg></span><div><b data-i18n="trust.pay">Pagamenti sicuri</b><span data-i18n="trust.pay2">checkout cifrato SSL</span></div></div>
     </div>
     <style>
       .hero-trust{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:18px 32px 26px;}
       .ht-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--card);min-width:0;}
       .ht-ic{flex-shrink:0;width:38px;height:38px;border-radius:12px;background:var(--accent-soft);color:var(--led-text);display:flex;align-items:center;justify-content:center;}
       .ht-item b{display:block;font-size:13px;font-weight:700;color:var(--k);line-height:1.25;}
-      .ht-item span{display:block;font-size:11.5px;color:var(--mid);line-height:1.35;margin-top:2px;}
+      .ht-item div span{display:block;font-size:11.5px;color:var(--mid);line-height:1.35;margin-top:2px;}
+      .ht-ic .ic{width:21px;height:21px;}
       @media(max-width:768px){
         .hero-trust{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 12px 18px;}
         .ht-item{padding:10px;gap:10px;}
         .ht-ic{width:32px;height:32px;border-radius:10px;}
         .ht-item b{font-size:12px;}
-        .ht-item span{font-size:11px;}
+        .ht-item div span{font-size:11px;}
+        .ht-ic .ic{width:19px;height:19px;}
       }
     </style>
   </section>

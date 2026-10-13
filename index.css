@@ -145,7 +145,8 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:var(--font-body);}
   padding:0 16px;border-bottom:1px solid var(--border);
 }
 @media(max-width:768px){
-  #mob-hdr{display:flex;}
+  /* iPhone con viewport-fit=cover: niente ☰ e punti sotto orologio e batteria */
+  #mob-hdr{display:flex;padding-top:env(safe-area-inset-top,0px);height:calc(var(--h) + env(safe-area-inset-top,0px));}
   #site-hdr{display:none;}
 }
 /* Desktop/laptop (769–1450px): compatta la nav così sta nella sua metà
