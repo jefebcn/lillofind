@@ -583,6 +583,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <button class="btn-led" onclick="showPg('shop')" style="min-width:160px;font-size:13px;padding:16px 22px;" data-i18n="hero.cta">Scopri il drop →</button>
           <button class="btn-g" onclick="showPg('lfpoints')" style="min-width:140px;padding:16px 22px;">⦡ LFPoints</button>
         </div>
+        <button type="button" class="hero-photo-search" onclick="openVisualSearch()"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg> Hai una foto? Cercala nello shop</button>
       </div>
     </div>
     <style>
@@ -596,6 +597,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       .hero-text{text-align:center;}
       .hero-text h1{font-size:clamp(46px,12vw,80px);line-height:.92;letter-spacing:.5px;}
       .hero-cta-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+      .hero-photo-search{margin-top:14px;background:none;border:none;padding:6px 2px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;gap:6px;}
       /* pallini: quello della foto visibile si allunga (stessi tempi delle slide) */
       .hero-dots{position:absolute;top:14px;right:14px;z-index:3;display:flex;gap:6px;padding:6px 8px;border-radius:999px;background:rgba(0,0,0,.28);backdrop-filter:blur(6px);}
       .hero-dots i{display:block;width:6px;height:6px;border-radius:99px;background:rgba(255,255,255,.55);animation:hero-dot 30s ease-in-out infinite both;}
@@ -617,6 +619,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         .hero-cta-row{justify-content:flex-start;}
         .hero-cta-row .btn-led,.hero-cta-row .btn-g{min-width:0!important;padding:14px 20px!important;}
         .hero-text .btn-g{border-color:rgba(255,255,255,.75)!important;color:#fff!important;background:rgba(0,0,0,.18)!important;}
+        .hero-photo-search{color:rgba(255,255,255,.92)!important;}
       }
       @media(min-width:769px){
         .hero-wrap{grid-template-columns:1.05fr .95fr;gap:48px;padding:52px 32px 40px;}
@@ -1195,6 +1198,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <input class="lf-in" id="shop-search" placeholder="Cerca prodotto, brand, modello..." style="padding-left:36px;" oninput="liveSearch(this.value)" autocomplete="off"/>
           <div id="search-dropdown"></div>
         </div>
+        <button onclick="openVisualSearch()" class="btn-k" style="padding:0 14px;font-size:18px;flex-shrink:0;border-left:none;" title="Cerca con una foto" aria-label="Cerca con una foto"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg></button>
         <button onclick="document.getElementById('shop-search').value='';searchShop('');" class="btn-k" style="padding:0 14px;font-size:18px;flex-shrink:0;" title="Cancella ricerca"><svg class=ic aria-hidden=true><use href=icons.svg#x></use></svg></button>
       </div>
       <!-- Barra squadre: compare nelle categorie Calcio/Basket, mostra le squadre in catalogo -->
@@ -2413,7 +2417,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       <span class="lf-eyebrow lf-eyebrow--on-dark">Product Request</span>
     </div>
     <p class="bb" style="font-size:clamp(22px,6vw,32px);letter-spacing:1px;color:var(--on-ink);margin-bottom:10px;line-height:1.2;">Non trovi il prodotto che stai cercando?</p>
-    <p style="font-size:11px;color:rgba(246,243,238,.72);letter-spacing:.5px;margin-bottom:36px;line-height:1.8;">Inviaci una foto e ti faremo sapere in <span style="color:var(--led2);font-weight:700;">48 ore</span> la disponibilità di questo articolo.</p>
+    <p style="font-size:11px;color:rgba(246,243,238,.72);letter-spacing:.5px;margin-bottom:14px;line-height:1.8;">Inviaci una foto e ti faremo sapere in <span style="color:var(--led2);font-weight:700;">48 ore</span> la disponibilità di questo articolo.</p>
+    <button type="button" onclick="openVisualSearch()" style="margin-bottom:26px;padding:11px 18px;font-family:var(--font-body);font-size:11.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:1px solid rgba(246,243,238,.45);border-radius:999px;color:#f6f3ee;background:#0d0d0d;cursor:pointer;display:inline-flex;align-items:center;gap:8px;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg> Prima cercalo con la foto nello shop</button>
 
     <!-- Drop zone -->
     <div id="pr-drop-zone" onclick="document.getElementById('pr-file-input').click()"
@@ -5850,6 +5855,192 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     prRemoveFile();
     const noteEl=document.getElementById('pr-note'); if(noteEl) noteEl.value='';
   };
+
+  // ── Ricerca per foto ───────────────────────────────────
+  // La foto va al Worker (/visualSearch): l'AI la descrive (categoria, marchio,
+  // squadra, colori, parole chiave) e qui si cerca nel catalogo già caricato.
+  // Niente salvato: la foto resta solo in memoria finché la finestra è aperta.
+  const VS_WORDS=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  function vsCategoryOf(p){
+    if(isBasketball(p)) return 'Basket';
+    if(isFootballKit(p)) return 'Calcio';
+    return classifyModel(p)||'';
+  }
+  window.lfVisualMatch=function(list, r, max){
+    if(!r||!r.found) return [];
+    const brand=VS_WORDS(canonBrand(r.brand||'')), team=VS_WORDS(r.team||'');
+    const colors=(r.colors||[]).map(c=>VS_WORDS(c)), kws=(r.keywords||[]).map(VS_WORDS);
+    const scored=[];
+    (list||[]).forEach(p=>{
+      if(!p||p.hidden===true) return;
+      const txt=VS_WORDS([p.name,p.model,p.brand,p.description&&String(p.description).slice(0,160)].join(' '));
+      const pb=VS_WORDS(canonBrand(p.brand||''));
+      let sc=0, catOk=false;
+      if(r.category){ const c=vsCategoryOf(p); if(c===r.category){ sc+=4; catOk=true; } }
+      if(brand && (pb===brand || (brand.length>=3 && txt.includes(brand)))) sc+=5;
+      if(team && (pb===team || txt.includes(team))) sc+=6;
+      const pcol=(Array.isArray(p.colors)?p.colors:[]).map(c=>VS_WORDS(colorFamily(c).label));
+      colors.forEach(c=>{ if(pcol.includes(c)||txt.includes(c)) sc+=1.2; });
+      kws.forEach(k=>{ if(k.length>=3&&txt.includes(k)) sc+=1; });
+      // serve almeno categoria giusta o marchio/squadra giusti
+      if(sc>=4 && (catOk||sc>=5)) scored.push({p,sc:sc-(p.soldOut===true?2:0)});
+    });
+    scored.sort((a,b)=>b.sc-a.sc);
+    return scored.slice(0,max||24).map(x=>x.p);
+  };
+  function vsCompress(file){
+    return new Promise((res,rej)=>{
+      if(!file||!/^image\//.test(file.type||'image/')) return rej(new Error('Scegli una foto (JPG, PNG o WEBP).'));
+      if(file.size>15*1024*1024) return rej(new Error('Foto troppo grande (max 15MB).'));
+      const rd=new FileReader();
+      rd.onerror=()=>rej(new Error('Foto non leggibile.'));
+      rd.onload=e=>{ const img=new Image(); img.onerror=()=>rej(new Error('Formato foto non supportato.'));
+        img.onload=()=>{ const max=900; let w=img.width,h=img.height;
+          if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} }
+          const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+          res(cv.toDataURL('image/jpeg',0.8)); };
+        img.src=e.target.result; };
+      rd.readAsDataURL(file);
+    });
+  }
+  function vsModal(){
+    let m=document.getElementById('vs-modal'); if(m) return m;
+    m=document.createElement('div'); m.id='vs-modal'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.setAttribute('aria-label','Cerca con una foto');
+    m.innerHTML=`<style>
+      #vs-modal{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;}
+      #vs-modal .vs-box{background:var(--card);color:var(--k);width:100%;max-width:880px;border-radius:18px;margin:auto;box-shadow:0 24px 70px rgba(0,0,0,.4);overflow:hidden;}
+      #vs-modal .vs-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);}
+      #vs-modal .vs-body{padding:18px 20px 22px;}
+      #vs-modal .vs-drop{border:1.5px dashed var(--border-2);border-radius:14px;padding:30px 16px;text-align:center;cursor:pointer;}
+      #vs-modal .vs-top{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px;}
+      #vs-modal .vs-top img{width:110px;height:110px;object-fit:cover;border-radius:12px;border:1px solid var(--border);flex-shrink:0;}
+      #vs-modal .vs-chip{display:inline-block;font-size:11.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--border-2);margin:0 6px 6px 0;color:var(--mid);}
+      #vs-modal .vs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+      #vs-modal .vs-card{cursor:pointer;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--w);text-align:left;padding:0;font:inherit;color:inherit;}
+      #vs-modal .vs-card img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--accent-soft);}
+      #vs-modal .vs-card div{padding:8px 10px;font-size:12px;line-height:1.35;}
+      #vs-modal .vs-card b{display:block;font-size:11px;color:var(--mid);font-weight:600;}
+      @media(max-width:520px){#vs-modal{padding:8px;}#vs-modal .vs-grid{grid-template-columns:repeat(2,1fr);gap:8px;}}
+    </style>
+    <div class="vs-box">
+      <div class="vs-head"><p class="bb" style="font-size:20px;letter-spacing:1px;margin:0;">Cerca con una foto</p>
+        <button type="button" onclick="closeVisualSearch()" class="btn-k" style="padding:6px 10px;" aria-label="Chiudi"><svg class=ic aria-hidden=true><use href=icons.svg#x></use></svg></button></div>
+      <div class="vs-body" id="vs-body"></div>
+    </div>
+    <input type="file" id="vs-file" accept="image/*" style="display:none;"/>`;
+    m.addEventListener('click',e=>{ if(e.target===m) closeVisualSearch(); });
+    document.body.appendChild(m);
+    m.querySelector('#vs-file').addEventListener('change',e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(f) vsRun(f); });
+    return m;
+  }
+  // Il catalogo può essere ancora in caricamento (loadAllProducts esce subito
+  // se un altro caricamento è in corso): si aspetta che ci sia, max 12 secondi.
+  async function vsWaitProducts(){
+    try{ if(typeof ensureProducts==='function') ensureProducts(); }catch(_){}
+    for(let i=0;i<48&&!(typeof products!=='undefined'&&products.length);i++) await new Promise(r=>setTimeout(r,250));
+  }
+  function vsPick(){ const f=document.getElementById('vs-file'); if(f) f.click(); }
+  function vsStart(){
+    document.getElementById('vs-body').innerHTML=`
+      <div class="vs-drop" id="vs-drop" tabindex="0" role="button">
+        <p style="font-size:34px;margin-bottom:8px;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg></p>
+        <p style="font-size:14px;font-weight:700;">Carica o scatta una foto del capo</p>
+        <p style="font-size:12px;color:var(--mid);margin-top:6px;line-height:1.6;">Uno screenshot da Instagram, una foto per strada, un outfit che ti piace:<br>troviamo i prodotti più simili nello shop.</p>
+      </div>
+      <p style="font-size:11px;color:var(--dim);margin-top:10px;text-align:center;">La foto serve solo per la ricerca e non viene salvata.</p>`;
+    const d=document.getElementById('vs-drop');
+    d.onclick=vsPick; d.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); vsPick(); } };
+    d.ondragover=e=>{ e.preventDefault(); d.style.borderColor='var(--led)'; };
+    d.ondragleave=()=>{ d.style.borderColor=''; };
+    d.ondrop=e=>{ e.preventDefault(); const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) vsRun(f); };
+  }
+  window.openVisualSearch=function(){
+    vsModal(); vsStart();
+    document.body.style.overflow='hidden';
+    try{ if(typeof ensureProducts==='function') ensureProducts(); }catch(_){}
+  };
+  window.closeVisualSearch=function(){
+    const m=document.getElementById('vs-modal'); if(m) m.remove();
+    document.body.style.overflow='';
+    window._vsImage=null;
+  };
+  async function vsRun(file){
+    const body=document.getElementById('vs-body'); if(!body) return;
+    let img;
+    try{ img=await vsCompress(file); }catch(e){ showToast('⚠️ '+e.message); return; }
+    window._vsImage=img;
+    body.innerHTML=`<div class="vs-top"><img src="${img}" alt="La tua foto"><div style="flex:1;min-width:200px;">
+      <p style="font-size:15px;font-weight:700;margin-bottom:6px;">Sto guardando la foto…</p>
+      <p style="font-size:12px;color:var(--mid);">Riconosco marchio, tipo di capo e colori: ci vogliono pochi secondi.</p></div></div>
+      <div class="vs-grid">${'<div class="skel" style="aspect-ratio:1;border-radius:12px;"></div>'.repeat(4)}</div>`;
+    let r;
+    try{
+      await window.lfAssicuraUtente();
+      const res=await lfCallable('visualSearch')({ imageBase64: img.split(',')[1], mediaType:'image/jpeg' });
+      r=res&&res.data;
+      await vsWaitProducts();
+    }catch(e){
+      body.innerHTML=`<div class="vs-top"><img src="${img}" alt=""><div style="flex:1;min-width:200px;"><p style="font-size:14px;font-weight:700;">${lfEsc(e.message||'Ricerca non riuscita')}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="btn-led" style="padding:10px 16px;font-size:12px;" onclick="openVisualSearch()">Riprova</button>
+        <button type="button" class="btn-g" style="padding:10px 16px;font-size:12px;" onclick="vsRequest()">Richiedilo con questa foto</button></div></div></div>`;
+      return;
+    }
+    vsShow(img, r);
+  }
+  function vsShow(img, r){
+    const body=document.getElementById('vs-body'); if(!body) return;
+    const list=(typeof products!=='undefined')?products:[];
+    const res=r&&r.found?lfVisualMatch(list, r, 24):[];
+    const chips=r&&r.found?[r.category,r.brand,r.team,...(r.colors||[])].filter(Boolean).map(c=>`<span class="vs-chip">${lfEsc(c)}</span>`).join(''):'';
+    const head=`<div class="vs-top"><img src="${img}" alt="La tua foto"><div style="flex:1;min-width:200px;">
+      <p style="font-size:15px;font-weight:700;margin-bottom:8px;">${lfEsc(r&&r.label||'')}</p>${chips}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <button type="button" class="btn-g" style="padding:8px 14px;font-size:11.5px;" onclick="openVisualSearch()">Nuova foto</button>
+        ${res.length?`<button type="button" class="btn-g" style="padding:8px 14px;font-size:11.5px;" onclick="vsSeeAll()">Vedi nello shop</button>`:''}
+      </div></div></div>`;
+    window._vsLast=r;
+    if(!res.length){
+      body.innerHTML=head+`<div style="text-align:center;padding:18px 8px 6px;">
+        <p style="font-size:15px;font-weight:700;margin-bottom:6px;">${r&&r.found?'Non abbiamo ancora niente di simile':'Nella foto non vedo un capo da cercare'}</p>
+        <p style="font-size:12.5px;color:var(--mid);margin-bottom:14px;line-height:1.6;">${r&&r.found?'Mandaci la richiesta con questa foto: ti diciamo entro 48 ore se possiamo trovarlo.':'Prova con una foto in cui il capo si vede bene, da vicino.'}</p>
+        ${r&&r.found?'<button type="button" class="btn-led" style="padding:12px 20px;font-size:12px;" onclick="vsRequest()">Richiedilo con questa foto →</button>':''}</div>`;
+      return;
+    }
+    body.innerHTML=head+`<p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:4px 0 10px;">I più simili nello shop · ${res.length}</p>
+      <div class="vs-grid">${res.map(p=>`<button type="button" class="vs-card" onclick="closeVisualSearch();openProduct(${lfEsc(JSON.stringify(String(p.id)))})">
+        <img src="${p.imageUrl?pImg(p.imageUrl):''}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        <div><b>${lfEsc(canonBrand(p.brand||''))}</b>${p.name?cleanTitle(p.name,48):'—'}<br><span style="font-weight:700;">€${(Number(p.price)||0).toFixed(2).replace('.',',')}</span></div></button>`).join('')}</div>
+      <p style="font-size:12px;color:var(--mid);text-align:center;margin-top:16px;">Non è quello giusto? <button type="button" onclick="vsRequest()" style="background:none;border:none;padding:0;font:inherit;color:var(--led-text);font-weight:700;text-decoration:underline;cursor:pointer;">Richiedilo con questa foto</button></p>`;
+  }
+  // "Vedi nello shop": applica marchio/squadra o categoria come filtri
+  window.vsSeeAll=function(){
+    const r=window._vsLast||{}; closeVisualSearch(); showPg('shop'); resetFilters();
+    setTimeout(()=>{
+      const b0=r.team||canonBrand(r.brand||'');
+      const b=(b0 && products.some(p=>canonBrand(p.brand||'')===b0))?b0:'';
+      if(r.category==='Calcio'||r.category==='Basket'){
+        setFilter(r.category==='Calcio'?'football':'basket',true);
+        if(b && typeof setSportTeam==='function') setSportTeam(b);
+      } else if(r.category && b && typeof setFilters2==='function') setFilters2(r.category,b);
+      else if(r.category) setFilter('model',r.category);
+      else if(b) setFilter('brand',b);
+    },80);
+  };
+  // Nessun risultato giusto: la stessa foto diventa una richiesta prodotto
+  window.vsRequest=async function(){
+    const img=window._vsImage, r=window._vsLast||{};
+    const note=[r.label,r.brand,r.team].filter(Boolean).join(' · ').slice(0,300)||'Richiesta da ricerca per foto';
+    const fb=window.__fb;
+    if(!img||!fb) return showToast('Riprova tra poco.');
+    try{
+      const small=await new Promise(res=>{ const im=new Image(); im.onload=()=>{ const max=700; let w=im.width,h=im.height; if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} } const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(im,0,0,w,h); res(cv.toDataURL('image/jpeg',0.72)); }; im.onerror=()=>res(img); im.src=img; });
+      const u=await window.lfAssicuraUtente();
+      await fb.addDoc(fb.collection(fb.db,'product_requests'),{note:'📷 '+note,image:small,userId:u.uid,userEmail:(u.email||null),type:'visual_search',ts:fb.serverTimestamp()});
+      closeVisualSearch();
+      showToast('✅ Richiesta inviata! Ti rispondiamo entro 48 ore.');
+    }catch(e){ console.error('vsRequest',e&&e.code); showToast('⚠️ Richiesta non inviata ('+((e&&e.code)||'riprova')+').'); }
+  };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.getElementById('vs-modal')) closeVisualSearch(); });
 
   // ── Size guide ─────────────────────────────────────────
   function buildSizeGuide(){

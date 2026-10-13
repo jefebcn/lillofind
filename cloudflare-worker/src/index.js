@@ -19,6 +19,7 @@ import * as telemetry from './handlers/telemetry.js';
 import * as tracking from './handlers/tracking.js';
 import * as reminders from './handlers/reminders.js';
 import * as daily from './handlers/daily.js';
+import * as visual from './handlers/visual.js';
 import { isAllowedSource, rewriteManifest } from './lib/stream-lib.js';
 
 const app = new Hono();
@@ -640,6 +641,8 @@ app.post('/publishCatalog',      callable(catalog.publishCatalog,       { auth: 
 app.post('/markCatalogDirty',    callable(catalog.markCatalogDirty,     { auth: 'adminEmail' }));
 app.post('/catalogMergeNew',     callable(catalog.catalogMergeNew,      { auth: 'adminEmail' }));
 app.post('/catalogAlbums',       callable(catalog.catalogAlbums,        { auth: 'adminEmail' }));
+// Ricerca per foto: serve un utente (anche ospite anonimo) per il limite per persona
+app.post('/visualSearch',        callable(visual.visualSearch,          { auth: 'required' }));
 app.post('/remindersRun',        callable((_d, { env, db }) => reminders.runReminders(env, db), { auth: 'adminEmail' }));
 app.post('/photoScanStep',       callable((_d, { env, db }) => daily.photoScanStep(env, db), { auth: 'adminEmail' }));
 app.post('/morningRun',          callable((_d, { env, db }) => daily.runMorning(env, db), { auth: 'adminEmail' }));
