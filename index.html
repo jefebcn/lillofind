@@ -148,7 +148,7 @@
 <link rel="stylesheet" href="style.css"/>
 
 <!-- Firebase -->
-<script type="module" src="firebase.js"></script>
+<script type="module" src="firebase.js?v=20261013"></script>
 <script>
 /* Escape unico per OGNI valore che finisce in HTML: nomi, descrizioni, brand,
    taglie e id arrivano dai fornitori (scraper/import) e dagli utenti, e
@@ -3642,7 +3642,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!email){ email=(prompt('Lascia la tua email: ti avvisiamo appena il prodotto torna disponibile.')||'').trim(); }
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ if(email!=='') showToast('⚠️ Email non valida.'); return; }
     try{
-      const u=await window.lfAssicuraUtente();
+      const u=await lfUser();
       await fb.addDoc(fb.collection(fb.db,'stock_alerts'),{
         productId:pid, productName:p?p.name||'':'', email:email.toLowerCase(), uid:u.uid,
         notified:false, createdAt:fb.serverTimestamp()
@@ -4075,7 +4075,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showToast('Inserisci una email valida.'); return; }
     const fb=window.__fb; if(!fb){ showToast('Riprova tra poco.'); return; }
     try{
-      const u=await window.lfAssicuraUtente();
+      const u=await lfUser();
       const payload={ type:'team_request', sport, team, year:g('tr-year'), kit:g('tr-kit'), category:g('tr-cat'),
         personalization:g('tr-perso'), email, uid:u.uid, status:'new', createdAt:fb.serverTimestamp() };
       await fb.addDoc(fb.collection(fb.db,'product_requests'), payload);
@@ -5821,7 +5821,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const fb=window.__fb;
     if(!fb) return showToast('Riprova tra poco.');
     try{
-      const u=await window.lfAssicuraUtente();
+      const u=await lfUser();
       await fb.addDoc(fb.collection(fb.db,'newsletter'),{email:e.toLowerCase().slice(0,200),uid:u.uid,ts:fb.serverTimestamp()});
       if(!emailOverride){ const el=document.getElementById('nl-mail'); if(el) el.value=''; }
       showToast('Iscritto! Early access attivo.');
@@ -5867,13 +5867,24 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     // Il «richiesta inviata» arriva solo se la richiesta è salvata davvero:
     // prima compariva subito, e un errore veniva ingoiato in silenzio.
     try{
-      const u=await window.lfAssicuraUtente();
+      const u=await lfUser();
       await fb.addDoc(fb.collection(fb.db,'product_requests'),{note:note.slice(0,2000),image:img,userId:u.uid,userEmail:(u.email||null),ts:fb.serverTimestamp()});
       showToast('✅ Richiesta inviata! Ti risponderemo entro 48 ore.');
     }catch(e){ console.error('productRequest',e&&e.code); showToast('⚠️ Richiesta non inviata ('+((e&&e.code)||'riprova')+'). Se la foto è molto grande, prova con una più piccola.'); return; }
     prRemoveFile();
     const noteEl=document.getElementById('pr-note'); if(noteEl) noteEl.value='';
   };
+
+  // Utente per scrivere richieste/avvisi: quello loggato o un ospite anonimo.
+  // Non dipende da window.lfAssicuraUtente (firebase.js): un telefono con una
+  // copia vecchia di firebase.js in cache non l'ha e la ricerca falliva.
+  async function lfUser(){
+    if(typeof window.lfAssicuraUtente==='function') return window.lfAssicuraUtente();
+    const fb=window.__fb; if(!fb||!fb.auth) throw new Error('Connessione non pronta: riprova tra un attimo.');
+    if(fb.auth.currentUser) return fb.auth.currentUser;
+    return (await fb.signInAnonymously(fb.auth)).user;
+  }
+  window.lfUser=lfUser;
 
   // ── Ricerca per foto ───────────────────────────────────
   // La foto va al Worker (/visualSearch): l'AI la descrive (categoria, marchio,
@@ -5994,7 +6005,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       <div class="vs-grid">${'<div class="skel" style="aspect-ratio:1;border-radius:12px;"></div>'.repeat(4)}</div>`;
     let r;
     try{
-      await window.lfAssicuraUtente();
+      await lfUser();
       const res=await lfCallable('visualSearch')({ imageBase64: img.split(',')[1], mediaType:'image/jpeg' });
       r=res&&res.data;
       await vsWaitProducts();
@@ -6053,7 +6064,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!img||!fb) return showToast('Riprova tra poco.');
     try{
       const small=await new Promise(res=>{ const im=new Image(); im.onload=()=>{ const max=700; let w=im.width,h=im.height; if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} } const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(im,0,0,w,h); res(cv.toDataURL('image/jpeg',0.72)); }; im.onerror=()=>res(img); im.src=img; });
-      const u=await window.lfAssicuraUtente();
+      const u=await lfUser();
       await fb.addDoc(fb.collection(fb.db,'product_requests'),{note:'📷 '+note,image:small,userId:u.uid,userEmail:(u.email||null),type:'visual_search',ts:fb.serverTimestamp()});
       closeVisualSearch();
       showToast('✅ Richiesta inviata! Ti rispondiamo entro 48 ore.');
