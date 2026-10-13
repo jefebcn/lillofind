@@ -6968,12 +6968,15 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const js=s=>lfEsc(JSON.stringify(String(s)));
     const brands=[...new Set(products.map(p=>canonBrand(p.brand)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
+    // I nomi dei gruppi (MODEL_FILTERS) sono testo fisso del sito con l'icona
+    // SVG dentro: vanno inseriti come HTML, non scappati (prima nel menu ☰
+    // compariva "<svg class=ic …> Calzature" come testo).
     const shop=document.getElementById('dd-shop');
     if(shop){
       const groups={};
       MODEL_FILTERS.forEach(mf=>{ if(!products.some(p=>matchesModelFilter(p,mf.label))) return; (groups[mf.group]=groups[mf.group]||[]).push(mf.label); });
       shop.innerHTML='<button class="nav-dd-item" style="font-weight:700;" onclick="showPg(\'shop\');resetFilters()">Tutti i prodotti</button>'+
-        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${lfEsc(g)}</div>`+labels.map(l=>`<button class="nav-dd-item" onclick="setFilters2(${js(l)},'')">${lfEsc(l)}</button>`).join('')).join('');
+        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${g}</div>`+labels.map(l=>`<button class="nav-dd-item" onclick="setFilters2(${js(l)},'')">${lfEsc(l)}</button>`).join('')).join('');
     }
 
     const bm=document.getElementById('dd-brands');
@@ -6996,7 +6999,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       const groups={};
       MODEL_FILTERS.forEach(mf=>{ if(!products.some(p=>matchesModelFilter(p,mf.label))) return; (groups[mf.group]=groups[mf.group]||[]).push(mf.label); });
       shopM.innerHTML='<button style="font-weight:700;color:var(--k);" onclick="setFilters2(\'\',\'\');closeDrawer()">Tutti i prodotti</button>'+
-        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${lfEsc(g)}</div>`+labels.map(l=>`<button onclick="setFilters2(${js(l)},'');closeDrawer()">${lfEsc(l)}</button>`).join('')).join('');
+        Object.entries(groups).map(([g,labels])=>`<div class="nav-dd-grp">${g}</div>`+labels.map(l=>`<button onclick="setFilters2(${js(l)},'');closeDrawer()">${lfEsc(l)}</button>`).join('')).join('');
     }
     const snM=document.getElementById('dd-sneakers-m');
     if(snM){
