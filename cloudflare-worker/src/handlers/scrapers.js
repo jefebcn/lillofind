@@ -313,6 +313,89 @@ export async function filterPromoPhotos(env, photos, referer) {
   }
 }
 
+// ── Lista album di una categoria: titoli, prezzi, tabelle taglie ─────────
+// Alcuni negozi (es. yolo66) mettono la tabella taglie in un album a parte
+// ("Size 500Y 【SJ Batch】Solano down Hoody 女款 S-XL", copertina PNG) e gli
+// album dei colori ("… S-XL 黑色") non la contengono. Qui si leggono i titoli
+// nell'ordine della pagina e si abbina ogni tabella ai prodotti dello stesso
+// modello: titolo senza prezzo, lotto 【…】, "Size" e colore finale.
+export function parseAlbumList(html) {
+  const out = [];
+  String(html || '').split(/class="album__main"/).slice(1).forEach((b) => {
+    const id = (b.match(/href="[^"]*\/albums\/(\d+)/) || [])[1];
+    if (!id || out.some((x) => x.id === id)) return;
+    const t = (b.match(/album__title"[^>]*>([^<]*)/) || [])[1] || (b.match(/title="([^"]*)"/) || [])[1] || '';
+    const cover = (b.match(/(?:data-src|data-origin-src|src)="((?:https?:)?\/\/[^"]*(?:yupoo|yunjifen)[^"]*)"/) || [])[1] || '';
+    out.push({ id, title: t.replace(/&amp;/g, '&').replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim(), cover: cover.startsWith('//') ? 'https:' + cover : cover });
+  });
+  return out;
+}
+
+// "330Y 【TZ Batch】…", "270 【XF Batch】…", "…/¥199" → prezzo fornitore in CNY
+export function priceFromTitle(t) {
+  const m = String(t || '').match(/(?:^|\s)(\d{2,4})\s*(?:Y|元|RMB|CNY)(?![a-z])/i) || String(t || '').match(/^\s*(\d{2,4})\s*(?=【|\[)/) || String(t || '').match(/[¥￥]\s*(\d{2,4})/);
+  const v = m ? parseInt(m[1], 10) : 0;
+  return v >= 10 && v < 20000 ? v : null;
+}
+
+// Taglie dall'intervallo nel titolo: "S-XXL", "XS-XXL", "S-2XL", "XXS-XL"
+const SIZE_SCALE = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+export function sizesFromTitle(t) {
+  const m = String(t || '').toUpperCase().match(/\b(XXS|XS|S|M|L|XL|XXL|2XL|XXXL|3XL)\s*[-~～–]\s*(XS|S|M|L|XL|XXL|2XL|XXXL|3XL|4XL)\b/);
+  if (!m) return [];
+  const n = (x) => ({ '2XL': 'XXL', '3XL': 'XXXL', '4XL': 'XXXL' }[x] || x);
+  const a = SIZE_SCALE.indexOf(n(m[1])), b = SIZE_SCALE.indexOf(n(m[2]));
+  return a >= 0 && b >= a ? SIZE_SCALE.slice(a, b + 1) : [];
+}
+
+const isSizeTitle = (t) => /\bsize\b|尺码|尺寸/i.test(t);
+export function modelKey(t) {
+  return String(t || '').toLowerCase()
+    .replace(/【[^】]*】|\[[^\]]*\]/g, ' ')
+    .replace(/\bsize\b|尺码表?|尺寸表?/gi, ' ')
+    .replace(/(?:^|\s)\d{2,4}\s*(?:y|元|rmb|cny)?(?=\s|$)/gi, ' ')
+    .replace(/\s+[一-鿿]{1,6}\s*$/, ' ')          // colore finale ("黑色", "层云蓝")
+    .replace(/\s+/g, ' ').trim();
+}
+const SIZE_RANGE_RE = /\b(?:xxs|xs|s|m|l|xl|xxl|2xl|xxxl|3xl|4xl)\s*[-~～–]\s*(?:xs|s|m|l|xl|xxl|2xl|xxxl|3xl|4xl)\b/gi;
+const modelCore = (k) => String(k || '').replace(SIZE_RANGE_RE, ' ').replace(/\s+/g, ' ').trim();
+const bigCover = (u) => String(u || '').replace(/\/(small|medium|square|thumb)\.(jpe?g|png|webp)/i, '/big.$2');
+
+export function pairSizeCharts(list) {
+  const items = (list || []).map((a, i) => ({ ...a, i, key: modelKey(a.title) }));
+  const keys = new Map();
+  items.forEach((a) => { if (!isSizeTitle(a.title)) keys.set(a.key, (keys.get(a.key) || 0) + 1); });
+  // tabella: "Size" nel titolo, oppure copertina PNG con lo stesso modello di altri album
+  // ma senza colore (es. "220Y 【TZ Batch】Atom2.0 S-XXL")
+  const isChart = (a) => isSizeTitle(a.title) || (/\.png(\?|$)/i.test(a.cover) && a.key && items.some((b) => b !== a && !isSizeTitle(b.title) && b.key === a.key && b.title.length > a.title.length));
+  const charts = items.filter(isChart);
+  const sizeAlbums = charts.map((c) => c.id);
+  const sizeChartOf = {};
+  const products = items.filter((a) => !sizeAlbums.includes(a.id));
+  products.forEach((p) => {
+    if (!p.key) return;
+    let best = null, bestScore = 0;
+    const pc = modelCore(p.key);
+    charts.forEach((c) => {
+      if (!c.key) return;
+      const cc = modelCore(c.key);
+      // 3 = stesso titolo; 2 = uno contiene l'altro ("Alpha SV 7代" ⊂ "Alpha SV 7代 S-XXL");
+      // 1 = stesso modello con intervallo taglie diverso ("Beta LT S-XXL" ~ "Beta LT XS-XXL")
+      const score = c.key === p.key ? 3 : (p.key.startsWith(c.key + ' ') || c.key.startsWith(p.key + ' ')) ? 2
+        : (cc && cc === pc) ? 1 : 0;
+      if (score > bestScore || (score && score === bestScore && c.key.length > best.key.length)) { best = c; bestScore = score; }
+    });
+    if (best) sizeChartOf[p.id] = bigCover(best.cover);
+  });
+  // tabelle senza nome ("Size"): vanno ai prodotti dello stesso modello che le seguono subito
+  charts.filter((c) => !c.key).forEach((c) => {
+    const next = items.slice(c.i + 1).find((a) => !sizeAlbums.includes(a.id));
+    if (!next || !next.key) return;
+    items.slice(c.i + 1).filter((a) => !sizeAlbums.includes(a.id) && a.key === next.key && !sizeChartOf[a.id]).forEach((a) => { sizeChartOf[a.id] = bigCover(c.cover); });
+  });
+  return { sizeAlbums, sizeChartOf };
+}
+
 export async function yupooFetch(data, _ctx) {
   usaChiaveImgbb(_ctx && _ctx.env);
   const { url: inUrl, password } = data || {};
@@ -736,6 +819,37 @@ export async function yupooFetch(data, _ctx) {
       while ((sp = stripRe.exec(stripped)) !== null) { if (!albumPrices[sp[1]]) albumPrices[sp[1]] = { value: parseInt(sp[2], 10), currency: 'CNY' }; }
     }
 
+    // Titoli degli album (in ordine), prezzo scritto nel titolo e tabelle taglie
+    const albumList = parseAlbumList(html);
+    // La tabella di un modello può stare in un'altra pagina della categoria:
+    // si leggono anche le altre pagine (solo i titoli, max 5).
+    let pagedList = albumList;
+    try {
+      const nPages = Math.min(6, parseInt((html.match(/共\s*(\d+)\s*页/) || [])[1] || '1', 10) || 1);
+      const curPage = parseInt(parsedUrl.searchParams.get('page') || '1', 10) || 1;
+      if (albumList.length && nPages > 1 && !/\/albums\/\d/.test(parsedUrl.pathname)) {
+        const others = await Promise.all(Array.from({ length: nPages }, (_, i) => i + 1).filter((n) => n !== curPage).map(async (n) => {
+          const u = new URL(url); u.searchParams.set('page', String(n));
+          try {
+            const r = await fetch(u.toString(), { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', 'Accept-Language': 'zh-CN,zh;q=0.9', Referer: `https://${parsedUrl.hostname}/`, ...(authCookieStr ? { Cookie: authCookieStr } : {}) }, signal: AbortSignal.timeout(12000) });
+            return { n, list: r.ok ? parseAlbumList(await r.text()) : [] };
+          } catch (_) { return { n, list: [] }; }
+        }));
+        const pages = [{ n: curPage, list: albumList }, ...others].sort((a, b) => a.n - b.n);
+        pagedList = pages.flatMap((p) => p.list);
+      }
+    } catch (_) { pagedList = albumList; }
+    const albumTitles = {};
+    albumList.forEach((a) => {
+      albumTitles[a.id] = a.title;
+      const pv = priceFromTitle(a.title);
+      if (pv && !albumPrices[a.id]) albumPrices[a.id] = { value: pv, currency: 'CNY' };
+    });
+    const onPage = new Set(albumList.map((a) => a.id));
+    const paired = pairSizeCharts(pagedList);
+    const sizeAlbums = paired.sizeAlbums.filter((id) => onPage.has(id));
+    const sizeChartOf = Object.fromEntries(Object.entries(paired.sizeChartOf).filter(([id]) => onPage.has(id)));
+
     let albumInfo = null;
     const isAlbumPage = /\/albums\/\w+/.test(parsedUrl.pathname);
     if (isAlbumPage) {
@@ -823,7 +937,7 @@ export async function yupooFetch(data, _ctx) {
       albumInfo = { pageTitle, name: cleanName || pageTitle, shoeSizes, clothSizes, supplierPriceCNY, supplierPriceUSD, photos: promo.photos, removedPhotos: promo.removed, priceCtx, priceFromWeidian };
     }
 
-    return { html, status: resp.status, albumCovers, albumPrices, albumInfo, albumUid, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
+    return { html, status: resp.status, albumCovers, albumPrices, albumTitles, sizeAlbums, sizeChartOf, albumInfo, albumUid, _debug: { albumIdsInHtml, htmlPreview, htmlLen: html.length, authDebug, authOk: authHtml !== null || authApiAlbums !== null || (!!authCookieStr && Object.keys(albumCovers).length > 0), authApiAlbumsKeys: authApiAlbums ? Object.keys(authApiAlbums) : null, nextDataInfo, apiUrlsInHtml, hrefCount, hasAlbumsPath, hrefSamples, firstAlbumContext } };
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
