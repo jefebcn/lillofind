@@ -172,7 +172,7 @@ document.addEventListener('click',function(e){
   if(a==='notify') return window.notifyWhenAvailable&&window.notifyWhenAvailable(d.pid);
   if(a==='buy'){ window.buy&&window.buy(d.pid,Number(d.price)||0); if(window.closeProd) window.closeProd(); return; }
   if(a==='share') return window.shareProduct&&window.shareProduct(d.name||'',Number(d.price)||0,d.pid);
-  if(a==='sizeguide') return window.openSizeGuide&&window.openSizeGuide(d.model||'');
+  if(a==='sizeguide') return window.openSizeGuide&&window.openSizeGuide(d.model||'',d.pid||'');
 });
 </script>
 
@@ -3590,7 +3590,26 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   };
 
   // ── Guida taglie ──────────────────────────────────────
-  window.openSizeGuide=function(model){
+  window.openSizeGuide=function(model,pid){
+    // Tabella del fornitore salvata sul prodotto (importer: album "Size" dello
+    // stesso modello): misure vere del capo, al posto della tabella generica.
+    const _p=pid&&(typeof products!=='undefined')?products.find(x=>x.id===pid):null;
+    if(_p&&_p.sizeChart){
+      document.getElementById('lf-sizeguide')?.remove();
+      document.body.insertAdjacentHTML('beforeend',`<div id="lf-sizeguide" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(20,20,17,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:var(--card);max-width:760px;width:100%;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);">
+            <p class="bb" style="font-size:18px;">Guida Taglie · questo modello</p>
+            <button onclick="document.getElementById('lf-sizeguide').remove()" aria-label="Chiudi" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mid);">×</button>
+          </div>
+          <div style="padding:14px 16px 18px;">
+            <img src="${lfEsc(pImg(_p.sizeChart))}" alt="Tabella taglie del modello" style="width:100%;height:auto;display:block;border-radius:10px;background:#fff;" onerror="this.replaceWith(Object.assign(document.createElement('p'),{textContent:'Tabella non disponibile al momento.'}))">
+            <p style="font-size:11px;color:var(--dim);margin-top:12px;line-height:1.6;">Misure del capo in cm, prese dal produttore. «Jin» = mezzo chilo (1 jin = 0,5 kg). In caso di dubbio tra due taglie scegli la più grande o scrivici.</p>
+          </div>
+        </div>
+      </div>`);
+      return;
+    }
     const isShoe=/sneaker|scarp|shoe/i.test(model||'');
     const shoeRows=[['36','5','23'],['37','6','23.5'],['38','7','24.5'],['39','7.5','25'],['40','8','25.5'],['41','9','26'],['42','9.5','27'],['43','10','27.5'],['44','11','28.5'],['45','12','29.5']];
     const clothRows=[['XS','44-46','82-86'],['S','46-48','86-90'],['M','48-50','90-96'],['L','50-52','96-102'],['XL','52-54','102-108'],['XXL','54-56','108-114']];
@@ -3731,7 +3750,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${(p.sizes&&p.sizes.length)?p.sizes.map(s=>`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">${lfEsc(s)}</span>`).join(''):p.size?`<span style="border:1.5px solid var(--k);padding:5px 14px;font-size:11px;letter-spacing:2px;">SZ ${lfEsc(p.size)}</span>`:''}
-            ${((p.sizes&&p.sizes.length)||p.size)?`<button data-act="sizeguide" data-model="${lfEsc(p.model||'')}" style="background:none;border:none;color:var(--led-text);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;"><svg class=ic aria-hidden=true><use href=icons.svg#ruler></use></svg> Guida taglie</button>`:''}
+            ${((p.sizes&&p.sizes.length)||p.size||p.sizeChart)?`<button data-act="sizeguide" data-model="${lfEsc(p.model||'')}" data-pid="${lfEsc(p.id||'')}" style="background:none;border:none;color:var(--led-text);font-size:11px;letter-spacing:1px;cursor:pointer;text-decoration:underline;padding:5px 4px;"><svg class=ic aria-hidden=true><use href=icons.svg#ruler></use></svg> Guida taglie</button>`:''}
           </div>
           <p style="font-size:12.5px;color:var(--mid);margin:-4px 0 0;"><b style="color:var(--k);font-weight:600;">Colore:</b> ${(p.colors&&p.colors.length)?p.colors.map(c=>String(c).replace(/[<>&"]/g,'')).join(' · '):'come in foto'}</p>
           <div style="border-top:1px solid var(--border);padding-top:16px;">

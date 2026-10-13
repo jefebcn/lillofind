@@ -1162,6 +1162,10 @@ window.saveAll=async function(){
       const supplierCNY = parseFloat(row.dataset.cny)||0;
       let images=[]; try{ images=JSON.parse(row.dataset.images||'[]'); }catch(_){}
       images=[...new Set([imgUrl, ...images].filter(Boolean))].slice(0,15);
+      // Tabella taglie del modello (album "Size" separato): ultima foto della
+      // galleria e campo sizeChart per la guida taglie della pagina prodotto
+      const sizeChart = (row.dataset.sizeChart||'').trim();
+      if(sizeChart && !images.includes(sizeChart)) images=[...images.slice(0,14), sizeChart];
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand:brandOut,model:rowModel,
         category,
@@ -1169,6 +1173,7 @@ window.saveAll=async function(){
         colors,imageUrl:imgUrl,description,weightKg,
         ...(isCycling?{style:'ciclismo'}:isBasket?{style:'basket'}:isKit?{style:'calcio'}:{}),
         ...(images.length>1?{images}:{}),
+        ...(sizeChart?{sizeChart}:{}),
         sourceUrl,
         ...(supplierCNY>0?{supplierPriceCNY:supplierCNY}:{}),
         createdAt:imp.serverTimestamp()
@@ -1766,7 +1771,7 @@ window.fetchYupooAlbums = async function(){
     const imp = window.__imp;
     const fn = lfCallable('yupooFetch');
     const result = await fn({ url, ...(_yupooPassword ? { password: _yupooPassword } : {}) });
-    const { albumCovers, albumPrices = {}, albumUid = null } = result.data;
+    const { albumCovers, albumPrices = {}, albumUid = null, albumTitles = {}, sizeAlbums = [], sizeChartOf = {} } = result.data;
     _yupooUid = albumUid;   // owner uid: serve per URL album validi (?uid=N)
     const albumIds = Object.keys(albumCovers || {});
 
@@ -1802,11 +1807,17 @@ window.fetchYupooAlbums = async function(){
 
     try { _yupooHostname = new URL(url).hostname; } catch(e) { _yupooHostname = ''; }
     yupooAlbumsData = {};
-    albumIds.forEach(id => { yupooAlbumsData[id] = { cover: albumCovers[id], supplierPrice: albumPrices[id] || null, analysis: null, albumInfo: null }; });
+    // Album "tabella taglie" (es. "Size 500Y …"): non sono prodotti, la loro foto
+    // va nella guida taglie dei prodotti dello stesso modello (sizeChartOf).
+    const _charts = new Set((sizeAlbums || []).map(String));
+    albumIds.forEach(id => { yupooAlbumsData[id] = { cover: albumCovers[id], supplierPrice: albumPrices[id] || null, analysis: null, albumInfo: null,
+      title: albumTitles[id] || '', isSizeChart: _charts.has(String(id)), sizeChart: sizeChartOf[id] || '' }; });
 
     renderYupooGrid();
     document.getElementById('yupoo-grid').style.display = 'block';
-    status.textContent = `✅ ${albumIds.length} album trovati — seleziona quelli da importare, poi clicca "Analizza con AI"`;
+    const _withChart = albumIds.filter(id => sizeChartOf[id]).length;
+    status.textContent = `✅ ${albumIds.length} album trovati — seleziona quelli da importare, poi clicca "Analizza con AI"`
+      + (_charts.size ? ` · 📏 ${_charts.size} tabelle taglie (non importate) abbinate a ${_withChart} prodotti` : '');
     // Album già in catalogo (stesso id nel sourceUrl): deselezionati, così
     // reimportare una pagina non crea doppioni.
     // L'elenco degli album importati sta su Cloudflare (0 letture Firestore):
@@ -1834,13 +1845,14 @@ window.fetchYupooAlbums = async function(){
 
 function renderYupooGrid(){
   const grid = document.getElementById('yupoo-albums');
+  const _e = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   grid.innerHTML = Object.entries(yupooAlbumsData).map(([id, d]) => `
-    <div class="alb-card on" id="alb-${id}" data-cover="${d.cover}" onclick="toggleAlbum('${id}')">
+    <div class="alb-card${d.isSizeChart ? '' : ' on'}" id="alb-${id}" data-cover="${d.cover}" onclick="toggleAlbum('${id}')"${d.title ? ` title="${_e(d.title)}"` : ''}>
       <div class="alb-check">✓</div>
       <img class="alb-img" src="${pImg(d.cover)}" alt="" onerror="this.style.opacity='.15'" loading="lazy"/>
       <div class="alb-meta">
-        <p class="alb-name" id="alb-name-${id}">Album ${id.slice(-6)}</p>
-        <p class="alb-status" id="alb-st-${id}">${d.supplierPrice ? `¥${d.supplierPrice.value}` : 'In attesa'}</p>
+        <p class="alb-name" id="alb-name-${id}">${d.title ? _e(d.title.slice(0, 48)) : 'Album ' + id.slice(-6)}</p>
+        <p class="alb-status" id="alb-st-${id}"${d.isSizeChart ? ' style="color:#e0b84a;"' : ''}>${d.isSizeChart ? '📏 Tabella taglie · non si importa' : (d.supplierPrice ? `¥${d.supplierPrice.value}` : 'In attesa') + (d.sizeChart ? ' · 📏' : '')}</p>
       </div>
     </div>`).join('');
   updateYupooSelCount();
@@ -2045,6 +2057,15 @@ function pickImporterModel(d, fullName){
 }
 
 const _CYCLING_RE = /cycling|ciclismo|ciclista|\bbici\b|bicicletta|\bbike\b|\bmtb\b|\bgravel\b|maillot|\bbib\b|salopette|skinsuit|cuissard/i;
+// "S-XXL", "XS-XXL", "S-2XL", "XXS-XL" → taglie in mezzo (XXS→XS, 3XL→XXL: toggle disponibili)
+function _sizesFromTitle(t){
+  const m = String(t||'').toUpperCase().match(/\b(XXS|XS|S|M|L|XL|XXL|2XL|XXXL|3XL)\s*[-~～–]\s*(XS|S|M|L|XL|XXL|2XL|XXXL|3XL|4XL)\b/);
+  if(!m) return [];
+  const sc = ['XXS','XS','S','M','L','XL','XXL','XXXL'], n = x => ({'2XL':'XXL','3XL':'XXXL','4XL':'XXXL'}[x]||x);
+  const a = sc.indexOf(n(m[1])), b = sc.indexOf(n(m[2]));
+  if(a < 0 || b < a) return [];
+  return [...new Set(sc.slice(a, b+1).map(x => x==='XXS' ? 'XS' : x==='XXXL' ? 'XXL' : x))];
+}
 function addAnalyzedRow(d){
   const id = rowId++;
   const container = document.getElementById('rows-container');
@@ -2053,6 +2074,7 @@ function addAnalyzedRow(d){
   div.id = 'row-'+id;
   div.dataset.imgUrl   = d.cover;
   div.dataset.sourceUrl = d.sourceUrl || '';
+  div.dataset.sizeChart = d.sizeChart || '';
   // Galleria: cover + tutte le foto dell'album (per la pagina prodotto).
   // Dedup per ID foto (evita che la cover si ripeta in un'altra dimensione),
   // fino a 15 immagini — gli album occhiali hanno molte varianti colore.
@@ -2102,7 +2124,8 @@ function addAnalyzedRow(d){
   const modelMatch = isShoe ? 'Sneakers' : pickImporterModel(d, name);
 
   const shoeSizes  = d.albumInfo?.shoeSizes  || [];
-  const clothSizes = d.albumInfo?.clothSizes || [];
+  // Taglie: dal testo dell'album, altrimenti dall'intervallo nel titolo ("S-XXL")
+  const clothSizes = (d.albumInfo?.clothSizes || []).length ? d.albumInfo.clothSizes : _sizesFromTitle(d.title || d.albumInfo?.pageTitle || '');
   const defaultShoeSizes = '38 39 40 41 42 43 44 45 46';
   const sizesStr   = isShoe
     ? (shoeSizes.length ? shoeSizes.join(' ') : defaultShoeSizes)
@@ -2175,7 +2198,7 @@ function addAnalyzedRow(d){
         ` : `
           <p class="row-label">Taglie <button onclick="toggleAllSizes(${id})" style="background:none;border:none;color:var(--led);cursor:pointer;font-size:8px;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-left:6px;">TUTTE</button></p>
           <div style="display:flex;flex-wrap:wrap;gap:3px;" id="sz-${id}">
-            ${SIZES_ALL.map(s=>`<span class="sz-toggle ${isOneSize ? (s==='Unica'?'on':'') : 'on'}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
+            ${SIZES_ALL.map(s=>`<span class="sz-toggle ${isOneSize ? (s==='Unica'?'on':'') : (clothSizes.length ? (clothSizes.includes(s)?'on':'') : (s==='Unica'?'':'on'))}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}
           </div>
         `}
       </div>
