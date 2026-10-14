@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 rm -rf dist && mkdir -p dist
 
 # pagine, script e stili della radice
-for f in *.html firebase.js catalog-qc.js sw.js *.css icons.svg manifest.json robots.txt sitemap.xml; do
+for f in *.html firebase.js catalog-qc.js sw.js *.css icons.svg manifest.json version.json robots.txt sitemap.xml look*.jpg; do
   [ -e "$f" ] && cp "$f" dist/
 done
 # immagini della radice (hero, icone PWA)

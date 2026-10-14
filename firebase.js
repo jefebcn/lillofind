@@ -3,7 +3,7 @@
    Usato da: index.html, admin.html, vault.html
    ══════════════════════════════════════════════ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where,limit,startAfter,writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where,limit,startAfter,writeBatch,onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth,updateProfile,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInAnonymously,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,updatePassword,EmailAuthProvider,reauthenticateWithCredential,sendPasswordResetEmail,sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFunctions,httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 
@@ -13,7 +13,7 @@ const _googleProvider=new GoogleAuthProvider();
 _googleProvider.setCustomParameters({prompt:'select_account'});
 const _functions=getFunctions(app,'europe-west1');
 const _auth=getAuth(app);
-window.__fb={db:getFirestore(app),auth:_auth,functions:_functions,httpsCallable,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where,limit,startAfter,writeBatch,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInAnonymously,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,updatePassword,EmailAuthProvider,reauthenticateWithCredential,sendPasswordResetEmail,sendEmailVerification,updateProfile,_googleProvider};
+window.__fb={db:getFirestore(app),auth:_auth,functions:_functions,httpsCallable,collection,addDoc,getDocs,doc,getDoc,setDoc,updateDoc,deleteDoc,deleteField,serverTimestamp,query,orderBy,where,limit,startAfter,writeBatch,onSnapshot,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInAnonymously,signOut,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,updatePassword,EmailAuthProvider,reauthenticateWithCredential,sendPasswordResetEmail,sendEmailVerification,updateProfile,_googleProvider};
 
 /* ══════════════════════════════════════════════
    Campi privati dei prodotti → products_private

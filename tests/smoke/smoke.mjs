@@ -20,6 +20,14 @@ const ROOT = path.resolve(HERE, '../..');
 const OUT = path.join(HERE, 'out');
 const CONTRAST = fs.readFileSync(path.join(HERE, 'contrast.js'), 'utf8');
 
+// Aggiornamento forzato: LF_BUILD in index.html deve coincidere con version.json,
+// altrimenti ogni visitatore ricaricherebbe la pagina una volta per sessione.
+{
+  const v = JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')).build;
+  const m = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match(/window\.LF_BUILD='([^']+)'/);
+  if (!m || m[1] !== v) { console.error(`✗ version.json (${v}) e LF_BUILD in index.html (${m && m[1]}) non coincidono`); process.exit(1); }
+}
+
 // ── server statico ────────────────────────────────────────────────
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
