@@ -16,7 +16,7 @@
    Con cache:'no-cache' il browser chiede sempre al server se la pagina è
    cambiata (risposta 304 leggera se è uguale).
 */
-const CACHE = 'lillofind-v9';
+const CACHE = 'lillofind-v10';
 const STATIC = ['/', '/index.html', '/stream.html', '/manifest.json', '/style.css', '/index.css',
   '/theme-v3.css', '/icons.svg', '/firebase.js', '/icon-192.png', '/icon-512.png', '/assets/og-image.jpg'];
 
@@ -31,8 +31,23 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
+      .then((ks) => {
+        const old = ks.filter((k) => k !== CACHE);
+        return Promise.all(old.map((k) => caches.delete(k))).then(() => old.length > 0);
+      })
+      .then((updated) => self.clients.claim().then(() => updated))
+      .then((updated) => {
+        // Aggiornamento (c'era una cache vecchia): ricarica le pagine dello shop
+        // già aperte, così prendono subito il codice nuovo. Admin e importer no:
+        // si perderebbe quello che si sta scrivendo.
+        if (!updated) return;
+        return self.clients.matchAll({ type: 'window' }).then((cs) => Promise.all(cs.map((c) => {
+          try {
+            const p = new URL(c.url).pathname;
+            if ((p === '/' || p === '/index.html' || p === '/stream.html') && c.navigate) return c.navigate(c.url).catch(() => {});
+          } catch (_) {}
+        })));
+      })
   );
 });
 

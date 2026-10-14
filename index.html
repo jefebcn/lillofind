@@ -20,6 +20,7 @@
       else fetch(url,{method:'POST',body:body,keepalive:true,mode:'no-cors'});
     }catch(_){}
   }
+  window.lfReportError=function(kind,msg){ report(kind,msg,'',0,0,''); };
   window.addEventListener('error',function(e){ if(e.target&&e.target!==window) return; report('error',e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack); });
   window.addEventListener('unhandledrejection',function(e){ var r=e.reason||{}; report('promise',r.message||String(r),'',0,0,r.stack); });
 })();
@@ -87,6 +88,37 @@
     window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
   }
 
+  // ── Aggiornamento forzato ──
+  // LF_BUILD deve essere uguale a version.json (lo controlla lo smoke test).
+  // Chi ha il sito o l'app aperti da prima di una pubblicazione si ritrova la
+  // versione vecchia (anche per giorni, sull'app installata): qui si confronta
+  // con version.json e, se è cambiata, si svuota la cache e si ricarica, una
+  // volta sola. Mai durante il checkout o mentre si scrive in un campo.
+  window.LF_BUILD='2026-10-14.1';
+  (function(){
+    var last=0;
+    function busy(){
+      var a=document.activeElement, t=a&&a.tagName;
+      if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT') return true;
+      var co=document.getElementById('pg-checkout'); return !!(co&&co.classList.contains('on'));
+    }
+    function check(){
+      if(Date.now()-last<120000) return; last=Date.now();
+      fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; }).then(function(v){
+        if(!v||!v.build||v.build===window.LF_BUILD) return;
+        try{ if(sessionStorage.getItem('lf_reload_for')===v.build) return; }catch(_){}
+        if(busy()){ last=0; setTimeout(check,30000); return; }
+        try{ sessionStorage.setItem('lf_reload_for',v.build); }catch(_){}
+        var clear=(window.caches&&caches.keys)?caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }):Promise.resolve();
+        var upd=(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)?navigator.serviceWorker.getRegistration().then(function(r){ return r&&r.update(); }).catch(function(){}):Promise.resolve();
+        Promise.all([clear,upd]).catch(function(){}).then(function(){ location.reload(); });
+      }).catch(function(){});
+    }
+    window.addEventListener('load',function(){ setTimeout(check,4000); });
+    document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') check(); });
+    setInterval(function(){ if(document.visibilityState==='visible') check(); },600000);
+  })();
+
   // ── Presenza / analytics: registra la sessione su Firestore (heartbeat) ──
   // Serve al pannello admin per sapere chi è online, chi visita e quanto naviga.
   (function(){
@@ -148,7 +180,7 @@
 <link rel="stylesheet" href="style.css"/>
 
 <!-- Firebase -->
-<script type="module" src="firebase.js?v=20261013"></script>
+<script type="module" src="firebase.js?v=20261014"></script>
 <script>
 /* Escape unico per OGNI valore che finisce in HTML: nomi, descrizioni, brand,
    taglie e id arrivano dai fornitori (scraper/import) e dagli utenti, e
@@ -2977,12 +3009,12 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   };
 
   window.handleLogout=async function(){
-    clearTimeout(_cartPushT);
+    clearTimeout(_cartPushT); _cartStopWatch();
     await window.__fb.signOut(window.__fb.auth);
     try{ localStorage.removeItem('lf_ud'); }catch(_){}
     // Il carrello resta salvato nell'account: su questo dispositivo si svuota,
     // così chi usa lo stesso computer dopo non vede (e non eredita) il tuo.
-    _cartApply([]); try{ localStorage.removeItem('lf_cart_ts'); }catch(_){}
+    _cartApply([]); try{ localStorage.removeItem('lf_cart_ts'); localStorage.removeItem('lf_cart_uid'); }catch(_){}
     updateNav(null,null); updateHomeDisplay();
     showToast('Arrivederci. 👋'); showPg('home');
   };
@@ -4487,33 +4519,47 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   function saveCart(){ try{ localStorage.setItem('lf_cart',JSON.stringify(cart)); localStorage.setItem('lf_cart_ts',String(Date.now())); }catch(_){} _cartPushSoon(); }
 
   // ── Carrello legato all'account (computer ↔ telefono) ──
-  // Prima il carrello viveva solo nel browser: chi riempiva il carrello dal
-  // computer non lo ritrovava dal telefono con lo stesso account. Ora, per
-  // gli account veri (non gli ospiti), si salva anche in carts/{uid}
+  // Per gli account veri (non gli ospiti) il carrello sta anche in carts/{uid}
   // (leggibile solo dal proprietario, vedi firestore.rules):
-  //  - all'accesso si UNISCE il carrello del dispositivo con quello salvato;
-  //  - tornando sulla pagina si prende quello salvato se è più recente;
-  //  - ogni modifica si salva (con un piccolo ritardo, una scrittura sola).
+  //  - prima volta di questo account su questo dispositivo (lf_cart_uid diverso):
+  //    si UNISCE il carrello del dispositivo (es. da ospite) con quello salvato;
+  //  - dopo vale l'ultima modifica (lf_cart_ts contro updatedAt): così un
+  //    articolo tolto sul telefono non ricompare aprendo il sito dal computer;
+  //  - un ascolto in tempo reale (onSnapshot) porta subito sull'altro
+  //    dispositivo ogni modifica, anche con la pagina già aperta.
   function _cartKey(i){ return [i.id,i.size||'',i.color||'',i.addonKey||'',i.boxOption||''].join('|'); }
   function _cartLocalTs(){ try{ return +localStorage.getItem('lf_cart_ts')||0; }catch(_){ return 0; } }
+  function _cartSetTs(ts){ try{ localStorage.setItem('lf_cart_ts',String(ts)); }catch(_){} }
+  function _cartOwner(){ try{ return localStorage.getItem('lf_cart_uid')||''; }catch(_){ return ''; } }
+  function _cartSetOwner(uid){ try{ if(uid) localStorage.setItem('lf_cart_uid',uid); else localStorage.removeItem('lf_cart_uid'); }catch(_){} }
   function _cartAccount(){ return !!(typeof user!=='undefined' && user && !user.isAnonymous && window.__fb); }
-  var _cartPushT=null, _cartPulling=false, _cartPullAt=0;
+  var _cartPushT=null, _cartPulling=false, _cartPullAt=0, _cartUnsub=null, _cartWatchUid='', _cartPoll=null;
+  function _cartClean(){ return cart.slice(0,60).map(i=>{ const o={}; for(const k in i){ if(i[k]!==undefined&&typeof i[k]!=='function') o[k]=i[k]; } return JSON.parse(JSON.stringify(o)); }); }
+  function _cartPushNow(){
+    if(!_cartAccount()) return Promise.resolve();
+    const fb=window.__fb, uid=user.uid, ts=_cartLocalTs()||Date.now();
+    return fb.setDoc(fb.doc(fb.db,'carts',uid),{items:_cartClean(),updatedAt:ts})
+      .then(()=>_cartSetOwner(uid))
+      .catch(e=>{ console.warn('carrello account:',e&&e.code); try{ window.lfReportError&&lfReportError('cart','salvataggio carrello: '+((e&&e.code)||(e&&e.message)||'errore')); }catch(_){} });
+  }
   function _cartPushSoon(){
     if(!_cartAccount()) return;
     clearTimeout(_cartPushT);
-    _cartPushT=setTimeout(()=>{
-      if(!_cartAccount()) return;
-      const fb=window.__fb, items=cart.slice(0,60).map(i=>{ const o={}; for(const k in i){ if(i[k]!==undefined&&typeof i[k]!=='function') o[k]=i[k]; } return o; });
-      fb.setDoc(fb.doc(fb.db,'carts',user.uid),{items,updatedAt:_cartLocalTs()||Date.now()}).catch(e=>console.warn('carrello account:',e&&e.code));
-    },1200);
+    _cartPushT=setTimeout(_cartPushNow,800);
   }
   function _cartApply(items){
     cart=(items||[]).filter(i=>i&&typeof i==='object'&&i.id);
     try{ localStorage.setItem('lf_cart',JSON.stringify(cart)); }catch(_){}
     try{ updateCartBadge(); renderCart(); }catch(_){}
   }
-  // merge=true all'accesso: unione dei due carrelli (stessa riga → quantità maggiore).
-  async function lfCartSync(merge){
+  // Applica il carrello salvato se è più recente di quello del dispositivo.
+  function _cartTakeRemote(d){
+    const rTs=+(d&&d.updatedAt)||0;
+    if(rTs>_cartLocalTs()){ _cartApply(Array.isArray(d.items)?d.items:[]); _cartSetTs(rTs); return true; }
+    return false;
+  }
+  // login=true all'accesso: prima volta su questo dispositivo → unione; poi vince il più recente.
+  async function lfCartSync(login){
     if(!_cartAccount()||_cartPulling) return;
     _cartPulling=true; _cartPullAt=Date.now();
     try{
@@ -4521,23 +4567,47 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       const snap=await fb.getDoc(fb.doc(fb.db,'carts',uid));
       if(!user||user.uid!==uid) return;
       const remote=snap.exists()?(snap.data()||{}):{}, rItems=Array.isArray(remote.items)?remote.items:[], rTs=+remote.updatedAt||0;
-      if(merge){
+      if(login && _cartOwner()!==uid){
+        // carrello da ospite (o di un altro account) + carrello salvato: si uniscono
         const map=new Map();
         rItems.concat(cart).forEach(i=>{ if(!i||!i.id) return; const k=_cartKey(i), cur=map.get(k); if(!cur) map.set(k,{...i}); else cur.qty=Math.max(+cur.qty||1,+i.qty||1); });
-        const merged=[...map.values()];
-        const changed=JSON.stringify(merged)!==JSON.stringify(cart);
-        if(changed) _cartApply(merged);
-        if(changed||merged.length!==rItems.length){ try{ localStorage.setItem('lf_cart_ts',String(Date.now())); }catch(_){} _cartPushSoon(); }
+        _cartApply([...map.values()]);
+        _cartSetTs(Date.now());
+        await _cartPushNow();
       } else if(rTs>_cartLocalTs()){
-        _cartApply(rItems);
-        try{ localStorage.setItem('lf_cart_ts',String(rTs)); }catch(_){}
+        _cartTakeRemote(remote);
+        _cartSetOwner(uid);
+      } else if(_cartLocalTs()>rTs){
+        await _cartPushNow();   // modifiche fatte qui (anche da altre pagine) non ancora salvate
       }
-    }catch(e){ console.warn('carrello account:',e&&e.code); }
+      _cartWatch(uid);
+    }catch(e){ console.warn('carrello account:',e&&e.code); try{ window.lfReportError&&lfReportError('cart','lettura carrello: '+((e&&e.code)||(e&&e.message)||'errore')); }catch(_){} }
     finally{ _cartPulling=false; }
   }
   window.lfCartSync=lfCartSync;
-  // Tornando sulla scheda (es. dopo aver usato il telefono) riprende il carrello aggiornato.
+  // Ascolto in tempo reale del carrello dell'account (una lettura per modifica).
+  function _cartWatch(uid){
+    if(_cartWatchUid===uid) return;
+    _cartStopWatch();
+    const fb=window.__fb; _cartWatchUid=uid;
+    if(fb && typeof fb.onSnapshot==='function'){
+      _cartUnsub=fb.onSnapshot(fb.doc(fb.db,'carts',uid),s=>{
+        if(!user||user.uid!==uid||s.metadata.hasPendingWrites||!s.exists()) return;
+        _cartTakeRemote(s.data()||{});
+      },e=>console.warn('carrello live:',e&&e.code));
+    } else {
+      // firebase.js vecchio in cache: controllo ogni 45 secondi a pagina visibile
+      _cartPoll=setInterval(()=>{ if(document.visibilityState==='visible') lfCartSync(false); },45000);
+    }
+  }
+  function _cartStopWatch(){
+    try{ if(_cartUnsub) _cartUnsub(); }catch(_){}
+    _cartUnsub=null; _cartWatchUid=''; clearInterval(_cartPoll); _cartPoll=null;
+  }
+  window._cartStopWatch=_cartStopWatch;
+  // Tornando sulla scheda riprende il carrello aggiornato (di riserva all'ascolto live).
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && Date.now()-_cartPullAt>20000) lfCartSync(false); });
+  window.addEventListener('pageshow',e=>{ if(e.persisted) lfCartSync(false); });
   // Carrello aperto in due schede: senza questo ciascuna sovrascriveva
   // l'altra al primo saveCart, e un articolo aggiunto spariva.
   window.addEventListener('storage', e=>{
@@ -6131,7 +6201,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       updateNav(u,udata); updateHomeDisplay();
       if(u){ try{ claimReferralRewards(); }catch(_){} try{ const cke=document.getElementById('ck-email'); if(cke && !cke.value && u.email) cke.value=u.email; }catch(_){} }
       // Carrello dell'account: unisce quello del dispositivo con quello salvato
-      if(u && !u.isAnonymous){ try{ lfCartSync(true); }catch(_){} }
+      if(u && !u.isAnonymous){ try{ lfCartSync(true); }catch(_){} } else { try{ _cartStopWatch(); }catch(_){} }
       // Re-render profile if it's already open (covers race condition on load)
       if(u && document.getElementById('pg-profile')?.classList.contains('on')){
         if(typeof window._fullRenderProfile==='function') window._fullRenderProfile();

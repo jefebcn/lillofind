@@ -510,7 +510,8 @@ const pctOff = s => Math.round((1 - s.lillofind_price / s.official_price) * 100)
 
 // ── Carrello (condiviso con index.html via localStorage) ─
 function loadCart(){ try{ return JSON.parse(localStorage.getItem('lf_cart')||'[]'); }catch(_){ return []; } }
-function saveCart(c){ localStorage.setItem('lf_cart', JSON.stringify(c)); }
+// lf_cart_ts: così lo shop sa che il carrello è cambiato e lo salva sull'account
+function saveCart(c){ localStorage.setItem('lf_cart', JSON.stringify(c)); try{ localStorage.setItem('lf_cart_ts', String(Date.now())); }catch(_){} }
 function updateCartBadge(){
   const count = loadCart().reduce((s,i)=>s+(i.isDigital?1:(i.qty||1)),0);
   const b = document.getElementById('sub-cart-count');
