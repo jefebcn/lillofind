@@ -338,6 +338,30 @@ export function priceFromTitle(t) {
   return v >= 10 && v < 20000 ? v : null;
 }
 
+// Prezzo fornitore (¥) dal testo di una pagina album: prezzo BASE in CNY,
+// ignorando gli add-on tipo "+ 15 CNY/pcs" (numero/personalizzazione); poi
+// ¥/￥, parole chiave cinesi e infine il titolo ("330Y 【TZ Batch】…").
+// Usata dall'importer e dal recupero prezzi (scripts/backfill-supplier-prices.mjs).
+export function albumPagePriceCNY(bodyText, rawTitle) {
+  const cnyAll = [...String(bodyText || '').matchAll(/(\+\s*)?(\d{1,5})\s*(?:元|CNY|cny|RMB|rmb)/g)];
+  const cnyBases = cnyAll.filter(m => !m[1]).map(m => parseInt(m[2], 10)).filter(v => v > 0 && v < 100000);
+  if (cnyBases.length) return Math.max(...cnyBases);
+  if (cnyAll.length) return parseInt(cnyAll[0][2], 10);
+  // Simbolo ¥/￥ (es. "¥128", "￥ 128", "￥~135", "￥ ~ 298" → prezzo saldo)
+  const y = String(bodyText || '').match(/[¥￥]\s*[~～≈约\s]*(\d{1,5})/); if (y) return parseInt(y[1], 10);
+  // Parole chiave cinesi: 价格/售价/价/单价/批发价 seguite da un numero
+  const kw = [...String(bodyText || '').matchAll(/(?:价格|售价|单价|批发价|价)\s*[:：]?\s*(\d{1,5})/g)]
+    .map(m => parseInt(m[1], 10)).filter(v => v >= 5 && v < 100000);
+  if (kw.length) return Math.max(...kw);
+  // Ultima risorsa: un numero prezzo nel titolo album (es. "… 65" / "价65" / "330Y 【…")
+  if (rawTitle) {
+    const tp = rawTitle.match(/(?:¥|￥|价格?|售价)\s*[~～≈约\s]*(\d{2,5})/) || rawTitle.match(/\b(\d{2,4})\s*(?:元|cny|rmb)\b/i);
+    if (tp) { const v = parseInt(tp[1], 10); if (v >= 5 && v < 100000) return v; }
+    return priceFromTitle(rawTitle);
+  }
+  return null;
+}
+
 // Taglie dall'intervallo nel titolo: "S-XXL", "XS-XXL", "S-2XL", "XXS-XL"
 const SIZE_SCALE = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 export function sizesFromTitle(t) {
@@ -873,26 +897,7 @@ export async function yupooFetch(data, _ctx) {
       const shoeSizes = sizesRaw ? [...new Set(sizesRaw.split(/[\s,\/]+/).filter(s => /^\d{2}(\.\d)?$/.test(s)))] : [];
       const clothM = bodyText.match(/(?:size|sizes|尺码)[：:\s]+([A-Z]{1,3}(?:\s+[A-Z]{1,3})+)/i);
       const clothSizes = clothM ? clothM[1].split(/\s+/).filter(s => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].includes(s)) : [];
-      // Prezzo fornitore: prendi il prezzo BASE in CNY, ignorando gli
-      // add-on tipo "+ 15 CNY/pcs" (numero/personalizzazione).
-      let supplierPriceCNY = null;
-      const cnyAll = [...bodyText.matchAll(/(\+\s*)?(\d{1,5})\s*(?:元|CNY|cny|RMB|rmb)/g)];
-      const cnyBases = cnyAll.filter(m => !m[1]).map(m => parseInt(m[2], 10)).filter(v => v > 0 && v < 100000);
-      if (cnyBases.length) supplierPriceCNY = Math.max(...cnyBases);
-      else if (cnyAll.length) supplierPriceCNY = parseInt(cnyAll[0][2], 10);
-      // Simbolo ¥/￥ (es. "¥128", "￥ 128", "￥~135", "￥ ~ 298" → prezzo saldo)
-      if (supplierPriceCNY == null) { const y = bodyText.match(/[¥￥]\s*[~～≈约\s]*(\d{1,5})/); if (y) supplierPriceCNY = parseInt(y[1], 10); }
-      // Parole chiave cinesi: 价格/售价/价/单价/批发价 seguite da un numero
-      if (supplierPriceCNY == null) {
-        const kw = [...bodyText.matchAll(/(?:价格|售价|单价|批发价|价)\s*[:：]?\s*(\d{1,5})/g)]
-          .map(m => parseInt(m[1], 10)).filter(v => v >= 5 && v < 100000);
-        if (kw.length) supplierPriceCNY = Math.max(...kw);
-      }
-      // Ultima risorsa: un numero prezzo nel titolo album (es. "… 65" / "价65")
-      if (supplierPriceCNY == null && rawTitle) {
-        const tp = rawTitle.match(/(?:¥|￥|价格?|售价)\s*[~～≈约\s]*(\d{2,5})/) || rawTitle.match(/\b(\d{2,4})\s*(?:元|cny|rmb)\b/i);
-        if (tp) { const v = parseInt(tp[1], 10); if (v >= 5 && v < 100000) supplierPriceCNY = v; }
-      }
+      let supplierPriceCNY = albumPagePriceCNY(bodyText, rawTitle);
       // Prezzo assente nel testo ma l'album linka un prodotto Weidian
       // (es. "Weidian link : https://weidian.com/item.html?itemID=…"): apri il
       // link e leggi il prezzo da lì (in yuan), che poi il client converte.

@@ -1,0 +1,51 @@
+# Recupera il prezzo fornitore (¥) dei prodotti che non ce l'hanno, rileggendo
+# l'album Yupoo d'origine, così "Prezzi sotto il minimo" (Costi & Margini) può
+# controllarli. Non cambia i prezzi di vendita. Nei log solo conteggi.
+# Parte da solo quando questo file o lo script cambiano su main; si può
+# rilanciare a mano: GitHub → Actions → "Prezzi fornitore" → Run workflow.
+name: Prezzi fornitore
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/backfill-supplier-prices.yml'
+      - 'scripts/backfill-supplier-prices.mjs'
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'Solo anteprima (1 = non salva)'
+        required: false
+        default: '0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supplier-prices
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Credenziali Google (service account Firebase)
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: printf '%s' "$GOOGLE_CREDENTIALS" > "$RUNNER_TEMP/gcloud-key.json"
+
+      - name: Recupera i prezzi dagli album Yupoo
+        working-directory: scripts
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
+          DRY: ${{ github.event.inputs.dry || '0' }}
+        run: |
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund firebase-admin@12 >/dev/null
+          node backfill-supplier-prices.mjs
