@@ -53,12 +53,22 @@ eq(getProductWeight({ category: 'scarpe', boxOption: 'senza_scatola' }), 2.0, 's
 eq(getProductWeight({ category: 'scarpe_box' }), 2.5, 'scarpe_box default');
 eq(getProductWeight({ category: 'sconosciuta' }), 0.5, 'categoria sconosciuta → 0.5');
 
-// ── Fasce spedizione ────────────────────────────────────────────
+// ── Spedizione a peso: €12 fino a 1 kg, poi €5 ogni 0,5 kg ──────
 eq(getShippingCost(0.5), 12, 'spedizione <=1kg');
-eq(getShippingCost(2), 18, 'spedizione <=3kg');
-eq(getShippingCost(5), 25, 'spedizione <=6kg');
-eq(getShippingCost(8), 35, 'spedizione <=10kg');
-eq(getShippingCost(50), 50, 'spedizione oltre');
+eq(getShippingCost(1), 12, 'spedizione 1kg esatto');
+eq(getShippingCost(1.2), 17, 'spedizione 1,2kg');
+eq(getShippingCost(2), 22, 'spedizione 2kg (un paio di sneakers)');
+eq(getShippingCost(3), 32, 'spedizione 3kg');
+eq(getShippingCost(6), 62, 'spedizione 6kg');
+eq(getShippingCost(0.35 * 3), 17, 'spedizione 3 t-shirt (1,05kg)');
+
+// ── Pesi reali (ricevute agente) ────────────────────────────────
+eq(getProductWeight({ category: 'scarpe', weightKg: 1.2 }), 2.0, 'sneakers salvate a 1,2 kg → 2 kg reali');
+eq(getProductWeight({ category: 'felpa', weightKg: 0.7 }), 0.8, 'felpa salvata 0,7 → 0,8');
+eq(getProductWeight({ category: 'giacchetto', name: 'Moncler Piumino Maya Nero' }), 2.8, 'piumino 2,8 kg');
+eq(getProductWeight({ category: 'scarpe', name: 'Birkenstock Boston Ciabatte' }), 1.3, 'ciabatte 1,3 kg');
+eq(getProductWeight({ category: 'pantaloni', name: 'Nike Tech Fleece Set Completo' }), 1.4, 'set felpa+pantaloni 1,4 kg');
+eq(getProductWeight({ category: 'felpa', weightKg: 3 }), 3, 'peso salvato più alto: resta');
 
 // ════════════════════════════════════════════════════════════════
 // Catalogo streaming
