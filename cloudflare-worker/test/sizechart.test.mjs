@@ -1,5 +1,5 @@
 // Categorie Yupoo con la tabella taglie in un album a parte (es. yolo66).
-import { parseAlbumList, pairSizeCharts, priceFromTitle, sizesFromTitle, modelKey } from '../src/handlers/scrapers.js';
+import { parseAlbumList, pairSizeCharts, priceFromTitle, sizesFromTitle, modelKey, albumPagePriceCNY } from '../src/handlers/scrapers.js';
 
 let pass = 0, fail = 0;
 const eq = (a, e, l) => { const A = JSON.stringify(a), E = JSON.stringify(e); if (A === E) pass++; else { fail++; console.error('❌ ' + l + '\n   atteso ' + E + '\n   ottenuto ' + A); } };
@@ -28,6 +28,9 @@ eq([list[0].id, list[0].title, list[0].cover], ['1', 'Size 500Y 【SJ Batch】So
 eq(priceFromTitle('330Y 【TZ Batch】 ALPHA SV 7代'), 330, 'prezzo "330Y"');
 eq(priceFromTitle('270 【XF Batch】Beta LW'), 270, 'prezzo "270 【"');
 eq(priceFromTitle('Size'), null, 'nessun prezzo');
+eq(albumPagePriceCNY('prezzo 239元 + 15 CNY nome', ''), 239, 'album: prezzo base, add-on ignorato');
+eq(albumPagePriceCNY('foto', '330Y 【TZ Batch】Polo'), 330, 'album: prezzo dal titolo "330Y"');
+eq(albumPagePriceCNY('foto', 'Polo'), null, 'album: nessun prezzo');
 eq(sizesFromTitle('… S-XXL 黑色'), ['S', 'M', 'L', 'XL', 'XXL'], 'taglie S-XXL');
 eq(sizesFromTitle('… XS-2XL'), ['XS', 'S', 'M', 'L', 'XL', 'XXL'], 'taglie XS-2XL');
 eq(sizesFromTitle('Felpa'), [], 'nessuna taglia');
