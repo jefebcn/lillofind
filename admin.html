@@ -4592,7 +4592,8 @@ waitFB(()=>{
     const idHint=r.itemId||costItemKey(r.link);
     return `<tr data-i="${i}" style="border-top:1px solid rgba(255,255,255,.07);">
       <td style="padding:9px 6px;color:#888;vertical-align:top;">${r.line||i+1}<div style="font-size:9px;color:#666;">${escH(String(r.size||'').slice(0,18))}${r.remarks?(' · '+escH(r.remarks)):''}</div>
-        <input list="cost-people" value="${String(r.person||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" oninput="costSetPerson(${i},this.value)" placeholder="👤 persona" style="margin-top:5px;width:104px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:4px 7px;font-size:10px;"/></td>
+        <input list="cost-people" value="${String(r.person||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" oninput="costSetPerson(${i},this.value)" placeholder="👤 persona" style="margin-top:5px;width:104px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:4px 7px;font-size:10px;"/>
+        <input value="${String(r.label||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" oninput="costSetLabel(${i},this.value)" placeholder="✏️ nome nel messaggio" title="Nome dell'articolo nel messaggio WhatsApp (vuoto = nome del prodotto)" style="margin-top:4px;width:104px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:4px 6px;font-size:10px;"/></td>
       <td style="min-width:210px;vertical-align:top;"><select onchange="costSetPid(${i},this.value)" style="width:100%;max-width:250px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:7px;padding:7px 8px;font-size:11px;">${opts}</select>
         ${r.matched?'<div style="font-size:9px;color:#2ecc71;margin-top:3px;">✓ abbinato via link</div>':(idHint?('<div style="font-size:9px;color:#c90;margin-top:3px;">nessun match auto (id '+escH(idHint)+')</div>'):'<div style="font-size:9px;color:#777;margin-top:3px;">link non letto — scegli a mano</div>')}</td>
       <td style="vertical-align:top;"><input type="number" step="0.01" value="${(+r.unitPriceUsd||0)}" oninput="costEdit(${i},'unitPriceUsd',this.value)" style="width:72px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"/></td>
@@ -4638,6 +4639,8 @@ waitFB(()=>{
   }
   // Totali per persona: assegna le righe a chi le ha ordinate → quanto deve pagare.
   window.costSetPerson=function(i,val){ if(_costRows[i]) _costRows[i].person=val; updatePeopleTotals(); };
+  // Nome personalizzato dell'articolo per il messaggio WhatsApp (vuoto = nome del prodotto)
+  window.costSetLabel=function(i,val){ if(_costRows[i]) _costRows[i].label=String(val||'').slice(0,60); updatePeopleTotals(); };
   function updatePeopleTotals(){
     const el=document.getElementById('cost-people-tot'); if(!el) return;
     const fx=costFx();
@@ -4645,9 +4648,10 @@ waitFB(()=>{
     let all$=0;
     _costRows.forEach(r=>{
       const name=(r.person||'').trim(); const key=name.toLowerCase()||'—';
-      if(!groups[key]){ groups[key]={name:name||'Non assegnati', price:0, ship:0, n:0, un:!name}; order.push(key); }
+      if(!groups[key]){ groups[key]={name:name||'Non assegnati', price:0, ship:0, n:0, un:!name, items:[]}; order.push(key); }
       const q=rowQty(r), u=rowUnitUsd(r);
       groups[key].price+=u.p*q; groups[key].ship+=u.s*q; groups[key].n+=q; all$+=(u.p+u.s)*q;
+      groups[key].items.push({label:costRowLabel(r), size:String(r.size||'').trim(), q, p:u.p*q, s:u.s*q});
     });
     // Sconto della ricevuta diviso in proporzione a quanto ha ordinato ciascuno
     const disc$=(_costSummary&&_costSummary.discountUsd)||0;
@@ -4667,21 +4671,32 @@ waitFB(()=>{
       +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;">';
     // Testo pronto per WhatsApp: lista in colonna, in € (quanto incassi da ciascuno).
     const waLines=['💰 LILLOFIND — Riepilogo pagamenti',''];
+    const eur=v=>'€'+v.toFixed(2);
+    // Messaggio di una persona: articolo per articolo (merce + spedizione), poi il suo totale
+    const personLines=(g,tE)=>{
+      const L=['👤 '+g.name+' ('+g.n+' art.)'];
+      g.items.forEach(it=>{
+        L.push('• '+it.label+(it.size?' ('+it.size+')':'')+(it.q>1?' ×'+it.q:'')+' — '+eur((it.p+it.s)*fx)+(it.s?(' (merce '+eur(it.p*fx)+' + sped. '+eur(it.s*fx)+')'):''));
+      });
+      if(g.disc) L.push('➖ '+(ref$?'Sconto/rimborso':'Sconto')+': −'+eur(g.disc*fx));
+      L.push('👉 Totale da pagare: '+eur(tE));
+      return L;
+    };
+    window._peopleWaEach={};
     let grpTotE=0, nPeople=0;
     order.forEach(k=>{ const g=groups[k]; const t$=g.price+g.ship-g.disc, tE=t$*fx;
       html+='<div style="border:1px solid '+(g.un?'#333':'rgba(200,255,0,.28)')+';border-radius:9px;padding:11px 13px;background:'+(g.un?'transparent':'rgba(200,255,0,.04)')+';">'
         +'<div style="font-weight:700;font-size:13px;color:'+(g.un?'#888':'#fff')+';">'+escH(g.name)+' <span style="font-size:10px;color:#888;font-weight:400;">· '+g.n+' art.</span></div>'
         +'<div style="font-size:11px;color:#aaa;margin-top:4px;">merce $'+g.price.toFixed(2)+' + sped $'+g.ship.toFixed(2)+(g.disc?(' − '+(ref$?'sconto/rimborso':'sconto')+' $'+g.disc.toFixed(2)):'')+'</div>'
         +'<div style="font-family:\'Bricolage Grotesque\',sans-serif;font-size:22px;color:var(--led);margin-top:3px;line-height:1;">$'+t$.toFixed(2)+' <span style="font-size:13px;color:#ccc;">= €'+tE.toFixed(2)+'</span></div>'
+        +'<div style="font-size:10.5px;color:#999;margin-top:6px;line-height:1.5;">'+g.items.map(it=>'· '+escH(it.label.slice(0,34))+(it.size?' ('+escH(it.size)+')':'')+(it.q>1?' ×'+it.q:'')+' — €'+((it.p+it.s)*fx).toFixed(2)).join('<br>')+'</div>'
+        +(g.un?'':'<button class="btn-k" onclick="copyPersonList('+JSON.stringify(k).replace(/"/g,'&quot;')+')" style="margin-top:8px;padding:5px 10px;font-size:10px;">📋 Copia solo '+escH(g.name)+'</button>')
         +'</div>';
       // Solo persone assegnate nel testo WhatsApp (i "Non assegnati" non si mandano).
       if(!g.un){
-        waLines.push('👤 '+g.name+' ('+g.n+' art.)');
-        waLines.push('   Merce: €'+(g.price*fx).toFixed(2));
-        waLines.push('   Spedizione: €'+(g.ship*fx).toFixed(2));
-        if(g.disc) waLines.push('   '+(ref$?'Sconto/rimborso':'Sconto')+': −€'+(g.disc*fx).toFixed(2));
-        waLines.push('   👉 Da pagare: €'+tE.toFixed(2));
-        waLines.push('');
+        const pl=personLines(g,tE);
+        waLines.push(...pl, '');
+        window._peopleWaEach[k]=['💰 LILLOFIND — Il tuo ordine',''].concat(pl).join('\n');
         grpTotE+=tE; nPeople++;
       }
     });
@@ -4708,6 +4723,18 @@ waitFB(()=>{
   window.setCostSummaryVal=function(k,v){ if(!_costSummary) return; const n=Math.abs(parseFloat(String(v).replace(',','.')))||0;
     _costSummary[k+'Usd']=n; _costSummary[k+'Fixed']=false; updateCostTotals(); updatePeopleTotals(); };
   window.setCostRefundTo=function(v){ if(!_costSummary) return; _costSummary.refundTo=v||''; updatePeopleTotals(); };
+  // Nome dell'articolo per il messaggio: prodotto abbinato, altrimenti note/riga della ricevuta
+  function costRowLabel(r){
+    if(r.label&&String(r.label).trim()) return String(r.label).trim().replace(/\s+/g,' ').slice(0,60);
+    const prod=r.pid?adminCatalogProducts.find(p=>p.id===r.pid):null;
+    const n=prod?String(prod.name||'').trim():'';
+    return (n?(prod.brand&&!n.toLowerCase().includes(String(prod.brand).toLowerCase())?prod.brand+' '+n:n):('Articolo '+(r.line||'')+(r.remarks?' · '+String(r.remarks):''))).replace(/\s+/g,' ').slice(0,60);
+  }
+  window.copyPersonList=function(k){
+    const t=(window._peopleWaEach||{})[k]||'';
+    if(!t){ showToast('⚠️ Niente da copiare'); return; }
+    try{ navigator.clipboard.writeText(t).then(()=>showToast('📋 Copiato — incolla su WhatsApp')).catch(()=>showToast('📋 '+t)); }catch(_){ showToast('📋 '+t); }
+  };
   // Copia negli appunti la lista pagamenti per persona (formato WhatsApp).
   window.copyPeopleList=function(){
     const t=window._peopleWaText||'';
