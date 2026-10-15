@@ -74,5 +74,7 @@ jobs:
           if [ -z "$ID" ]; then echo "KV 'lillofind-catalog' non trovato"; exit 1; fi
           npx wrangler kv key put catalog --path ../scripts/catalog.json --namespace-id "$ID"
           npx wrangler kv key put "catalog:meta" --path ../scripts/catalog-meta.json --namespace-id "$ID"
+          npx wrangler kv key get "catalog:albums" --namespace-id "$ID" > ../scripts/albums-old.json 2>/dev/null || echo "[]" > ../scripts/albums-old.json
+          node ../scripts/merge-albums.mjs ../scripts/albums-old.json ../scripts/catalog-albums.json
           npx wrangler kv key put "catalog:albums" --path ../scripts/catalog-albums.json --namespace-id "$ID"
           echo "Catalogo pubblicato nel KV $ID"
