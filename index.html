@@ -4478,39 +4478,44 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     return pImg(inner);
   }
 
-  // ── Cart — weight & shipping config ────────────────────
+  // ── Cart — peso e spedizione ───────────────────────────
+  // STESSA logica di cloudflare-worker/src/lib/shipping.js (lì i dettagli):
+  // pesi reali dalle ricevute dell'agente; il peso salvato sul prodotto conta
+  // solo se più alto; spedizione €12 fino a 1 kg, poi €5 ogni 0,5 kg.
   const CATEGORY_WEIGHTS={
     tshirt:0.35,tshirt_branded:0.40,felpa:0.80,
     scarpe:2.00,scarpe_box:2.50,pantaloni:0.80,
-    shorts:0.50,cappello:0.30,giacchetto:1.20,
-    borsa:1.50,accessori:0.20,
+    shorts:0.40,cappello:0.30,giacchetto:1.20,
+    borsa:1.50,accessori:0.30,
   };
-  const SHIPPING_TIERS=[
-    {maxKg:1,   price:12,label:'0–1 kg'},
-    {maxKg:3,   price:18,label:'1–3 kg'},
-    {maxKg:6,   price:25,label:'3–6 kg'},
-    {maxKg:10,  price:35,label:'6–10 kg'},
-    {maxKg:9999,price:50,label:'10+ kg'},
+  const TYPE_WEIGHTS=[
+    [/piumin|puffer|down ?jacket|parka|nuptse|\bdown\b/i,2.8],
+    [/ciabatt|slides?\b|clog|sandal|infradito/i,1.3],
+    [/\bset\b|\btuta\b|tracksuit|completo/i,1.4],
+    [/maglion|knit|cardigan/i,1.0],
+    [/airpods?|cuffie|headphone/i,0.5],
   ];
   function isShoeItem(item){
     const cat=item.category||'';
     return cat==='scarpe'||cat==='scarpe_box'||(item.model||'').toLowerCase()==='sneakers';
   }
   function getProductWeight(item){
-    if(item.weightKg&&item.weightKg>0) return item.weightKg;
-    if(isShoeItem(item)){
-      const box=item.boxOption||(item.category==='scarpe_box'?'con_scatola':'senza_scatola');
-      return box==='con_scatola'?2.5:2.0;
+    const p=item||{}, txt=(p.name||'')+' '+(p.model||'');
+    let base=null;
+    for(const [re,w] of TYPE_WEIGHTS){ if(re.test(txt)){ base=w; break; } }
+    if(base==null){
+      if(isShoeItem(p)){ const box=p.boxOption||(p.category==='scarpe_box'?'con_scatola':'senza_scatola'); base=box==='con_scatola'?2.5:2.0; }
+      else base=CATEGORY_WEIGHTS[p.category]??0.5;
     }
-    return CATEGORY_WEIGHTS[item.category]??0.5;
+    return Math.max(+p.weightKg||0, base);
   }
   function getShippingCost(totalWeightKg){
-    const tier=SHIPPING_TIERS.find(t=>totalWeightKg<=t.maxKg);
-    return tier?tier.price:50;
+    const kg=Math.max(0,+totalWeightKg||0);
+    if(kg<=1) return 12;
+    return 12+Math.ceil(Math.round((kg-1)*1000)/1000/0.5)*5;
   }
   function getShippingTierLabel(totalWeightKg){
-    const tier=SHIPPING_TIERS.find(t=>totalWeightKg<=t.maxKg);
-    return tier?tier.label:'10+ kg';
+    return (Math.round((+totalWeightKg||0)*10)/10).toFixed(1).replace('.',',')+' kg';
   }
 
   // ── Cart ───────────────────────────────────────────────
@@ -4717,7 +4722,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     document.getElementById('cart-subtotal').textContent='€'+total.toFixed(2);
     document.getElementById('cart-ship').textContent=(ship===0&&allDigital)?'Digitale — Gratis':'€'+ship.toFixed(2);
     const shipTierEl=document.getElementById('cart-ship-tier');
-    if(shipTierEl) shipTierEl.textContent=tierLabel?'Fascia '+tierLabel:'';
+    if(shipTierEl) shipTierEl.textContent=tierLabel?'Peso '+tierLabel:'';
     const discRow=document.getElementById('cart-disc-row');
     const discEl=document.getElementById('cart-disc');
     if(ar&&discount>0){
@@ -4932,7 +4937,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const finalTotal2=Math.max(0,total+ship-discount2);
     const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     set('ck-sub','€'+total.toFixed(2));
-    set('ck-ship',allDigital?'Digitale — Gratis':'€'+ship.toFixed(2)+(tierLbl?' (fascia '+tierLbl+')':''));
+    set('ck-ship',allDigital?'Digitale — Gratis':'€'+ship.toFixed(2)+(tierLbl?' (peso '+tierLbl+')':''));
     const ckDiscRow=document.getElementById('ck-disc-row');
     if(ar2&&discount2>0){
       set('ck-disc','−€'+discount2.toFixed(2)+' ('+ar2.label+')');
@@ -6388,7 +6393,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;"><span style="font-size:11px;"><svg class=ic aria-hidden=true><use href=icons.svg#map-pin></use></svg> Copertura</span><strong style="font-size:11px;">Tutta Italia</strong></div>
   <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;"><span style="font-size:11px;"><svg class=ic aria-hidden=true><use href=icons.svg#package></use></svg> Imballaggio</span><strong style="font-size:11px;">Premium, a norma di legge</strong></div>
   <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;"><span style="font-size:11px;"><svg class=ic aria-hidden=true><use href=icons.svg#hash></use></svg> Tracking</span><strong style="font-size:11px;">Visibile nel tuo profilo</strong></div>
-  <div style="display:flex;justify-content:space-between;padding:10px 0;"><span style="font-size:11px;"><svg class=ic aria-hidden=true><use href=icons.svg#money></use></svg> Costo spedizione</span><strong style="font-size:11px;">Basata sul peso: da €12 (0–1 kg) a €50 (10+ kg)</strong></div>
+  <div style="display:flex;justify-content:space-between;padding:10px 0;"><span style="font-size:11px;"><svg class=ic aria-hidden=true><use href=icons.svg#money></use></svg> Costo spedizione</span><strong style="font-size:11px;">In base al peso: €12 fino a 1 kg, poi €5 ogni 0,5 kg in più</strong></div>
 </div>
 <p style="font-size:11px;color:var(--mid);line-height:1.8;">I tempi indicati sono stime. Eventuali ritardi causati da fattori esterni (dogane, condizioni meteo, festività) sono al di fuori del nostro controllo ma verrai sempre aggiornato via email. Per i membri Silver e superiori la spedizione è sempre prioritaria.</p>`
     },
@@ -7222,37 +7227,26 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!physItems.length){bar.style.display='none';return;}
     const totW=physItems.reduce((s,i)=>s+getProductWeight(i)*(i.qty||1),0);
     bar.style.display='block';
-    const tierIdx=SHIPPING_TIERS.findIndex(t=>totW<=t.maxKg);
-    const tier=SHIPPING_TIERS[tierIdx];
-    const prevMax=tierIdx>0?SHIPPING_TIERS[tierIdx-1].maxKg:0;
-    const nextTier=SHIPPING_TIERS[tierIdx+1];
-    const remaining=+(tier.maxKg-totW).toFixed(2);
-    const pct=Math.min(((totW-prevMax)/(tier.maxKg-prevMax))*100,100);
-    fill.style.width=pct+'%';
-    // Suggerimento articoli per il peso rimanente
+    const ship=getShippingCost(totW), wTxt=getShippingTierLabel(totW);
     function weightHint(kg){
-      if(kg>=2.0) return '~1 paio di scarpe';
-      if(kg>=1.6) return '~2 felpe';
       if(kg>=0.8) return '~1 felpa o 2 t-shirt';
       if(kg>=0.7) return '~2 t-shirt';
       if(kg>=0.35) return '~1 t-shirt o 1 cappello';
       if(kg>=0.2) return '~1 cappello o accessorio';
       return null;
     }
-    if(!nextTier){
-      // Fascia massima — info neutrale
+    if(totW<=1){
+      // Primo kg a prezzo fisso: suggerisci cosa ci sta ancora
+      const remaining=+(1-totW).toFixed(2), hint=weightHint(remaining);
+      fill.style.width=Math.min(totW*100,100)+'%';
       fill.style.background='linear-gradient(90deg,var(--led),var(--led2))';
-      msg.innerHTML=`Peso ordine: <strong>${totW.toFixed(2)} kg</strong> · Spedizione: <strong>€${tier.price}</strong>`;
-    } else if(remaining<=0.5){
-      // Vicino alla fascia successiva — avviso
-      fill.style.background='linear-gradient(90deg,#ff9500,#ff6b00)';
-      msg.innerHTML=`<svg class=ic aria-hidden=true><use href=icons.svg#warning></use></svg> Attenzione — sei a <strong>${remaining} kg</strong> dalla fascia successiva: la spedizione salirà da <strong>€${tier.price}</strong> a <strong>€${nextTier.price}</strong>`;
+      msg.innerHTML=remaining>=0.2
+        ? `<svg class=ic aria-hidden=true><use href=icons.svg#shopping-cart></use></svg> Spedizione fissa <strong>€12</strong> fino a 1 kg: hai ancora <strong>${String(remaining).replace('.',',')} kg</strong>${hint?` (${hint})`:''} allo stesso prezzo.`
+        : `Peso ordine: <strong>${wTxt}</strong> · Spedizione: <strong>€${ship}</strong>`;
     } else {
-      // Ampio margine — upsell
+      fill.style.width='100%';
       fill.style.background='linear-gradient(90deg,var(--led),var(--led2))';
-      const hint=weightHint(remaining);
-      const hintStr=hint?` — equivale a ${hint}`:'';
-      msg.innerHTML=`<svg class=ic aria-hidden=true><use href=icons.svg#shopping-cart></use></svg> Aggiungi altri articoli, la spedizione non cambia! Hai ancora <strong>${remaining} kg</strong> in questa fascia${hintStr} per la stessa spedizione di <strong>€${tier.price}</strong>`;
+      msg.innerHTML=`Peso ordine: <strong>${wTxt}</strong> · Spedizione: <strong>€${ship}</strong> <span style="opacity:.75;">(€12 il primo kg, poi €5 ogni 0,5 kg)</span>`;
     }
   }
   // Hook into renderCart

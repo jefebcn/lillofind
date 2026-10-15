@@ -1083,6 +1083,20 @@ select.lf-in{appearance:none;-webkit-appearance:none;}
         </div>
         <button class="btn-k" id="cost-recalc-btn" onclick="recalcAllSavedCosts()" style="padding:11px 20px;font-size:12px;white-space:nowrap;">🔄 Ricalcola tutti i costi</button>
       </div>
+      <div class="admin-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div>
+            <p style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">🏷️ Prezzi sotto il minimo</p>
+            <p style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;max-width:600px;">Trova i prodotti venduti sotto <b>costo vero × <span id="pc-mult-lbl">1,6</span></b>. Costo vero = prezzo della ricevuta dell'agente (se il prodotto è abbinato) oppure prezzo fornitore ¥ + ¥10 magazzino al cambio dell'agente (~5,9 ¥/$). La spedizione la paga il cliente a parte. Alza <b>solo</b> quelli sotto il minimo, dopo che hai controllato l'elenco.</p>
+            <p id="pc-status" style="font-size:11px;color:var(--dim);margin-top:8px;min-height:14px;"></p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:11px;color:#aaa;">Margine ×<input id="pc-mult" type="number" step="0.1" min="1" value="1.6" style="width:58px;margin-left:4px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:6px;padding:6px;font-size:12px;"></label>
+            <button class="btn-k" onclick="priceCheckRun()" style="padding:11px 20px;font-size:12px;white-space:nowrap;">🔍 Cerca prezzi sotto il minimo</button>
+          </div>
+        </div>
+        <div id="pc-list" style="margin-top:12px;"></div>
+      </div>
       <div id="cost-results"></div>
     </div>
 
@@ -4826,6 +4840,71 @@ waitFB(()=>{
 
   // Ricalcola il costo € di TUTTI i prodotti col tasso USD→EUR attuale,
   // partendo dal costo in $ già salvato (costUsd). Non tocca i prodotti senza costo.
+  // ── Prezzi sotto il minimo: costo vero × margine (ricevute agente) ──
+  const PC_AGENT_RMB_PER_USD=5.9, PC_WAREHOUSE_RMB=10;
+  let _pcRows=[];
+  function pcCost(p,fx){
+    const u=+p.costUnitPriceUsd||0;
+    if(u>0) return {eur:u*fx, src:'ricevuta'};
+    const cny=+p.supplierPriceCNY||0;
+    if(cny>0) return {eur:(cny+PC_WAREHOUSE_RMB)/PC_AGENT_RMB_PER_USD*fx, src:'¥'+cny};
+    return null;
+  }
+  window.priceCheckRun=async function(){
+    const st=document.getElementById('pc-status'), box=document.getElementById('pc-list');
+    const mult=Math.max(1,parseFloat(document.getElementById('pc-mult').value)||1.6);
+    document.getElementById('pc-mult-lbl').textContent=String(mult).replace('.',',');
+    st.textContent='Leggo il catalogo…'; box.innerHTML='';
+    let list=[];
+    try{ list=await getAdminCatalog(true); }catch(e){ st.textContent='⚠️ Lettura catalogo non riuscita: '+((e&&e.code)||e.message||''); return; }
+    const fx=costFx();
+    let noCost=0, ok=0;
+    _pcRows=[];
+    list.forEach(p=>{
+      if(p.hidden===true) return;
+      const c=pcCost(p,fx); if(!c){ noCost++; return; }
+      const price=+p.price||0, min=Math.ceil(c.eur*mult);
+      if(price<min) _pcRows.push({id:p.id,name:p.name||p.id,brand:p.brand||'',price,min,cost:c.eur,src:c.src,on:true});
+      else ok++;
+    });
+    _pcRows.sort((a,b)=>(b.min-b.price)-(a.min-a.price));
+    st.innerHTML='Sotto il minimo: <b style="color:#ff8a65;">'+_pcRows.length+'</b> · già a posto: '+ok+' · senza prezzo fornitore (non controllabili): '+noCost+' · cambio $→€ '+fx.toFixed(4);
+    if(!_pcRows.length){ box.innerHTML='<p style="font-size:12px;color:#2ecc71;">✓ Nessun prodotto sotto il minimo.</p>'; return; }
+    const gain=_pcRows.reduce((s,r)=>s+(r.min-r.price),0);
+    box.innerHTML='<div style="max-height:420px;overflow:auto;border:1px solid #222;border-radius:8px;">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:11.5px;"><thead><tr style="color:#888;text-align:left;position:sticky;top:0;background:#111;">'
+      +'<th style="padding:7px;"><input type="checkbox" checked onchange="priceCheckAll(this.checked)"></th><th>Prodotto</th><th>Costo vero</th><th>Prezzo ora</th><th>Nuovo prezzo</th></tr></thead><tbody>'
+      +_pcRows.map((r,i)=>'<tr style="border-top:1px solid #1d1d1d;"><td style="padding:6px 7px;"><input type="checkbox" checked onchange="priceCheckToggle('+i+',this.checked)" data-pc="'+i+'"></td>'
+        +'<td style="padding:6px 4px;color:#ddd;">'+escH(String(r.brand?r.brand+' · ':'')+String(r.name).slice(0,60))+'</td>'
+        +'<td style="color:#aaa;white-space:nowrap;">€'+r.cost.toFixed(2)+' <span style="color:#666;font-size:10px;">('+escH(r.src)+')</span></td>'
+        +'<td style="color:#ff8a65;">€'+r.price.toFixed(2)+'</td><td style="color:#2ecc71;font-weight:700;">€'+r.min.toFixed(2)+'</td></tr>').join('')
+      +'</tbody></table></div>'
+      +'<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><button class="btn-led" id="pc-apply" onclick="priceCheckApply()" style="padding:10px 18px;font-size:12px;">Alza i prezzi selezionati ('+_pcRows.length+')</button>'
+      +'<span style="font-size:11px;color:#888;">+€'+gain.toFixed(0)+' in totale se ne vendi uno per tipo. Il catalogo dello shop si aggiorna da solo.</span></div>';
+  };
+  function pcRefreshBtn(){ const n=_pcRows.filter(r=>r.on).length; const b=document.getElementById('pc-apply'); if(b) b.textContent='Alza i prezzi selezionati ('+n+')'; }
+  window.priceCheckToggle=function(i,on){ if(_pcRows[i]) _pcRows[i].on=on; pcRefreshBtn(); };
+  window.priceCheckAll=function(on){ _pcRows.forEach(r=>r.on=on); document.querySelectorAll('[data-pc]').forEach(c=>c.checked=on); pcRefreshBtn(); };
+  window.priceCheckApply=async function(){
+    const sel=_pcRows.filter(r=>r.on); if(!sel.length) return;
+    if(!confirm('Alzare il prezzo di '+sel.length+' prodotti al minimo calcolato?')) return;
+    const fb=window.__fb, btn=document.getElementById('pc-apply'), st=document.getElementById('pc-status');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ Aggiorno…'; }
+    let done=0;
+    try{
+      for(let k=0;k<sel.length;k+=400){
+        const b=fb.writeBatch(fb.db);
+        sel.slice(k,k+400).forEach(r=>b.update(fb.doc(fb.db,'products',r.id),{price:r.min,priceRaisedFrom:r.price,priceRaisedAt:fb.serverTimestamp()}));
+        await b.commit(); done+=Math.min(400,sel.length-k);
+        if(st) st.textContent='Aggiornati '+done+'/'+sel.length+'…';
+      }
+      sel.forEach(r=>{ const p=adminCatalogProducts.find(x=>x.id===r.id); if(p) p.price=r.min; });
+      showToast('✅ '+done+' prezzi alzati');
+      if(st) st.innerHTML='✅ <b>'+done+'</b> prezzi alzati. Il catalogo dello shop si ripubblica tra un paio di minuti.';
+      document.getElementById('pc-list').innerHTML='';
+    }catch(e){ showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+') dopo '+done+' prodotti'); if(btn){ btn.disabled=false; pcRefreshBtn(); } }
+  };
+
   window.recalcAllSavedCosts = async function(){
     const fb=window.__fb;
     const status=document.getElementById('cost-recalc-status');

@@ -198,9 +198,10 @@
   };
 
   // Peso di spedizione predefinito (kg) per categoria — usato dal calcolo spedizione.
+  // Pesi reali dalle ricevute dell'agente (uguali a lib/shipping.js del Worker)
   var CAT_WEIGHT = {
-    tshirt: 0.3, tshirt_branded: 0.3, felpa: 0.7, scarpe: 1.2, scarpe_box: 1.5, pantaloni: 0.6,
-    shorts: 0.4, cappello: 0.2, giacchetto: 1.0, borsa: 0.8, accessori: 0.3
+    tshirt: 0.35, tshirt_branded: 0.4, felpa: 0.8, scarpe: 2.0, scarpe_box: 2.5, pantaloni: 0.8,
+    shorts: 0.4, cappello: 0.3, giacchetto: 1.2, borsa: 1.5, accessori: 0.3
   };
   function defaultWeight(cat) { return CAT_WEIGHT[cat] != null ? CAT_WEIGHT[cat] : 0.5; }
 
