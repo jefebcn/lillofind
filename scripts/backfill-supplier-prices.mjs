@@ -7,9 +7,14 @@
 // Il repository è pubblico: nei log solo conteggi, mai prezzi o link.
 import fs from 'node:fs';
 import admin from 'firebase-admin';
-import { albumPagePriceCNY } from '../cloudflare-worker/src/handlers/scrapers.js';
 
 const DRY = process.env.DRY === '1';
+// Errori e riepilogo anche come annotazioni di GitHub Actions (leggibili senza i log)
+const note = (m) => console.log('::notice::' + m);
+const fail = (e) => { console.log('::error::' + String((e && (e.code ? e.code + ' ' : '') + e.message) || e).slice(0, 300)); process.exit(1); };
+process.on('unhandledRejection', fail);
+process.on('uncaughtException', fail);
+const { albumPagePriceCNY } = await import('../cloudflare-worker/src/handlers/scrapers.js');
 const MAX = parseInt(process.env.MAX || '8000', 10);
 const cred = JSON.parse(fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf8'));
 admin.initializeApp({ credential: admin.credential.cert(cred), projectId: cred.project_id });
@@ -33,6 +38,7 @@ priv.docs.forEach((d) => {
 });
 console.log(`Prodotti: ${total} · con dati privati: ${priv.size}`);
 console.log(`Con ricevuta: ${stat.conRicevuta} · con ¥ già salvato: ${stat.conYuan} · senza link: ${stat.senzaLink + Math.max(0, total - priv.size)} · link non Yupoo: ${stat.linkNonYupoo}`);
+note(`Prodotti: ${total} · con ricevuta: ${stat.conRicevuta} · con ¥: ${stat.conYuan} · senza link: ${stat.senzaLink + Math.max(0, total - priv.size)} · link non Yupoo: ${stat.linkNonYupoo} · da cercare: ${stat.daCercare} (${byAlbum.size} album)`);
 console.log(`Da cercare: ${stat.daCercare} prodotti in ${byAlbum.size} album${DRY ? ' (solo anteprima)' : ''}`);
 
 const HDR = {
@@ -83,4 +89,5 @@ await Promise.all(Array.from({ length: 4 }, worker));
 await flush();
 console.log(`Album con prezzo: ${res.trovati} (${res.prodotti} prodotti${DRY ? ', non salvati' : ' aggiornati'})`);
 console.log(`Album senza prezzo scritto: ${res.senzaPrezzo} · rimossi dal fornitore: ${res.rimossi} · errori: ${res.errori}`);
-if (res.errori) console.log('Errori: ' + Object.entries(errs).map(([k, v]) => `${k} ×${v}`).join(', '));
+note(`Album con prezzo: ${res.trovati} (${res.prodotti} prodotti) · senza prezzo: ${res.senzaPrezzo} · rimossi: ${res.rimossi} · errori: ${res.errori}`);
+if (res.errori) note('Errori: ' + Object.entries(errs).map(([k, v]) => `${k} ×${v}`).join(', '));
