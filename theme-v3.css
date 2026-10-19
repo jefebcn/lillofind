@@ -186,7 +186,10 @@ h2.bb{letter-spacing:-.02em!important;}
 @media(min-width:769px){#back-top{bottom:28px!important;right:24px!important;}} /* niente bottom nav su desktop */
 /* Toast */
 #toast{border-radius:12px!important;text-transform:none!important;letter-spacing:.2px!important;
-  font-size:13px!important;border-bottom:none!important;box-shadow:0 10px 30px rgba(0,0,0,.2);}
+  font-size:13px!important;border-bottom:none!important;box-shadow:0 10px 30px rgba(0,0,0,.2);
+  /* su 360px i messaggi lunghi uscivano dallo schermo da entrambi i lati: vanno a capo */
+  white-space:normal!important;width:max-content;max-width:calc(100vw - 32px);text-align:center;}
+@media(max-width:768px){#toast{bottom:calc(76px + env(safe-area-inset-bottom))!important;}}
 
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}

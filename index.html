@@ -94,7 +94,7 @@
   // versione vecchia (anche per giorni, sull'app installata): qui si confronta
   // con version.json e, se è cambiata, si svuota la cache e si ricarica, una
   // volta sola. Mai durante il checkout o mentre si scrive in un campo.
-  window.LF_BUILD='2026-10-14.1';
+  window.LF_BUILD='2026-10-19.1';
   (function(){
     var last=0;
     function busy(){
@@ -232,7 +232,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     <p style="font-size:11px;opacity:.72;line-height:1.3;">Drop, offerte e ordini a portata di tap.</p>
   </div>
   <button onclick="lfInstall()" style="background:var(--led);color:#fff;border:none;padding:10px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Installa</button>
-  <button onclick="lfDismissInstall()" aria-label="Chiudi" style="background:none;border:none;color:var(--on-ink);font-size:20px;cursor:pointer;opacity:.55;line-height:1;">×</button>
+  <button onclick="lfDismissInstall()" aria-label="Chiudi" style="background:none;border:none;color:var(--on-ink);font-size:20px;cursor:pointer;opacity:.55;line-height:1;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;margin:-8px -8px -8px 0;">×</button>
 </div>
 
 <script>
@@ -242,7 +242,10 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   function isStandalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; }
   function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
   function dismissed(){ try{ return localStorage.getItem('lf_pwa_dismiss')==='1'; }catch(_){ return false; } }
-  function show(){ if(isStandalone()||dismissed()) return; var b=el(); if(b) b.style.display='flex'; }
+  function show(){ if(isStandalone()||dismissed()) return;
+    // Mai sopra il banner cookie (sul telefono si coprivano a vicenda): riprova dopo la scelta.
+    var cb=document.getElementById('cookie-bar'); if(cb&&cb.classList.contains('show')&&cb.style.display!=='none'){ setTimeout(show,4000); return; }
+    var b=el(); if(b) b.style.display='flex'; }
   window.lfDismissInstall=function(){ try{ localStorage.setItem('lf_pwa_dismiss','1'); }catch(_){}; var b=el(); if(b) b.style.display='none'; };
   window.lfInstall=async function(){
     var b=el();
@@ -256,8 +259,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     d.id='lf-ios-install';
     d.style.cssText='position:fixed;inset:0;background:rgba(20,20,17,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:22px;';
     d.onclick=function(e){ if(e.target===d) d.remove(); };
-    d.innerHTML='<div style="background:var(--card);color:#23231f;max-width:360px;width:100%;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">'
-      +'<div style="background:#23231f;color:#f5f2ec;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;">Installa su iPhone</strong><span onclick="document.getElementById(\'lf-ios-install\').remove()" style="cursor:pointer;font-size:20px;opacity:.7;">×</span></div>'
+    d.innerHTML='<div style="background:var(--card);color:var(--k);max-width:360px;width:100%;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);">'
+      +'<div style="background:#23231f;color:#f5f2ec;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;">Installa su iPhone</strong><span onclick="document.getElementById(\'lf-ios-install\').remove()" role="button" aria-label="Chiudi" style="cursor:pointer;font-size:20px;opacity:.7;margin:-12px -12px -12px 0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;">×</span></div>'
       +'<div style="padding:20px;font-size:14px;line-height:1.7;">'
       +'<p style="margin-bottom:14px;">Aggiungi LilloFind alla schermata Home in 2 passaggi:</p>'
       +'<p style="margin-bottom:10px;">1️⃣ Tocca il pulsante <strong>Condividi</strong> <span style="display:inline-block;border:1px solid var(--border-2);border-radius:6px;padding:0 6px;">&#8613;</span> nella barra di Safari.</p>'
@@ -285,19 +288,19 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     d.id='lf-onboard';
     d.style.cssText='position:fixed;inset:0;background:rgba(20,20,17,.78);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;';
     d.onclick=function(e){ if(e.target===d) lfCloseOnboard(); };
-    d.innerHTML='<div style="background:var(--card);color:#23231f;width:100%;max-width:480px;border-radius:22px 22px 0 0;box-shadow:0 -12px 50px rgba(0,0,0,.35);overflow:hidden;animation:fadeup .35s ease;">'
+    d.innerHTML='<div style="background:var(--card);color:var(--k);width:100%;max-width:480px;border-radius:22px 22px 0 0;box-shadow:0 -12px 50px rgba(0,0,0,.35);overflow:hidden;animation:fadeup .35s ease;">'
       +'<div style="background:radial-gradient(120% 100% at 50% 0%,#26271f,#161812);color:#f5f2ec;padding:26px 24px 20px;text-align:center;position:relative;">'
-      +'<span onclick="lfCloseOnboard()" style="position:absolute;top:14px;right:16px;font-size:22px;cursor:pointer;opacity:.6;">×</span>'
+      +'<span onclick="lfCloseOnboard()" role="button" aria-label="Chiudi" style="position:absolute;top:4px;right:6px;font-size:22px;cursor:pointer;opacity:.6;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;">×</span>'
       +'<p style="font-weight:800;letter-spacing:8px;font-size:16px;margin-bottom:8px;">LILLOFIND</p>'
       +'<p style="font-family:var(--font-display);font-size:26px;line-height:1.1;">Benvenuto nei drop.</p></div>'
       +'<div style="padding:20px 24px 8px;display:flex;flex-direction:column;gap:14px;">'
-      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#coins></use></svg></span><div><strong style="font-size:14px;">50 LFPoints gratis</strong><p style="font-size:12px;color:#6b6b63;">Subito all\'iscrizione = €5 sul primo ordine.</p></div></div>'
-      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg></span><div><strong style="font-size:14px;">Foto QC prima di spedire</strong><p style="font-size:12px;color:#6b6b63;">Vedi il tuo articolo reale prima della spedizione.</p></div></div>'
-      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#truck></use></svg></span><div><strong style="font-size:14px;">Spedizione tracciata</strong><p style="font-size:12px;color:#6b6b63;">DHL, 10–15 gg lavorativi, zero rischi doganali.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#coins></use></svg></span><div><strong style="font-size:14px;">50 LFPoints gratis</strong><p style="font-size:12px;color:var(--mid);">Subito all\'iscrizione = €5 sul primo ordine.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg></span><div><strong style="font-size:14px;">Foto QC prima di spedire</strong><p style="font-size:12px;color:var(--mid);">Vedi il tuo articolo reale prima della spedizione.</p></div></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;"><span style="font-size:22px;width:28px;flex-shrink:0;display:inline-flex;justify-content:center;"><svg class=ic aria-hidden=true><use href=icons.svg#truck></use></svg></span><div><strong style="font-size:14px;">Spedizione tracciata</strong><p style="font-size:12px;color:var(--mid);">DHL, 10–15 gg lavorativi, zero rischi doganali.</p></div></div>'
       +'</div>'
       +'<div style="padding:8px 24px 26px;display:flex;flex-direction:column;gap:10px;">'
       +'<button onclick="lfOnboardCTA()" style="background:#6f7552;color:#fff;border:none;padding:15px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;">Crea account — 50 punti gratis</button>'
-      +'<button onclick="lfCloseOnboard()" style="background:none;border:none;color:#6b6b63;font-size:13px;cursor:pointer;">Sfoglia prima →</button>'
+      +'<button onclick="lfCloseOnboard()" style="background:none;border:none;color:var(--mid);font-size:13px;cursor:pointer;">Sfoglia prima →</button>'
       +'</div></div>';
     document.body.appendChild(d);
     try{ lfTrack('onboarding_shown'); }catch(_){}
@@ -378,7 +381,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 </div>
 
 <!-- ══════════ MOBILE HEADER ══════════ -->
-<header id="mob-hdr" style="position:relative;">
+<!-- niente position inline: annullava lo sticky di index.css (il logo assoluto si posiziona già rispetto a un header sticky) -->
+<header id="mob-hdr">
   <button onclick="openDrawer()" aria-label="Apri menu" style="background:none;border:none;cursor:pointer;color:var(--k);font-size:22px;padding:8px;min-width:44px;flex-shrink:0;"><svg class=ic aria-hidden=true><use href=icons.svg#list></use></svg></button>
   <button id="mob-logo" onclick="showPg('home')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-family:var(--font-display);font-size:26px;letter-spacing:4px;color:var(--k);white-space:nowrap;">LILLOFIND</button>
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -639,7 +643,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       @media(max-width:768px){
         .hero-wrap{grid-template-areas:"hero";padding:12px 12px 0;gap:0;}
         .hero-frame,.hero-text{grid-area:hero;}
-        .hero-frame{max-width:none;aspect-ratio:4/5;border-radius:20px;}
+        .hero-frame{max-width:none;aspect-ratio:4/5;border-radius:20px;align-self:stretch;} /* stretch: sui telefoni da 360px i bottoni vanno a capo e il testo è più alto della foto → la foto restava a metà con bande vuote sopra e sotto */
         .hero-text{position:relative;z-index:2;align-self:end;text-align:left;padding:96px 20px 22px;border-radius:0 0 20px 20px;
           background:linear-gradient(180deg,rgba(12,12,11,0) 0%,rgba(12,12,11,.55) 38%,rgba(12,12,11,.86) 100%);color:#fff;}
         .hero-text .led-badge{background:rgba(255,255,255,.16)!important;border-color:rgba(255,255,255,.4)!important;color:#fff!important;backdrop-filter:blur(6px);margin-bottom:12px!important;}
@@ -1065,7 +1069,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <p class="lf-eyebrow" style="margin-bottom:6px;">Hai visto di recente</p>
           <h2 class="lf-section-title">Dove eri rimasto.</h2>
         </div>
-        <button onclick="localStorage.removeItem('lf_rv');document.getElementById('recently-viewed-section').style.display='none';" style="font-size:10.5px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Cancella</button>
+        <button onclick="try{localStorage.removeItem('lf_rv')}catch(_){};document.getElementById('recently-viewed-section').style.display='none';" style="font-size:10.5px;letter-spacing:1px;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--dim);text-decoration:underline;">Cancella</button>
       </div>
       <div id="rv-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;"></div>
     </div>
@@ -1777,7 +1781,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   #team-req-modal .lf-in{margin-bottom:2px;}
   #pg-group .g-vis{flex:1;border:1.5px solid var(--border);background:var(--card);border-radius:8px;padding:9px 8px;font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--font-body);}
   #pg-group .g-vis.on{border-color:var(--k);background:var(--ink);color:#fff;}
-  @media(max-width:720px){ #pg-group .group-grid{grid-template-columns:1fr!important;} }
+  @media(max-width:720px){ #pg-group .group-grid{grid-template-columns:minmax(0,1fr)!important;} }
 </style>
 <!-- ════════════════════════════════════════════════════════
      SPEDIZIONE DI GRUPPO
@@ -1808,7 +1812,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <label class="glbl">Zona / Città</label>
           <input id="g-area" class="lf-in" placeholder="es. Milano, Roma Nord…" maxlength="60"/>
           <div style="display:flex;gap:10px;">
-            <div style="flex:1;"><label class="glbl">Scadenza adesioni</label><input id="g-deadline" type="date" class="lf-in"/></div>
+            <div style="flex:1;min-width:0;"><label class="glbl">Scadenza adesioni</label><input id="g-deadline" type="date" class="lf-in"/></div>
             <div style="width:120px;"><label class="glbl">Max persone</label><input id="g-max" type="number" min="2" max="30" value="6" class="lf-in"/></div>
           </div>
           <label class="glbl">Note (opzionale)</label>
@@ -2297,7 +2301,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 ════════════════════════════════════════════════════════ -->
 <!-- ══ SIZE/COLOR PICKER MODAL ══ -->
 <div class="modal-bg" id="size-picker-modal" onclick="if(event.target===this){this.classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();}" style="align-items:flex-end;">
-  <div style="background:var(--card);width:100%;max-width:480px;padding:28px 22px;border-top:3px solid var(--k);max-height:90vh;overflow-y:auto;">
+  <div style="background:var(--card);width:100%;max-width:480px;padding:28px 22px calc(28px + env(safe-area-inset-bottom));border-top:3px solid var(--k);max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <p style="font-family:var(--font-display);font-size:26px;letter-spacing:2px;">Scegli Opzioni</p>
       <button onclick="document.getElementById('size-picker-modal').classList.remove('open');if(typeof hideStickyATC==='function')hideStickyATC();" style="background:none;border:none;font-size:22px;cursor:pointer;min-width:44px;min-height:44px;"><svg class=ic aria-hidden=true><use href=icons.svg#x></use></svg></button>
@@ -2437,6 +2441,31 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         </table>
         <p style="font-size:10.5px;color:var(--dim);margin-top:16px;letter-spacing:1px;"><svg class=ic aria-hidden=true><use href=icons.svg#ruler></use></svg> Per un fit oversized, scegli una taglia in più rispetto alle misure.</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- La Wishlist sta con le altre pagine: era dopo footer e bottom nav, quindi
+     sul telefono si vedevano prima "Product Request" e il footer e la lista
+     compariva solo scorrendo fino in fondo. -->
+<!-- ════════════════════════════════════════════════════════
+     WISHLIST PAGE
+════════════════════════════════════════════════════════ -->
+<div id="pg-wishlist" class="pg">
+  <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <p class="lf-eyebrow" style="margin-bottom:6px;">I tuoi salvataggi</p>
+        <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Wishlist</h1>
+      </div>
+      <button class="btn-g" onclick="showPg('shop')" style="font-size:10.5px;padding:8px 16px;">← Continua a Fare Shopping</button>
+    </div>
+    <div id="wish-grid" class="pgrid"></div>
+    <div id="wish-empty" style="display:none;padding:80px 0;text-align:center;">
+      <p style="font-size:48px;margin-bottom:16px;"><svg class=ic aria-hidden=true><use href=icons.svg#heart></use></svg></p>
+      <p class="bb" style="font-size:28px;margin-bottom:8px;">Wishlist vuota</p>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:24px;">Salva i prodotti che ti piacciono per trovarli subito.</p>
+      <button class="btn-led" onclick="showPg('shop')">Esplora lo Shop →</button>
     </div>
   </div>
 </div>
@@ -2637,28 +2666,6 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 </nav>
 
 <!-- ════════════════════════════════════════════════════════
-     WISHLIST PAGE
-════════════════════════════════════════════════════════ -->
-<div id="pg-wishlist" class="pg">
-  <div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;flex-wrap:wrap;gap:8px;">
-      <div>
-        <p class="lf-eyebrow" style="margin-bottom:6px;">I tuoi salvataggi</p>
-        <h1 class="bb" style="font-size:clamp(36px,5vw,64px);">Wishlist</h1>
-      </div>
-      <button class="btn-g" onclick="showPg('shop')" style="font-size:10.5px;padding:8px 16px;">← Continua a Fare Shopping</button>
-    </div>
-    <div id="wish-grid" class="pgrid"></div>
-    <div id="wish-empty" style="display:none;padding:80px 0;text-align:center;">
-      <p style="font-size:48px;margin-bottom:16px;"><svg class=ic aria-hidden=true><use href=icons.svg#heart></use></svg></p>
-      <p class="bb" style="font-size:28px;margin-bottom:8px;">Wishlist vuota</p>
-      <p style="font-size:11px;color:var(--dim);margin-bottom:24px;">Salva i prodotti che ti piacciono per trovarli subito.</p>
-      <button class="btn-led" onclick="showPg('shop')">Esplora lo Shop →</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════════════════════════════ -->
 <script type="module">
@@ -2778,9 +2785,12 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   // ── Cookie ─────────────────────────────────────────────
   window.closeCookie=function(){
     document.getElementById('cookie-bar').style.display='none';
-    localStorage.setItem('lf_cookie','1');
+    try{ localStorage.setItem('lf_cookie','1'); }catch(_){}
   };
-  if(!localStorage.getItem('lf_cookie')){
+  // localStorage può lanciare (Safari con "Blocca tutti i cookie", browser in-app):
+  // senza try/catch qui si fermava tutto lo script e il sito restava vuoto.
+  let _cookieOk=false; try{ _cookieOk=!!localStorage.getItem('lf_cookie'); }catch(_){}
+  if(!_cookieOk){
     setTimeout(()=>document.getElementById('cookie-bar').classList.add('show'),1200);
   }
 
@@ -2867,10 +2877,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(document.getElementById('pg-lfpoints')?.classList.contains('on')) renderRewardsTable();
     renderRecentlyViewed();
     // Mostra banner vault se primo ordine completato
-    if(localStorage.getItem('lf_show_vault_banner')==='1'){
-      localStorage.removeItem('lf_show_vault_banner');
-      setTimeout(showVaultUnlockBanner, 400);
-    }
+    let _vb=false; try{ _vb=localStorage.getItem('lf_show_vault_banner')==='1'; if(_vb) localStorage.removeItem('lf_show_vault_banner'); }catch(_){}
+    if(_vb) setTimeout(showVaultUnlockBanner, 400);
   }
 
   function showVaultUnlockBanner(){
@@ -3185,45 +3193,58 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     {label:'Jogger',         group:'<svg class=ic aria-hidden=true><use href=icons.svg#pants></use></svg> Bottom',     aliases:['jogger','joggers']},
     {label:'Ciclismo',       group:'<svg class=ic aria-hidden=true><use href=icons.svg#bicycle></use></svg> Sport',      aliases:['ciclismo','cycling','bici']},
     {label:'Cappello',       group:'<svg class=ic aria-hidden=true><use href=icons.svg#baseball-cap></use></svg> Accessori',  aliases:['cappello','cap','hat','beanie']},
-    {label:'Calzini',        group:'<svg class=ic aria-hidden=true><use href=icons.svg#sock></use></svg> Accessori',  aliases:['calzini','socks']},
+    {label:'Calzini',        group:'<svg class=ic aria-hidden=true><use href=icons.svg#baseball-cap></use></svg> Accessori',  aliases:['calzini','socks']}, // stesso gruppo (stessa stringa) degli altri accessori: con l'icona diversa "Accessori" compariva due volte
     {label:'Sciarpa',        group:'<svg class=ic aria-hidden=true><use href=icons.svg#baseball-cap></use></svg> Accessori',  aliases:['sciarpa','scarf']},
     {label:'Zaino / Borsa',  group:'<svg class=ic aria-hidden=true><use href=icons.svg#baseball-cap></use></svg> Accessori',  aliases:['zaino','borsa','bag','backpack']},
     {label:'Occhiali',       group:'<svg class=ic aria-hidden=true><use href=icons.svg#baseball-cap></use></svg> Accessori',  aliases:['occhiali','sunglasses','eyewear']},
   ];
 
-  // ── Classificatore categoria (agente) ─────────────────────────────
-  // Deduce la categoria REALE dal testo del prodotto (nome + modello +
-  // categoria), con priorità ordinata dal più specifico al più generico.
-  // Fondamentale: T-Shirt viene controllata PRIMA di Camicia, così "t-shirt"
-  // non finisce erroneamente tra le camicie (bug del vecchio matcher a substring).
+  // ── Classificatore categoria ──────────────────────────────────────
+  // Deduce la categoria REALE dal prodotto con parole intere (niente
+  // sottostringhe: "cap" non deve prendere "cappuccio", "bag" "Baggy", "vest"
+  // "Vestito", "hat" "Hate"). Si guarda prima il nome, poi il modello
+  // dell'importer, poi la categoria del fornitore: la categoria generica
+  // ("felpa") non deve vincere su un nome preciso ("Long Sleeve Tee").
+  // L'ordine va dal più specifico al più generico (T-Shirt prima di Camicia).
+  const _W=(s)=>new RegExp('(?:^|[^a-zà-ÿ0-9])(?:'+s+')(?![a-zà-ÿ0-9])','i');
   const _CLASSIFY_RULES=[
     // Calzature
-    ['Sneakers',            ['sneaker','scarpe','scarpa','shoe','air force','air max','dunk','runner','trainer']],
+    ['Sneakers',            _W('sneakers?|scarpe|scarpa|shoes?|air force|air max|dunk|jordan [1-9]\\d?|runners?|trainers?|ciabatt[ae]|slides?|sandal[oi]|sandals?|clogs?|stivali|boots?|mocassin[oi]|loafers?|infradito')],
     // Accessori
-    ['Calzini',             ['calzini','calze','socks','sock']],
-    ['Sciarpa',             ['sciarpa','scarf']],
-    ['Occhiali',            ['occhiali','occhiale','sunglass','sunglasses','eyewear']],
-    ['Zaino / Borsa',       ['zaino','borsa','borsello','tracolla','bag','backpack','pouch','marsupio']],
-    ['Cappello',            ['cappello','berretto','beanie','snapback','cappellino',' cap',' hat','bucket']],
+    ['Calzini',             _W('calzini|calze|socks?')],
+    ['Sciarpa',             _W('sciarp[ae]|scarf|scarves')],
+    ['Occhiali',            _W('occhiali|occhiale|sunglass(?:es)?|eyewear|glasses')],
+    ['Zaino / Borsa',       _W('zain[oi]|bors[ae]|borsell[oi]|tracolla|bags?|backpacks?|pouch|marsupi[oi]|tote')],
+    ['Cappello',            _W('cappell[oi]|cappellino|berretto|beanie|snapback|caps?|hats?|bucket hat|trucker')],
     // Bottom
-    ['Jogger',              ['jogger','joggers','tuta pantalone']],
-    ['Pantaloncini',        ['pantaloncini','shorts','bermuda','short ']],
-    ['Pantaloni',           ['pantaloni','pantalone','pants','trousers','jeans','denim pant','cargo','chino']],
+    ['Jogger',              _W('joggers?|tuta pantalone')],
+    ['Pantaloncini',        _W('pantaloncin[oi]|shorts|bermuda')],
+    ['Pantaloni',           _W('pantalon[ei]|pants|trousers|jeans|denim pant|cargo pants?|chinos?')],
     // Top — dal più specifico
-    ['Piumino',             ['piumino','puffer','puffy','down jacket','doudoune']],
-    ['Bomber',              ['bomber']],
-    ['Giacchetto',          ['giacchetto','giubbotto','giacca','jacket','coach jacket','windbreaker','harrington']],
-    ['Gilet',               ['gilet','vest','smanicato']],
-    ['Cardigan',            ['cardigan']],
-    ['Pile',                ['pile','fleece','polar']],
-    ['Felpa con Cappuccio', ['felpa con cappuccio','hoodie','hooded','felpa cappuccio']],
-    ['Felpa',               ['felpa','crewneck','sweatshirt','sweat ','girocollo']],
-    ['Maglia Manica Lunga', ['manica lunga','longsleeve','long sleeve','long-sleeve','ls tee']],
-    ['Polo',                ['polo']],
-    ['Canotta',             ['canotta','canottiera','tank top','tank']],
-    ['T-Shirt',             ['t-shirt','tshirt','t shirt','tee','maglietta']],
-    ['Camicia',             ['camicia','camicie','flanella','flannel','button up','button-up','button down','overshirt','shirt']],
+    ['Piumino',             _W('piumin[oi]|puffer|puffy|down jacket|doudoune|nuptse')],
+    ['Bomber',              _W('bomber')],
+    ['Gilet',               _W('gilet|vests?|smanicat[oi]')],
+    ['Giacchetto',          _W('giacchett[oi]|giubbott[oi]|giacca|giacche|jackets?|coach jacket|windbreaker|harrington|parka|cappotto|coat|anorak|track top')],
+    ['Cardigan',            _W('cardigan')],
+    ['Pile',                _W('pile|fleece')],
+    ['Felpa con Cappuccio', _W('felpa con cappuccio|felpa cappuccio|hoodies?|hoody|hooded|cappuccio')],
+    ['Felpa',               _W('felp[ae]|crewnecks?|sweatshirts?|sweaters?|girocollo|maglione|knit|quarter zip|half zip|1/4 zip')],
+    ['Maglia Manica Lunga', _W('manica lunga|maniche lunghe|longsleeve|long sleeve|long-sleeve|ls tee')],
+    ['Polo',                _W('polo')],
+    ['Canotta',             _W('canott[ae]|canottiera|tank top|tank|singlet')],
+    ['T-Shirt',             _W('t-shirts?|tshirts?|t shirts?|tees?|magliett[ae]')],
+    ['Camicia',             _W('camici[ae]|flanell[ae]|flannel|button[- ]up|button[- ]down|overshirt|shirt')],
+    ['T-Shirt',             _W('maglia|maglie|jersey')],
   ];
+  // Categoria del fornitore → filtro, solo se nome e modello non bastano
+  const _CAT_MODEL={tshirt:'T-Shirt',tshirt_branded:'T-Shirt',maglietta:'T-Shirt',felpa:'Felpa',scarpe:'Sneakers',scarpe_box:'Sneakers',
+    pantaloni:'Pantaloni',shorts:'Pantaloncini',giacchetto:'Giacchetto',cappello:'Cappello',borsa:'Zaino / Borsa'};
+  function _classifyText(t){
+    // "Polo Ralph Lauren" è il marchio, non una polo
+    t=String(t||'').toLowerCase().replace(/polo\s+(?:by\s+)?ralph\s+lauren/g,'ralph lauren');
+    for(const [label, re] of _CLASSIFY_RULES){ if(re.test(t)) return label; }
+    return '';
+  }
   // Ciclismo: tag dall'importer (style) o parole chiave; prima degli altri
   // capi perché maglie e salopette da bici sono "jersey"/"shorts".
   const CYCLING_KW=/cycling|ciclismo|ciclista|\bbici\b|bicicletta|\bbike\b|\bmtb\b|\bgravel\b|maillot|\bbib\b|salopette|skinsuit|cuissard/i;
@@ -3238,11 +3259,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   function classifyModel(p){
     if(!p) return '';
     if(isCycling(p)) return 'Ciclismo';
-    const t=((p.model||'')+' '+(p.name||'')+' '+(p.category||'')).toLowerCase();
-    for(const [label, kws] of _CLASSIFY_RULES){
-      if(kws.some(k=>t.includes(k))) return label;
-    }
-    return '';
+    return _classifyText(p.name)||_classifyText(p.model)||_CAT_MODEL[String(p.category||'').toLowerCase()]||'';
   }
   window.classifyModel=classifyModel;
 
@@ -3256,7 +3273,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     nike:'Nike', airjordan:'Jordan', jordan:'Jordan', adidas:'Adidas', adidasoriginals:'Adidas',
     yeezy:'Yeezy', newbalance:'New Balance', nb:'New Balance', asics:'Asics', puma:'Puma', reebok:'Reebok',
     converse:'Converse', vans:'Vans', offwhite:'Off-White', supreme:'Supreme', bape:'Bape', abathingape:'Bape',
-    stussy:'Stüssy', stssy:'Stüssy', trapstar:'Trapstar', corteiz:'Corteiz', crtz:'Corteiz', palmangels:'Palm Angels',
+    stussy:'Stüssy', stssy:'Stüssy', arcteryx:"Arc'teryx", acmilan:'AC Milan', laurenralphlauren:'Ralph Lauren',
+    christiandior:'Dior', adidasyeezy:'Yeezy', onrunning:'On', brokenplanetmarket:'Broken Planet', loropiana:'Loro Piana',
+    hermes:'Hermès', alexandermcqueen:'Alexander McQueen', trapstar:'Trapstar', corteiz:'Corteiz', crtz:'Corteiz', palmangels:'Palm Angels',
     essentials:'Essentials', fearofgod:'Fear of God', fearofgodessentials:'Essentials', fog:'Fear of God',
     thenorthface:'The North Face', northface:'The North Face', tnf:'The North Face',
     ralphlauren:'Ralph Lauren', poloralphlauren:'Ralph Lauren', polo:'Ralph Lauren',
@@ -3275,8 +3294,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!b) return '';
     const k=_brandKey(b);
     if(BRAND_CANON[k]) return BRAND_CANON[k];
-    // Fallback: minuscolo → Title Case (così "NIKE"/"nike"/"Nike" → "Nike")
-    return String(b).trim().replace(/\s+/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    // Fallback: iniziale maiuscola per parola (così "NIKE"/"nike" → "Nike"),
+    // senza spezzare accenti e apostrofi ("HERMÈS" → "Hermès", non "HermèS")
+    return String(b).trim().replace(/\s+/g,' ').toLowerCase().split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):w).join(' ');
   };
 
   // ── Calcio: riconoscimento kit + squadra + add-on personalizzazione ──
@@ -3290,7 +3310,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   const LF_PLAYER_PRICE=8;  // Nome + numero di un giocatore ufficiale
   const LF_CUSTOM_PRICE=12; // Nome + numero personalizzato (costa di più)
   const FOOTBALL_TEAMS=[
-    ['Juventus',/juventus|\bjuve\b/i],['AC Milan',/\bac ?milan\b|\bmilan\b/i],['Inter',/\binter\b|internazionale/i],
+    // Inter prima del Milan: "Inter Milan" è l'Inter
+    ['Juventus',/juventus|\bjuve\b/i],['Inter',/\binter\b|internazionale/i],['AC Milan',/\bac ?milan\b|\bmilan\b/i],
     ['Napoli',/napoli/i],['Roma',/\bas ?roma\b|\broma\b/i],['Lazio',/lazio/i],['Atalanta',/atalanta/i],
     ['Fiorentina',/fiorentina/i],['Real Madrid',/real ?madrid/i],['Barcelona',/barcelona|bar[çc]a\b|\bfcb\b/i],
     ['Atletico Madrid',/atl[eé]tico/i],['Manchester United',/man(chester)? ?united|\bman ?utd\b/i],
@@ -3314,6 +3335,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(st==='calcio') return true;
     if(isCycling(p)) return false;
     if(window.isBasketball(p)) return false;
+    if(classifyModel(p)==='Sneakers') return false;   // "Dunk Low Brazil" è una scarpa, non una maglia
     if(window.detectTeam(p)) return true;
     return FOOTBALL_KW.test(((p.name||'')+' '+(p.model||'')));
   };
@@ -3332,7 +3354,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     ['Raptors',/raptors|toronto rap/i],['Hawks',/atlanta hawk|\bhawks\b/i],['Hornets',/hornets|charlotte horn/i],
     ['Magic',/orlando magic/i],['Wizards',/wizards|washington wiz/i],
   ];
-  const BASKET_KW=/canott|basket|\bnba\b|tank\s?top/i;
+  // Una canotta da sola non è basket (canotte da palestra, da donna…): serve
+  // NBA/basket nel titolo o una squadra
+  const BASKET_KW=/basket|\bnba\b/i;
   window.detectBasketTeam=function(p){
     const t=((p&&p.brand||'')+' '+(p&&p.name||'')+' '+(p&&p.model||''));
     for(const [team,re] of BASKET_TEAMS){ if(re.test(t)) return team; }
@@ -3342,6 +3366,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(!p) return false;
     if(typeof p.style==='string' && p.style.toLowerCase()==='basket') return true;
     if(isCycling(p)) return false;
+    if(classifyModel(p)==='Sneakers') return false;
     if(window.detectBasketTeam(p)) return true;
     return BASKET_KW.test(((p.name||'')+' '+(p.model||'')));
   };
@@ -3437,7 +3462,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const active=(filters.priceMin===min&&filters.priceMax===max);
     document.querySelectorAll('.chip[data-price]').forEach(c=>c.classList.remove('on'));
     if(active){ filters.priceMin=null; filters.priceMax=null; }
-    else { filters.priceMin=min; filters.priceMax=max; if(el) el.classList.add('on'); }
+    else { filters.priceMin=min; filters.priceMax=max; document.querySelectorAll('.chip[data-price="'+min+'-'+max+'"]').forEach(c=>c.classList.add('on')); } // stesso chip in sidebar e drawer mobile
     const rst=document.getElementById('rst-btn'); if(rst) rst.style.display='';
     updateFilterUI();
     renderShop();
@@ -3605,6 +3630,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   window.closeProd=function(){
     const m=document.getElementById('prod-modal');
     if(m) m.classList.remove('open');
+    // la barra "Aggiungi" fissa restava sopra la bottom nav dopo la X
+    try{ hideStickyATC(); }catch(_){}
     document.body.style.overflow='';
     document.body.classList.remove('prod-open');
     try{
@@ -3615,9 +3642,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       if(location.search.indexOf('p=')>-1){
         // Se siamo sullo shop, ripristina i filtri nell'URL; altrimenti pulisci.
         if(document.getElementById('pg-shop')?.classList.contains('on') && typeof window._syncShopURL==='function'){
-          history.replaceState(null,'',location.pathname); window._syncShopURL();
+          history.replaceState(history.state,'',location.pathname); window._syncShopURL();
         } else {
-          history.replaceState(null,'',location.pathname);
+          history.replaceState(history.state,'',location.pathname);
         }
       }
     }catch(_){}
@@ -3634,7 +3661,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         <div style="background:var(--card);max-width:760px;width:100%;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);">
             <p class="bb" style="font-size:18px;">Guida Taglie · questo modello</p>
-            <button onclick="document.getElementById('lf-sizeguide').remove()" aria-label="Chiudi" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mid);">×</button>
+            <button onclick="document.getElementById('lf-sizeguide').remove()" aria-label="Chiudi" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mid);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;margin:-10px -10px -10px 0;">×</button>
           </div>
           <div style="padding:14px 16px 18px;">
             <img src="${lfEsc(pImg(_p.sizeChart))}" alt="Tabella taglie del modello" style="width:100%;height:auto;display:block;border-radius:10px;background:#fff;" onerror="this.replaceWith(Object.assign(document.createElement('p'),{textContent:'Tabella non disponibile al momento.'}))">
@@ -3653,7 +3680,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       <div style="background:var(--card);max-width:420px;width:100%;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);">
           <p class="bb" style="font-size:18px;">Guida Taglie ${isShoe?'· Scarpe':'· Abbigliamento'}</p>
-          <button onclick="document.getElementById('lf-sizeguide').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mid);">×</button>
+          <button onclick="document.getElementById('lf-sizeguide').remove()" aria-label="Chiudi" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mid);min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;margin:-10px -10px -10px 0;">×</button>
         </div>
         <div style="padding:8px 22px 20px;">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -3712,7 +3739,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       document.title=`${cleanTitleTxt(p.name)}${p.brand?' · '+p.brand:''} — €${(p.price||0).toFixed(0)} | LilloFind`;
       const ogt=document.querySelector('meta[property="og:title"]'); if(ogt) ogt.setAttribute('content',p.name+' — LilloFind');
       const ogi=document.querySelector('meta[property="og:image"]'); if(ogi&&p.imageUrl) ogi.setAttribute('content',pImg(p.imageUrl));
-      history.replaceState(null,'',location.pathname+'?p='+encodeURIComponent(pid));
+      // l'URL ?p= lo scrive la gestione del tasto Indietro (fondo pagina) sulla
+      // voce di cronologia della scheda, non su quella della pagina sotto
+      window._lfProdUrl=location.pathname+'?p='+encodeURIComponent(pid);
     }catch(_){}
     try{ lfTrack('view_item',{item_id:pid,item_name:p.name,value:p.price||0,currency:'EUR'}); }catch(_){}
     // Track recently viewed (max 8, no duplicates)
@@ -3889,7 +3918,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
           <img id="rev-photo-prev" style="display:none;width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"/>
         </div>
         <button data-pid="${_esc(pid)}" onclick="submitReview(this.dataset.pid)" style="margin-top:10px;background:var(--ink);color:#fff;border:none;padding:10px 20px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer;">Invia recensione</button>
-      </div>`:`<p style="font-size:12px;color:var(--dim);margin-top:8px;"><a onclick="showPg('auth')" style="color:var(--led-text);cursor:pointer;text-decoration:underline;">Accedi</a> per lasciare una recensione.</p>`;
+      </div>`:`<p style="font-size:12px;color:var(--dim);margin-top:8px;"><a onclick="closeProd();showPg('auth')" style="color:var(--led-text);cursor:pointer;text-decoration:underline;">Accedi</a> per lasciare una recensione.</p>`;
     _reviewRating=0; _reviewPhoto='';
     box.innerHTML=head+(list||'')+form;
   };
@@ -4080,7 +4109,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     box.innerHTML=`<div style="background:var(--card);color:var(--k);max-width:460px;width:100%;border-radius:16px;overflow:hidden;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">
       <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
         <strong style="font-size:15px;">${isB?'<svg class=ic aria-hidden=true><use href=icons.svg#basketball></use></svg>':'<svg class=ic aria-hidden=true><use href=icons.svg#soccer-ball></use></svg>'} Richiedi una squadra</strong>
-        <span onclick="document.getElementById('team-req-modal').remove()" style="cursor:pointer;font-size:22px;opacity:.5;">×</span>
+        <span onclick="document.getElementById('team-req-modal').remove()" role="button" aria-label="Chiudi" style="cursor:pointer;font-size:22px;opacity:.5;margin:-12px -12px -12px 0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;">×</span>
       </div>
       <div style="padding:18px 20px;">
         <p style="font-size:12px;color:var(--mid);margin-bottom:14px;line-height:1.5;">Dicci cosa cerchi: la reperiamo e ti avvisiamo appena disponibile.</p>
@@ -4140,12 +4169,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       (!filters.brand||canonBrand(p.brand)===filters.brand)&&
       (!filters.size ||(Array.isArray(p.sizes)&&p.sizes.includes(filters.size))||p.size===filters.size)&&
       (!filters.color||(Array.isArray(p.colors)&&p.colors.some(c=>colorFamily(c).label===filters.color))||colorFamily(p.color||'').label===filters.color)&&
-      (!filters.gender||p.gender===filters.gender)&&
+      // unisex (o senza genere) compare sia in Uomo sia in Donna
+      (!filters.gender||p.gender===filters.gender||!p.gender||p.gender==='unisex')&&
       (filters.priceMin==null||((p.price||0)>=filters.priceMin&&(p.price||0)<=filters.priceMax))&&
       (!filters.style||(filters.style==='Sport'?isSportProduct(p):p.style===filters.style))&&
       (!filters.football||isFootballKit(p))&&
       (!filters.basket||isBasketball(p))&&
-      (!q||(p.name||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q)||(p.model||'').toLowerCase().includes(q))
+      (!q||_lfMatchQ(p,q))
     );
     if(_sLoad) _sLoad.style.display='none';
     if(_sCount) _sCount.textContent=_shopFiltered.length+' item'+(_shopFiltered.length!==1?'s':'');
@@ -4164,6 +4194,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       _ensureShopObserver();
     }
   }
+  // Ricerca a parole: "felpa nike" trova anche "Nike Felpa …". Prima si cercava
+  // la frase intera in un solo campo e due parole davano quasi sempre 0 risultati.
+  function _lfMatchQ(p,q){
+    const hay=((p.name||'')+' '+(p.brand||'')+' '+(p.model||'')).toLowerCase();
+    return q.split(/\s+/).filter(Boolean).every(w=>hay.includes(w));
+  }
+  window._lfMatchQ=_lfMatchQ;
   function renderShop(){
     // Debounce: skip duplicate frames, execute on next animation frame
     if(_renderTimer) cancelAnimationFrame(_renderTimer);
@@ -4363,16 +4400,20 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       track.textContent='';
       track.insertAdjacentHTML('afterbegin', cards.join(''));
 
-      // Auto-scroll — slow drift, pauses on touch
-      let autoScroll = setInterval(()=>{
-        if(track.matches(':hover')||_carouselTouching) return;
-        if(track.scrollLeft + track.clientWidth >= track.scrollWidth - 4){
-          track.scrollLeft = 0;
-        } else {
-          track.scrollLeft += 1;
-        }
-      }, 20);
-      track._autoScroll = autoScroll;
+      // Auto-scroll: una card alla volta, in pausa al tocco e quando non si vede.
+      // Prima: +1px ogni 20ms, che con scroll-snap "mandatory" veniva subito
+      // annullato (il carosello non si muoveva mai) e intanto forzava un layout
+      // 50 volte al secondo (scroll a scatti e batteria sui telefoni). E a ogni
+      // nuovo render si aggiungeva un altro intervallo senza fermare il vecchio.
+      clearInterval(track._autoScroll);
+      track._autoScroll = setInterval(()=>{
+        if(document.hidden||_carouselTouching||track.matches(':hover')) return;
+        const r=track.getBoundingClientRect();
+        if(r.bottom<0||r.top>innerHeight||!track.offsetParent) return;
+        const card=track.firstElementChild; if(!card) return;
+        if(track.scrollLeft + track.clientWidth >= track.scrollWidth - 4) track.scrollTo({left:0,behavior:'smooth'});
+        else track.scrollBy({left:card.getBoundingClientRect().width+12,behavior:'smooth'});
+      }, 3500);
     });
   }
   let _carouselTouching = false;
@@ -4428,7 +4469,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   function cleanTitle(name, max){ return lfEsc(cleanTitleTxt(name, max)); }
   function cleanTitleTxt(name, max){
     const raw=String(name||''); max=max||60;
-    let t=raw.replace(/[【\[][^】\]]*[】\]]/g,' ')                         // [promo] 【促销】
+    let t=raw.replace(/&amp;?/gi,'&')                                       // "&Amp" dei titoli importati
+             .replace(/[【\[][^】\]]*[】\]]/g,' ')                         // [promo] 【促销】
              .replace(/[　-〿㐀-鿿豈-﫿＀-￯]+/g,' '); // cinese + punteggiatura full-width
     _TITLE_JUNK.forEach(r=>{ t=t.replace(r,' '); });
     const first=t.split(/[!?]|\.\s/)[0];                                     // prima frase
@@ -5033,7 +5075,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const q=new URLSearchParams(location.search);
     const piId=q.get('payment_intent'); const stato=q.get('redirect_status');
     if(!piId) return;
-    try{ history.replaceState(null,'',location.pathname+location.hash); }catch(_){}
+    try{ history.replaceState(history.state,'',location.pathname+location.hash); }catch(_){}
     if(stato!=='succeeded'){ showToast('⚠️ Il pagamento non è stato completato. Puoi riprovare dal carrello.'); return; }
     const pend=_leggiPendente();
     if(!pend||pend.pi!==piId){ _mostraPagamentoInRegistrazione(piId); return; }
@@ -5067,7 +5109,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const q=new URLSearchParams(location.search), st=q.get('paypal');
     if(!st) return;
     const id=q.get('token');
-    try{ history.replaceState(null,'',location.pathname+location.hash); }catch(_){}
+    try{ history.replaceState(history.state,'',location.pathname+location.hash); }catch(_){}
     if(st==='cancel'){ setTimeout(()=>{ showToast('Pagamento PayPal annullato: non ti è stato addebitato nulla.'); try{showPg('checkout');}catch(_){} },700); return; }
     if(st!=='return'||!id) return;
     waitFB(()=>{
@@ -5097,10 +5139,14 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     // LFPoints: accreditati subito solo se pagamento verificato (carta)
     const newPts=prevPts+(pts||0);
     udata={...udata,lfpoints:newPts,totalSpent:(udata?.totalSpent||0)+subtotal,activeReward:null,...(discount>0?{discountUsed:true}:{})};
-    if(!localStorage.getItem('lf_orders_placed')){
-      localStorage.setItem('lf_show_vault_banner','1');
-    }
-    localStorage.setItem('lf_orders_placed','1');
+    // try/catch: con lo storage bloccato un errore qui fermava la conferma
+    // dell'ordine GIÀ PAGATO (carrello non svuotato, niente riepilogo).
+    try{
+      if(!localStorage.getItem('lf_orders_placed')){
+        localStorage.setItem('lf_show_vault_banner','1');
+      }
+      localStorage.setItem('lf_orders_placed','1');
+    }catch(_){}
     updateNav(user,udata); updateHomeDisplay();
     const newReward=pts>0?REWARDS.find(r=>prevPts<r.pts&&newPts>=r.pts):null;
     cart=[];saveCart();updateCartBadge();
@@ -6648,7 +6694,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const link='https://lillofind.shop/?ref='+encodeURIComponent(user.uid);
     const html=`<div id="lf-ref" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(20,20,17,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:22px;">
       <div style="background:var(--card);color:var(--k);max-width:400px;width:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg);">
-        <div style="background:var(--ink);color:var(--on-ink);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;"><svg class=ic aria-hidden=true><use href=icons.svg#gift></use></svg> Invita un amico</strong><span onclick="document.getElementById('lf-ref').remove()" style="cursor:pointer;font-size:20px;opacity:.7;">×</span></div>
+        <div style="background:var(--ink);color:var(--on-ink);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;"><strong style="letter-spacing:1px;"><svg class=ic aria-hidden=true><use href=icons.svg#gift></use></svg> Invita un amico</strong><span onclick="document.getElementById('lf-ref').remove()" role="button" aria-label="Chiudi" style="cursor:pointer;font-size:20px;opacity:.7;margin:-12px -12px -12px 0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;">×</span></div>
         <div style="padding:22px;">
           <p style="font-size:14px;line-height:1.6;color:var(--mid);margin-bottom:16px;">Condividi il tuo link: quando un amico si iscrive, ricevi <strong style="color:var(--led-text);">${REFERRAL_POINTS} LFPOINTS</strong> (=€${(REFERRAL_POINTS/10).toFixed(0)}). Lui riceve 50 punti di benvenuto.</p>
           <div style="display:flex;gap:8px;margin-bottom:12px;">
@@ -6995,9 +7041,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   // ══════════════════════════════════════════════════════════════
   window.setFilter = function(type, value){
     // Reset all active chips/size-boxes/swatches first
-    document.querySelectorAll('.chip[data-key],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
-    // Reset all filters then apply the one requested
-    filters = {model:'',brand:'',size:'',style:'',color:'',football:false,basket:false};
+    document.querySelectorAll('.chip[data-key],.chip[data-price],.size-box[data-key],.swatch[data-key]').forEach(c=>c.classList.remove('on'));
+    // Reset all filters then apply the one requested (anche genere e prezzo:
+    // prima restavano evidenziati nei tab/chip ma non venivano più applicati)
+    filters = {model:'',brand:'',size:'',style:'',color:'',gender:'',football:false,basket:false,priceMin:null,priceMax:null};
+    document.querySelectorAll('.g-tab').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()==='tutti'));
+    document.querySelectorAll('.gtrio-btn[data-g]').forEach(b=>b.classList.toggle('active',b.dataset.g===''));
+    document.querySelectorAll('.gtrio-btn[data-gm]').forEach(b=>b.classList.toggle('active',b.dataset.gm===''));
     if(type === 'brand') filters.brand = value;
     if(type === 'style') filters.style = value;
     if(type === 'model') filters.model = value;
@@ -7132,7 +7182,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       if(filters.priceMax!=null) sp.set('pmax',filters.priceMax);
       if(sort && sort!=='new')   sp.set('sort',sort);
       const qs=sp.toString();
-      history.replaceState(null,'',location.pathname+(qs?'?'+qs:''));
+      history.replaceState(history.state,'',location.pathname+(qs?'?'+qs:''));
     }catch(_){}
   }
   window._syncShopURL=_syncShopURL;
@@ -7262,7 +7312,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   // ══════════════════════════════════════════════════════════════
   // FEATURE 9 — Sticky Add to Cart
   // ══════════════════════════════════════════════════════════════
-  var _stickyPid = null, _stickyPrice = 0; // var: usate da showPg/buy anche prima di questa riga
+  var _stickyPid = null, _stickyPrice = 0, _stickyHideT = 0; // var: usate da showPg/buy anche prima di questa riga
 
   window.stickBuy = function(){
     if(_stickyPid) buy(_stickyPid, _stickyPrice);
@@ -7275,6 +7325,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     // Don't show if size-picker modal is already open
     const picker = document.getElementById('size-picker-modal');
     if(picker && picker.classList.contains('open')) return;
+    // né se la scheda è già stata chiusa nei 200ms prima della comparsa
+    if(!document.getElementById('prod-modal')?.classList.contains('open')) return;
+    clearTimeout(_stickyHideT); // un hide in corso (es. "Completa il drop") la rinasconderebbe
     _stickyPid   = pid;
     _stickyPrice = price;
     const bar = document.getElementById('sticky-atc');
@@ -7289,7 +7342,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     const bar = document.getElementById('sticky-atc');
     if(!bar) return;
     bar.classList.remove('visible');
-    setTimeout(()=>{ bar.style.display='none'; }, 320);
+    clearTimeout(_stickyHideT);
+    _stickyHideT=setTimeout(()=>{ if(!bar.classList.contains('visible')) bar.style.display='none'; }, 320);
     _stickyPid = null;
   }
 
@@ -7329,11 +7383,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     clearTimeout(_liveSearchTimer);
     _liveSearchTimer = setTimeout(()=>{
       const prods = (typeof products !== 'undefined') ? products : [];
-      const matches = prods.filter(p =>
-        (p.name||'').toLowerCase().includes(q) ||
-        (p.brand||'').toLowerCase().includes(q) ||
-        (p.model||'').toLowerCase().includes(q)
-      ).slice(0, 4);
+      const matches = prods.filter(p => _lfMatchQ(p,q)).slice(0, 4);
 
       if(!matches.length){
         dropdown.innerHTML = '<div class="search-drop-empty">Nessun risultato</div>';
@@ -7484,10 +7534,115 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     document.body.style.overflow = 'hidden';
   };
   window.closeLightbox = function(){
-    document.getElementById('lf-lightbox').style.display = 'none';
+    const lb=document.getElementById('lf-lightbox');
+    if(lb.style.display==='none') return; // Esc a lightbox chiuso sbloccava lo scroll sotto la scheda prodotto
+    lb.style.display = 'none';
     document.body.style.overflow = '';
   };
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox(); });
+
+  // ══════════════════════════════════════════════════════════════
+  // Tasto "Indietro" (Android, gesto iPhone, app installata) + blocco scroll
+  // ══════════════════════════════════════════════════════════════
+  // Prima non c'era nessuna voce di cronologia: con una scheda prodotto, il
+  // menu ☰ o i filtri aperti, "Indietro" faceva USCIRE dal sito (o chiudeva
+  // l'app installata). Ora: una voce per ogni pagina visitata e una per ogni
+  // pannello aperto; Indietro chiude il pannello in cima o torna alla pagina
+  // precedente. Lo stato è in history.state: {lfPg: pagina, lfOv: n. pannelli}.
+  // Inoltre, finché un pannello resta aperto, la pagina sotto non scorre: prima
+  // chiudere il pannello sopra (es. lightbox sopra la scheda) la sbloccava.
+  (function(){
+    const $=id=>document.getElementById(id);
+    const cls=id=>()=>!!$(id)?.classList.contains('open');
+    const esiste=id=>()=>!!$(id);
+    const togli=id=>()=>$(id)?.remove();
+    // dal più in alto al più in basso
+    const OV=[
+      ['lf-ios-install', esiste('lf-ios-install'), togli('lf-ios-install')],
+      ['lf-ref',         esiste('lf-ref'),         togli('lf-ref')],
+      ['team-req-modal', esiste('team-req-modal'), togli('team-req-modal')],
+      ['lf-sizeguide',   esiste('lf-sizeguide'),   togli('lf-sizeguide')],
+      ['lf-lightbox',    ()=>$('lf-lightbox')?.style.display==='flex', ()=>closeLightbox()],
+      ['vs-modal',       esiste('vs-modal'),       ()=>closeVisualSearch()],
+      ['mob-filter-drawer', cls('mob-filter-drawer'), ()=>closeMobFilter()],
+      ['size-picker-modal', cls('size-picker-modal'), ()=>{ $('size-picker-modal').classList.remove('open'); hideStickyATC(); }],
+      ['info-modal',     cls('info-modal'),        ()=>closeInfo()],
+      ['size-modal',     cls('size-modal'),        ()=>$('size-modal').classList.remove('open')],
+      ['prod-modal',     cls('prod-modal'),        ()=>closeProd()],
+      ['drawer',         cls('drawer'),            ()=>closeDrawer()],
+    ];
+    const aperti=()=>OV.filter(o=>{ try{ return o[1](); }catch(_){ return false; } });
+    const pagina=()=>(document.querySelector('.pg.on')?.id||'pg-home').slice(3);
+    const H={pending:0, fromPop:false, user:false, pgDue:false};
+    const stato=()=>history.state||{};
+    const vai=(push,st)=>{ try{ history[push?'pushState':'replaceState'](st,'',location.href); }catch(_){} };
+    ['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,()=>{ H.user=true; },{capture:true,passive:true}));
+
+    // Voce per la pagina corrente (le navigazioni automatiche all'avvio, es.
+    // link condivisi o ?go=, sostituiscono invece di aggiungere).
+    function pgSync(){
+      if(H.fromPop) return;
+      if(H.pending){ H.pgDue=true; return; }
+      const st=stato(), now=pagina();
+      if(st.lfPg===now) return;
+      // ricorda dove era arrivato lo scroll, per ritrovarlo tornando indietro
+      if(st.lfPg && !st.lfOv) vai(false,{...st,sy:Math.round(scrollY)});
+      vai(H.user && !st.lfOv && !!st.lfPg, {lfPg:now,lfOv:0});
+    }
+    // Voci per i pannelli aperti + blocco scroll
+    function ovSync(){
+      const n=aperti().length;
+      // tutti i blocchi dello scroll della pagina sono pannelli di OV: niente
+      // pannelli = pagina libera (es. scelta taglia chiusa con la X dopo la scheda)
+      document.body.style.overflow=n?'hidden':'';
+      if(H.fromPop||H.pending) return;
+      const st=stato(), cur=st.lfOv||0;
+      if(n>cur) vai(true,{...st,lfPg:st.lfPg||pagina(),lfOv:n,sy:undefined});
+      else if(n<cur){ H.pending++; try{ history.go(n-cur); }catch(_){ H.pending--; } }
+      // URL ?p= della scheda aperta sulla SUA voce (vedi openProduct)
+      if(cls('prod-modal')() && window._lfProdUrl && location.pathname+location.search!==window._lfProdUrl){
+        try{ history.replaceState(history.state,'',window._lfProdUrl); }catch(_){}
+      }
+    }
+    window._lfOvSync=ovSync;
+    let due=false;
+    const presto=()=>{ if(due) return; due=true; queueMicrotask(()=>{ due=false; ovSync(); }); };
+    const mo=new MutationObserver(presto);
+    mo.observe(document.body,{childList:true});
+    OV.forEach(([id])=>{ const el=$(id); if(el) mo.observe(el,{attributes:true,attributeFilter:['class','style']}); });
+
+    const _showPgNoHist=window.showPg;
+    window.showPg=function(){ const r=_showPgNoHist.apply(this,arguments); pgSync(); return r; };
+
+    addEventListener('popstate',e=>{
+      if(H.pending>0){
+        // arrivo di un history.go() nostro (pannello chiuso con la X o lo sfondo)
+        if(--H.pending) return;
+        if(!cls('prod-modal')() && /[?&]p=/.test(location.search)){
+          try{ history.replaceState(history.state,'',location.pathname); if(pagina()==='shop') window._syncShopURL?.(); }catch(_){}
+        }
+        if(H.pgDue){ H.pgDue=false; pgSync(); }
+        ovSync();
+        return;
+      }
+      const st=e.state||{}, d=st.lfOv||0;
+      let fatto=false;
+      H.fromPop=true;
+      try{
+        for(let i=0;i<OV.length && aperti().length>d;i++){ const top=aperti()[0]; try{ top[2](); }catch(_){} fatto=true; }
+        if(st.lfPg && st.lfPg!==pagina()){
+          window.showPg(st.lfPg); fatto=true;
+          if(st.sy) requestAnimationFrame(()=>requestAnimationFrame(()=>scrollTo(0,st.sy)));
+        }
+      }finally{ H.fromPop=false; }
+      document.body.style.overflow=aperti().length?'hidden':'';
+      // voce di un pannello già chiuso in altro modo: niente da fare, salta alla precedente
+      if(!fatto && d>0){ try{ history.back(); }catch(_){} }
+    });
+
+    // stato iniziale sulla prima voce
+    if(!stato().lfPg) vai(false,{...stato(),lfPg:pagina(),lfOv:0});
+  })();
 
 </script>
 
@@ -7510,7 +7665,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 <!-- ── Lightbox ──────────────────────────────────────────────── -->
 <div id="lf-lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);cursor:zoom-out;align-items:center;justify-content:center;">
   <img id="lf-lb-img" src="" alt="" style="max-width:96vw;max-height:96vh;object-fit:contain;display:block;box-shadow:0 0 60px rgba(0,0,0,.8);user-select:none;">
-  <button onclick="closeLightbox()" style="position:fixed;top:18px;right:24px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;line-height:1;opacity:.7;padding:0;">&times;</button>
+  <button onclick="closeLightbox()" aria-label="Chiudi" style="position:fixed;top:calc(8px + env(safe-area-inset-top));right:12px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;line-height:1;opacity:.7;padding:0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;">&times;</button>
 </div>
 
 <!-- ══ MOBILE FILTER OVERLAY + DRAWER ══ -->
@@ -7549,6 +7704,16 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     <div class="fsec">
       <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.color">Colore</span><span class="fsec-arr">▾</span></button>
       <div class="fsec-bd" id="ch-color-m"></div>
+    </div>
+    <!-- Prezzo: c'era solo nella barra laterale desktop, nascosta sul telefono -->
+    <div class="fsec">
+      <button class="fsec-hd" onclick="toggleFsec(this)"><span data-i18n="shop.f.price">Prezzo</span><span class="fsec-arr">▾</span></button>
+      <div class="fsec-bd" id="ch-price-m">
+        <span class="chip" data-price="0-30" onclick="setPriceRange(0,30,this)">&lt; €30</span>
+        <span class="chip" data-price="30-60" onclick="setPriceRange(30,60,this)">€30–60</span>
+        <span class="chip" data-price="60-100" onclick="setPriceRange(60,100,this)">€60–100</span>
+        <span class="chip" data-price="100-99999" onclick="setPriceRange(100,99999,this)">&gt; €100</span>
+      </div>
     </div>
   </div>
   <div class="mfd-footer">
