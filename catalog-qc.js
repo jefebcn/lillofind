@@ -47,7 +47,8 @@
   // Riconosce squadra di calcio o brand dal NOME (titolo album Yupoo).
   // Per i kit calcio è la squadra il "brand" con cui filtra il cliente.
   var TEAMS = [
-    ['Juventus', /juventus|\bjuve\b/i], ['AC Milan', /\bac ?milan\b|\bmilan\b/i], ['Inter', /\binter\b|internazionale/i],
+    // Inter prima del Milan: "Inter Milan" è l'Inter, non l'AC Milan
+    ['Juventus', /juventus|\bjuve\b/i], ['Inter', /\binter\b|internazionale/i], ['AC Milan', /\bac ?milan\b|\bmilan\b/i],
     ['Napoli', /napoli/i], ['Roma', /\bas ?roma\b|\broma\b/i], ['Lazio', /lazio/i], ['Atalanta', /atalanta/i],
     ['Fiorentina', /fiorentina/i], ['Real Madrid', /real ?madrid/i], ['Barcelona', /barcelona|bar[çc]a\b|\bfcb\b/i],
     ['Atletico Madrid', /atl[eé]tico/i], ['Manchester United', /man(chester)? ?united|\bman ?utd\b/i],
@@ -79,7 +80,8 @@
     for (var j = 0; j < NBA_TEAMS.length; j++) { if (NBA_TEAMS[j][1].test(t)) return NBA_TEAMS[j][0]; }
     // Scan brand noti nel titolo (alias >=4 char per evitare falsi positivi)
     var compact = t.toLowerCase().replace(/[^a-z0-9]/g, '');
-    for (var k in BRAND_CANON) { if (k.length >= 4 && compact.indexOf(k) >= 0) return BRAND_CANON[k]; }
+    // "polo" da solo è il capo (polo), non Polo Ralph Lauren
+    for (var k in BRAND_CANON) { if (k.length >= 4 && k !== 'polo' && compact.indexOf(k) >= 0) return BRAND_CANON[k]; }
     return '';
   }
   // ── Ciclismo: squadra o marchio dal titolo ─────────────────────
@@ -163,16 +165,20 @@
   // Deduce la categoria dal nome/modello. Ritorna '' se non deducibile.
   function inferCategory(p) {
     var t = ((p.name || '') + ' ' + (p.model || '')).toLowerCase();
-    if (/scarpa|scarpe|sneaker|dunk|air\s?max|air\s?force|jordan\s?\d|yeezy|runner|trainer|samba|gazelle|990|550|force\s?1|blazer|superstar/.test(t)) return 'scarpe';
+    t = t.replace(/polo\s+(?:by\s+)?ralph\s+lauren/g, 'ralph lauren'); // il marchio, non il capo
+    if (/scarpa|scarpe|sneaker|dunk|air\s?max|air\s?force|jordan\s?\d|yeezy|\brunners?\b|\btrainers?\b|samba|gazelle|990|550|force\s?1|nike\s+blazer|blazer\s+(?:mid|low)|superstar|ciabatt|\bslides?\b/.test(t)) return 'scarpe';
     if (/polo\b/.test(t)) return 'tshirt_branded';
     if (/t-?shirt|tee\b|maglietta|canott/.test(t)) return 'tshirt';
     if (/felpa|hoodie|cappuccio|crewneck|sweatshirt|girocollo/.test(t)) return 'felpa';
     if (/giacchett|giacca|bomber|giubbott|piumino|parka|trench|cappotto|jacket|gilet|smanicat/.test(t)) return 'giacchetto';
+    // "Pantaloncini" contiene "pantalon": i corti prima dei lunghi
+    if (/pantaloncin|\bshorts\b|bermuda/.test(t)) return 'shorts';
     if (/pantalon|jeans|cargo|tuta\b|jogger|trouser|leggings/.test(t)) return 'pantaloni';
     if (/short|bermuda|costume|boxer\s?short/.test(t)) return 'shorts';
     if (/cappell|beanie|berretto|bucket|cap\b|hat\b|visiera/.test(t)) return 'cappello';
     if (/borsa|bag|pochette|clutch|tote|zaino|marsupio|tracolla|shopper|speedy|baguette/.test(t)) return 'borsa';
-    if (/maglia|maglione|cardigan|dolcevita|knit|pile|fleece|camicia/.test(t)) return 'felpa';
+    if (/maglione|cardigan|dolcevita|knit|pile|fleece/.test(t)) return 'felpa';
+    if (/maglia|camicia|shirt|jersey/.test(t)) return 'tshirt'; // maglie e camicie pesano come una t-shirt
     if (/occhial|cintura|portafogl|sciarpa|guant|calz|boxer|intimo|set\b|accessori|orolog|anello|anelli|braccial|collan|catenin|\bcatena\b|orecchin|ciondol|pendent|gioiell|spilla|piercing|perline|bigiotteri/.test(t)) return 'accessori';
     return '';
   }

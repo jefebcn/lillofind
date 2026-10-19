@@ -1138,7 +1138,8 @@ window.saveAll=async function(){
       // e nelle barre Squadre (raggruppate per brand). Il basket ha priorità
       // (una "jersey" NBA non deve finire nel calcio).
       const _txt = (name||'')+' '+(rowModel||'');
-      const _basketKw = /canott|basket|\bnba\b|tank\s?top/i;
+      // Canotta da sola non vuol dire basket (canotte da palestra, da donna…): serve NBA/basket o una squadra
+      const _basketKw = /basket|\bnba\b/i;
       const isCycling = row.dataset.sport === 'ciclismo' || _CYCLING_RE.test(_txt);
       // Ciclismo: squadra o marchio vero dal titolo (i fornitori li scrivono male)
       const brandOut = (isCycling && QC && QC.cyclingBrand && QC.cyclingBrand(name, rowBrand)) || brand;
@@ -1169,7 +1170,7 @@ window.saveAll=async function(){
       if(sizeChart && !images.includes(sizeChart)) images=[...images.slice(0,14), sizeChart];
       await imp.addDoc(imp.collection(imp.db,'products'),{
         name,price,brand:brandOut,model:rowModel,
-        category,
+        category,gender:'unisex',
         sizes:sizes.length?sizes:['Unica'],size:sizes.join(', '),
         colors,imageUrl:imgUrl,description,weightKg,
         ...(isCycling?{style:'ciclismo'}:isBasket?{style:'basket'}:isKit?{style:'calcio'}:{}),
@@ -1538,6 +1539,7 @@ window.saveCSV = async function(){
         brand:       csvBrand,
         model:       r.tipo,
         category:    csvCat,
+        gender:      'unisex',
         sizes:       csvSizes.length ? csvSizes : ['Unica'],
         size:        csvSizes.join(', '),
         colors:      r.colori,
@@ -2029,16 +2031,17 @@ function pickImporterModel(d, fullName){
   const ai = d.analysis || {};
   const exact = MODELS.find(m => m.toLowerCase() === (ai.model||'').toLowerCase());
   if(exact) return exact;
-  const t = ((fullName||'') + ' ' + (ai.name||'') + ' ' + (ai.model||'') + ' ' + (ai.category||'')).toLowerCase();
+  const t = ((fullName||'') + ' ' + (ai.name||'') + ' ' + (ai.model||'') + ' ' + (ai.category||'')).toLowerCase()
+    .replace(/polo\s+(?:by\s+)?ralph\s+lauren/g, 'ralph lauren');   // il marchio, non una polo
   const KW = [
     ['Occhiali da Vista', /occhiali da vista|montatura.*vista|eyeglass|optical frame|prescription/],
     ['Occhiali da Sole',  /occhiali da sole|occhiali|sunglass|eyewear|\bshades\b/],
-    ['Shorts',      /shorts|pantaloncin|\bshort\b/],
+    ['Shorts',      /shorts|pantaloncin|\bshort\b(?!\s*-?sleeve)/],
     ['Jogger',      /jogger/],
     ['Jeans',       /jeans|denim/],
     ['Pants',       /pants|pantalon|trouser|leggings/],
     ['Zip Hoodie',  /zip ?hoodie|full[- ]?zip/],
-    ['Hoodie',      /hoodie|cappuccio/],
+    ['Hoodie',      /hoodie|felpa con cappuccio|felpa cappuccio/],
     ['Crewneck',    /crewneck|girocollo/],
     ['Puffer',      /puffer|piumino|down jacket/],
     ['Parka',       /parka/],
