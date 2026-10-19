@@ -68,6 +68,9 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:var(--font-body);}
 
 /* ── GRID ────────────────────────────────────── */
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;}
+/* Telefoni da 360px (molti Android): 160px + gap non stavano due volte nella
+   larghezza utile e la griglia diventava a UNA colonna con card enormi. */
+@media(max-width:479px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(min(160px,calc(50% - 7px)),1fr));}}
 @media(min-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;}}
 @media(min-width:900px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px;}}
 
@@ -148,6 +151,8 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:var(--font-body);}
   /* iPhone con viewport-fit=cover: niente ☰ e punti sotto orologio e batteria */
   #mob-hdr{display:flex;padding-top:env(safe-area-inset-top,0px);height:calc(var(--h) + env(safe-area-inset-top,0px));}
   #site-hdr{display:none;}
+  /* l'header è sticky: scrollIntoView (campi del checkout, newsletter…) non deve finirci sotto */
+  html{scroll-padding-top:calc(var(--h) + env(safe-area-inset-top,0px));}
 }
 /* Desktop/laptop (769–1450px): compatta la nav così sta nella sua metà
    e il logo resta centrato (dimensione logo invariata). */
@@ -187,7 +192,7 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:var(--font-body);}
   z-index:300;align-items:center;justify-content:center;padding:16px;
 }
 .modal-bg.open{display:flex;}
-.modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.modal-box{background:var(--w);width:100%;max-width:480px;max-height:90vh;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 
 /* ── COOKIE BANNER ───────────────────────────── */
 #cookie-bar{
@@ -199,6 +204,8 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:var(--font-body);}
 }
 #cookie-bar.show{transform:translateY(0);}
 @media(max-width:768px){#cookie-bar{padding-bottom:calc(16px + 60px + env(safe-area-inset-bottom));}}
+/* Banner "Installa l'app": sopra la bottom nav, non sopra i suoi pulsanti */
+@media(max-width:768px){#pwa-install{bottom:calc(72px + env(safe-area-inset-bottom))!important;}}
 
 
 /* ── CHECKOUT STEPS (Hick's Law — step chunking) ── */
@@ -342,7 +349,10 @@ p,label,span:not(.bnav-lbl):not(.chip):not(.slbl){font-family:var(--font-body);}
   #filter-aside{display:none !important;}
   .show-mob{display:block !important;}
   .full-mob{width:100% !important;}
-  .grid-1-mob{grid-template-columns:1fr !important;}
+  .grid-1-mob{grid-template-columns:minmax(0,1fr) !important;} /* minmax(0,…): un nome prodotto lungo (nowrap) allargava la colonna */
+  /* un figlio con grid-column:span 2 creava una seconda colonna implicita:
+     il checkout diventava largo ~540px (scroll orizzontale, campi tagliati) */
+  .grid-1-mob > *{grid-column:auto !important;}
   .pad-mob{padding:18px 16px !important;}
   .text-sm-mob{font-size:11px !important;}
 
@@ -671,7 +681,7 @@ img{ -webkit-user-drag:none; user-select:none; }
 /* ── STICKY ADD TO CART (mobile modal) ──────────── */
 #sticky-atc{
   display:none;position:fixed;bottom:0;left:0;right:0;z-index:600;
-  background:var(--ink);padding:12px 16px 16px;
+  background:var(--ink);padding:12px 16px calc(16px + env(safe-area-inset-bottom));
   border-top:2px solid var(--led);
   box-shadow:0 -4px 24px rgba(0,0,0,.3);
   transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
@@ -683,6 +693,9 @@ img{ -webkit-user-drag:none; user-select:none; }
 #sticky-atc-price{font-family:var(--font-display);font-size:20px;color:var(--led2);}
 #sticky-atc-btn{background:var(--led);color:#fff;border:none;padding:12px 20px;font-family:var(--font-body);font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;box-shadow:none;flex-shrink:0;}
 @media(min-width:769px){#sticky-atc{display:none!important;}}
+/* La barra "Aggiungi" fissa copre il fondo della scheda: senza questo spazio
+   il pulsante "Invia recensione" restava irraggiungibile sotto la barra. */
+@media(max-width:768px){#prod-modal .modal-box{padding-bottom:calc(90px + env(safe-area-inset-bottom))!important;}}
 
 /* ── PERFORMANCE — layout containment & compositing hints ── */
 .pcard{contain:layout style;}
@@ -834,7 +847,7 @@ img{ -webkit-user-drag:none; user-select:none; }
   background:var(--card);border-top:1px solid var(--border);
   border-radius:22px 22px 0 0;padding:0;
   transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
-  max-height:85vh;overflow:hidden;display:flex;flex-direction:column;
+  max-height:85vh;max-height:85dvh;overflow:hidden;display:flex;flex-direction:column;
 }
 #mob-filter-drawer.open{transform:translateY(0);}
 .mfd-header{
@@ -844,11 +857,14 @@ img{ -webkit-user-drag:none; user-select:none; }
 .mfd-title{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--k);}
 .mfd-close{background:var(--accent-soft);border:none;color:var(--k);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;}
 .mfd-body{overflow-y:auto;padding:0 20px;flex:1;scrollbar-width:thin;}
-.mfd-footer{padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:10px;}
+.mfd-footer{padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:10px;}
 .mfd-body .fsec{border-bottom:1px solid var(--border);}
 .mfd-body .fsec-hd{padding:14px 0;font-size:12px;}
 .mfd-body .chip{border-color:var(--border-2);color:var(--mid);background:var(--card);margin:2px;padding:6px 12px;font-size:11px;}
-.mfd-body .chip:hover,.mfd-body .chip.on{background:var(--led);color:#fff;border-color:var(--led);}
+.mfd-body .chip.on{background:var(--led);color:#fff;border-color:var(--led);}
+/* :hover solo con il mouse: al tocco restava "appiccicato" e un chip appena
+   disattivato sembrava ancora selezionato */
+@media(hover:hover){.mfd-body .chip:hover{background:var(--led);color:#fff;border-color:var(--led);}}
 .mfd-body .size-box{border-color:var(--border-2);background:var(--card);color:var(--mid);min-width:40px;min-height:40px;border-radius:var(--radius-sm);}
 .mfd-body .size-box.on{border-color:var(--led);color:#fff;background:var(--led);}
 .mfd-body .fs-grp{font-size:10.5px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin:10px 0 6px;font-weight:600;}
