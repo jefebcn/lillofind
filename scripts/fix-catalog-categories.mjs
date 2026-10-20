@@ -10,7 +10,12 @@ import admin from 'firebase-admin';
 
 const DRY = process.env.DRY === '1';
 const note = (m) => console.log('::notice::' + m);
-const fail = (e) => { console.log('::error::' + String((e && (e.code ? e.code + ' ' : '') + e.message) || e).slice(0, 300)); process.exit(1); };
+const fail = (e) => {
+  const msg = String((e && (e.code ? e.code + ' ' : '') + e.message) || e).slice(0, 300);
+  // quota giornaliera di Firestore finita: nessuna scrittura fatta, si rilancia dopo le 9:00 (ora di Roma)
+  console.log('::error::' + (/RESOURCE_EXHAUSTED|quota/i.test(msg) ? 'Quota Firestore esaurita: rilanciare dopo il reset (09:00 ora di Roma), i campi già corretti vengono saltati. ' : '') + msg);
+  process.exit(1);
+};
 process.on('unhandledRejection', fail);
 process.on('uncaughtException', fail);
 

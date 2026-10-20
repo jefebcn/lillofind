@@ -28,12 +28,27 @@ jobs:
         with:
           node-version: '20'
 
+      # Il giro programmato legge tutti i prodotti (~7000 letture della quota
+      # Firestore di 50.000 al giorno): si salta se il catalogo è già aggiornato
+      # (nessuna modifica in sospeso e pubblicato da meno di 3 giorni). A mano
+      # (Run workflow) si ripubblica sempre.
+      - name: Serve ripubblicare?
+        id: need
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          M="$(curl -s --max-time 20 'https://lillofind.conti9708.workers.dev/catalog?meta=1' || echo '{}')"
+          GO="$(node -e 'try{const m=JSON.parse(process.argv[1]);const age=Date.now()-(+m.builtAtMs||0);process.stdout.write(m.dirty||!(m.count>0)||age>72*3600e3?"1":"0")}catch(e){process.stdout.write("1")}' "$M")"
+          echo "go=$GO" >> "$GITHUB_OUTPUT"
+          [ "$GO" = 1 ] || echo "Catalogo già aggiornato: niente da ripubblicare."
+
       - name: Credenziali Google (service account Firebase)
+        if: steps.need.outputs.go == '1'
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: printf '%s' "$GOOGLE_CREDENTIALS" > "$RUNNER_TEMP/gcloud-key.json"
 
       - name: Leggi i prodotti da Firestore
+        if: steps.need.outputs.go == '1'
         working-directory: scripts
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
@@ -43,10 +58,12 @@ jobs:
           node publish-catalog.mjs
 
       - name: Dipendenze Worker (wrangler)
+        if: steps.need.outputs.go == '1'
         working-directory: cloudflare-worker
         run: npm ci
 
       - name: Scrivi il catalogo nel KV
+        if: steps.need.outputs.go == '1'
         working-directory: cloudflare-worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
