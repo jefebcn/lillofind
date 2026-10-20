@@ -36,8 +36,11 @@
   var CYCLING_CANON = {
     efeducationeasypost:'EF Education-EasyPost', uaeteamemirates:'UAE Team Emirates', vismaleaseabike:'Visma-Lease a Bike', ineosgrenadiers:'INEOS Grenadiers', soudalquickstep:'Soudal Quick-Step', redbullborahansgrohe:'Red Bull-Bora-Hansgrohe', alpecindeceuninck:'Alpecin-Deceuninck', groupamafdj:'Groupama-FDJ', totalenergies:'TotalEnergies', lidltrek:'Lidl-Trek', jaycoalula:'Jayco AlUla', decathlonag2r:'Decathlon AG2R', intermarchwanty:'Intermarché-Wanty', israelpremiertech:'Israel Premier Tech', picnicpostnl:'Picnic PostNL', unox:'Uno-X', q365:'Q36.5', unibetroserockets:'Unibet Rose Rockets', uciworldchampion:'UCI World Champion', pasnormalstudios:'Pas Normal Studios', lecol:'Le Col', poc:'POC', cervlo:'Cervélo', '7mesh':'7mesh'
   };
+  // Marchi segnaposto dell'analisi AI ("Sconosciuto", "Unknown", "Vintage/…",
+  // "Generic/…"): meglio nessun marchio che una voce finta nel filtro Marchio
+  var PLACEHOLDER_BRAND = /^(?:brand\s+)?(?:sconosciut[oa]|unknown|non identificat[oa]|non specificat[oa]|generic[oa]?|unbranded|vintage|original|zzz|n\/?a|vari\b.*)$|^(?:vintage|generic|outdoor)\//i;
   function canonBrand(b) {
-    if (!b) return '';
+    if (!b || PLACEHOLDER_BRAND.test(String(b).trim())) return '';
     var k = brandKey(b);
     if (BRAND_CANON[k]) return BRAND_CANON[k];
     if (CYCLING_CANON[k]) return CYCLING_CANON[k];
