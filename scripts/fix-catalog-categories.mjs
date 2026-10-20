@@ -5,6 +5,14 @@
 // qualcuno l'ha già modificato a mano, resta com'è. Poi il workflow ripubblica
 // il catalogo. DRY=1 mostra solo i conteggi.
 // Il repository è pubblico: nei log solo conteggi.
+//
+// Quota Firestore (piano Spark: 50.000 letture e 20.000 scritture al giorno,
+// le stesse che servono al checkout): al massimo MAX_DOCS prodotti per giro
+// (una lettura e una scrittura ciascuno). Quelli già a posto nel catalogo
+// pubblico si saltano senza leggerli, così i giri successivi proseguono da
+// dove si era arrivati. Il catalogo dello shop si aggiorna poi nel KV
+// applicando solo le modifiche fatte (applied.json), senza rileggere tutti i
+// prodotti da Firestore come faceva la ripubblicazione completa.
 import fs from 'node:fs';
 import admin from 'firebase-admin';
 
@@ -26,13 +34,28 @@ const db = admin.firestore();
 const DEL = admin.firestore.FieldValue.delete();
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
-const ids = Object.keys(FIX);
+const MAX_DOCS = Math.max(1, parseInt(process.env.MAX_DOCS || '400', 10));
+const CATALOG_URL = process.env.CATALOG_URL || 'https://lillofind.conti9708.workers.dev/catalog';
+
+// Catalogo pubblico (KV, nessuna lettura Firestore): cosa resta da fare
+let pub = null;
+try { pub = new Map(((await (await fetch(CATALOG_URL, { signal: AbortSignal.timeout(60000) })).json()).products || []).map((p) => [p.id, p])); }
+catch (e) { console.log('Catalogo pubblico non leggibile, si controllano tutti: ' + String(e.message || e).slice(0, 120)); }
+const pending = Object.keys(FIX).filter((id) => {
+  if (!pub) return true;
+  const p = pub.get(id);
+  if (!p) return false;                       // non più nel catalogo
+  return Object.entries(FIX[id]).some(([f, { from }]) => same(p[f], from));
+});
+const ids = pending.slice(0, MAX_DOCS);
+console.log(`Da fare: ${pending.length} su ${Object.keys(FIX).length} · in questo giro: ${ids.length} (tetto ${MAX_DOCS})`);
 const snaps = [];
 for (let i = 0; i < ids.length; i += 300) {
   snaps.push(...await db.getAll(...ids.slice(i, i + 300).map((id) => db.collection('products').doc(id))));
 }
 
 const count = {}, skipped = { mancante: 0, giaCambiato: 0 };
+const applied = {};   // per aggiornare il catalogo nel KV: { id: { campo: nuovo valore | null } }
 let batch = db.batch(), ops = 0, updated = 0;
 for (const s of snaps) {
   if (!s.exists) { skipped.mancante++; continue; }
@@ -40,7 +63,8 @@ for (const s of snaps) {
   for (const [field, { from, to }] of Object.entries(FIX[s.id])) {
     if (!same(cur[field], from)) { skipped.giaCambiato++; continue; }
     upd[field] = to === null ? DEL : to;
-    if (field === 'sizes' && Array.isArray(to)) upd.size = to.join(', ');
+    (applied[s.id] = applied[s.id] || {})[field] = to;
+    if (field === 'sizes' && Array.isArray(to)) { upd.size = to.join(', '); applied[s.id].size = upd.size; }
     count[field] = (count[field] || 0) + 1;
   }
   if (!Object.keys(upd).length) continue;
@@ -49,4 +73,5 @@ for (const s of snaps) {
   if (ops >= 400) { if (!DRY) await batch.commit(); batch = db.batch(); ops = 0; }
 }
 if (ops && !DRY) await batch.commit();
-note(`Prodotti corretti: ${DRY ? 0 : updated} su ${ids.length} in elenco${DRY ? ' (solo anteprima)' : ''} · campi: ${Object.entries(count).map(([k, v]) => k + ' ' + v).join(', ') || 'nessuno'} · saltati: già cambiati a mano ${skipped.giaCambiato}, prodotti non più presenti ${skipped.mancante}`);
+fs.writeFileSync(new URL('./applied.json', import.meta.url), JSON.stringify(DRY ? {} : applied));
+note(`Prodotti corretti: ${DRY ? 0 : updated} su ${ids.length} in questo giro (ancora da fare dopo: ${Math.max(0, pending.length - ids.length)})${DRY ? ' (solo anteprima)' : ''} · campi: ${Object.entries(count).map(([k, v]) => k + ' ' + v).join(', ') || 'nessuno'} · saltati: già cambiati a mano ${skipped.giaCambiato}, prodotti non più presenti ${skipped.mancante}`);

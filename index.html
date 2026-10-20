@@ -5367,6 +5367,22 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     };
     const fb=window.__fb;
     const placeBtn=document.querySelector('#pg-checkout .btn-led.cta-primary-glow');
+    // Errore dell'ordine: se gli ordini sono momentaneamente fermi (quota del
+    // database esaurita, 'resource-exhausted') il messaggio resta sotto il
+    // pulsante con un contatto, non solo in un avviso di 3 secondi.
+    const _errBox=(()=>{ let b=document.getElementById('order-err'); if(!b&&placeBtn){ b=document.createElement('div'); b.id='order-err'; b.setAttribute('role','alert'); b.hidden=true; b.style.cssText='margin-top:12px;padding:12px 14px;border:1px solid var(--led);border-radius:10px;font-size:13px;line-height:1.5;color:var(--k);background:var(--card);'; placeBtn.insertAdjacentElement('afterend',b); } return b; })();
+    if(_errBox) _errBox.hidden=true;
+    function orderError(e,fallback){
+      const msg=(e&&e.message)||fallback;
+      showToast('⚠️ '+msg);
+      if(_errBox && e && e.code==='resource-exhausted'){
+        _errBox.textContent='';
+        const p1=document.createElement('p'); p1.style.fontWeight='700'; p1.textContent=msg;
+        const p2=document.createElement('p'); p2.style.color='var(--dim)'; p2.textContent='Il tuo carrello resta salvato. Puoi riprovare tra un po\' o scriverci a support@lillofind.com.';
+        _errBox.append(p1,p2); _errBox.hidden=false;
+        _errBox.scrollIntoView({block:'nearest',behavior:'smooth'});
+      }
+    }
 
     // ── Carta: apri modal Stripe ─────────────────────────
     if(selectedPayment==='card'){
@@ -5401,7 +5417,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         _pendingOrderData=_orderPayload;
         document.getElementById('stripe-payment-modal').style.display='flex';
       }catch(e){
-        showToast('⚠️ '+(e.message||'Errore avvio pagamento. Riprova.'));
+        orderError(e,'Errore avvio pagamento. Riprova.');
       }finally{
         if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
       }
@@ -5421,7 +5437,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         location.href=r.data.approveUrl;
         return;
       }catch(e){
-        showToast('⚠️ '+(e.message||'PayPal non disponibile, riprova.'));
+        orderError(e,'PayPal non disponibile, riprova.');
         if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
         return;
       }
@@ -5438,7 +5454,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       _handleOrderSuccess(res.data,_orderPayload);
     }catch(e){
       console.error('placeOrder error:',e.code,e.message);
-      showToast('⚠️ '+(e.message||'Si è verificato un errore. Riprova.'));
+      orderError(e,'Si è verificato un errore. Riprova.');
     }finally{
       if(placeBtn){placeBtn.disabled=false;placeBtn.textContent='🔒 CONFERMA ORDINE →';}
     }
