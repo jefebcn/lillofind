@@ -12,6 +12,10 @@ on:
       - '.github/workflows/fix-catalog-categories.yml'
       - 'scripts/fix-catalog-categories.mjs'
       - 'scripts/catalog-fixes.json'
+  # Una volta, il 21/10 alle 09:15 italiane: il giro del 20/10 (secondo giro di
+  # nomi) si è fermato per la quota Firestore esaurita. Poi si può togliere.
+  schedule:
+    - cron: '15 7 21 10 *'
   workflow_dispatch:
     inputs:
       dry:
