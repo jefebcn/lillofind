@@ -12,6 +12,16 @@ import { utenteAuth, linkImpostaPassword } from '../lib/identity.js';
 import { DELETE_FIELD } from '../lib/firestore.js';
 import { getProductWeight, getShippingCost } from '../lib/shipping.js';
 
+// Gli album Yupoo si aprono solo con ?uid=1 (senza, Yupoo risponde 404).
+export function ypAlbumUrl(raw) {
+  const u = String(raw || '').trim();
+  try {
+    const x = new URL(u);
+    if (/\.x\.yupoo\.com$/i.test(x.hostname) && /\/albums\/\d+/.test(x.pathname) && !x.searchParams.has('uid')) { x.searchParams.set('uid', '1'); return x.href; }
+  } catch (_) {}
+  return u;
+}
+
 export const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
 // Add-on personalizzazione maglie calcio — prezzi calcolati SEMPRE lato server
@@ -476,7 +486,7 @@ export async function sendOrderEmails(o, env, opts = {}) {
       physItems.map((i, idx) => {
         const specs = [i.size ? ('Taglia ' + i.size) : '', i.color ? ('Colore ' + i.color) : '', i.addonSummary || ''].filter(Boolean).join(' · ');
         const cny = (i.supplierPriceCNY != null && i.supplierPriceCNY !== '') ? String(i.supplierPriceCNY) : '10 (da confermare)';
-        const link = i.sourceUrl || '';
+        const link = ypAlbumUrl(i.sourceUrl || '');
         const img = i.img ? (String(i.img).startsWith('//') ? 'https:' + i.img : i.img) : '';
         const row = (l, v) => '<tr><td style="padding:2px 10px 2px 0;font-size:11px;color:#8a8a80;white-space:nowrap;vertical-align:top;">' + l + '</td><td style="padding:2px 0;font-size:12px;color:#23231f;word-break:break-all;">' + v + '</td></tr>';
         return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #ece7db;">' +

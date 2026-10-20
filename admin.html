@@ -2611,6 +2611,19 @@ waitFB(()=>{
   }
 
 
+  // Gli album Yupoo si aprono solo con ?uid=1: senza, Yupoo risponde "album
+  // inesistente" (404). Molti link salvati (es. ricostruiti dall'immagine) non ce
+  // l'avevano, quindi dagli ordini il link al fornitore non funzionava.
+  function ypAlbumUrl(raw){
+    const u=String(raw||'').trim();
+    try{
+      const x=new URL(u);
+      if(/\.x\.yupoo\.com$/i.test(x.hostname) && /\/albums\/\d+/.test(x.pathname) && !x.searchParams.has('uid')){ x.searchParams.set('uid','1'); return x.href; }
+    }catch(_){}
+    return u;
+  }
+  window.ypAlbumUrl=ypAlbumUrl;
+
   // ── Link fornitore (sourceUrl) ─────────────────────────────────
   // Ogni prodotto deve avere il link alla pagina SPECIFICA del fornitore:
   // album Yupoo (/albums/<id>), articolo Weidian (itemID=…), Taobao/Tmall (id=…).
@@ -2623,7 +2636,7 @@ waitFB(()=>{
     if(/yupoo\.com$/.test(_h) && !/\/albums\/\d+/i.test(u)) return { ok:false, url:u, msg:'Link Yupoo generico: serve il link dell\'album (…/albums/123…)' };
     if(/weidian\.com$/.test(_h) && !/item(?:ID|_id|id)=\d+|\/item\/\d+/i.test(u)) return { ok:false, url:u, msg:'Link Weidian generico: serve il link dell\'articolo (itemID=…)' };
     if(/(taobao|tmall)\.com$/.test(_h) && !/[?&]id=\d+/i.test(u)) return { ok:false, url:u, msg:'Link Taobao generico: serve il link dell\'articolo (id=…)' };
-    return { ok:true, url:u, msg:'' };
+    return { ok:true, url:ypAlbumUrl(u), msg:'' };
   }
   window.srcCheck = srcCheck;
 
@@ -2798,6 +2811,7 @@ waitFB(()=>{
           }));
         }catch(e){ console.warn('Enrichimento ordini fallito',e); }
       }
+      adminOrders.forEach(o=>(o.items||[]).forEach(i=>{ if(i.sourceUrl) i.sourceUrl=ypAlbumUrl(i.sourceUrl); }));
       renderAdminOrders();
     } catch(e){ list.innerHTML = '<p style="color:red;font-size:10px;">Errore: '+e.message+'</p>'; }
   };
@@ -3619,7 +3633,7 @@ waitFB(()=>{
       // Senza orderBy: l'orderBy('createdAt') escluderebbe i prodotti privi del
       // campo. Ordino lato client per data (i più recenti prima).
       const snap=await fb.getDocs(fb.collection(fb.db,'products'));
-      adminCatalogProducts=snap.docs.map(d=>({id:d.id,...d.data()}))
+      adminCatalogProducts=snap.docs.map(d=>{ const p={id:d.id,...d.data()}; if(p.sourceUrl) p.sourceUrl=ypAlbumUrl(p.sourceUrl); return p; })
         .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       _catLoadedAt=Date.now();
       try{ maybeAutoPublishSnapshot(adminCatalogProducts); }catch(_){}
@@ -4450,7 +4464,7 @@ waitFB(()=>{
         // Applica i match trovati per questo store
         for(const p of cands){
           const aid=hashToAid[ypHash(p.imageUrl)];
-          if(aid){ writes.push({id:p.id, sourceUrl:'https://'+store+'.x.yupoo.com/albums/'+aid}); matched++; }
+          if(aid){ writes.push({id:p.id, sourceUrl:'https://'+store+'.x.yupoo.com/albums/'+aid+'?uid=1'}); matched++; }
         }
       }
       prog.innerHTML=`Scansione completata: ${pagesTot} pagine · <b style="color:var(--led)">${matched}</b> match. Salvataggio...`;
