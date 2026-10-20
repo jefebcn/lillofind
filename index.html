@@ -5577,7 +5577,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         const o=d.data();
         const date=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
         const st=o.status||'pending';
-        const itemSummary=(o.items||[]).slice(0,2).map(i=>lfEsc(i.name)).join(', ')+(o.items?.length>2?` +${o.items.length-2}`:'');
+        // articoli che il fornitore non aveva più: tolti dall'ordine dall'admin
+        const liveIt=(o.items||[]).filter(i=>!i.unavailable), naIt=(o.items||[]).filter(i=>i.unavailable);
+        const itemSummary=liveIt.slice(0,2).map(i=>lfEsc(i.name)).join(', ')+(liveIt.length>2?` +${liveIt.length-2}`:'');
         return `<div style="padding:12px 0;border-bottom:1px solid #f0f0f0;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
             <div>
@@ -5589,6 +5591,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
               <span style="font-size:10.5px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;background:${statusColor[st]||'#999'};color:${statusTxt[st]||'#fff'};">${statusLabel[st]||st}</span>
             </div>
           </div>
+          ${naIt.length?`<p style="font-size:10.5px;color:var(--dim);margin-top:6px;line-height:1.5;">Non più disponibile, tolto dall'ordine: ${naIt.map(i=>lfEsc(i.name||'')).join(', ')}${o.refundDue>0?` · ti rimborsiamo €${(+o.refundDue).toFixed(2)}`:''}</p>`:''}
           ${(Array.isArray(o.qcPhotos)&&o.qcPhotos.length)?`<div style="margin-top:10px;">
             <p style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--led-text);margin-bottom:6px;font-weight:700;"><svg class=ic aria-hidden=true><use href=icons.svg#camera></use></svg> Foto QC del tuo articolo</p>
             <div style="display:flex;gap:6px;overflow-x:auto;">
