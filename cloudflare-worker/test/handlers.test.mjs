@@ -1,6 +1,6 @@
 // Test dei handler checkout/loyalty con un Firestore finto in memoria.
 // Eseguibile con `node test/handlers.test.mjs` (niente rete: fetch è finto).
-import { validateOrder, sendOrderEmail, track17, rewardDiscount, stripeWebhook, ypAlbumUrl } from '../src/handlers/checkout.js';
+import { validateOrder, sendOrderEmail, track17, rewardDiscount, stripeWebhook, ypAlbumUrl, productsReadError, ORDERS_DOWN_MSG } from '../src/handlers/checkout.js';
 import { claimReward, claimReferrals } from '../src/handlers/loyalty.js';
 import { DELETE_FIELD } from '../src/lib/firestore.js';
 
@@ -196,6 +196,13 @@ eq(rewardDiscount({ activeReward: { type: 'percentuale', val: 500 } }, 10, 5).di
   eq([back.alreadyCreated, back.orderId], [true, w1.body.orderId], 'ritorno dal redirect: stesso ordine del webhook');
   eq(Object.values(db.D.orders).filter(o => o.stripePaymentIntentId === 'pi_9').length, 1, 'un solo ordine in tutto');
 }
+// Quota Firestore esaurita → messaggio chiaro per il cliente
+{ const _ce = console.error; console.error = () => {};
+  const q = productsReadError(new Error('Firestore getMany: 429 {"error":{"status":"RESOURCE_EXHAUSTED"}}'), 'test');
+  const o = productsReadError(new Error('Firestore getMany: 500 boom'), 'test');
+  console.error = _ce;
+  eq([q.code, q.message], ['resource-exhausted', ORDERS_DOWN_MSG], 'quota esaurita: resource-exhausted col messaggio per il cliente');
+  eq(o.code, 'internal', 'altri errori: internal'); }
 // Link album Yupoo: senza ?uid=1 Yupoo risponde 404
 eq(ypAlbumUrl('https://huskyreps.x.yupoo.com/albums/123'), 'https://huskyreps.x.yupoo.com/albums/123?uid=1', 'album Yupoo: aggiunge uid=1');
 eq(ypAlbumUrl('https://a.x.yupoo.com/albums/1?uid=1&isSubCate=false'), 'https://a.x.yupoo.com/albums/1?uid=1&isSubCate=false', 'album Yupoo con uid: invariato');

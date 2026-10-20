@@ -24,6 +24,17 @@ export function ypAlbumUrl(raw) {
 
 export const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
+// Lettura dei prodotti fallita. Se è la quota giornaliera di Firestore (piano
+// Spark: 429 RESOURCE_EXHAUSTED) il cliente deve capire che è temporaneo,
+// non un errore suo; il messaggio vero resta nei log del Worker.
+export const ORDERS_DOWN_MSG = 'Ordini momentaneamente non disponibili, riprova più tardi o scrivici.';
+export function productsReadError(e, where) {
+  const msg = String((e && e.message) || e || '');
+  console.error(`[${where}] lettura prodotti fallita: ${msg.slice(0, 500)}`);
+  if (/\b429\b|RESOURCE_EXHAUSTED|quota/i.test(msg)) return new HttpsError('resource-exhausted', ORDERS_DOWN_MSG);
+  return new HttpsError('internal', 'Errore nel caricamento dei prodotti.');
+}
+
 // Add-on personalizzazione maglie calcio — prezzi calcolati SEMPRE lato server
 // (mai fidarsi del prezzo del client). Deve restare allineato a index.html.
 // Rispecchia le 3 opzioni del fornitore: Badges, Player e Custom Name/Number.
@@ -694,7 +705,7 @@ export async function quoteCart(items, { db, auth }) {
   let snaps = [];
   if (prodItems.length) {
     try { snaps = await db.getMany('products', prodItems.map(i => i.id)); }
-    catch (e) { throw new HttpsError('internal', 'Errore lettura prodotti.'); }
+    catch (e) { throw productsReadError(e, 'quoteCart'); }
   }
 
   const verifiedItems = snaps.map((snap, idx) => {
@@ -802,7 +813,7 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
   let productDocs = [], privDocs = [];
   if (prodItems.length > 0) {
     try { productDocs = await db.getMany('products', prodItems.map(i => i.id)); }
-    catch (e) { throw new HttpsError('internal', 'Errore nel caricamento dei prodotti.'); }
+    catch (e) { throw productsReadError(e, 'validateOrder'); }
     // Costo fornitore e link alla fonte (per l'email all'admin): stanno in
     // products_private. Se mancano l'ordine si fa lo stesso.
     try { privDocs = db.getMany ? await db.getMany('products_private', prodItems.map(i => i.id)) : []; }

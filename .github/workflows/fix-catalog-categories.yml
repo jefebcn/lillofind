@@ -1,8 +1,11 @@
-# Corregge categoria, taglie, marchio, modello, genere e stile dei prodotti
-# catalogati male (scripts/catalog-fixes.json) e ripubblica il catalogo.
-# Parte da solo quando questo file, lo script o l'elenco cambiano su main; si
-# può rilanciare a mano: GitHub → Actions → "Correzioni catalogo" → Run workflow
-# (con "solo anteprima" mostra i conteggi senza salvare). Nei log solo conteggi.
+# Corregge categoria, taglie, marchio, modello, nome, genere e stile dei
+# prodotti catalogati male (scripts/catalog-fixes.json) e aggiorna il catalogo
+# dello shop nel KV con le sole modifiche fatte.
+# Parte quando questo file, lo script o l'elenco cambiano su main; si può
+# rilanciare a mano: GitHub → Actions → "Correzioni catalogo" → Run workflow.
+# Quota Firestore: al massimo MAX_DOCS prodotti per giro (1 lettura + 1
+# scrittura ciascuno) e nessuna rilettura del catalogo intero, così non si
+# consuma la quota che serve agli ordini. Nei log solo conteggi.
 name: Correzioni catalogo
 
 on:
@@ -12,16 +15,16 @@ on:
       - '.github/workflows/fix-catalog-categories.yml'
       - 'scripts/fix-catalog-categories.mjs'
       - 'scripts/catalog-fixes.json'
-  # Una volta, il 21/10 alle 09:15 italiane: il giro del 20/10 (secondo giro di
-  # nomi) si è fermato per la quota Firestore esaurita. Poi si può togliere.
-  schedule:
-    - cron: '15 7 21 10 *'
   workflow_dispatch:
     inputs:
       dry:
         description: 'Solo anteprima (1 = non salva)'
         required: false
         default: '0'
+      max_docs:
+        description: 'Prodotti al massimo in questo giro'
+        required: false
+        default: '400'
 
 permissions:
   contents: read
@@ -33,7 +36,7 @@ concurrency:
 jobs:
   fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,29 +48,23 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: printf '%s' "$GOOGLE_CREDENTIALS" > "$RUNNER_TEMP/gcloud-key.json"
 
-      - name: Correggi le categorie
+      - name: Correggi i prodotti
         working-directory: scripts
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
           DRY: ${{ github.event.inputs.dry || '0' }}
+          MAX_DOCS: ${{ github.event.inputs.max_docs || '400' }}
         run: |
           npm init -y >/dev/null
           npm install --no-audit --no-fund firebase-admin@12 >/dev/null
           node fix-catalog-categories.mjs
-
-      - name: Leggi i prodotti da Firestore
-        if: ${{ github.event.inputs.dry != '1' }}
-        working-directory: scripts
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
-        run: node publish-catalog.mjs
 
       - name: Dipendenze Worker (wrangler)
         if: ${{ github.event.inputs.dry != '1' }}
         working-directory: cloudflare-worker
         run: npm ci
 
-      - name: Scrivi il catalogo nel KV
+      - name: Aggiorna il catalogo nel KV (solo le modifiche fatte)
         if: ${{ github.event.inputs.dry != '1' }}
         working-directory: cloudflare-worker
         env:
@@ -77,9 +74,11 @@ jobs:
           set -e
           ID="$(npx wrangler kv namespace list 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const a=JSON.parse(s.slice(s.indexOf("[")));const n=a.find(x=>x.title==="lillofind-catalog");process.stdout.write(n?n.id:"")}catch(e){}})')"
           if [ -z "$ID" ]; then echo "KV 'lillofind-catalog' non trovato"; exit 1; fi
+          npx wrangler kv key get catalog --namespace-id "$ID" > ../scripts/catalog-old.json
+          set +e; node ../scripts/patch-catalog-kv.mjs ../scripts/catalog-old.json ../scripts/applied.json; rc=$?; set -e
+          if [ "$rc" = 2 ]; then exit 0; fi
+          if [ "$rc" != 0 ]; then exit "$rc"; fi
           npx wrangler kv key put catalog --path ../scripts/catalog.json --namespace-id "$ID"
           npx wrangler kv key put "catalog:meta" --path ../scripts/catalog-meta.json --namespace-id "$ID"
-          npx wrangler kv key get "catalog:albums" --namespace-id "$ID" > ../scripts/albums-old.json 2>/dev/null || echo "[]" > ../scripts/albums-old.json
-          node ../scripts/merge-albums.mjs ../scripts/albums-old.json ../scripts/catalog-albums.json
-          npx wrangler kv key put "catalog:albums" --path ../scripts/catalog-albums.json --namespace-id "$ID"
-          echo "Catalogo pubblicato nel KV $ID"
+          echo "Catalogo aggiornato nel KV $ID"
+          curl -s "https://lillofind.conti9708.workers.dev/catalog?meta=1"
