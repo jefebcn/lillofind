@@ -2452,12 +2452,12 @@ waitFB(()=>{
         if(isPaid(o)){
           const rev=o.total||0; totalRevenue+=rev; totalShipping+=o.shipping||0;
           if(cMs&&cMs>=startOfMonth) monthlyRevenue+=rev;
-          (o.items||[]).forEach(i=>{ const qty=i.qty||1; itemsSold+=qty; const k=i.name||'Unknown'; productSales[k]=(productSales[k]||0)+qty; });
+          lfLiveItems(o).forEach(i=>{ const qty=i.qty||1; itemsSold+=qty; const k=i.name||'Unknown'; productSales[k]=(productSales[k]||0)+qty; });
         }
         // Profitto: solo ordini pagati, articoli fisici con costo salvato.
         if(isPaid(o)){
           let op=0;
-          (o.items||[]).forEach(i=>{ if(i.isDigital) return; const qty=i.qty||1; totalPhysItems+=qty; const c=costMap[i.id]; if(c!=null){ costedPhysItems+=qty; op+=((i.price||0)-c)*qty; } });
+          lfLiveItems(o).forEach(i=>{ if(i.isDigital) return; const qty=i.qty||1; totalPhysItems+=qty; const c=costMap[i.id]; if(c!=null){ costedPhysItems+=qty; op+=((i.price||0)-c)*qty; } });
           profitTotal+=op;
           if(cMs&&cMs>=startOfMonth) profitMonth+=op;
         }
@@ -2623,6 +2623,58 @@ waitFB(()=>{
     return u;
   }
   window.ypAlbumUrl=ypAlbumUrl;
+
+  // ── Articoli non disponibili negli ordini ──────────────────────
+  // Prima di confermare, un articolo che il fornitore non ha più si segna
+  // "non disponibile": resta nell'ordine (storico) ma non va al fornitore e
+  // non conta in totali e statistiche. Subtotale, spedizione (peso rimasto,
+  // mai più di quella pagata) e totale si ricalcolano; se il cliente ha già
+  // pagato, l'ordine mostra il rimborso da fare.
+  const lfLiveItems=o=>((o&&o.items)||[]).filter(i=>!i.unavailable);
+  window.lfLiveItems=lfLiveItems;
+  // Stessi pesi e tariffa di cloudflare-worker/src/lib/shipping.js
+  const _CAT_KG={tshirt:.35,tshirt_branded:.4,felpa:.8,scarpe:2,scarpe_box:2.5,pantaloni:.8,shorts:.4,cappello:.3,giacchetto:1.2,borsa:1.5,accessori:.3};
+  const _TYPE_KG=[[/piumin|puffer|down ?jacket|parka|nuptse|\bdown\b/i,2.8],[/ciabatt|slides?\b|clog|sandal|infradito/i,1.3],[/\bset\b|\btuta\b|tracksuit|completo/i,1.4],[/maglion|knit|cardigan/i,1],[/airpods?|cuffie|headphone/i,.5]];
+  function lfItemKg(i){
+    const t=(i.name||'')+' '+(i.model||''); let b=null;
+    for(const [re,w] of _TYPE_KG){ if(re.test(t)){ b=w; break; } }
+    if(b==null){ const c=i.category||''; b=(c==='scarpe'||c==='scarpe_box')?(((i.boxOption||(c==='scarpe_box'?'con_scatola':''))==='con_scatola')?2.5:2):(_CAT_KG[c]??.5); }
+    return Math.max(+(i.weightKg||i.weight_kg)||0,b);
+  }
+  const lfShipCost=kg=>kg<=1?12:12+Math.ceil(Math.round((kg-1)*1000)/1000/.5)*5;
+  const _r2=n=>Math.round(n*100)/100;
+  window.toggleItemUnavailable=async function(docId,idx,btn){
+    const fb=window.__fb, o=adminOrders.find(x=>x._docId===docId);
+    if(!o||!o.items||!o.items[idx]) return;
+    const items=o.items.map((x,k)=>k===idx?{...x,unavailable:!x.unavailable}:x);
+    const live=items.filter(x=>!x.unavailable);
+    if(!live.length){ showToast('⚠️ Nessun articolo disponibile: annulla l\'ordine con ❌ Annulla.'); return; }
+    const phys=live.filter(x=>!x.isDigital);
+    const subtotal=_r2(live.reduce((s,x)=>s+(+x.price||0)*(x.qty||1),0));
+    const kg=phys.reduce((s,x)=>s+lfItemKg(x)*(x.qty||1),0);
+    // si parte sempre dai valori dell'ordine originale (rimettere un articolo li ripristina)
+    const orig=k=>o['original'+k]!=null?+o['original'+k]:(+o[k.toLowerCase()]||0);
+    const originalShipping=orig('Shipping'), originalDiscount=orig('Discount'), originalTotal=orig('Total');
+    const shipping=phys.length?_r2(Math.min(originalShipping,lfShipCost(kg))):0;
+    const discount=_r2(Math.min(originalDiscount,subtotal+shipping));
+    const total=_r2(Math.max(0,subtotal+shipping-discount));
+    const paid=o.paymentStatus==='paid'||o.payment==='card';
+    const refundDue=paid?_r2(Math.max(0,originalTotal-total)):0;
+    const upd={items,subtotal,shipping,discount,total,originalShipping,originalDiscount,originalTotal,refundDue,itemsChangedAt:fb.serverTimestamp()};
+    if(btn){ btn.disabled=true; btn.textContent='…'; }
+    try{
+      await fb.updateDoc(fb.doc(fb.db,'orders',docId),upd);
+      Object.assign(o,upd);
+      renderAdminOrders();
+      showToast(items[idx].unavailable
+        ? '🚫 Articolo tolto · nuovo totale €'+total.toFixed(2)+(refundDue?' · rimborso da fare €'+refundDue.toFixed(2):'')
+        : '↩️ Articolo di nuovo nell\'ordine · totale €'+total.toFixed(2));
+    }catch(e){
+      console.error('toggleItemUnavailable:',e&&e.code,e&&e.message);
+      showToast('⚠️ Errore ('+((e&&e.code)||'riprova')+')');
+      if(btn){ btn.disabled=false; }
+    }
+  };
 
   // ── Link fornitore (sourceUrl) ─────────────────────────────────
   // Ogni prodotto deve avere il link alla pagina SPECIFICA del fornitore:
@@ -2892,7 +2944,7 @@ waitFB(()=>{
   }
   function spOrders(f){
     return (typeof adminOrders!=='undefined' ? adminOrders : []).filter(o=>{
-      if(!(o.items||[]).some(i=>!i.isDigital)) return false;
+      if(!lfLiveItems(o).some(i=>!i.isDigital)) return false;
       if(f==='todo')   return o.status==='confirmed' && !o.supplierOrdered;
       if(f==='unpaid') return o.status==='pending' && !o.supplierOrdered;
       if(f==='done')   return !!o.supplierOrdered;
@@ -2966,7 +3018,7 @@ waitFB(()=>{
     let html='';
     if(_spView==='supplier'){
       const groups={};
-      orders.forEach(o=>(o.items||[]).filter(i=>!i.isDigital).forEach(i=>{
+      orders.forEach(o=>lfLiveItems(o).filter(i=>!i.isDigital).forEach(i=>{
         const r0=spItemRow(i), sup=spSupplier(r0.link);
         const g=groups[sup.key]=groups[sup.key]||{ sup, rows:{}, pcs:0 };
         const key=[r0.link||('id:'+i.id), r0.size, r0.color, r0.extras.join('|')].join('¦');
@@ -2986,7 +3038,7 @@ waitFB(()=>{
       }).join('');
     } else {
       html=orders.map(o=>{
-        const items=(o.items||[]).filter(i=>!i.isDigital).map(spItemRow);
+        const items=lfLiveItems(o).filter(i=>!i.isDigital).map(spItemRow);
         const ka='c'+Object.keys(_spCopy).length+'ord'; _spCopy[ka]=items.map(spText).join('\n\n');
         const pcs=items.reduce((t,r)=>t+r.qty,0);
         const d=o.createdAt?.seconds?new Date(o.createdAt.seconds*1000).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}):'';
@@ -3103,7 +3155,7 @@ waitFB(()=>{
           : isPending
             ? `<span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;background:var(--led);color:var(--k);">⏳ IN ATTESA</span>`
             : `<span style="font-size:11px;padding:3px 10px;letter-spacing:.5px;text-transform:uppercase;background:#e8f5e9;color:#2e7d32;">✅ CONFERMATO</span>`;
-      const itemsHtml = (o.items||[]).map(i=>{
+      const itemsHtml = (o.items||[]).map((i,_ix)=>{
         const box = i.boxOption==='con_scatola'?' · 📦 Con Scatola':i.boxOption==='senza_scatola'?' · Senza Scatola':'';
         const qtyLabel = i.isDigital ? (i.qty>1?i.qty+' mesi':'1 mese') : ('x'+i.qty);
         const imgRaw = i.img || i.imageUrl || '';
@@ -3137,12 +3189,15 @@ waitFB(()=>{
           'Unit price (CNY): '+_cny+'\n'+
           'Image: '+(imgRaw||'')
         ):'';
-        return `<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:4px;transition:border-color .15s;" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
+        const _na=!!i.unavailable;
+        const _naBtn=(isPending&&!i.isDigital)?`<button class="btn-k" onclick="event.stopPropagation();toggleItemUnavailable('${o._docId}',${_ix},this)" style="margin-top:8px;padding:5px 10px;font-size:10px;white-space:nowrap;${_na?'':'background:#3a1f22;color:#ff8a8a;'}" title="${_na?'Rimetti l\'articolo nell\'ordine':'Il fornitore non ce l\'ha più: togli l\'articolo e ricalcola il totale'}">${_na?'↩️ Disponibile':'🚫 Non disponibile'}</button>`:'';
+        return `<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:4px;transition:border-color .15s;${_na?'opacity:.5;':''}" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
           <div ${onclickAttr} style="width:60px;height:60px;background:rgba(255,255,255,.08);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:3px;${imgSrc?'cursor:zoom-in;':''}">
             ${imgSrc?`<img src="${escH(imgSrc)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'">`:'<span style="font-size:22px;">📦</span>'}
           </div>
           <div style="flex:1;min-width:0;${imgSrc?'cursor:pointer;':''}" ${onclickAttr}>
-            <p style="font-size:15px;font-weight:600;line-height:1.3;margin-bottom:3px;">${escH(i.name||'—')}</p>
+            <p style="font-size:15px;font-weight:600;line-height:1.3;margin-bottom:3px;${_na?'text-decoration:line-through;':''}">${escH(i.name||'—')}</p>
+            ${_na?'<p style="font-size:11px;font-weight:700;letter-spacing:1px;color:#ff8a8a;margin-bottom:3px;">NON DISPONIBILE · tolto dall\'ordine</p>':''}
             <p style="font-size:13px;color:rgba(255,255,255,.55);">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
             ${src && safeUrl(src.url) ? `<a href="${escH(safeUrl(src.url))}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:11px;color:var(--led);text-decoration:none;">🔗 Fonte: ${src.exact?'album esatto':escH(src.label)} (${escH(src.site)})</a>` : (src ? `<span style="display:inline-block;margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">🔗 Fonte: ${escH(src.label)}</span>` : '')}
           </div>
@@ -3150,12 +3205,13 @@ waitFB(()=>{
             <p style="font-size:16px;font-weight:700;">€${((i.price||0)*i.qty).toFixed(2)}</p>
             <p style="font-size:13px;color:rgba(255,255,255,.55);">${qtyLabel}</p>
             ${(()=>{ if(i.isDigital) return ''; const c=costOfProduct(i.id); if(c==null) return ''; return costMarginHTML((i.price||0)*i.qty, c*(i.qty||1), {small:true}); })()}
-            ${_supplierText?`<button class="btn-k" data-copy="${_supplierText}" onclick="event.stopPropagation();adminCopySupplier(this)" style="margin-top:8px;padding:5px 10px;font-size:10px;white-space:nowrap;" title="Copia i dati pronti per il form dell'agente d'acquisto (link, nome, specifiche, quantità, prezzo CNF, immagine)">🛒 Copia per agente</button>`:''}
+            ${(_supplierText&&!_na)?`<button class="btn-k" data-copy="${_supplierText}" onclick="event.stopPropagation();adminCopySupplier(this)" style="margin-top:8px;padding:5px 10px;font-size:10px;white-space:nowrap;" title="Copia i dati pronti per il form dell'agente d'acquisto (link, nome, specifiche, quantità, prezzo CNF, immagine)">🛒 Copia per agente</button>`:''}
+            ${_naBtn}
           </div>
         </div>`;
       }).join('');
       // Blocco "ordine fornitore" per TUTTI gli articoli fisici (copia unica).
-      const _physItems=(o.items||[]).filter(i=>!i.isDigital);
+      const _physItems=lfLiveItems(o).filter(i=>!i.isDigital);
       const _orderSupplierAll = _physItems.length ? encodeURIComponent(
         'ORDER '+(o.orderId||'')+'\n'+
         _physItems.map((i,idx)=>{
@@ -3173,7 +3229,7 @@ waitFB(()=>{
       ) : '';
       // Profitto ordine: somma su articoli fisici con costo salvato sul prodotto.
       let _ordCost=0, _ordRev=0, _ordHasCost=false;
-      (o.items||[]).forEach(i=>{ if(i.isDigital) return; const c=costOfProduct(i.id); if(c!=null){ _ordHasCost=true; _ordCost+=c*(i.qty||1); _ordRev+=(i.price||0)*(i.qty||1); } });
+      lfLiveItems(o).forEach(i=>{ if(i.isDigital) return; const c=costOfProduct(i.id); if(c!=null){ _ordHasCost=true; _ordCost+=c*(i.qty||1); _ordRev+=(i.price||0)*(i.qty||1); } });
       const orderMarginHTML = _ordHasCost ? (()=>{ const m=_ordRev-_ordCost; const pct=_ordRev>0?Math.round(m/_ordRev*100):null; const col=m>=0?'#2ecc71':'#ff5555'; return `<p style="font-size:12px;color:var(--dim);margin-top:4px;line-height:1.5;">Costo merce €${_ordCost.toFixed(2)} · <span style="color:${col};font-weight:700;">Profitto €${m.toFixed(2)}${pct!=null?(' ('+pct+'%)'):''}</span></p>`; })() : '';
       const orderJsonSafe = JSON.stringify(o).replace(/'/g,"\\'").replace(/"/g,'&quot;');
       return `
@@ -3201,6 +3257,10 @@ waitFB(()=>{
           <span style="font-size:16px;">⚠️</span>
           <p style="font-size:12px;color:#ff9a9a;line-height:1.5;">Pagamento <strong>da verificare manualmente</strong> (${o.payment==='paypal'?'PayPal':'bonifico'}). Non spedire finché non hai ricevuto l'importo. Conferma l'ordine solo dopo l'incasso — altrimenti scade automaticamente dopo ${UNPAID_EXPIRY_HOURS}h.</p>
         </div>`:''}
+        ${o.refundDue>0?`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;background:rgba(255,184,77,.12);border:1px solid rgba(255,184,77,.45);border-radius:4px;">
+          <span style="font-size:16px;">💸</span>
+          <p style="font-size:12px;color:#ffcf8a;line-height:1.5;">Articoli non disponibili tolti: il cliente aveva pagato €${(+o.originalTotal||0).toFixed(2)}, il nuovo totale è €${(+o.total||0).toFixed(2)}. <strong>Rimborso da fare: €${(+o.refundDue).toFixed(2)}</strong> (${o.payment==='card'?'dalla dashboard Stripe':o.payment==='paypal'?'da PayPal':'con un bonifico'}).</p>
+        </div>`:''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;padding:16px;background:rgba(255,255,255,.04);border-left:3px solid rgba(255,255,255,.15);">
           <div>
             <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Cliente</p>
@@ -3217,7 +3277,7 @@ waitFB(()=>{
         </div>
         <div style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-            <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);">Articoli (${(o.items||[]).reduce((s,i)=>s+i.qty,0)} pezzi)</p>
+            <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);">Articoli (${lfLiveItems(o).reduce((s,i)=>s+i.qty,0)} pezzi)</p>
             ${_orderSupplierAll?`<button class="btn-k" data-copy="${_orderSupplierAll}" onclick="adminCopySupplier(this)" style="padding:6px 12px;font-size:10px;white-space:nowrap;" title="Copia i dati di TUTTI gli articoli per il form dell'agente">🛒 Copia tutto l'ordine</button>`:''}
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">${itemsHtml||'<p style="font-size:14px;color:#aaa;">—</p>'}</div>
@@ -3316,12 +3376,14 @@ waitFB(()=>{
     if(addr) L.push('📍 '+addr);
     L.push('');
     L.push('🛍️ *Articoli:*');
-    (o.items||[]).forEach(i=>{
+    lfLiveItems(o).forEach(i=>{
       const q=i.qty||1;
       const tot=((i.price||0)*q).toFixed(2);
       const det=[i.brand,i.size?'Tg '+i.size:'',i.color].filter(Boolean).join(' · ');
       L.push('• '+(i.name||'—')+(det?' ('+det+')':'')+' ×'+q+' — €'+tot);
     });
+    (o.items||[]).filter(i=>i.unavailable).forEach(i=>L.push('🚫 '+(i.name||'—')+(i.size?' (Tg '+i.size+')':'')+' — non più disponibile, tolto dall\'ordine'));
+    if(o.refundDue>0) L.push('💸 Ti rimborsiamo €'+(+o.refundDue).toFixed(2));
     L.push('');
     if(o.subtotal!=null) L.push('Merce: €'+Number(o.subtotal).toFixed(2));
     if(o.shipping!=null) L.push('Spedizione: '+(Number(o.shipping)>0?'€'+Number(o.shipping).toFixed(2):'Gratis'));
@@ -3364,7 +3426,7 @@ waitFB(()=>{
     const a=o.address||{};
     const addr=[a.street,[a.zip,a.city].filter(Boolean).join(' '),a.country].filter(Boolean).join(', ');
     const pay={card:'Carta',paypal:'PayPal',bonifico:'Bonifico'}[o.payment]||o.payment||'—';
-    const rows=(o.items||[]).map(i=>{
+    const rows=lfLiveItems(o).map(i=>{
       const q=i.qty||1;
       const det=[i.brand,i.size?'Tg '+i.size:'',i.color].filter(Boolean).join(' · ');
       return `<tr><td>${escH(i.name||'—')}${det?'<br><span class="det">'+escH(det)+'</span>':''}</td>`
@@ -5371,7 +5433,7 @@ waitFB(()=>{
         userMap[email].total+=(o.total||0);
         // Profitto ordine: articoli fisici con costo salvato sul prodotto.
         let op=0, hasCost=false;
-        (o.items||[]).forEach(i=>{ if(i.isDigital) return; const c=costOfProduct(i.id); if(c!=null){ hasCost=true; op+=((i.price||0)-c)*(i.qty||1); } });
+        lfLiveItems(o).forEach(i=>{ if(i.isDigital) return; const c=costOfProduct(i.id); if(c!=null){ hasCost=true; op+=((i.price||0)-c)*(i.qty||1); } });
         if(hasCost){ userMap[email].profit+=op; userMap[email].costOrders++; }
         const ts=o.createdAt?.seconds||0;
         if(ts>userMap[email].lastTs){
