@@ -7212,6 +7212,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       if(filters.priceMin!=null) sp.set('pmin',filters.priceMin);
       if(filters.priceMax!=null) sp.set('pmax',filters.priceMax);
       if(sort && sort!=='new')   sp.set('sort',sort);
+      // shop senza filtri = Ultimi arrivi: senza parametri il link condiviso
+      // riportava alla home
+      if(![...sp.keys()].length) sp.set('go','new');
       const qs=sp.toString();
       history.replaceState(history.state,'',location.pathname+(qs?'?'+qs:''));
     }catch(_){}
@@ -7642,8 +7645,21 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     mo.observe(document.body,{childList:true});
     OV.forEach(([id])=>{ const el=$(id); if(el) mo.observe(el,{attributes:true,attributeFilter:['class','style']}); });
 
+    // Il link della barra (quello che si condivide) segue la pagina: ?go=… per
+    // le pagine con scorciatoia, niente parametri per la home. Prima restavano
+    // i filtri dello shop anche sulle altre pagine, e lo shop senza filtri
+    // aveva il link della home. Solo dopo un tocco: all'avvio i link condivisi
+    // (?p=, filtri) restano com'erano.
+    const GO_PAGES={lfpoints:1,cart:1,profile:1};
+    function pageUrl(){
+      if(!H.user||H.fromPop) return;
+      const pg=pagina();
+      if(pg==='shop'){ window._syncShopURL?.(); return; }
+      const want=location.pathname+(GO_PAGES[pg]?'?go='+pg:'');
+      if(location.pathname+location.search!==want){ try{ history.replaceState(history.state,'',want); }catch(_){} }
+    }
     const _showPgNoHist=window.showPg;
-    window.showPg=function(){ const r=_showPgNoHist.apply(this,arguments); pgSync(); return r; };
+    window.showPg=function(){ const r=_showPgNoHist.apply(this,arguments); pgSync(); pageUrl(); return r; };
 
     addEventListener('popstate',e=>{
       if(H.pending>0){
