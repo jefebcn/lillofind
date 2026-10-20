@@ -731,6 +731,18 @@ const MODELS = [
 // Ogni prodotto salvato deve avere il link alla pagina SPECIFICA del
 // fornitore (album Yupoo /albums/<id>, articolo Weidian itemID=…, Taobao id=…):
 // serve per passare gli ordini al fornitore dal pannello "Da ordinare".
+// Gli album Yupoo si aprono solo con ?uid=1: senza, Yupoo risponde "album
+// inesistente" (404). Molti link salvati (es. ricostruiti dall'immagine) non ce
+// l'avevano, quindi dagli ordini il link al fornitore non funzionava.
+function ypAlbumUrl(raw){
+  const u=String(raw||'').trim();
+  try{
+    const x=new URL(u);
+    if(/\.x\.yupoo\.com$/i.test(x.hostname) && /\/albums\/\d+/.test(x.pathname) && !x.searchParams.has('uid')){ x.searchParams.set('uid','1'); return x.href; }
+  }catch(_){}
+  return u;
+}
+window.ypAlbumUrl=ypAlbumUrl;
 function srcCheck(raw){
   const u=String(raw||'').trim();
   if(!u) return { ok:false, url:'', msg:'link fornitore mancante' };
@@ -739,7 +751,7 @@ function srcCheck(raw){
     if(/yupoo\.com$/.test(_h) && !/\/albums\/\d+/i.test(u)) return { ok:false, url:u, msg:'link Yupoo generico: serve il link dell\'album (…/albums/123…)' };
   if(/weidian\.com$/.test(_h) && !/item(?:ID|_id|id)=\d+|\/item\/\d+/i.test(u)) return { ok:false, url:u, msg:'link Weidian generico: serve il link dell\'articolo (itemID=…)' };
   if(/(taobao|tmall)\.com$/.test(_h) && !/[?&]id=\d+/i.test(u)) return { ok:false, url:u, msg:'link Taobao generico: serve il link dell\'articolo (id=…)' };
-  return { ok:true, url:u, msg:'' };
+  return { ok:true, url:ypAlbumUrl(u), msg:'' };
 }
 window.srcCheck=srcCheck;
 // Aggiunge a ogni riga prodotto il campo "Link fornitore" (precompilato

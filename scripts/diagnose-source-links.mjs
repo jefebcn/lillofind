@@ -55,7 +55,9 @@ note('Ordini: ' + orders.size + ' · articoli fisici ' + items.length + ' · lin
 
 // Le pagine rispondono?
 const HDR = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8' };
-const uniq = [...new Set(items.map((x) => x.url).filter(Boolean))];
+// Come li apre l'admin: agli album Yupoo si aggiunge ?uid=1 (senza, Yupoo risponde 404)
+const ypAlbumUrl = (u) => { try { const x = new URL(u); if (/\.x\.yupoo\.com$/i.test(x.hostname) && /\/albums\/\d+/.test(x.pathname) && !x.searchParams.has('uid')) { x.searchParams.set('uid', '1'); return x.href; } } catch (_) {} return u; };
+const uniq = [...new Set(items.map((x) => ypAlbumUrl(x.url)).filter(Boolean))];
 const res = [];
 let i = 0;
 await Promise.all(Array.from({ length: 4 }, async () => {
