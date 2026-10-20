@@ -328,12 +328,13 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     }, 150); setTimeout(function(){ clearInterval(st); }, 12000);
   }
 
-  // Scorciatoie manifest (?go=shop|sport|lfpoints) → naviga quando l'app è pronta
+  // Scorciatoie manifest (?go=shop|new|sport|lfpoints) → naviga quando l'app è pronta
   var go=new URLSearchParams(location.search).get('go');
   if(go){ var t=setInterval(function(){
       if(typeof window.showPg==='function' && (go!=='profile' || window.__fb)){ clearInterval(t);
         // Non resettare i filtri se il link porta già una ricerca/categoria.
         if(go==='shop'){ showPg('shop'); if(!_hasShopParams && window.resetFilters) resetFilters(); }
+        else if(go==='new'){ if(window.goNewArrivals) goNewArrivals(); else showPg('shop'); }
         else if(go==='sport'){ showPg('shop'); setTimeout(function(){ if(window.setFilter) setFilter('style','Sport'); }, 250); }
         else if(go==='lfpoints'){ showPg('lfpoints'); }
         else if(go==='cart'){ showPg('cart'); }
@@ -406,6 +407,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       <div style="display:flex;flex-direction:column;gap:2px;">
         <button onclick="showPg('shop');closeDrawer();resetFilters()" class="drawer-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg> Shop</button>
         <!-- Categorie a cascata -->
+        <button onclick="closeDrawer();goNewArrivals()" class="drawer-link"><svg class=ic aria-hidden=true><use href=icons.svg#sparkle></use></svg> Ultimi arrivi</button>
         <button class="drawer-acc" onclick="toggleDrawerAcc(this)">Categorie <span class="drawer-acc-arr">▾</span></button>
         <div class="drawer-sub" id="dd-shop-m"></div>
         <!-- Sneakers · marchi a cascata -->
@@ -551,6 +553,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         <button class="nbtn" onclick="showPg('shop');resetFilters()">Shop <span class="nav-dd-arr">▾</span></button>
         <div class="nav-dd-menu" id="dd-shop"></div>
       </div>
+      <button class="nbtn" onclick="goNewArrivals()" style="white-space:nowrap;">Novità</button>
       <div class="nav-dd">
         <button class="nbtn" onclick="showPg('shop');setTimeout(()=>setFilter('model','Sneakers'),80)" style="display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14s-1-1 1-5l2-2 4 1 1 3 5-1 2 2s1 2-2 3l-4 1H5z"/><path d="M3 14l18 0"/></svg>Sneakers <span class="nav-dd-arr">▾</span></button>
         <div class="nav-dd-menu cols" id="dd-sneakers"></div>
@@ -835,7 +838,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   <section style="padding:48px 24px;border-bottom:1px solid var(--border);">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;flex-wrap:wrap;gap:8px;">
       <h2 class="lf-section-title" data-i18n="sec.latest">Ultimi arrivi</h2>
-      <button class="btn-g" onclick="showPg('shop')" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
+      <button class="btn-g" onclick="goNewArrivals()" style="padding:8px 18px;font-size:12px;min-height:0;white-space:nowrap;" data-i18n="sec.viewall">Vedi tutto →</button>
     </div>
     <div id="home-prods" class="pgrid"></div>
   </section>
@@ -2569,7 +2572,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       <button class="flink" onclick="showPg('shop')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#shopping-bag></use></svg></span>Shop</button>
       <button class="flink" onclick="location.href='subscriptions.html'"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#game-controller></use></svg></span>Digital Gear</button>
       <button class="flink" onclick="showPg('lfpoints')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#star-fill></use></svg></span>LFPoints</button>
-      <button class="flink" onclick="showPg('home')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#sparkle></use></svg></span><span data-i18n="foot.newarrivals">Nuovi Arrivi</span></button>
+      <button class="flink" onclick="goNewArrivals()"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#sparkle></use></svg></span><span data-i18n="foot.newarrivals">Nuovi Arrivi</span></button>
       <button class="flink" onclick="openInfo('brand')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#tag></use></svg></span>Brand</button>
       <button class="flink" onclick="openInfo('outlet')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#bookmark-simple></use></svg></span>Outlet</button>
       <button class="flink" onclick="showPg('auth')"><span class="fico"><svg class=ic aria-hidden=true><use href=icons.svg#user></use></svg></span><span data-i18n="foot.createaccount">Crea Account</span></button>
@@ -4266,7 +4269,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     if(h){
       requestAnimationFrame(()=>{
         try{
-          const latest=products.filter(p=>!isSportOnly(p)).slice(0,8);
+          // sempre per data: l'ordinamento scelto nello shop (es. prezzo) riordina `products`
+          const latest=products.filter(p=>!isSportOnly(p)).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,8);
           h.textContent='';
           h.insertAdjacentHTML('afterbegin',latest.length?latest.map(cardHTML).join(''):'<p style="font-size:10.5px;color:var(--dim);letter-spacing:2px;grid-column:1/-1;">Nessun prodotto ancora.</p>');
           h.style.display='grid';
@@ -7153,6 +7157,18 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     else if(val==='price-desc') products.sort((a,b)=>(b.price||0)-(a.price||0));
     else if(val==='alpha')      products.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
     if(typeof renderShop === 'function') renderShop();
+  };
+
+  // «Ultimi arrivi»: shop senza filtri né ricerca, dal più recente, dall'inizio.
+  // Prima "Vedi tutto" apriva lo shop con i filtri e l'ordinamento rimasti
+  // (es. prezzo crescente) e "Nuovi Arrivi" nel footer riportava alla home.
+  window.goNewArrivals=function(){
+    const s=document.getElementById('shop-search'); if(s) s.value='';
+    const ss=document.getElementById('shop-sort'); if(ss) ss.value='new';
+    products.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    showPg('shop');
+    resetFilters();
+    window.scrollTo({top:0});
   };
 
   // ── URL condivisibile dello shop (ricerca + filtri + ordinamento) ──────
