@@ -3217,7 +3217,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     ['Calzini',             _W('calzini|calze|socks?')],
     ['Sciarpa',             _W('sciarp[ae]|scarf|scarves')],
     ['Occhiali',            _W('occhiali|occhiale|sunglass(?:es)?|eyewear|glasses')],
-    ['Zaino / Borsa',       _W('zain[oi]|bors[ae]|borsell[oi]|tracolla|bags?|backpacks?|pouch|marsupi[oi]|tote')],
+    ['Zaino / Borsa',       _W('zain[oi]|bors[ae]|borsell[oi]|tracolla|puffer bag|bags?|backpacks?|pouch|marsupi[oi]|tote')],
     ['Cappello',            _W('cappell[oi]|cappellino|berretto|beanie|snapback|caps?|hats?|bucket hat|trucker')],
     // Bottom
     ['Jogger',              _W('joggers?|tuta pantalone')],
@@ -3232,7 +3232,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
     ['Pile',                _W('pile|fleece')],
     ['Felpa con Cappuccio', _W('felpa con cappuccio|felpa cappuccio|hoodies?|hoody|hooded|cappuccio')],
     ['Felpa',               _W('felp[ae]|crewnecks?|sweatshirts?|sweaters?|girocollo|maglione|knit|quarter zip|half zip|1/4 zip')],
-    ['Maglia Manica Lunga', _W('manica lunga|maniche lunghe|longsleeve|long sleeve|long-sleeve|ls tee')],
+    ['Maglia Manica Lunga', _W('maglia manica lunga|maglie maniche lunghe|manica lunga|maniche lunghe|longsleeve|long sleeve|long-sleeve|ls tee')],
     ['Polo',                _W('polo')],
     ['Canotta',             _W('canott[ae]|canottiera|tank top|tank|singlet')],
     ['T-Shirt',             _W('t-shirts?|tshirts?|t shirts?|tees?|magliett[ae]')],
@@ -3242,11 +3242,24 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   // Categoria del fornitore → filtro, solo se nome e modello non bastano
   const _CAT_MODEL={tshirt:'T-Shirt',tshirt_branded:'T-Shirt',maglietta:'T-Shirt',felpa:'Felpa',scarpe:'Sneakers',scarpe_box:'Sneakers',
     pantaloni:'Pantaloni',shorts:'Pantaloncini',giacchetto:'Giacchetto',cappello:'Cappello',borsa:'Zaino / Borsa'};
+  // Vince il tipo di capo nominato PER PRIMO ("T-shirt con Stampa Sneakers" è una
+  // t-shirt, "Camicia di Jeans" una camicia); a pari posizione l'ordine delle regole
+  // ("Felpa con Cappuccio" prima di "Felpa").
+  function _firstType(t){
+    let best='', at=Infinity;
+    for(const [label, re] of _CLASSIFY_RULES){ const m=re.exec(t); if(m && m.index<at){ at=m.index; best=label; } }
+    return best;
+  }
   function _classifyText(t){
-    // "Polo Ralph Lauren" è il marchio, non una polo
-    t=String(t||'').toLowerCase().replace(/polo\s+(?:by\s+)?ralph\s+lauren/g,'ralph lauren');
-    for(const [label, re] of _CLASSIFY_RULES){ if(re.test(t)) return label; }
-    return '';
+    t=String(t||'').toLowerCase()
+      .replace(/polo\s+(?:by\s+)?ralph\s+lauren/g,'ralph lauren')   // il marchio, non una polo
+      .replace(/polo\s+bear/g,'bear').replace(/logo\s+polo/g,'logo')  // disegni Ralph Lauren
+      .replace(/polo\s+(?:shirts?|in\s+maglia)/g,'polo');              // "Polo Shirt", "Polo in Maglia" = polo
+    // "Ralph Lauren Polo Hoodie", "Polo Maglione…": "Polo" in testa è il marchio
+    // se dopo c'è un altro capo; altrimenti è davvero una polo
+    const lead=/^(\s*(?:ralph\s+lauren\s+)?)polo\s+/;
+    if(lead.test(t)){ const r=_firstType(t.replace(lead,'$1')); if(r) return r; }
+    return _firstType(t);
   }
   // Ciclismo: tag dall'importer (style) o parole chiave; prima degli altri
   // capi perché maglie e salopette da bici sono "jersey"/"shorts".
