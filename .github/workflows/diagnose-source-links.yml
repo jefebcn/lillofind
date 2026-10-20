@@ -1,0 +1,38 @@
+# Diagnosi dei link al fornitore negli ordini (solo lettura, nei log solo
+# conteggi). Parte quando questo file o lo script cambiano su main.
+name: Diagnosi link fornitore
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-source-links.yml'
+      - 'scripts/diagnose-source-links.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Credenziali Google (service account Firebase)
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: printf '%s' "$GOOGLE_CREDENTIALS" > "$RUNNER_TEMP/gcloud-key.json"
+
+      - name: Controlla i link
+        working-directory: scripts
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
+        run: |
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund firebase-admin@12 >/dev/null
+          node diagnose-source-links.mjs
