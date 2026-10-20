@@ -1,0 +1,81 @@
+# Corregge categoria, taglie, marchio, modello, genere e stile dei prodotti
+# catalogati male (scripts/catalog-fixes.json) e ripubblica il catalogo.
+# Parte da solo quando questo file, lo script o l'elenco cambiano su main; si
+# può rilanciare a mano: GitHub → Actions → "Correzioni catalogo" → Run workflow
+# (con "solo anteprima" mostra i conteggi senza salvare). Nei log solo conteggi.
+name: Correzioni catalogo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-catalog-categories.yml'
+      - 'scripts/fix-catalog-categories.mjs'
+      - 'scripts/catalog-fixes.json'
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'Solo anteprima (1 = non salva)'
+        required: false
+        default: '0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-publish
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Credenziali Google (service account Firebase)
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: printf '%s' "$GOOGLE_CREDENTIALS" > "$RUNNER_TEMP/gcloud-key.json"
+
+      - name: Correggi le categorie
+        working-directory: scripts
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
+          DRY: ${{ github.event.inputs.dry || '0' }}
+        run: |
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund firebase-admin@12 >/dev/null
+          node fix-catalog-categories.mjs
+
+      - name: Leggi i prodotti da Firestore
+        if: ${{ github.event.inputs.dry != '1' }}
+        working-directory: scripts
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud-key.json
+        run: node publish-catalog.mjs
+
+      - name: Dipendenze Worker (wrangler)
+        if: ${{ github.event.inputs.dry != '1' }}
+        working-directory: cloudflare-worker
+        run: npm ci
+
+      - name: Scrivi il catalogo nel KV
+        if: ${{ github.event.inputs.dry != '1' }}
+        working-directory: cloudflare-worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          ID="$(npx wrangler kv namespace list 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const a=JSON.parse(s.slice(s.indexOf("[")));const n=a.find(x=>x.title==="lillofind-catalog");process.stdout.write(n?n.id:"")}catch(e){}})')"
+          if [ -z "$ID" ]; then echo "KV 'lillofind-catalog' non trovato"; exit 1; fi
+          npx wrangler kv key put catalog --path ../scripts/catalog.json --namespace-id "$ID"
+          npx wrangler kv key put "catalog:meta" --path ../scripts/catalog-meta.json --namespace-id "$ID"
+          npx wrangler kv key get "catalog:albums" --namespace-id "$ID" > ../scripts/albums-old.json 2>/dev/null || echo "[]" > ../scripts/albums-old.json
+          node ../scripts/merge-albums.mjs ../scripts/albums-old.json ../scripts/catalog-albums.json
+          npx wrangler kv key put "catalog:albums" --path ../scripts/catalog-albums.json --namespace-id "$ID"
+          echo "Catalogo pubblicato nel KV $ID"
