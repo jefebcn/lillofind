@@ -13,6 +13,7 @@
 // dove si era arrivati. Il catalogo dello shop si aggiorna poi nel KV
 // applicando solo le modifiche fatte (applied.json), senza rileggere tutti i
 // prodotti da Firestore come faceva la ripubblicazione completa.
+// Giro del 21/10/2026: secondo lotto di nomi (399), confermato da Alex.
 import fs from 'node:fs';
 import admin from 'firebase-admin';
 
