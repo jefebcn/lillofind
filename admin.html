@@ -2899,7 +2899,8 @@ waitFB(()=>{
     });
   }
   function enName(n){ return String(n||'').replace(/[A-Za-zÀ-ÿ]+/g, w=>{ const t=_EN_WORD[w.toLowerCase()]; if(!t) return w; return w[0]===w[0].toUpperCase()?_cap(t):t; }); }
-  function enSpecs(i){ return [i.size?('Size '+enSize(i.size)):'', i.color?('Color '+enColor(i.color)):'', ...enExtras(i.addonSummary?[i.addonSummary]:[])].filter(Boolean).join(' · '); }
+  // i.variant = foto scelta dal cliente (1…n) nei prodotti con più capi nelle foto
+  function enSpecs(i){ return [i.size?('Size '+enSize(i.size)):'', i.variant?('Variant: photo '+i.variant+(i.variantOf?'/'+i.variantOf:'')+' (see image)'):'', i.color?('Color '+enColor(i.color)):'', ...enExtras(i.addonSummary?[i.addonSummary]:[])].filter(Boolean).join(' · '); }
 
 // ══════════════════════════════════════════════════════════════════════
 // DA ORDINARE — articoli degli ordini clienti da passare al fornitore.
@@ -2927,7 +2928,8 @@ waitFB(()=>{
     if(/1688\.com/i.test(url)) return { key:'1688', label:'1688', site:'1688' };
     try{ const h=new URL(url).hostname; return { key:h, label:h, site:'' }; }catch(_){ return { key:'?', label:'Altro', site:'' }; }
   }
-  function spExtras(i){ const e=[]; if(i.addonSummary) e.push(i.addonSummary); if(i.boxOption==='con_scatola') e.push('Con scatola'); return e; }
+  // la variante (foto) separa le righe: due varianti dello stesso prodotto non si sommano
+  function spExtras(i){ const e=[]; if(i.variant) e.push('Photo '+i.variant+(i.variantOf?'/'+i.variantOf:'')+' (see image)'); if(i.addonSummary) e.push(i.addonSummary); if(i.boxOption==='con_scatola') e.push('Con scatola'); return e; }
   // Testo da incollare al fornitore: link, pezzi, taglia, colore (+ extra) su più righe.
   // Testo da incollare al fornitore — sempre in inglese.
   function spText(r){
@@ -3199,6 +3201,7 @@ waitFB(()=>{
             <p style="font-size:15px;font-weight:600;line-height:1.3;margin-bottom:3px;${_na?'text-decoration:line-through;':''}">${escH(i.name||'—')}</p>
             ${_na?'<p style="font-size:11px;font-weight:700;letter-spacing:1px;color:#ff8a8a;margin-bottom:3px;">NON DISPONIBILE · tolto dall\'ordine</p>':''}
             <p style="font-size:13px;color:rgba(255,255,255,.55);">${i.brand?escH(i.brand)+' · ':''}${i.size?'Sz '+escH(i.size):''}${box}</p>
+            ${i.variant?`<p style="font-size:12px;font-weight:700;color:var(--led);margin-top:2px;">Variante: foto ${+i.variant}${i.variantOf?' di '+(+i.variantOf):''} (quella in miniatura)</p>`:''}
             ${src && safeUrl(src.url) ? `<a href="${escH(safeUrl(src.url))}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:11px;color:var(--led);text-decoration:none;">🔗 Fonte: ${src.exact?'album esatto':escH(src.label)} (${escH(src.site)})</a>` : (src ? `<span style="display:inline-block;margin-top:5px;font-size:11px;color:rgba(255,255,255,.35);">🔗 Fonte: ${escH(src.label)}</span>` : '')}
           </div>
           <div style="text-align:right;flex-shrink:0;">
@@ -3379,7 +3382,7 @@ waitFB(()=>{
     lfLiveItems(o).forEach(i=>{
       const q=i.qty||1;
       const tot=((i.price||0)*q).toFixed(2);
-      const det=[i.brand,i.size?'Tg '+i.size:'',i.color].filter(Boolean).join(' · ');
+      const det=[i.brand,i.size?'Tg '+i.size:'',i.variant?'foto '+i.variant:'',i.color].filter(Boolean).join(' · ');
       L.push('• '+(i.name||'—')+(det?' ('+det+')':'')+' ×'+q+' — €'+tot);
     });
     (o.items||[]).filter(i=>i.unavailable).forEach(i=>L.push('🚫 '+(i.name||'—')+(i.size?' (Tg '+i.size+')':'')+' — non più disponibile, tolto dall\'ordine'));
