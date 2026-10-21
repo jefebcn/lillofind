@@ -24,6 +24,19 @@ export function ypAlbumUrl(raw) {
 
 export const NOTIFY_EMAIL = 'yishionvt@gmail.com';
 
+// Varianti: molti prodotti hanno capi/colori diversi nelle foto; il cliente
+// sceglie la foto (1…n, la tabella taglie esclusa) e l'ordine porta quella foto,
+// così l'admin e l'agente sanno quale capo comprare. Stessa lista del sito.
+export function variantImgs(prod) {
+  const p = prod || {};
+  const all = [...new Set([...(Array.isArray(p.images) ? p.images : []), p.imageUrl].filter(Boolean))];
+  return all.filter((u) => u !== p.sizeChart);
+}
+export function variantImg(prod, variant) {
+  const v = parseInt(variant, 10), list = variantImgs(prod);
+  return list.length > 1 && v >= 1 && v <= list.length ? list[v - 1] : '';
+}
+
 // Lettura dei prodotti fallita. Se è la quota giornaliera di Firestore (piano
 // Spark: 429 RESOURCE_EXHAUSTED) il cliente deve capire che è temporaneo,
 // non un errore suo; il messaggio vero resta nei log del Worker.
@@ -495,7 +508,7 @@ export async function sendOrderEmails(o, env, opts = {}) {
       '<div style="margin:16px 0;padding:14px 16px;border:1px solid #e7e2d8;border-radius:10px;background:#faf8f3;">' +
       '<p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#23231f;">🛒 Ordine fornitore (per l\'agente d\'acquisto)</p>' +
       physItems.map((i, idx) => {
-        const specs = [i.size ? ('Taglia ' + i.size) : '', i.color ? ('Colore ' + i.color) : '', i.addonSummary || ''].filter(Boolean).join(' · ');
+        const specs = [i.size ? ('Taglia ' + i.size) : '', i.variant ? ('Foto ' + i.variant + (i.variantOf ? '/' + i.variantOf : '')) : '', i.color ? ('Colore ' + i.color) : '', i.addonSummary || ''].filter(Boolean).join(' · ');
         const cny = (i.supplierPriceCNY != null && i.supplierPriceCNY !== '') ? String(i.supplierPriceCNY) : '10 (da confermare)';
         const link = ypAlbumUrl(i.sourceUrl || '');
         const img = i.img ? (String(i.img).startsWith('//') ? 'https:' + i.img : i.img) : '';
@@ -832,7 +845,8 @@ export async function validateOrder(data, { env, db, auth, waitUntil, ip }) {
       category: prod.category || '', weightKg: prod.weightKg || prod.weight_kg || 0,
       boxOption: ['con_scatola', 'senza_scatola'].includes(prodItems[idx].boxOption) ? prodItems[idx].boxOption : '',
       qty, size: String(prodItems[idx].size || '').slice(0, 20),
-      color: String(prodItems[idx].color || '').slice(0, 60), img: prod.imageUrl || '', isDigital: prod.isDigital || false,
+      color: String(prodItems[idx].color || '').slice(0, 60), img: variantImg(prod, prodItems[idx].variant) || prod.imageUrl || '', isDigital: prod.isDigital || false,
+      ...(variantImg(prod, prodItems[idx].variant) ? { variant: parseInt(prodItems[idx].variant, 10), variantOf: variantImgs(prod).length } : {}),
       ...(prod.sourceUrl ? { sourceUrl: prod.sourceUrl } : {}),
       ...(prod.supplierPriceCNY != null ? { supplierPriceCNY: prod.supplierPriceCNY } : {}),
       ...(addonPrice ? { addonPrice, addonSummary } : {}),

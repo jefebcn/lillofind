@@ -1,6 +1,6 @@
 // Test dei handler checkout/loyalty con un Firestore finto in memoria.
 // Eseguibile con `node test/handlers.test.mjs` (niente rete: fetch è finto).
-import { validateOrder, sendOrderEmail, track17, rewardDiscount, stripeWebhook, ypAlbumUrl, productsReadError, ORDERS_DOWN_MSG } from '../src/handlers/checkout.js';
+import { validateOrder, sendOrderEmail, track17, rewardDiscount, stripeWebhook, ypAlbumUrl, productsReadError, ORDERS_DOWN_MSG, variantImg } from '../src/handlers/checkout.js';
 import { claimReward, claimReferrals } from '../src/handlers/loyalty.js';
 import { DELETE_FIELD } from '../src/lib/firestore.js';
 
@@ -196,6 +196,9 @@ eq(rewardDiscount({ activeReward: { type: 'percentuale', val: 500 } }, 10, 5).di
   eq([back.alreadyCreated, back.orderId], [true, w1.body.orderId], 'ritorno dal redirect: stesso ordine del webhook');
   eq(Object.values(db.D.orders).filter(o => o.stripePaymentIntentId === 'pi_9').length, 1, 'un solo ordine in tutto');
 }
+// Variante (foto scelta): solo indici validi, tabella taglie esclusa
+{ const P = { imageUrl: 'a.jpg', images: ['a.jpg', 'b.jpg', 'c.jpg', 'size.png'], sizeChart: 'size.png' };
+  eq([variantImg(P, 2), variantImg(P, 4), variantImg(P, 0), variantImg(P, 'x'), variantImg({ imageUrl: 'a.jpg' }, 1)], ['b.jpg', '', '', '', ''], 'variante: foto 2 = b.jpg; fuori lista, tabella taglie o prodotto con una foto = nessuna'); }
 // Quota Firestore esaurita → messaggio chiaro per il cliente
 { const _ce = console.error; console.error = () => {};
   const q = productsReadError(new Error('Firestore getMany: 429 {"error":{"status":"RESOURCE_EXHAUSTED"}}'), 'test');
