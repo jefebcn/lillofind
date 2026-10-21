@@ -145,7 +145,8 @@ async function run(pageFile, steps, { width, theme, cart = CART, extra = {} }) {
 const INDEX = [
   ['home', null, "document.querySelectorAll('#home-prods .pcard').length>0"],
   ['shop', "showPg('shop')", "document.querySelectorAll('#pg-shop .pcard').length>0"],
-  ['prodotto', "openProduct('p0')", "document.getElementById('prod-modal').classList.contains('open')"],
+  // la scheda deve poter scorrere (su PC un overflow:hidden nascondeva "Aggiungi al carrello")
+  ['prodotto', "openProduct('p0')", "document.getElementById('prod-modal').classList.contains('open') && /auto|scroll/.test(getComputedStyle(document.querySelector('#prod-modal .modal-box')).overflowY)"],
   // i click veri (data-* + un solo listener, niente onclick con dentro i dati)
   ['click card', "closeProd();showPg('shop');document.querySelector('#pg-shop .pcard').click()", "document.getElementById('prod-modal').classList.contains('open')"],
   ['prodotto ostile', "closeProd();openProduct('p8')", "document.getElementById('prod-modal').classList.contains('open') && !window.__xss && /Giacca/.test(document.getElementById('prod-modal').textContent)"],

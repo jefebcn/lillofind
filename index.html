@@ -94,7 +94,7 @@
   // versione vecchia (anche per giorni, sull'app installata): qui si confronta
   // con version.json e, se è cambiata, si svuota la cache e si ricarica, una
   // volta sola. Mai durante il checkout o mentre si scrive in un campo.
-  window.LF_BUILD='2026-10-19.1';
+  window.LF_BUILD='2026-10-21.1';
   (function(){
     var last=0;
     function busy(){
@@ -2333,7 +2333,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   <style>
     /* ── Scheda prodotto: arrotonda e ammorbidisce (mantiene i colori LED) ── */
     @media(min-width:601px){
-      #prod-modal .modal-box{border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(20,20,17,.42);}
+      /* overflow-y:auto, non hidden: con hidden su PC la scheda non scorreva e il
+         pulsante "Aggiungi al carrello" restava sotto il bordo dello schermo */
+      #prod-modal .modal-box{border-radius:18px;overflow-x:hidden;overflow-y:auto;box-shadow:0 30px 80px rgba(20,20,17,.42);}
     }
     #prod-modal .pg-thumb{border-radius:8px;}
     /* size chips → pill */
