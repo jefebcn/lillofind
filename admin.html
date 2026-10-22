@@ -2634,7 +2634,7 @@ waitFB(()=>{
   window.lfLiveItems=lfLiveItems;
   // Stessi pesi e tariffa di cloudflare-worker/src/lib/shipping.js
   const _CAT_KG={tshirt:.35,tshirt_branded:.4,felpa:.8,scarpe:2,scarpe_box:2.5,pantaloni:.8,shorts:.4,cappello:.3,giacchetto:1.2,borsa:1.5,accessori:.3};
-  const _TYPE_KG=[[/piumin|puffer|down ?jacket|parka|nuptse|\bdown\b/i,2.8],[/ciabatt|slides?\b|clog|sandal|infradito/i,1.3],[/\bset\b|\btuta\b|tracksuit|completo/i,1.4],[/maglion|knit|cardigan/i,1],[/airpods?|cuffie|headphone/i,.5]];
+  const _TYPE_KG=[[/piumin|puffer|down ?jacket|parka|nuptse|\bdown\b/i,2.8],[/ciabatt|slides?\b|clog|sandal|infradito/i,1.3],[/\bset\b|\btuta\b|tracksuit|completo/i,1.4],[/maglion|knit|cardigan/i,1],[/airpods?|auricolar|earbuds?|cuffie|headphone/i,.5]];
   function lfItemKg(i){
     const t=(i.name||'')+' '+(i.model||''); let b=null;
     for(const [re,w] of _TYPE_KG){ if(re.test(t)){ b=w; break; } }

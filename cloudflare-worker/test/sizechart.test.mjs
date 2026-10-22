@@ -1,5 +1,5 @@
 // Categorie Yupoo con la tabella taglie in un album a parte (es. yolo66).
-import { parseAlbumList, pairSizeCharts, priceFromTitle, sizesFromTitle, modelKey, albumPagePriceCNY } from '../src/handlers/scrapers.js';
+import { parseAlbumList, pairSizeCharts, priceFromTitle, sizesFromTitle, modelKey, albumPagePriceCNY, mapWooProduct } from '../src/handlers/scrapers.js';
 
 let pass = 0, fail = 0;
 const eq = (a, e, l) => { const A = JSON.stringify(a), E = JSON.stringify(e); if (A === E) pass++; else { fail++; console.error('❌ ' + l + '\n   atteso ' + E + '\n   ottenuto ' + A); } };
@@ -45,6 +45,14 @@ eq([sizeChartOf['7'], sizeChartOf['8']], [big(6), big(6)], '"Size" senza nome: a
 eq(sizeChartOf['9'], undefined, 'Covert: nessuna tabella, nessun abbinamento');
 eq(sizeChartOf['10'], big(11), 'Beta LT XS-XXL ~ tabella Beta LT S-XXL (dopo i prodotti)');
 eq(sizeChartOf['12'], big(13), 'ALPHA SV 7代: tabella con titolo più corto');
+
+// Negozi WooCommerce (es. earhive.com): prodotto dalla Store API
+const woo = mapWooProduct({ id: 7, name: 'AirPods Pro 2 &#8211; Gen 2', permalink: 'https://earhive.com/product/airpods-pro-2/',
+  images: [{ src: 'https://earhive.com/a.jpg' }, { src: '' }, { src: 'https://earhive.com/b.jpg' }],
+  prices: { price: '6700', regular_price: '7900', currency_code: 'USD', currency_minor_unit: 2 },
+  categories: [{ name: 'Pro &amp; Gen', slug: 'pro-gen' }], short_description: '<p>Con custodia</p>', is_in_stock: true });
+eq([woo.title, woo.price, woo.currency, woo.images.length, woo.category, woo.categorySlugs, woo.inStock], ['AirPods Pro 2 – Gen 2', 67, 'USD', 2, 'Pro & Gen', ['pro-gen'], true], 'WooCommerce: prezzo in centesimi, entità HTML, foto vuote tolte');
+eq(mapWooProduct({ id: 8, name: 'X', prices: { regular_price: '1500', currency_minor_unit: 2 }, is_in_stock: false }).price, 15, 'WooCommerce: senza prezzo scontato usa il prezzo pieno');
 
 console.log(`\n${pass} passati, ${fail} falliti`);
 if (fail) process.exit(1);

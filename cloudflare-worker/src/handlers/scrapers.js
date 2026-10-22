@@ -443,7 +443,10 @@ export async function yupooFetch(data, _ctx) {
     || parsedUrl.hostname.endsWith('.koudai.com')
     || parsedUrl.hostname === 'koudai.com';
   if (!parsedUrl.hostname.endsWith('.yupoo.com') && !isTaobao && !isWeidian) {
-    throw new HttpsError('invalid-argument', 'Solo URL Yupoo, Taobao/Tmall, AliExpress, Weidian o link agent (Kakobuy, CNFans…) di un singolo prodotto.');
+    // Negozi WooCommerce (WordPress, es. earhive.com/store/): API pubblica dei prodotti
+    const woo = await wooFetch(parsedUrl).catch((e) => { console.warn('[WOO]', e && e.message); return null; });
+    if (woo) return woo;
+    throw new HttpsError('invalid-argument', 'Solo URL Yupoo, Taobao/Tmall, AliExpress, Weidian, negozi WooCommerce o link agent (Kakobuy, CNFans…) di un singolo prodotto.');
   }
 
   // ── BRANCH WEIDIAN ────────────────────────────────────────────
@@ -946,6 +949,54 @@ export async function yupooFetch(data, _ctx) {
   } catch (e) {
     throw new HttpsError('unavailable', 'Fetch fallito: ' + e.message);
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+// wooFetch — prodotti di un negozio WooCommerce dall'API pubblica
+// (/wp-json/wc/store/v1/products, la stessa che usa il carrello del negozio).
+// Link al negozio o a una categoria → tutti i prodotti (max 500); link a un
+// prodotto (/product/<slug>/) → solo quello. Null se il sito non è WooCommerce.
+// ════════════════════════════════════════════════════════════════
+const decodeHtml = (t) => String(t || '').replace(/<[^>]*>/g, ' ').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+  .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16))).replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+  .replace(/&#039;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+export function mapWooProduct(p) {
+  const pr = p.prices || {}, minor = +pr.currency_minor_unit || 0;
+  const price = (+pr.price || +pr.regular_price || 0) / Math.pow(10, minor);
+  return {
+    id: p.id, title: decodeHtml(p.name).slice(0, 160), sourceUrl: p.permalink || '',
+    images: (p.images || []).map((i) => i && i.src).filter(Boolean).slice(0, 10),
+    price: Math.round(price * 100) / 100, currency: pr.currency_code || '',
+    category: decodeHtml((p.categories && p.categories[0] && p.categories[0].name) || ''),
+    categorySlugs: (p.categories || []).map((c) => c.slug),
+    description: decodeHtml(p.short_description || p.description || '').slice(0, 600),
+    inStock: p.is_in_stock !== false,
+  };
+}
+export async function wooFetch(u) {
+  const api = u.origin + '/wp-json/wc/store/v1/products';
+  const get = async (q) => {
+    const r = await fetch(api + q, { headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' }, signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => null);
+    return Array.isArray(j) ? j : null;
+  };
+  const prod = u.pathname.match(/\/product\/([^/]+)/), cat = u.pathname.match(/\/product-category\/(?:[^/]+\/)*([^/]+)\/?$/);
+  let list;
+  if (prod) list = await get('?slug=' + encodeURIComponent(decodeURIComponent(prod[1])));
+  else {
+    list = [];
+    for (let page = 1; page <= 5; page++) {
+      const part = await get(`?per_page=100&page=${page}`);
+      if (!part) { if (page === 1) return null; break; }
+      list.push(...part);
+      if (part.length < 100) break;
+    }
+  }
+  if (!list) return null;
+  let items = list.map(mapWooProduct).filter((p) => p.title && p.images.length);
+  if (cat) items = items.filter((p) => p.categorySlugs.includes(cat[1]));
+  return { mode: 'woo', shop: u.hostname, items };
 }
 
 // ════════════════════════════════════════════════════════════════
