@@ -25,7 +25,7 @@ const TYPE_WEIGHTS = [
   [/ciabatt|slides?\b|clog|sandal|infradito/i, 1.3],
   [/\bset\b|\btuta\b|tracksuit|completo/i, 1.4],
   [/maglion|knit|cardigan/i, 1.0],
-  [/airpods?|cuffie|headphone/i, 0.5],
+  [/airpods?|auricolar|earbuds?|cuffie|headphone/i, 0.5],
 ];
 
 export const SHIP_BASE_EUR = 12, SHIP_BASE_KG = 1, SHIP_STEP_KG = 0.5, SHIP_STEP_EUR = 5;

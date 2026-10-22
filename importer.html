@@ -19,13 +19,34 @@
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc,getDocs,updateDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getFirestore,collection,addDoc,serverTimestamp,doc,getDoc,getDocs,updateDoc,setDoc}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import{getFunctions,httpsCallable}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 const cfg={apiKey:"AIzaSyAZJ69_Nv-oTEINkhLAxjmPjsOO6QfIFkg",authDomain:"lillofind-c455c.firebaseapp.com",projectId:"lillofind-c455c",storageBucket:"lillofind-c455c.firebasestorage.app",messagingSenderId:"49368493660",appId:"1:49368493660:web:22e02baaa3a2f1cf2a0099"};
 const app=initializeApp(cfg);
 const _impAuth=getAuth(app);
 window.__imp={db:getFirestore(app),auth:_impAuth,functions:getFunctions(app,'europe-west1'),httpsCallable,collection,addDoc,serverTimestamp,doc,getDoc,getDocs,updateDoc,signInWithEmailAndPassword,onAuthStateChanged};
+// Campi privati (costi, prezzo fornitore, link alla fonte) → products_private,
+// come fa firebase.js per le pagine admin: l'importer li scriveva nel documento
+// pubblico di `products`, che chiunque può leggere. Stesso elenco del Worker
+// (cloudflare-worker/src/lib/product-private.js).
+(function(imp){
+  const PRIV=['costEUR','costUsd','costUnitPriceUsd','costUnitFreightUsd','costFx','costFxDate','costUpdatedAt','supplierPriceCNY','sourceUrl'];
+  const split=(o)=>{ const pub={},priv={}; for(const k of Object.keys(o||{})) (PRIV.includes(k)?priv:pub)[k]=o[k]; return {pub,priv}; };
+  const savePriv=(id,priv)=>Object.keys(priv).length?setDoc(doc(imp.db,'products_private',id),priv,{merge:true}):null;
+  const _add=imp.addDoc, _upd=imp.updateDoc;
+  imp.addDoc=async function(col,data){
+    if(!(col&&col.path==='products')) return _add.apply(this,arguments);
+    const {pub,priv}=split(data); const ref=await _add.call(this,col,pub);
+    await savePriv(ref.id,priv); return ref;
+  };
+  imp.updateDoc=async function(ref,data){
+    if(!(ref&&ref.parent&&ref.parent.id==='products')) return _upd.apply(this,arguments);
+    const {pub,priv}=split(data);
+    if(Object.keys(pub).length) await _upd.call(this,ref,pub);
+    await savePriv(ref.id,priv);
+  };
+})(window.__imp);
 
 /* Backend Cloudflare Worker — vedi cloudflare-worker/README.md.
    ⚠️ Stesso URL impostato in firebase.js */
@@ -384,6 +405,7 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
     <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:10px 14px;margin-bottom:16px;font-size:10px;color:#555;line-height:1.8;letter-spacing:.3px;">
       <strong style="color:#666;letter-spacing:1px;">COME FUNZIONA</strong><br>
       Incolla i link (Taobao/Tmall, AliExpress, <span style="color:#888;">Weidian</span> o link agent <span style="color:#888;">Kakobuy / CNFans / Mulebuy…</span> di un singolo prodotto) → il sistema estrae foto, nome e prezzo, poi l'AI riconosce brand/modello/colore.<br>
+      <span style="color:#888;">Negozi WooCommerce</span> (es. <span style="color:#888;">earhive.com/store/</span>): il link del negozio o di una categoria carica <b>tutti</b> i prodotti; prezzo di vendita = costo + 60%, al massimo +$15.<br>
       <span style="color:#555;">Nota: i link agent devono essere di un <b>prodotto</b>, non di un intero negozio.</span><br>
       Se la fonte blocca la richiesta, la riga viene creata vuota:<br>
       <span style="color:#888;">1.</span> Apri il link nel browser &nbsp;
@@ -392,7 +414,7 @@ html,body{background:var(--k);color:var(--w);font-family:'IBM Plex Mono',monospa
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start;">
-      <textarea class="lf-in" id="tb-urls" placeholder="https://weidian.com/item.html?itemID=...&#10;https://item.taobao.com/item.htm?id=...&#10;https://www.kakobuy.com/item/... (link agent del prodotto)&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
+      <textarea class="lf-in" id="tb-urls" placeholder="https://weidian.com/item.html?itemID=...&#10;https://item.taobao.com/item.htm?id=...&#10;https://www.kakobuy.com/item/... (link agent del prodotto)&#10;https://earhive.com/store/ (negozio WooCommerce: tutti i prodotti)&#10;(uno per riga)" style="flex:1;min-width:260px;min-height:90px;resize:vertical;line-height:1.7;"></textarea>
       <button class="btn-led" id="tb-fetch-btn" onclick="fetchTaobaoItems()" style="white-space:nowrap;padding:14px 28px;align-self:flex-start;">CARICA →</button>
     </div>
 
@@ -1048,9 +1070,11 @@ window.backfillGalleries = async function(){
   btn.disabled = true; btn.textContent = '⏳ Backfill…';
   let targets = [];
   try{
-    const snap = await imp.getDocs(imp.collection(imp.db,'products'));
+    // il link all'album ora sta in products_private (campo privato)
+    const [snap, privSnap] = await Promise.all([imp.getDocs(imp.collection(imp.db,'products')), imp.getDocs(imp.collection(imp.db,'products_private'))]);
+    const srcOf = {}; privSnap.forEach(ds=>{ const u=ds.data().sourceUrl; if(u) srcOf[ds.id]=u; });
     snap.forEach(ds=>{
-      const p = ds.data();
+      const p = { ...ds.data(), ...(srcOf[ds.id] ? { sourceUrl: srcOf[ds.id] } : {}) };
       const imgs = Array.isArray(p.images) ? p.images : [];
       if(p.sourceUrl && /yupoo\.com\/albums\//i.test(p.sourceUrl) && imgs.length <= 1)
         targets.push({ id: ds.id, sourceUrl: p.sourceUrl, imageUrl: p.imageUrl || '', name: p.name || ds.id });
@@ -1190,6 +1214,8 @@ window.saveAll=async function(){
         ...(sizeChart?{sizeChart}:{}),
         sourceUrl,
         ...(supplierCNY>0?{supplierPriceCNY:supplierCNY}:{}),
+        // costo in $ (negozi WooCommerce): finisce in products_private come una ricevuta
+        ...(parseFloat(row.dataset.costUsd)>0?{costUnitPriceUsd:parseFloat(row.dataset.costUsd)}:{}),
         createdAt:imp.serverTimestamp()
       });
       saved++; savedCount++;
@@ -1615,7 +1641,15 @@ window.fetchTaobaoItems = async function(){
     try{
       const res = await fnTB({ url });
       tbData = res.data;
-      // yupooFetch restituisce mode:'taobao' | 'weidian' oppure il formato Yupoo
+      // yupooFetch restituisce mode:'taobao' | 'weidian' | 'woo' oppure il formato Yupoo
+      if(tbData && tbData.mode === 'woo'){
+        // Negozio WooCommerce: una riga per prodotto, prezzo già calcolato (niente AI: i dati ci sono già)
+        const its = (tbData.items||[]).filter(it=>it.inStock!==false);
+        its.forEach(it=>addTaobaoRow(wooRow(it, tbData.shop), null));
+        added += its.length; done++;
+        lbl.textContent = `✅ ${tbData.shop}: ${its.length} prodotti${(tbData.items||[]).length>its.length?' (esauriti esclusi)':''}`;
+        continue;
+      }
       if(!tbData || (tbData.mode !== 'taobao' && tbData.mode !== 'weidian')){
         lbl.textContent = `⚠️ Risposta inattesa per: ${url.slice(0,50)}`;
         done++; continue;
@@ -1654,6 +1688,24 @@ window.fetchTaobaoItems = async function(){
   setTimeout(()=>{ document.getElementById('rows-container').scrollIntoView({behavior:'smooth',block:'start'}); }, 400);
 };
 
+// Prodotto WooCommerce → riga dell'importer. Prezzo di vendita: costo + 60%,
+// ma al massimo +$15 (scelta di Alex: auricolari da $67 non si rincarano del
+// 60%), convertito in euro e arrotondato all'euro. Il costo in $ resta privato.
+function wooSalePrice(cost, cur){
+  const markup = Math.min(15, cost * 0.6);
+  const fx = cur === 'EUR' ? 1 : USD_EUR;
+  return Math.ceil((cost + markup) * fx);
+}
+function wooRow(it, shop){
+  const cat = it.category || '';
+  // tipo di capo nel nome (lo shop classifica dal nome): auricolari / cuffie
+  const kind = /\bmax\b|head|cuffi/i.test(cat+' '+it.title) ? 'Cuffie' : /pro|gen|pod|bud|ear|auricol/i.test(cat) ? 'Auricolari' : '';
+  const title = kind && !new RegExp(kind,'i').test(it.title) ? kind+' '+it.title : it.title;
+  const cost = +it.price || 0, cur = it.currency || 'USD';
+  return { mode:'woo', title, images: it.images||[], sourceUrl: it.sourceUrl||'', shop,
+    priceEur: cost>0 ? wooSalePrice(cost, cur) : 0, costUsd: cur==='USD' ? cost : 0, costLabel: cost>0 ? (cur==='USD'?'$':cur+' ')+cost : '',
+    desc: it.description||'', category:'accessori' };
+}
 function addTaobaoRow(tb, ai){
   const id = rowId++;
   const container = document.getElementById('rows-container');
@@ -1677,7 +1729,8 @@ function addTaobaoRow(tb, ai){
   div.dataset.category = category;
 
   const priceVal  = tb.priceEur > 0 ? tb.priceEur : '';
-  const priceHint = tb.priceYuan > 0 ? `(¥${tb.priceYuan})` : '';
+  const priceHint = tb.mode==='woo' ? (tb.costLabel ? `(costo ${tb.costLabel} + max $15)` : '') : tb.priceYuan > 0 ? `(¥${tb.priceYuan})` : '';
+  if(tb.mode==='woo'){ if(tb.costUsd>0) div.dataset.costUsd = String(tb.costUsd); if(tb.desc) div.dataset.desc = tb.desc; if(tb.category) div.dataset.category = tb.category; }
 
   const thumbsHtml = (tb.images||[]).slice(0,5).map((img,i)=>`
     <img src="${img}" title="Clicca per usare questa immagine" alt=""
@@ -1687,10 +1740,11 @@ function addTaobaoRow(tb, ai){
 
   // Debug/warning panel — visibile se mancano dati
   const dbg = tb._debug || {};
-  const missingData = !tb.title && !tb.images?.length && !tb.priceYuan;
-  const partialData = !tb.title || !tb.images?.length || !tb.priceYuan;
+  const _hasPrice = tb.priceYuan > 0 || (tb.mode==='woo' && tb.priceEur > 0);
+  const missingData = !tb.title && !tb.images?.length && !_hasPrice;
+  const partialData = !tb.title || !tb.images?.length || !_hasPrice;
   const isWD = tb.mode === 'weidian';
-  const srcLabel = isWD ? 'Weidian' : 'Taobao';
+  const srcLabel = tb.mode==='woo' ? (tb.shop||'WooCommerce') : isWD ? 'Weidian' : 'Taobao';
   const itemLink = tb.sourceUrl || (tb.itemId ? `https://item.taobao.com/item.htm?id=${tb.itemId}` : '');
   const debugHtml = partialData ? `
     <div style="background:#100800;border:1px solid #2a1800;padding:8px 12px;margin-bottom:8px;border-radius:2px;">
