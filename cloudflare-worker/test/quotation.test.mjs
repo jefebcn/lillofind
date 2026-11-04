@@ -1,5 +1,5 @@
 // Lettura ricevuta: numeri con virgola e riquadro totali che deve tornare.
-import { quoteNum, fixQuotationSummary } from '../src/handlers/scrapers.js';
+import { quoteNum, fixQuotationSummary, parseQuotationJson } from '../src/handlers/scrapers.js';
 
 let pass = 0, fail = 0;
 const eq = (a, e, l) => { const A = JSON.stringify(a), E = JSON.stringify(e); if (A === E) pass++; else { fail++; console.error('❌ ' + l + '\n   atteso ' + E + '\n   ottenuto ' + A); } };
@@ -23,6 +23,19 @@ eq([g.discountUsd, g.discountFixed], [5.2, true], 'sconto 52 → 5.2');
 const h = fixQuotationSummary({ ...base, refundUsd: 99 });
 eq([h.refundUsd, h.refundFixed], [99, undefined], 'non torna in nessun modo: lasciato com\'è (avviso in admin)');
 eq(fixQuotationSummary({ goodsUsd: 10, refundUsd: 338 }).refundUsd, 338, 'senza totale: niente correzione');
+
+// Risposta troncata (ricevuta lunga): si tengono le righe complete
+const row = (n) => JSON.stringify({ line: n, itemId: String(700 + n), unitPriceUsd: 10 + n, unitFreightUsd: 2 });
+const full = '{"rows":[' + [1, 2, 3].map(row).join(',') + '],"summary":{"totalUsd":42},"currency":"USD"}';
+eq(parseQuotationJson(full).rows.length, 3, 'JSON completo');
+eq(parseQuotationJson(full).truncated, undefined, 'JSON completo: non troncato');
+const cut = '{\n  "rows": [\n' + [1, 2].map(row).join(',\n') + ',\n {"line":3,"itemId":"70{3","unitPriceUsd":1';
+const t = parseQuotationJson(cut);
+eq([t.rows.map((r) => r.line), t.truncated, t.summary], [[1, 2], true, {}], 'JSON troncato: righe complete salvate');
+const sumFirst = '{"summary":{"totalUsd":9},"rows":[' + row(1) + ',{"line":2';
+eq([parseQuotationJson(sumFirst).rows.length, parseQuotationJson(sumFirst).summary], [1, { totalUsd: 9 }], 'troncato con riepilogo prima delle righe');
+let threw = false; try { parseQuotationJson('{"rows":[{"line":1'); } catch (_) { threw = true; }
+eq(threw, true, 'nessuna riga completa: errore');
 
 console.log(`\n${pass} passati, ${fail} falliti`);
 if (fail) process.exit(1);

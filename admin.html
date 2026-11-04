@@ -4666,7 +4666,9 @@ waitFB(()=>{
       _costSummary=(resp&&resp.data&&resp.data.summary)||null;
       _costRows=rows.map(r=>{ const prod=costFindProduct(r); return {...r, pid:prod?prod.id:'', matched:!!prod}; });
       const nMatch=_costRows.filter(r=>r.matched).length;
-      status.textContent='✅ '+_costRows.length+' righe lette · '+nMatch+' abbinate automaticamente. Correggi se serve, poi salva.';
+      status.textContent=(resp.data.truncated
+        ? '⚠️ Ricevuta molto lunga: lette solo le prime '+_costRows.length+' righe ('+nMatch+' abbinate). Per le altre carica uno screenshot della parte restante.'
+        : '✅ '+_costRows.length+' righe lette · '+nMatch+' abbinate automaticamente. Correggi se serve, poi salva.');
       renderCostResults();
     }catch(e){ console.error('parseQuotation',e&&e.code,e&&e.message); status.textContent='⚠️ Errore lettura: '+((e&&e.message)||(e&&e.code)||'riprova'); }
     finally{ btn.disabled=false; btn.textContent=old; }
