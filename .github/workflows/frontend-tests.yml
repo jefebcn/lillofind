@@ -15,7 +15,8 @@ permissions:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 non supporta Ubuntu 26.04 (ubuntu-latest da nov 2026).
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
