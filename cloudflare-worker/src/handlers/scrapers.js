@@ -1324,6 +1324,35 @@ export function fixQuotationSummary(sum) {
   return s;
 }
 
+// Risposta dell'AI per la ricevuta. Se è troncata (ricevuta lunga, limite di
+// token raggiunto) il JSON resta aperto: si tengono le righe complete e il
+// riepilogo, se c'è, invece di fallire tutta la lettura.
+export function parseQuotationJson(text) {
+  try { return parseFirstJson(text); } catch (e) {
+    const s = String(text || '');
+    const objectsIn = (from) => {
+      const out = [];
+      let depth = 0, inStr = false, esc = false, st = -1;
+      for (let i = from; i < s.length; i++) {
+        const c = s[i];
+        if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+        if (c === '"') inStr = true;
+        else if (c === '{') { if (depth++ === 0) st = i; }
+        else if (c === '}') { if (--depth === 0) { try { out.push(JSON.parse(s.slice(st, i + 1))); } catch (_) {} } }
+        else if (c === ']' && depth === 0) break;
+      }
+      return out;
+    };
+    const ri = s.search(/"rows"\s*:\s*\[/);
+    if (ri < 0) throw e;
+    const rows = objectsIn(s.indexOf('[', ri) + 1);
+    const si = s.search(/"summary"\s*:\s*\{/);
+    const summary = si >= 0 ? (objectsIn(s.indexOf('{', si))[0] || {}) : {};
+    if (!rows.length) throw e;
+    return { rows, summary, truncated: true };
+  }
+}
+
 export async function parseQuotation(data, { env }) {
   const { imageBase64, mediaType } = data || {};
   if (!imageBase64 || typeof imageBase64 !== 'string') {
@@ -1338,7 +1367,7 @@ export async function parseQuotation(data, { env }) {
   if (imageBase64.length > 7 * 1024 * 1024) throw new HttpsError('invalid-argument', 'Immagine troppo grande (>5MB).');
 
   const prompt = `Sei un assistente che legge le "QUOTATION SHEET" degli agenti di acquisto cinesi (Weidian/Taobao/1688/Yupoo).
-Estrai le righe prodotto numerate della tabella E il riepilogo dei totali in fondo. Rispondi ESCLUSIVAMENTE con JSON valido (nessun markdown, nessun testo prima o dopo):
+Estrai le righe prodotto numerate della tabella E il riepilogo dei totali in fondo. Rispondi ESCLUSIVAMENTE con JSON valido e compatto su una sola riga (niente a capo né rientri, nessun markdown, nessun testo prima o dopo):
 {"rows":[{"line":1,"link":"https://...","itemId":"742989298","remarks":"no box","size":"42 eu","quantity":"1","rmb":280,"freightRmb":12,"totalRmb":292,"gw":2,"unitPriceUsd":49.01,"unitFreightUsd":21.22}],"summary":{"goodsUsd":265.5,"estFreightUsd":139.0,"discountUsd":8.6,"refundUsd":0,"totalUsd":396.0,"receivedUsd":473.0,"balanceUsd":-77.0,"totalRmb":1582.0},"currency":"USD"}
 Regole IMPORTANTI:
 - "rows": una riga per ogni prodotto numerato (1,2,3...). NON includere righe di totale/subtotale/spedizione stimata/pagamenti tra le rows.
@@ -1361,7 +1390,8 @@ Regole IMPORTANTI:
       headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2500,
+        // una ricevuta da 30+ righe supera i 2500 token: la risposta si troncava
+        max_tokens: 8000,
         messages: [{
           role: 'user',
           content: [
@@ -1375,8 +1405,9 @@ Regole IMPORTANTI:
     if (!aiResp.ok) { const errText = await aiResp.text(); throw new Error('Anthropic ' + aiResp.status + ': ' + errText.slice(0, 300)); }
     const aiData = await aiResp.json();
     const text = (aiData.content?.[0]?.text || '{}').trim();
-    const parsed = parseFirstJson(text);
+    const parsed = parseQuotationJson(text);
     const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
+    const truncated = !!parsed.truncated || aiData.stop_reason === 'max_tokens';
     // Normalizza i numeri lato server (difesa: l'AI a volte restituisce stringhe).
     const num = quoteNum;
     const clean = rows.map((r, i) => ({
@@ -1404,7 +1435,7 @@ Regole IMPORTANTI:
       balanceUsd: num(s.balanceUsd),
       totalRmb: num(s.totalRmb),
     });
-    return { rows: clean, summary, currency: 'USD' };
+    return { rows: clean, summary, currency: 'USD', ...(truncated ? { truncated: true } : {}) };
   } catch (e) {
     console.error('parseQuotation AI error:', e.message);
     throw new HttpsError('internal', 'Lettura ricevuta fallita: ' + e.message);
