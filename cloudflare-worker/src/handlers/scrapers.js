@@ -1184,7 +1184,7 @@ async function weidianPriceCNY(itemUrl) {
 // ignorando fence markdown, testo/prosa in coda o un eventuale secondo oggetto
 // (causa del "Unexpected non-whitespace character after JSON"). Conta le
 // parentesi rispettando le stringhe, così si ferma alla chiusura del 1° oggetto.
-function parseFirstJson(text) {
+export function parseFirstJson(text) {
   let s = String(text == null ? '' : text).trim();
   s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
   const start = s.indexOf('{');
@@ -1200,10 +1200,38 @@ function parseFirstJson(text) {
     else if (c === '{') depth++;
     else if (c === '}') { depth--; if (depth === 0) return JSON.parse(s.slice(start, i + 1)); }
   }
-  // Brace non bilanciate: ultimo tentativo greedy.
-  const m = s.match(/\{[\s\S]*\}/);
-  if (m) return JSON.parse(m[0]);
+  // Brace non bilanciate: risposta tagliata (max_tokens). Si recupera fin
+  // dove arriva l'ultimo valore completo invece di fallire tutta la lettura.
+  const rec = salvageTruncatedJson(s.slice(start));
+  if (rec !== undefined) return rec;
   throw new Error('JSON incompleto nella risposta AI');
+}
+
+// JSON tagliato a metà (es. "...},{"line":12,"link":"htt"): taglia subito
+// dopo l'ultimo oggetto/array chiuso e chiude le parentesi rimaste aperte.
+// Le righe incomplete si perdono, quelle intere restano.
+export function salvageTruncatedJson(text) {
+  const s = String(text == null ? '' : text);
+  const stack = [];
+  let inStr = false, esc = false, cut = -1, cutStack = null;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') inStr = true;
+    else if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') {
+      stack.pop();
+      if (!stack.length) { try { return JSON.parse(s.slice(0, i + 1)); } catch (_) { return undefined; } }
+      cut = i + 1; cutStack = stack.slice();
+    }
+  }
+  if (cut < 0) return undefined;
+  try { return JSON.parse(s.slice(0, cut) + cutStack.reverse().join('')); } catch (_) { return undefined; }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1338,7 +1366,7 @@ export async function parseQuotation(data, { env }) {
   if (imageBase64.length > 7 * 1024 * 1024) throw new HttpsError('invalid-argument', 'Immagine troppo grande (>5MB).');
 
   const prompt = `Sei un assistente che legge le "QUOTATION SHEET" degli agenti di acquisto cinesi (Weidian/Taobao/1688/Yupoo).
-Estrai le righe prodotto numerate della tabella E il riepilogo dei totali in fondo. Rispondi ESCLUSIVAMENTE con JSON valido (nessun markdown, nessun testo prima o dopo):
+Estrai le righe prodotto numerate della tabella E il riepilogo dei totali in fondo. Rispondi ESCLUSIVAMENTE con JSON valido e COMPATTO su una sola riga (niente indentazione né a capo, nessun markdown, nessun testo prima o dopo):
 {"rows":[{"line":1,"link":"https://...","itemId":"742989298","remarks":"no box","size":"42 eu","quantity":"1","rmb":280,"freightRmb":12,"totalRmb":292,"gw":2,"unitPriceUsd":49.01,"unitFreightUsd":21.22}],"summary":{"goodsUsd":265.5,"estFreightUsd":139.0,"discountUsd":8.6,"refundUsd":0,"totalUsd":396.0,"receivedUsd":473.0,"balanceUsd":-77.0,"totalRmb":1582.0},"currency":"USD"}
 Regole IMPORTANTI:
 - "rows": una riga per ogni prodotto numerato (1,2,3...). NON includere righe di totale/subtotale/spedizione stimata/pagamenti tra le rows.
@@ -1361,7 +1389,9 @@ Regole IMPORTANTI:
       headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2500,
+        // Ricevute con molte righe superano facilmente 2500 token: con il JSON
+        // tagliato la lettura falliva ("Expected ',' or ']'...").
+        max_tokens: 16000,
         messages: [{
           role: 'user',
           content: [
@@ -1375,6 +1405,7 @@ Regole IMPORTANTI:
     if (!aiResp.ok) { const errText = await aiResp.text(); throw new Error('Anthropic ' + aiResp.status + ': ' + errText.slice(0, 300)); }
     const aiData = await aiResp.json();
     const text = (aiData.content?.[0]?.text || '{}').trim();
+    const truncated = aiData.stop_reason === 'max_tokens';
     const parsed = parseFirstJson(text);
     const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
     // Normalizza i numeri lato server (difesa: l'AI a volte restituisce stringhe).
@@ -1404,7 +1435,7 @@ Regole IMPORTANTI:
       balanceUsd: num(s.balanceUsd),
       totalRmb: num(s.totalRmb),
     });
-    return { rows: clean, summary, currency: 'USD' };
+    return { rows: clean, summary, currency: 'USD', truncated };
   } catch (e) {
     console.error('parseQuotation AI error:', e.message);
     throw new HttpsError('internal', 'Lettura ricevuta fallita: ' + e.message);

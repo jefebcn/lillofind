@@ -1,5 +1,5 @@
 // Lettura ricevuta: numeri con virgola e riquadro totali che deve tornare.
-import { quoteNum, fixQuotationSummary } from '../src/handlers/scrapers.js';
+import { quoteNum, fixQuotationSummary, parseFirstJson } from '../src/handlers/scrapers.js';
 
 let pass = 0, fail = 0;
 const eq = (a, e, l) => { const A = JSON.stringify(a), E = JSON.stringify(e); if (A === E) pass++; else { fail++; console.error('❌ ' + l + '\n   atteso ' + E + '\n   ottenuto ' + A); } };
@@ -23,6 +23,18 @@ eq([g.discountUsd, g.discountFixed], [5.2, true], 'sconto 52 → 5.2');
 const h = fixQuotationSummary({ ...base, refundUsd: 99 });
 eq([h.refundUsd, h.refundFixed], [99, undefined], 'non torna in nessun modo: lasciato com\'è (avviso in admin)');
 eq(fixQuotationSummary({ goodsUsd: 10, refundUsd: 338 }).refundUsd, 338, 'senza totale: niente correzione');
+
+// Risposta AI tagliata da max_tokens (ricevute lunghe): si tengono le righe intere.
+const row = (n) => ({ line: n, link: 'https://weidian.com/item.html?itemID=' + n, size: '42 eu', unitPriceUsd: 10 + n });
+const full = JSON.stringify({ rows: [1, 2, 3].map(row), summary: { totalUsd: 99 } }, null, 2);
+eq(parseFirstJson(full).rows.length, 3, 'JSON completo indentato');
+const cutMid = full.slice(0, full.indexOf('"line": 3') + 12);
+eq(parseFirstJson(cutMid).rows.map(r => r.line), [1, 2], 'tagliato a metà riga 3: restano 1 e 2');
+const cutStr = JSON.stringify({ rows: [1, 2].map(row) }).replace(/\]\}$/, ',{"line":3,"link":"https://wei');
+eq(parseFirstJson(cutStr).rows.length, 2, 'tagliato dentro una stringa');
+eq(parseFirstJson('```json\n{"rows":[{"line":1,"remarks":"a } b"}]}\n```').rows[0].remarks, 'a } b', 'graffa dentro stringa e markdown');
+let threw = false; try { parseFirstJson('{"rows":[{"line":1'); } catch (_) { threw = true; }
+eq(threw, true, 'nessun valore completo: errore');
 
 console.log(`\n${pass} passati, ${fail} falliti`);
 if (fail) process.exit(1);
