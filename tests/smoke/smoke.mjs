@@ -154,6 +154,17 @@ const INDEX = [
   ['carrello', "document.getElementById('lf-sizeguide')?.remove();closeProd();showPg('cart')", "document.querySelector('#pg-cart.on')!==null && !window.__xss"],
   ['lfpoints', "showPg('lfpoints')", "document.querySelector('#pg-lfpoints.on')!==null"],
   ['profilo', "showPg('profile')", "document.querySelector('#pg-profile.on')!==null"],
+  // ricerca per foto: i prodotti arrivano già dal Worker (matches), anche con nomi ostili
+  ['ricerca per foto', `(async()=>{
+    window.lfCallable=()=>async()=>({data:{found:true,label:'Hoodie Stussy nera',category:'Felpa con Cappuccio',brand:'Stussy',colors:['Nero'],
+      matches:[{id:'p6',name:'Hoodie Basic Logo',brand:'Stussy',price:69,imageUrl:'',match:'same'},
+               {id:'p8',name:'Giacca <img src=x onerror="window.__xss=4">',brand:'Br"and',price:59,imageUrl:'',match:''}]}});
+    showPg('home'); openVisualSearch();
+    const cv=document.createElement('canvas'); cv.width=cv.height=40; cv.getContext('2d').fillRect(0,0,40,40);
+    const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+    const dt=new DataTransfer(); dt.items.add(new File([blob],'foto.png',{type:'image/png'}));
+    const inp=document.getElementById('vs-file'); inp.files=dt.files; inp.dispatchEvent(new Event('change'));
+  })()`, "document.querySelectorAll('#vs-modal .vs-card').length===2 && /Identico/.test(document.getElementById('vs-modal').textContent) && !window.__xss"],
 ];
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null; // es. ONLY=vault.html
 const want = f => !ONLY || ONLY.includes(f);

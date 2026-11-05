@@ -94,7 +94,7 @@
   // versione vecchia (anche per giorni, sull'app installata): qui si confronta
   // con version.json e, se è cambiata, si svuota la cache e si ricarica, una
   // volta sola. Mai durante il checkout o mentre si scrive in un campo.
-  window.LF_BUILD='2026-10-22.1';
+  window.LF_BUILD='2026-11-05.1';
   (function(){
     var last=0;
     function busy(){
@@ -6084,7 +6084,9 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
 
   // ── Ricerca per foto ───────────────────────────────────
   // La foto va al Worker (/visualSearch): l'AI la descrive (categoria, marchio,
-  // squadra, colori, parole chiave) e qui si cerca nel catalogo già caricato.
+  // squadra, colori, parole chiave), il Worker sceglie i candidati e li confronta
+  // con la foto, e risponde con i prodotti già ordinati (matches). Se mancano
+  // (Worker vecchio o errore) si cerca qui nel catalogo caricato (lfVisualMatch).
   // Niente salvato: la foto resta solo in memoria finché la finestra è aperta.
   const VS_WORDS=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   function vsCategoryOf(p){
@@ -6204,7 +6206,7 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
       await lfUser();
       const res=await lfCallable('visualSearch')({ imageBase64: img.split(',')[1], mediaType:'image/jpeg' });
       r=res&&res.data;
-      await vsWaitProducts();
+      if(!(r&&Array.isArray(r.matches))) await vsWaitProducts();
     }catch(e){
       body.innerHTML=`<div class="vs-top"><img src="${img}" alt=""><div style="flex:1;min-width:200px;"><p style="font-size:14px;font-weight:700;">${lfEsc(e.message||'Ricerca non riuscita')}</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="btn-led" style="padding:10px 16px;font-size:12px;" onclick="openVisualSearch()">Riprova</button>
@@ -6216,7 +6218,8 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
   function vsShow(img, r){
     const body=document.getElementById('vs-body'); if(!body) return;
     const list=(typeof products!=='undefined')?products:[];
-    const res=r&&r.found?lfVisualMatch(list, r, 24):[];
+    const res=r&&r.found?(Array.isArray(r.matches)?r.matches:lfVisualMatch(list, r, 24)):[];
+    const nSame=res.filter(p=>p.match==='same').length;
     const chips=r&&r.found?[r.category,r.brand,r.team,...(r.colors||[])].filter(Boolean).map(c=>`<span class="vs-chip">${lfEsc(c)}</span>`).join(''):'';
     const head=`<div class="vs-top"><img src="${img}" alt="La tua foto"><div style="flex:1;min-width:200px;">
       <p style="font-size:15px;font-weight:700;margin-bottom:8px;">${lfEsc(r&&r.label||'')}</p>${chips}
@@ -6232,12 +6235,18 @@ window.wishIcon=function(on){return on?ic('heart-fill','ic-heart-on'):ic('heart'
         ${r&&r.found?'<button type="button" class="btn-led" style="padding:12px 20px;font-size:12px;" onclick="vsRequest()">Richiedilo con questa foto →</button>':''}</div>`;
       return;
     }
-    body.innerHTML=head+`<p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:4px 0 10px;">I più simili nello shop · ${res.length}</p>
-      <div class="vs-grid">${res.map(p=>`<button type="button" class="vs-card" onclick="closeVisualSearch();openProduct(${lfEsc(JSON.stringify(String(p.id)))})">
+    body.innerHTML=head+`<p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin:4px 0 10px;">${nSame?'Trovato nello shop':'I più simili nello shop'} · ${res.length}</p>
+      <div class="vs-grid">${res.map(p=>`<button type="button" class="vs-card" style="position:relative;" onclick="vsOpen(${lfEsc(JSON.stringify(String(p.id)))})">
+        ${p.match==='same'?'<span class="vs-chip" style="position:absolute;top:8px;left:8px;margin:0;background:var(--card);color:var(--k);font-weight:700;">Identico</span>':''}
         <img src="${p.imageUrl?pImg(p.imageUrl):''}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         <div><b>${lfEsc(canonBrand(p.brand||''))}</b>${p.name?cleanTitle(p.name,48):'—'}<br><span style="font-weight:700;">€${(Number(p.price)||0).toFixed(2).replace('.',',')}</span></div></button>`).join('')}</div>
       <p style="font-size:12px;color:var(--mid);text-align:center;margin-top:16px;">Non è quello giusto? <button type="button" onclick="vsRequest()" style="background:none;border:none;padding:0;font:inherit;color:var(--led-text);font-weight:700;text-decoration:underline;cursor:pointer;">Richiedilo con questa foto</button></p>`;
   }
+  // I risultati del Worker arrivano prima del catalogo: la scheda prodotto lo aspetta
+  window.vsOpen=async function(id){
+    if(!(typeof products!=='undefined'&&products.some(x=>x.id===id))) await vsWaitProducts();
+    closeVisualSearch(); openProduct(id);
+  };
   // "Vedi nello shop": applica marchio/squadra o categoria come filtri
   window.vsSeeAll=function(){
     const r=window._vsLast||{}; closeVisualSearch(); showPg('shop'); resetFilters();

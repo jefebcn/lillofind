@@ -1,13 +1,16 @@
 // ════════════════════════════════════════════════════════════════
 // Ricerca per foto (POST /visualSearch): il cliente carica una foto di un
 // capo (screenshot, foto per strada…), Claude Haiku la descrive in campi
-// strutturati (categoria, marchio, squadra, colori, parole chiave) e il sito
-// cerca i prodotti simili nel catalogo che ha già in memoria: nessuna
-// lettura del catalogo da Firestore. La foto non viene salvata.
+// strutturati (categoria, marchio, squadra, colori, parole chiave); poi qui
+// si scelgono i candidati dal catalogo KV e l'AI confronta la foto con le
+// loro miniature (lib/visual-match.js). La risposta porta già i prodotti
+// (matches), così il telefono non deve scaricare tutto il catalogo per
+// cercare. Nessuna lettura da Firestore oltre al limite. La foto non viene salvata.
 // Limite: 12 ricerche l'ora per utente, 30 per connessione.
 // ════════════════════════════════════════════════════════════════
 import { HttpsError } from '../lib/errors.js';
 import { limita } from '../lib/limiti.js';
+import { visualCandidates, rerankByPhoto, matchView } from '../lib/visual-match.js';
 
 // Le stesse categorie dei filtri dello shop (MODEL_FILTERS in index.html)
 export const VS_CATEGORIES = ['Sneakers', 'T-Shirt', 'Polo', 'Camicia', 'Canotta', 'Maglia Manica Lunga', 'Felpa', 'Felpa con Cappuccio',
@@ -27,6 +30,37 @@ Regole:
 - "keywords": 0-5 parole utili per la ricerca, in italiano o col nome del modello (es. "dunk", "cargo", "zip", "oversize", "stampa").
 - "label": descrizione breve in italiano (max 70 caratteri).
 - Se la foto non mostra un capo d'abbigliamento, scarpe o accessori: {"found":false,"label":"motivo breve"}.`;
+
+// Indice compatto del catalogo per la ricerca (≈1/5 del catalogo completo),
+// ricostruito quando il catalogo pubblicato cambia o dopo 6 ore, e tenuto in
+// memoria tra una richiesta e l'altra.
+const IDX = 'catalog:visual', IDX_TTL = 6 * 3600 * 1000;
+let _mem = null;
+export function buildIndex(cat) {
+  return (cat && Array.isArray(cat.products) ? cat.products : [])
+    .filter((p) => p && p.id && p.hidden !== true && p.imageUrl)
+    .map((p) => ({ id: String(p.id), name: String(p.name || '').slice(0, 140), brand: p.brand || '', model: p.model || '', category: p.category || '',
+      style: p.style || '', colors: Array.isArray(p.colors) ? p.colors.slice(0, 4) : [], price: Number(p.price) || 0, imageUrl: p.imageUrl,
+      description: String(p.description || '').slice(0, 160), ...(p.soldOut === true ? { soldOut: true } : {}) }));
+}
+export async function visualIndex(env, now = Date.now()) {
+  const kv = env.CATALOG;
+  if (!kv) return [];
+  let ver = 0;
+  try { ver = (JSON.parse((await kv.get('catalog:meta')) || 'null') || {}).version || 0; } catch (_) {}
+  if (_mem && _mem.ver === ver && now - _mem.at < IDX_TTL) return _mem.list;
+  try {
+    const saved = JSON.parse((await kv.get(IDX)) || 'null');
+    if (saved && saved.ver === ver && now - saved.at < IDX_TTL && Array.isArray(saved.list)) { _mem = saved; return saved.list; }
+  } catch (_) {}
+  const body = await kv.get('catalog');
+  if (!body) return [];
+  const list = buildIndex(JSON.parse(body));
+  _mem = { ver, at: now, list };
+  try { await kv.put(IDX, JSON.stringify(_mem)); } catch (e) { console.error('visualIndex:', e.message); }
+  return list;
+}
+export const _resetVisualIndex = () => { _mem = null; };
 
 function firstJson(text) {
   const s = String(text || ''), i = s.indexOf('{'), j = s.lastIndexOf('}');
@@ -73,5 +107,16 @@ export async function visualSearch(data, { env, db, auth, ip }) {
     console.error('visualSearch:', e.message);
     throw new HttpsError('unavailable', 'Non sono riuscito a leggere la foto: riprova.');
   }
-  return cleanResult(r);
+  const out = cleanResult(r);
+  if (!out.found || (data && data.matches) === false) return out;
+  // Prodotti dal catalogo: candidati per punteggio, poi confronto delle foto
+  try {
+    const cands = visualCandidates(await visualIndex(env), out, 24);
+    const ranked = await rerankByPhoto(env, { media_type: mt, data: b64 }, cands, { max: 8 });
+    const seen = new Set(ranked.map((x) => x.p));
+    out.matches = [...ranked, ...cands.filter((p) => !seen.has(p)).map((p) => ({ p, match: '' }))].slice(0, 16).map(matchView);
+  } catch (e) {
+    console.error('visualSearch matches:', e.message);  // il sito ripiega sulla sua ricerca
+  }
+  return out;
 }
