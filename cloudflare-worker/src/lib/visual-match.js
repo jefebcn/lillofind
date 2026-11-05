@@ -42,6 +42,13 @@ function firstType(t) {
   for (const [label, re] of RULES) { const m = re.exec(t); if (m && m.index < at) { at = m.index; best = label; } }
   return best;
 }
+// Tipo di capo dal nome o dal modello, anche per i kit sportivi (una felpa del
+// Milan è "Calcio" nei filtri ma resta una felpa)
+export const productType = (p) => firstType(p && p.name) || firstType(p && p.model) || '';
+// Tipi vicini: l'AI può dire "Felpa" per una felpa con cappuccio
+const FAMILY = [['Felpa', 'Felpa con Cappuccio', 'Cardigan', 'Pile', 'Maglia Manica Lunga'], ['Giacchetto', 'Bomber', 'Piumino', 'Gilet'],
+  ['T-Shirt', 'Polo', 'Canotta', 'Camicia', 'Maglia Manica Lunga'], ['Pantaloni', 'Jogger', 'Pantaloncini']];
+const related = (a, b) => a && b && FAMILY.some((f) => f.includes(a) && f.includes(b));
 export function productCategory(p) {
   const st = norm(p && p.style);
   if (st === 'calcio' || st === 'basket' || st === 'ciclismo') return st[0].toUpperCase() + st.slice(1);
@@ -59,7 +66,11 @@ export function visualCandidates(products, r, max = 24) {
     const txt = norm([p.name, p.model, p.brand, String(p.description || '').slice(0, 160)].join(' '));
     const pb = norm(p.brand);
     let sc = 0, catOk = false;
-    if (r.category && productCategory(p) === r.category) { sc += 4; catOk = true; }
+    if (r.category) {
+      const c = productCategory(p), t = productType(p);
+      if (c === r.category || t === r.category) { sc += 4; catOk = true; }
+      else if (related(t, r.category)) { sc += 2.5; catOk = true; }
+    }
     if (brand && (pb === brand || (brand.length >= 3 && txt.includes(brand)))) sc += 5;
     if (team && (pb === team || txt.includes(team))) sc += 6;
     const pcol = (Array.isArray(p.colors) ? p.colors : []).map(norm);
@@ -129,7 +140,8 @@ export async function rerankByPhoto(env, photo, cands, { model = 'claude-haiku-4
     content.push({ type: 'image', source: { type: 'base64', ...x.t } });
   });
   content.push({ type: 'text', text: `Confronta il capo principale nella FOTO DEL CLIENTE con i ${shown.length} prodotti.
-"same" = stesso modello (stessa forma, stesso disegno/logo, stesso colore principale). "similar" = stesso tipo di capo e stile simile, ma modello o colore diversi.
+"same" = lo STESSO prodotto: stesso tipo di capo (una maglia non è mai uguale a una felpa o a una giacca), stessa forma, stesso disegno e logo, stesso colore principale. Nel dubbio non è "same".
+"similar" = stesso tipo di capo e stile simile, ma modello, disegno o colore diversi. Ignora le miniature che sono tabelle taglie o foto non leggibili.
 Rispondi SOLO con JSON: {"same":[numeri],"similar":[numeri]} in ordine dal più simile. Elenchi vuoti se nessuno corrisponde.` });
   let res;
   try {

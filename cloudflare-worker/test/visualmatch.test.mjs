@@ -21,6 +21,12 @@ const P = [
 const r = { found: true, category: 'Sneakers', brand: 'Jordan', team: '', colors: ['Nero'], keywords: ['jordan 4'], label: '' };
 eq(visualCandidates(P, r).map((p) => p.id), ['a', 'b', 'c'], 'candidati: marchio e colore prima, nascosti esclusi, felpa fuori');
 eq(visualCandidates(P, { found: false }), [], 'foto senza capo: niente');
+// Kit sportivi: conta anche il tipo di capo (felpa del Milan ≠ maglia del Milan)
+const K = [
+  { id: 'j', name: '2004-05 AC Milan retro jersey', style: 'calcio', imageUrl: 'x' },
+  { id: 'h', name: '25-26 AC Milan Hoodie', style: 'calcio', imageUrl: 'x' },
+];
+eq(visualCandidates(K, { found: true, category: 'Felpa', team: 'AC Milan', colors: [], keywords: [] }).map((p) => p.id), ['h', 'j'], 'felpa del Milan prima della maglia');
 
 eq(thumbUrl('https://yupoo-proxy.conti9708.workers.dev/?url=https%3A%2F%2Fphoto.yupoo.com%2Fhusky%2F405b%2Fmedium.jpg'), 'https://photo.yupoo.com/husky/405b/small.jpg', 'proxy tolto, miniatura small');
 eq(thumbUrl('https://si.geilicdn.com/open1_800_800.jpg'), 'https://si.geilicdn.com/open1_800_800.jpg', 'altri host invariati');
